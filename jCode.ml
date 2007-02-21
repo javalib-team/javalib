@@ -380,6 +380,9 @@ let parse_opcode op ch wide =
 	    raise Exit
 
 
+(* L'utilisation des wides est pas très claire. Lors du parsing,
+   il vaudrait mieux mettre l'instruction au bon offset, et pas après. *)
+
 (* Modified by eandre@irisa.fr 2006/05/19
    in order to accept wide offsets *)
 let parse_code ch len =

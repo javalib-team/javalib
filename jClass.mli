@@ -70,7 +70,7 @@ type jexception = {
 	e_start : int;
 	e_end : int;
 	e_handler : int;
-	e_catch_type : int;
+	e_catch_type : int; (* j'aurais mis class_name option *)
 }
 
 type array_type =
@@ -83,6 +83,7 @@ type array_type =
 	| ATInt
 	| ATLong
 
+(* J'aurais utilisé des polymorphic variants pour généraliser l'emploi de kind. *)
 type kind =
 	| KInt
 	| KLong
@@ -198,22 +199,22 @@ type opcode =
 	| OpAReturn
 	| OpReturnVoid
 
-	| OpGetStatic of int
+	| OpGetStatic of int (* j'aurais mis (class_name * string * signature) *)
 	| OpPutStatic of int
 	| OpGetField of int
 	| OpPutField of int
-	| OpInvokeVirtual of int
+	| OpInvokeVirtual of int (* pareil *)
 	| OpInvokeNonVirtual of int
 	| OpInvokeStatic of int
 	| OpInvokeInterface of int * int (* MethodInfo, count *)
 
-	| OpNew of int
+	| OpNew of int (* j'aurais mis class_name *)
 	| OpNewArray of array_type
-	| OpANewArray of int
+	| OpANewArray of int (* pareil *)
 	| OpArrayLength
 	| OpThrow
-	| OpCheckCast of int
-	| OpInstanceOf of int
+	| OpCheckCast of int (* pareil *)
+	| OpInstanceOf of int (* pareil *)
 	| OpMonitorEnter
 	| OpMonitorExit
 	    (* Modified by eandre@irisa.fr 2006/05/19
@@ -239,7 +240,7 @@ type verification_type =
 	| VLong
 	| VNull
 	| VUninitializedThis
-	| VObject of int
+	| VObject of int (* j'aurais mis class_name *)
 	| VUninitialized of int (* creation point *)
 
 type attribute =
