@@ -27,7 +27,7 @@ EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
-FILES =  jDump.+ jUnparse.+ jCode.+ jParse.+ jTest.+
+FILES =  jDump.+ jConsts.+ jUnparse.+ jCode.+ jParse.+ jTest.+
 
 all: javaLib.cma
 
@@ -35,8 +35,8 @@ opt: javaLib.cmxa
 
 install: all opt
 	-mkdir $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jCode.cmi jDump.cmi jUnparse.cmi jTest.cmi $(INSTALL_DIR)
-	cp -f jClass.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
+	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jCode.cmi jDump.cmi jUnparse.cmi jTest.cmi $(INSTALL_DIR)
+	cp -f jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
 
 sample:
 	$(OCAMLC) -I $(EXTLIB_PATH) extLib.cma javaLib.cma sample.ml -o sample.exe

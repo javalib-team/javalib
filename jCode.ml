@@ -22,6 +22,7 @@
 open IO.BigEndian
 open ExtList
 open JClass
+open JConsts
 
 exception Invalid_opcode of int
 
@@ -47,7 +48,7 @@ let read_signed ch wide =
 
 (* Modified by eandre@irisa.fr 2006/05/19
    in order to accept wide offsets*)
-let parse_opcode op ch wide =
+let parse_opcode op ch consts wide =
   match op with
 	| 0 ->
 		OpNop
@@ -76,11 +77,11 @@ let parse_opcode op ch wide =
 		OpSIPush (b1,b2) *)
 	    OpSIPush (read_i16 ch)
 	| 18 ->
-		OpLdc1 (IO.read_byte ch)
+	    OpLdc1 (get_constant consts (IO.read_byte ch))
 	| 19 ->
-		OpLdc1w (read_ui16 ch)
+	    OpLdc1w (get_constant consts (IO.read_ui16 ch))
 	| 20 ->
-		OpLdc2w (read_ui16 ch)
+	    OpLdc2w (get_constant consts (IO.read_ui16 ch))
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
 	    (* Modified by eandre@irisa.fr 2006/05/19
@@ -307,27 +308,34 @@ let parse_opcode op ch wide =
 		OpReturnVoid
 	(* ---- OO ------------------------------------- *)
 	| 178 ->
-		OpGetStatic (read_ui16 ch)
+	    let c, f, s = get_field consts ch in
+	      OpGetStatic (c, f, s)
 	| 179 ->
-		OpPutStatic (read_ui16 ch)
+	    let c, f, s = get_field consts ch in
+	      OpPutStatic (c, f, s)
 	| 180 ->
-		OpGetField (read_ui16 ch)
+	    let c, f, s = get_field consts ch in
+	      OpGetField (c, f, s)
 	| 181 ->
-		OpPutField (read_ui16 ch)
+	    let c, f, s = get_field consts ch in
+	      OpPutField (c, f, s)
 	| 182 ->
-		OpInvokeVirtual (read_ui16 ch)
+	    let c, m, s = get_method consts ch in
+	      OpInvokeVirtual (c, m, s)
 	| 183 ->
-		OpInvokeNonVirtual (read_ui16 ch)
+	    let c, m, s = get_method consts ch in
+	      OpInvokeNonVirtual (c, m, s)
 	| 184 ->
-		OpInvokeStatic (read_ui16 ch)
+	    let c, m, s = get_method consts ch in
+	      OpInvokeStatic (c, m, s)
 	| 185 ->
-		let idx = read_ui16 ch in
-		let nargs = IO.read_byte ch in
-		let _ = IO.read_byte ch in
-		OpInvokeInterface (idx,nargs)
+	    let c, m, s = get_interface_method consts ch in
+	    let nargs = IO.read_byte ch in
+	    let _ = IO.read_byte ch in
+	      OpInvokeInterface (c, m, s, nargs)
 	(* ---- others --------------------------------- *)
 	| 187 ->
-		OpNew (read_ui16 ch)
+		OpNew (get_class consts ch)
 	| 188 ->
 		OpNewArray (match IO.read_byte ch with
 			| 4 -> ATBool
@@ -340,15 +348,15 @@ let parse_opcode op ch wide =
 			| 11 -> ATLong
 			| _ -> raise Exit)
 	| 189 ->
-		OpANewArray (read_ui16 ch)
+		OpANewArray (get_class consts ch)
 	| 190 ->
 		OpArrayLength
 	| 191 ->
 		OpThrow
 	| 192 ->
-		OpCheckCast (read_ui16 ch)
+		OpCheckCast (get_class consts ch)
 	| 193 ->
-		OpInstanceOf (read_ui16 ch)
+		OpInstanceOf (get_class consts ch)
 	| 194 ->
 		OpMonitorEnter
 	| 195 ->
@@ -360,9 +368,9 @@ let parse_opcode op ch wide =
 	    then failwith "wide wide"
 	    else OpWide
 	| 197 ->
-		let idx = read_ui16 ch in
-		let dims = IO.read_byte ch in
-		OpAMultiNewArray (idx,dims)
+	    let c = get_class consts ch in
+	    let dims = IO.read_byte ch in
+	      OpAMultiNewArray (c,dims)
 	| 198 -> 
 	    OpIfNull (read_i16 ch)
 	| 199 -> 
@@ -385,7 +393,7 @@ let parse_opcode op ch wide =
 
 (* Modified by eandre@irisa.fr 2006/05/19
    in order to accept wide offsets *)
-let parse_code ch len =
+let parse_code ch consts len =
   let ch , pos = IO.pos_in ch in
   let code = Array.create len OpInvalid in
 
@@ -394,7 +402,7 @@ let parse_code ch len =
     let op = IO.read_byte ch in
       if (op = 170 || op = 171) && (p + 1) mod 4 > 0 then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
       try
-	let my_code = parse_opcode op ch wide in
+	let my_code = parse_opcode op ch consts wide in
 	  code.(p) <- my_code;
 	  if my_code = OpWide then step true
       with

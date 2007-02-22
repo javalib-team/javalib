@@ -70,7 +70,7 @@ type jexception = {
 	e_start : int;
 	e_end : int;
 	e_handler : int;
-	e_catch_type : int; (* j'aurais mis class_name option *)
+	e_catch_type : class_name option
 }
 
 type array_type =
@@ -99,9 +99,9 @@ type opcode =
 	| OpDConst of float
 	| OpBIPush of int
 	| OpSIPush of int
-	| OpLdc1 of int
-	| OpLdc1w of int
-	| OpLdc2w of int
+	| OpLdc1 of constant
+	| OpLdc1w of constant
+	| OpLdc2w of constant
 
 	| OpLoad of kind * int
 	| OpALoad of int
@@ -199,28 +199,28 @@ type opcode =
 	| OpAReturn
 	| OpReturnVoid
 
-	| OpGetStatic of int (* j'aurais mis (class_name * string * signature) *)
-	| OpPutStatic of int
-	| OpGetField of int
-	| OpPutField of int
-	| OpInvokeVirtual of int (* pareil *)
-	| OpInvokeNonVirtual of int
-	| OpInvokeStatic of int
-	| OpInvokeInterface of int * int (* MethodInfo, count *)
+	| OpGetStatic of class_name * string * signature
+	| OpPutStatic of class_name * string * signature
+	| OpGetField of class_name * string * signature
+	| OpPutField of class_name * string * signature
+	| OpInvokeVirtual of class_name * string * signature
+	| OpInvokeNonVirtual of class_name * string * signature
+	| OpInvokeStatic of class_name * string * signature
+	| OpInvokeInterface of class_name * string * signature * int (* count *)
 
-	| OpNew of int (* j'aurais mis class_name *)
+	| OpNew of class_name
 	| OpNewArray of array_type
-	| OpANewArray of int (* pareil *)
+	| OpANewArray of class_name
 	| OpArrayLength
 	| OpThrow
-	| OpCheckCast of int (* pareil *)
-	| OpInstanceOf of int (* pareil *)
+	| OpCheckCast of class_name
+	| OpInstanceOf of class_name
 	| OpMonitorEnter
 	| OpMonitorExit
 	    (* Modified by eandre@irisa.fr 2006/05/19
 	       because there was a (big) error *)
 	| OpWide
-	| OpAMultiNewArray of int * int (* ClassInfo, dims *)
+	| OpAMultiNewArray of class_name * int (* ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int
 	| OpGotoW of int
@@ -240,7 +240,7 @@ type verification_type =
 	| VLong
 	| VNull
 	| VUninitializedThis
-	| VObject of int (* j'aurais mis class_name *)
+	| VObject of class_name
 	| VUninitialized of int (* creation point *)
 
 type attribute =

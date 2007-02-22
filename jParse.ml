@@ -24,6 +24,7 @@ open JClass
 open IO.BigEndian
 open ExtList
 open ExtString
+include JConsts
 
 type tmp_constant =
 	| ConstantClass of int
@@ -38,36 +39,6 @@ type tmp_constant =
 	| ConstantNameAndType of int * int
 	| ConstantStringUTF8 of string
 	| ConstantUnusable
-
-type error_msg =
-	| Invalid_data
-	| Invalid_constant of int
-	| Invalid_access_flags of int
-	| Custom of string
-
-exception Error of string
-
-let error msg = raise (Error msg)
-
-let get_constant c n =
-	if n < 0 || n >= Array.length c then error ("Invalid constant index " ^ string_of_int n);
-	match c.(n) with
-	| ConstUnusable -> error "Unusable constant index";
-	| x -> x
-
-let get_class consts ch =
-	match get_constant consts (read_ui16 ch) with
-	| ConstClass n -> n
-	| _ -> error "Invalid class index"
-	
-let get_string consts ch =
-  let i = read_ui16 ch in
-	match get_constant consts i with
-	| ConstStringUTF8 s -> s
-	| c ->
-	    let s = IO.output_string () in
-	      JDump.dump_constant s c;
-	      error ("Invalid string " ^ IO.close_out s ^ " at index " ^ string_of_int i)
 
 let parse_constant max ch =
 	let cid = IO.read_byte ch in
@@ -193,7 +164,7 @@ let parse_stackmap_frame consts ch =
 		| 4 -> VLong
 		| 5 -> VNull
 		| 6 -> VUninitializedThis
-		| 7 -> VObject (read_ui16 ch)
+		| 7 -> VObject (get_class consts ch)
 		| 8 -> VUninitialized (read_ui16 ch)
 		| n -> prerr_endline ("type = " ^ string_of_int n); raise Exit
 	in let parse_type_info_array ch nb_item =
@@ -214,7 +185,7 @@ let rec parse_code consts ch =
 	let clen = read_i32 ch in
 	let code = 
 		(try			
-			JCode.parse_code ch clen
+			JCode.parse_code ch consts clen
 		with
 			JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n))
 	in
@@ -223,7 +194,14 @@ let rec parse_code consts ch =
 		let spc = read_ui16 ch in
 		let epc = read_ui16 ch in
 		let hpc = read_ui16 ch in
-		let ct = read_ui16 ch in
+		let ct =
+		  match read_ui16 ch with
+		    | 0 -> None
+		    | ct ->
+			match get_constant consts ct with
+			  | ConstClass c -> Some c
+			  | _ -> error "Invalid class index"
+		in
 		{
 			e_start = spc;
 			e_end = epc;

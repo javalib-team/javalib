@@ -29,4 +29,4 @@
 val unparse_class : 'a IO.output -> JClass.jclass -> unit
 
 (* For testing: *)
-val unparse_instruction : 'a IO.output -> (unit -> int) -> JClass.opcode -> unit
+val unparse_instruction : 'a IO.output -> JClass.constant DynArray.t -> (unit -> int) -> JClass.opcode -> unit

@@ -78,6 +78,23 @@ let array_type = function
 	| ATInt -> "int"
 	| ATLong -> "long"
 
+let dump_constant2 ch kind (cl,f,sign) =
+	IO.printf ch "%s : %s" kind (signature (class_name cl ^ "::" ^ f) sign)
+
+let dump_constant ch = function
+	| ConstClass cl -> IO.printf ch "class %s" (class_name cl)
+	| ConstField x -> dump_constant2 ch "field" x
+	| ConstMethod x -> dump_constant2 ch "method" x
+	| ConstInterfaceMethod x -> dump_constant2 ch "interface-method" x
+	| ConstString s -> IO.printf ch "string '%s'" s
+	| ConstInt i -> IO.printf ch "int %ld" i
+	| ConstFloat f -> IO.printf ch "float %f" f
+	| ConstLong i -> IO.printf ch "long %Ld" i
+	| ConstDouble f -> IO.printf ch "double %f" f
+	| ConstNameAndType (s,sign) -> IO.printf ch "name-and-type : %s" (signature s sign)
+	| ConstStringUTF8 s -> IO.printf ch "utf8 %s" s
+	| ConstUnusable -> IO.printf ch "unusable"
+
 let opcode = function
 	| OpNop -> "nop"
 	| OpAConstNull -> "aconstnull"
@@ -88,9 +105,9 @@ let opcode = function
 	| OpBIPush n -> sprintf "bipush %d" n
 	| OpSIPush a -> sprintf "sipush %d " a
 	    (* modified by eandre@irisa.fr 2006/05/02 *)
-	| OpLdc1 n -> sprintf "ldc1 %d" n
-	| OpLdc1w n -> sprintf "ldc1w %d" n
-	| OpLdc2w n -> sprintf "ldc2w %d" n
+	| OpLdc1 n -> sprintf "ldc1 %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
+	| OpLdc1w n -> sprintf "ldc1w %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
+	| OpLdc2w n -> sprintf "ldc2w %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
 
 	| OpLoad (k,n) -> sprintf "%cload %d" (kind k) n
 	| OpALoad n -> sprintf "aload %d" n
@@ -188,29 +205,29 @@ let opcode = function
 	| OpAReturn -> "areturn"
 	| OpReturnVoid -> "return"
 
-	| OpGetStatic n -> sprintf "getstatic %d" n
-	| OpPutStatic n -> sprintf "putstatic %d" n
-	| OpPutField n -> sprintf "putfield %d" n
-	| OpGetField n -> sprintf "getfield %d" n
-	| OpInvokeVirtual n -> sprintf "invokevirtual %d" n
-	| OpInvokeNonVirtual n -> sprintf "invokenonvirtual %d" n
-	| OpInvokeStatic n -> sprintf "invokestatic %d" n
-	| OpInvokeInterface (a,b) -> sprintf "invokeinterface %d %d" a b
+	| OpGetStatic (c, name, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpPutStatic (c, name, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpPutField (c, name, sign) -> sprintf "putfield %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpGetField (c, name, sign) -> sprintf "getfield %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpInvokeNonVirtual (c, name, sign) -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpInvokeStatic (c, name, sign) -> sprintf "invokestatic %s.%s:%s" (class_name c) name (signature "" sign)
+	| OpInvokeInterface (c, name, sign, count) -> sprintf "invokeinterface %s.%s:%s,%d" (class_name c) name (signature "" sign) count
 
-	| OpNew n -> sprintf "new %d" n
+	| OpNew c -> sprintf "new %s" (class_name c)
 	| OpNewArray t -> sprintf "newarray %s" (array_type t)
-	| OpANewArray n -> sprintf "anewarray %d" n
+	| OpANewArray c -> sprintf "anewarray %s" (class_name c)
 	| OpArrayLength -> "arraylength"
 	    (* Modified by eandre@irisa.fr 2006/06/08 *)
 	| OpThrow -> "athrow"
-	| OpCheckCast n -> sprintf "checkcast %d" n
-	| OpInstanceOf n -> sprintf "instanceof %d" n
+	| OpCheckCast c -> sprintf "checkcast %s" (class_name c)
+	| OpInstanceOf c -> sprintf "instanceof %s" (class_name c)
 	| OpMonitorEnter -> "monitorenter"
 	| OpMonitorExit -> "monitorexit"
 	    (* Modified by eandre@irisa.fr 2006/05/19
 	       because there was a (big) error *)
 	| OpWide -> "wide"
-	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %d %d" a b
+	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (class_name a) b
 	| OpIfNull n -> sprintf "ifnull %d" n
 	| OpIfNonNull n -> sprintf "ifnonnull %d" n
 	| OpGotoW n -> sprintf "gotow %d" n
@@ -219,24 +236,6 @@ let opcode = function
 	| OpRetW n -> sprintf "retw %d" n
 
 	| OpInvalid -> "invalid"
-
-let dump_constant2 ch kind (cl,f,sign) =
-	IO.printf ch "%s : %s" kind (signature (class_name cl ^ "::" ^ f) sign)
-
-let dump_constant ch = function
-	| ConstClass cl -> IO.printf ch "class %s" (class_name cl)
-	| ConstField x -> dump_constant2 ch "field" x
-	| ConstMethod x -> dump_constant2 ch "method" x
-	| ConstInterfaceMethod x -> dump_constant2 ch "interface-method" x
-	| ConstString s -> IO.printf ch "string '%s'" s
-	| ConstInt i -> IO.printf ch "int %ld" i
-	| ConstFloat f -> IO.printf ch "float %f" f
-	| ConstLong i -> IO.printf ch "long %Ld" i
-	| ConstDouble f -> IO.printf ch "double %f" f
-	| ConstNameAndType (s,sign) -> IO.printf ch "name-and-type : %s" (signature s sign)
-	| ConstStringUTF8 s -> IO.printf ch "utf8 %s" s
-	| ConstUnusable -> IO.printf ch "unusable"
-
 
 let dump_stackmap ch (offset,locals,stack) =
 	let dump_verif_info = function
@@ -247,7 +246,7 @@ let dump_stackmap ch (offset,locals,stack) =
 		| VLong -> "Long"
 		| VNull -> "Null"
 		| VUninitializedThis -> "UninitializedThis"
-		| VObject cl -> sprintf "Object %d" cl
+		| VObject c -> sprintf "Object %s" (class_name c)
 		| VUninitialized off -> sprintf "Uninitialized %d" off
 	in
 	IO.printf ch "\n      offset=%d,\n      locals=[" offset;
@@ -258,10 +257,9 @@ let dump_stackmap ch (offset,locals,stack) =
 (* added by eandre@irisa.fr 2006/06/08 *)
 let dump_exc ch cl exc =
   IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;
-  if exc.e_catch_type = 0 then
-    IO.printf ch "<finally>"
-  else
-    dump_constant ch cl.j_consts.(exc.e_catch_type);
+  (match exc.e_catch_type with
+     | None -> IO.printf ch "<finally>"
+     | Some cl -> IO.printf ch "class %s" (class_name cl));
   IO.printf ch ")"
 
 let rec dump_code ch cl code =

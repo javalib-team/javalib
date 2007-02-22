@@ -26,6 +26,6 @@ exception Invalid_opcode of int
 
    The boolean indicates that this instruction was preceded by a
    wide and should be read accordingly. *)
-val parse_opcode : int -> IO.input -> bool -> JClass.opcode
+val parse_opcode : int -> IO.input -> JClass.constant array -> bool -> JClass.opcode
 
-val parse_code : IO.input -> int -> JClass.opcode array
+val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array

@@ -8,4 +8,4 @@ val input_copy : IO.input -> IO.input * bool IO.output
 
 (* Clone of JCode.parse_code that checks JUnparse.unparse_instruction
    against the input. *)
-val parse_code : IO.input -> int -> JClass.opcode array
+val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array

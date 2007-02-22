@@ -18,6 +18,7 @@
  *)
 
 open JClass
+open JConsts
 open IO
 open IO.BigEndian
 
@@ -27,19 +28,6 @@ and version_minor = 0
 
 (* Usefull functions *)
 (*********************)
-
-let constant_to_int cp c =
-  try
-    DynArray.index_of (( = ) c) cp
-  with
-      Not_found ->
-	let i = DynArray.length cp in
-	  DynArray.add cp c;
-	  (match c with
-	     | ConstLong _ | ConstDouble _ ->
-		 DynArray.add cp ConstUnusable
-	     | _ -> ());
-	  i
 
 let write_constant ch cp c =
   write_ui16 ch (constant_to_int cp c)
@@ -244,24 +232,38 @@ let i16 ch inst =
 (* Instructions with one 16 bits unsigned argument *)
 let ui16 ch inst =
   let i, opcode = match inst with
-    | OpLdc1w i -> i, 19
-    | OpLdc2w i -> i, 20
-    | OpGetStatic i -> i, 178
-    | OpPutStatic i -> i, 179
-    | OpGetField i -> i, 180
-    | OpPutField i -> i, 181
-    | OpInvokeVirtual i -> i, 182
-    | OpInvokeNonVirtual i -> i, 183
-    | OpInvokeStatic i -> i, 184
-    | OpNew i -> i, 187
-    | OpANewArray i -> i, 189
-    | OpCheckCast i -> i, 192
-    | OpInstanceOf i -> i, 193
     | OpRetW i -> i, 209
     | _ -> invalid_arg "ui16"
   in
     write_byte ch opcode;
     write_ui16 ch i
+
+(* Instructions with one class_name argument *)
+let class_name consts ch inst =
+  let c, opcode = match inst with
+    | OpNew i -> i, 187
+    | OpANewArray i -> i, 189
+    | OpCheckCast i -> i, 192
+    | OpInstanceOf i -> i, 193
+    | _ -> invalid_arg "class_name"
+  in
+    write_byte ch opcode;
+    write_constant ch consts (ConstClass c)
+
+(* Instruction with a (class_name * string * signature) argument *)
+let field_or_method consts ch inst =
+  let arg, opcode = match inst with
+    | OpGetStatic (c, n, s) -> ConstField (c, n, s), 178
+    | OpPutStatic (c, n, s) -> ConstField (c, n, s), 179
+    | OpGetField (c, n, s) -> ConstField (c, n, s), 180
+    | OpPutField (c, n, s) -> ConstField (c, n, s), 181
+    | OpInvokeVirtual (c, n, s) -> ConstMethod (c, n, s), 182
+    | OpInvokeNonVirtual (c, n, s) -> ConstMethod (c, n, s), 183
+    | OpInvokeStatic (c, n, s) -> ConstMethod (c, n, s), 184
+    | _ -> invalid_arg "field_or_method"
+  in
+      write_byte ch opcode;
+      write_constant ch consts arg
 
 let array_type = [|
   ATBool;
@@ -281,7 +283,7 @@ let padding ch count =
   done
 
 (* Everything else *)
-let other count ch = function
+let other consts count ch = function
   | OpIConst n -> write_byte ch (3 + Int32.to_int n)
   | OpLConst n -> write_byte ch (9 + Int64.to_int n)
   | OpFConst n -> write_byte ch (11 + int_of_float n)
@@ -291,7 +293,13 @@ let other count ch = function
       write_byte ch n
   | OpLdc1 n ->
       write_byte ch 18;
-      write_byte ch n
+      write_byte ch (constant_to_int consts n)
+  | OpLdc1w n ->
+      write_byte ch 19;
+      write_constant ch consts n
+  | OpLdc2w n ->
+      write_byte ch 20;
+      write_constant ch consts n
   | OpIInc (index, incr) ->
       if
 	index < 0xFF && 0x80 >= - incr && incr < 0x80
@@ -332,18 +340,18 @@ let other count ch = function
 	   write_real_i32 ch v;
 	   write_i32 ch j)
 	tbl
-  | OpInvokeInterface (idx, nargs) ->
+  | OpInvokeInterface (c, m, s, nargs) ->
       write_byte ch 185;
-      write_ui16 ch idx;
+      write_constant ch consts (ConstInterfaceMethod (c, m, s));
       write_byte ch nargs;
       write_byte ch 0
   | OpNewArray at ->
       write_byte ch 188;
       write_byte ch (4 + ExtArray.Array.findi (( = ) at) array_type)
   | OpWide -> ()
-  | OpAMultiNewArray (idx, dims) ->
+  | OpAMultiNewArray (c, dims) ->
       write_byte ch 197;
-      write_ui16 ch idx;
+      write_constant ch consts (ConstClass c);
       write_byte ch dims
   | OpGotoW i ->
       write_byte ch 200;
@@ -354,7 +362,7 @@ let other count ch = function
   | OpInvalid -> ()
   | _ -> invalid_arg "other"
 
-let unparse_instruction ch count inst =
+let unparse_instruction ch consts count inst =
   try
     List.iter
       (function unparse ->
@@ -369,7 +377,9 @@ let unparse_instruction ch count inst =
 	ilfda_loadstore;
 	i16;
 	ui16;
-	other count
+	class_name consts;
+	field_or_method consts;
+	other consts count
       ];
     assert false
   with
@@ -516,7 +526,8 @@ let unparse_stackmap_attribute ch consts stackmap =
 		   | VLong -> write_byte ch 4
 		   | VNull -> write_byte ch 5
 		   | VUninitializedThis -> write_byte ch 6
-		   | VObject o -> write_byte ch 7 ; write_ui16 ch o
+		   | VObject o ->
+		       write_byte ch 7 ; write_constant ch consts(ConstClass o)
 		   | VUninitialized pc -> write_byte ch 8 ; write_ui16 ch pc)
 	    in
 	      write_ui16 ch pc;
@@ -582,11 +593,11 @@ let unparse_code_attribute ch consts code =
 	      Array.iteri
 		(fun i instr ->
 		   let ch', count' = pos_out ch' in
-		     unparse_instruction ch' count instr;
+		     unparse_instruction ch' consts count instr;
 		     let nops = length code.c_code i - count' () in
 		       assert (nops >= 0);
 		       for i = 1 to nops do
-			 unparse_instruction ch' count OpNop
+			 unparse_instruction ch' consts count OpNop
 		       done)
 		code.c_code);
        write_with_size write_ui16 ch
@@ -594,7 +605,9 @@ let unparse_code_attribute ch consts code =
 	    write_ui16 ch e.e_start;
 	    write_ui16 ch e.e_end;
 	    write_ui16 ch e.e_handler;
-	    write_ui16 ch e.e_catch_type)
+	    match e.e_catch_type with
+	      | Some cl -> write_constant ch consts (ConstClass cl)
+	      | None -> write_ui16 ch 0)
 	 code.c_exc_tbl;
        write_with_size write_ui16 ch
 	 (unparse_attribute_not_code ch consts)
