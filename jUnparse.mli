@@ -28,5 +28,18 @@
    the offset of the OpWide. *)
 val unparse_class : 'a IO.output -> JClass.jclass -> unit
 
+(* For statistics: *)
+
+val unparse_stackmap_attribute :
+  'a IO.output ->
+  JClass.constant DynArray.t ->
+  (int * JClass.verification_type list * JClass.verification_type list) list ->
+  unit
+
+val unparse_constant_pool :
+  'a IO.output ->
+  JClass.constant DynArray.t ->
+  unit
+
 (* For testing: *)
 val unparse_instruction : 'a IO.output -> JClass.constant DynArray.t -> (unit -> int) -> JClass.opcode -> unit

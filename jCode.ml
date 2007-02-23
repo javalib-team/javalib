@@ -397,6 +397,7 @@ let parse_code ch consts len =
   let ch , pos = IO.pos_in ch in
   let code = Array.create len OpInvalid in
 
+  (* Modified by Tifn in order to delete wide offsets :-) *)
   let rec step wide =
     let p = pos() in
     let op = IO.read_byte ch in
@@ -409,14 +410,15 @@ let parse_code ch consts len =
 	      e ->
 		prerr_endline ("error when parsing instruction " ^ string_of_int p);
 		raise e in
-	  code.(p) <- my_code;
-	  if my_code = OpWide then step true
+	  match my_code with
+	    | OpWide -> step true
+	    | c -> c
       with
 	  Exit -> raise (Invalid_opcode op)
   in
-
     while pos() < len do
-      step false
+      let p = pos() in
+	code.(p) <- step false
     done;
     code
       

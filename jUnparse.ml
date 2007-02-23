@@ -588,7 +588,8 @@ let rec nops code i =
 
 (* Length of an instruction (as read in the classfile) :
    - 0 for OpInvalid
-   - 1 + number of following OpInvalids otherwise. *)
+   - 1 + number of following OpInvalids otherwise.
+   Attention aux wides! *)
 let length code i =
   match code.(i) with
     | OpInvalid ->
@@ -606,13 +607,18 @@ let unparse_code_attribute ch consts code =
 	    let ch', count = pos_out ch in
 	      Array.iteri
 		(fun i instr ->
-		   let ch', count' = pos_out ch' in
-		     unparse_instruction ch' consts count instr;
-		     let nops = length code.c_code i - count' () in
-		       assert (nops >= 0);
-		       for i = 1 to nops do
-			 unparse_instruction ch' consts count OpNop
-		       done)
+		   try
+		     let ch', count' = pos_out ch' in
+		       unparse_instruction ch' consts count instr;
+		       let nops = length code.c_code i - count' () in
+			 if nops < 0
+			 then failwith ("Instruction " ^ string_of_int (- nops) ^ " byte(s) too long");
+			 for i = 1 to nops do
+			   unparse_instruction ch' consts count OpNop
+			 done
+		   with e ->
+		     prerr_endline ("Error when unparsing " ^ JDump.opcode instr);
+		     raise e)
 		code.c_code);
        write_with_size write_ui16 ch
 	 (function e ->
@@ -651,9 +657,9 @@ let unparse_method ch consts methode =
 	 (function AttributeCode _ -> true | _ -> false)
 	 methode.m_attributes
      with
-       | Some c, [AttributeCode c'] -> c = c'
+       | Some c, [AttributeCode c'] -> c == c' (* = is false because of nan. *)
        | None, [] -> true
-       | _, _ -> false);
+       | _, l -> false);
   write_ui16 ch (unparse_flags methode.m_flags);
   write_constant ch consts (ConstStringUTF8 methode.m_name);
   write_constant ch consts
