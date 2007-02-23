@@ -402,7 +402,13 @@ let parse_code ch consts len =
     let op = IO.read_byte ch in
       if (op = 170 || op = 171) && (p + 1) mod 4 > 0 then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
       try
-	let my_code = parse_opcode op ch consts wide in
+	let my_code =
+	  try
+	    parse_opcode op ch consts wide
+	  with
+	      e ->
+		prerr_endline ("error when parsing instruction " ^ string_of_int p);
+		raise e in
 	  code.(p) <- my_code;
 	  if my_code = OpWide then step true
       with

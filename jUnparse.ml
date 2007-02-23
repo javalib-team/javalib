@@ -29,6 +29,18 @@ and version_minor = 0
 (* Usefull functions *)
 (*********************)
 
+(* write_byte doesn't check anything *)
+let write_ui8 ch n =
+  if n < 0 || n > 0xFF then raise (Overflow "write_ui8");
+  write_byte ch n
+
+let write_i8 ch n =
+  if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
+  if n < 0 then
+    write_ui8 ch (0xFF + n)
+  else
+    write_ui8 ch n
+
 let write_constant ch cp c =
   write_ui16 ch (constant_to_int cp c)
 
@@ -135,7 +147,7 @@ let simple_table =
 (* Instruction without arguments *)
 let simple ch op =
   try
-    write_byte ch
+    write_ui8 ch
       (OpcodeMap.find op simple_table)
   with
       Not_found -> invalid_arg "simple"
@@ -160,16 +172,16 @@ let kind ch inst =
     | OpReturn k -> k, 172
     | _ -> invalid_arg "kind"
   in
-    write_byte ch (opcode + int_of_kind kind)
+    write_ui8 ch (opcode + int_of_kind kind)
 
 let unparse_local_instruction ch opcode value =
   if value < 0xFF
   then (
-    write_byte ch opcode;
-    write_byte ch value
+    write_ui8 ch opcode;
+    write_ui8 ch value
   ) else (
-    write_byte ch 196;
-    write_byte ch opcode;
+    write_ui8 ch 196;
+    write_ui8 ch opcode;
     write_ui16 ch value
   )
 
@@ -184,7 +196,7 @@ let ilfda_loadstore ch instr =
   in
     if value < 4
     then
-      write_byte ch
+      write_ui8 ch
 	(value +
 	   match instr with
 	     | OpLoad (kind, _) -> 26 + 4 * int_of_kind kind
@@ -226,7 +238,7 @@ let i16 ch inst =
     | OpIfNonNull i -> i, 199
     | _ -> invalid_arg "i16"
   in
-    write_byte ch opcode;
+    write_ui8 ch opcode;
     write_i16 ch i
 
 (* Instructions with one 16 bits unsigned argument *)
@@ -235,7 +247,7 @@ let ui16 ch inst =
     | OpRetW i -> i, 209
     | _ -> invalid_arg "ui16"
   in
-    write_byte ch opcode;
+    write_ui8 ch opcode;
     write_ui16 ch i
 
 (* Instructions with one class_name argument *)
@@ -247,7 +259,7 @@ let class_name consts ch inst =
     | OpInstanceOf i -> i, 193
     | _ -> invalid_arg "class_name"
   in
-    write_byte ch opcode;
+    write_ui8 ch opcode;
     write_constant ch consts (ConstClass c)
 
 (* Instruction with a (class_name * string * signature) argument *)
@@ -262,7 +274,7 @@ let field_or_method consts ch inst =
     | OpInvokeStatic (c, n, s) -> ConstMethod (c, n, s), 184
     | _ -> invalid_arg "field_or_method"
   in
-      write_byte ch opcode;
+      write_ui8 ch opcode;
       write_constant ch consts arg
 
 let array_type = [|
@@ -279,37 +291,39 @@ let array_type = [|
 let padding ch count =
   flush ch;
   for i = 1 + (count () - 1) mod 4 to 3 do
-    write_byte ch 0
+    write_ui8 ch 0
   done
 
 (* Everything else *)
 let other consts count ch = function
-  | OpIConst n -> write_byte ch (3 + Int32.to_int n)
-  | OpLConst n -> write_byte ch (9 + Int64.to_int n)
-  | OpFConst n -> write_byte ch (11 + int_of_float n)
-  | OpDConst n -> write_byte ch (14 + int_of_float n)
+  | OpIConst n -> write_ui8 ch (3 + Int32.to_int n)
+  | OpLConst n -> write_ui8 ch (9 + Int64.to_int n)
+  | OpFConst n -> write_ui8 ch (11 + int_of_float n)
+  | OpDConst n -> write_ui8 ch (14 + int_of_float n)
   | OpBIPush n ->
-      write_byte ch 16;
-      write_byte ch n
+      write_ui8 ch 16;
+      write_ui8 ch n
   | OpLdc1 n ->
-      write_byte ch 18;
-      write_byte ch (constant_to_int consts n)
+      write_ui8 ch 18;
+      (try (* not shown in the backtrace otherwise *)
+	 write_ui8 ch (constant_to_int consts n)
+       with _ -> failwith "constant index greater than 0xFF in ldc")
   | OpLdc1w n ->
-      write_byte ch 19;
+      write_ui8 ch 19;
       write_constant ch consts n
   | OpLdc2w n ->
-      write_byte ch 20;
+      write_ui8 ch 20;
       write_constant ch consts n
   | OpIInc (index, incr) ->
       if
 	index < 0xFF && 0x80 >= - incr && incr < 0x80
       then (
-	write_byte ch 132;
-	write_byte ch index;
-	write_byte ch incr
+	write_ui8 ch 132;
+	write_ui8 ch index;
+	write_i8 ch incr
       ) else (
-	write_byte ch 196;
-	write_byte ch 132;
+	write_ui8 ch 196;
+	write_ui8 ch 132;
 	write_ui16 ch index;
 	write_i16 ch incr
       )
@@ -317,22 +331,22 @@ let other consts count ch = function
       if
 	pc < 0xFF
       then (
-	write_byte ch 169;
-	write_byte ch pc
+	write_ui8 ch 169;
+	write_ui8 ch pc
       ) else (
-	write_byte ch 196;
-	write_byte ch 169;
+	write_ui8 ch 196;
+	write_ui8 ch 169;
 	write_ui16 ch pc
       )
   | OpTableSwitch (def, low, high, tbl) ->
-      write_byte ch 170;
+      write_ui8 ch 170;
       padding ch count;
       write_i32 ch def;
       write_real_i32 ch low;
       write_real_i32 ch high;
       Array.iter (write_i32 ch) tbl
   | OpLookupSwitch (def, tbl) ->
-      write_byte ch 171;
+      write_ui8 ch 171;
       padding ch count;
       write_i32 ch def;
       write_with_size write_i32 ch
@@ -341,23 +355,23 @@ let other consts count ch = function
 	   write_i32 ch j)
 	tbl
   | OpInvokeInterface (c, m, s, nargs) ->
-      write_byte ch 185;
+      write_ui8 ch 185;
       write_constant ch consts (ConstInterfaceMethod (c, m, s));
-      write_byte ch nargs;
-      write_byte ch 0
+      write_ui8 ch nargs;
+      write_ui8 ch 0
   | OpNewArray at ->
-      write_byte ch 188;
-      write_byte ch (4 + ExtArray.Array.findi (( = ) at) array_type)
+      write_ui8 ch 188;
+      write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) array_type)
   | OpWide -> ()
   | OpAMultiNewArray (c, dims) ->
-      write_byte ch 197;
+      write_ui8 ch 197;
       write_constant ch consts (ConstClass c);
-      write_byte ch dims
+      write_ui8 ch dims
   | OpGotoW i ->
-      write_byte ch 200;
+      write_ui8 ch 200;
       write_i32 ch i
   | OpJsrW i ->
-      write_byte ch 201;
+      write_ui8 ch 201;
       write_i32 ch i
   | OpInvalid -> ()
   | _ -> invalid_arg "other"
@@ -441,41 +455,41 @@ let unparse_constant ch consts =
   let write_constant = write_constant ch consts in
     function
       | ConstClass c ->
-	  write_byte ch 7;
+	  write_ui8 ch 7;
 	  write_constant (ConstStringUTF8 (encode_class_name c))
       | ConstField (c, s, signature) ->
-	  write_byte ch 9;
+	  write_ui8 ch 9;
 	  write_constant (ConstClass c);
 	  write_constant (ConstNameAndType (s, signature))
       | ConstMethod (c, s, signature) ->
-	  write_byte ch 10;
+	  write_ui8 ch 10;
 	  write_constant (ConstClass c);
 	  write_constant (ConstNameAndType (s, signature))
       | ConstInterfaceMethod (c, s, signature) ->
-	  write_byte ch 11;
+	  write_ui8 ch 11;
 	  write_constant (ConstClass c);
 	  write_constant (ConstNameAndType (s, signature))
       | ConstString s ->
-	  write_byte ch 8;
+	  write_ui8 ch 8;
 	  write_constant (ConstStringUTF8 s)
       | ConstInt i ->
-	  write_byte ch 3;
+	  write_ui8 ch 3;
 	  write_real_i32 ch i
       | ConstFloat f ->
-	  write_byte ch 4;
+	  write_ui8 ch 4;
 	  write_real_i32 ch (Int32.bits_of_float f)
       | ConstLong l ->
-	  write_byte ch 5;
+	  write_ui8 ch 5;
 	  write_i64 ch l
       | ConstDouble d ->
-	  write_byte ch 6;
+	  write_ui8 ch 6;
 	  write_double ch d
       | ConstNameAndType (s, signature) ->
-	  write_byte ch 12;
+	  write_ui8 ch 12;
 	  write_constant (ConstStringUTF8 s);
 	  write_constant (ConstStringUTF8 (unparse_signature signature))
       | ConstStringUTF8 s ->
-	  write_byte ch 1;
+	  write_ui8 ch 1;
 	  write_string_with_length write_ui16 ch s
       | ConstUnusable -> ()
 
@@ -519,16 +533,16 @@ let unparse_stackmap_attribute ch consts stackmap =
 	    let unparse_list =
 	      write_with_size write_ui16 ch
 		(function
-		   | VTop  -> write_byte ch 0
-		   | VInteger  -> write_byte ch 1
-		   | VFloat -> write_byte ch 2
-		   | VDouble -> write_byte ch 3
-		   | VLong -> write_byte ch 4
-		   | VNull -> write_byte ch 5
-		   | VUninitializedThis -> write_byte ch 6
+		   | VTop  -> write_ui8 ch 0
+		   | VInteger  -> write_ui8 ch 1
+		   | VFloat -> write_ui8 ch 2
+		   | VDouble -> write_ui8 ch 3
+		   | VLong -> write_ui8 ch 4
+		   | VNull -> write_ui8 ch 5
+		   | VUninitializedThis -> write_ui8 ch 6
 		   | VObject o ->
-		       write_byte ch 7 ; write_constant ch consts(ConstClass o)
-		   | VUninitialized pc -> write_byte ch 8 ; write_ui16 ch pc)
+		       write_ui8 ch 7 ; write_constant ch consts(ConstClass o)
+		   | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
 	    in
 	      write_ui16 ch pc;
 	      unparse_list lt;
