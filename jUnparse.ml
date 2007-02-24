@@ -37,7 +37,7 @@ let write_ui8 ch n =
 let write_i8 ch n =
   if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
   if n < 0 then
-    write_ui8 ch (0xFF + n)
+    write_ui8 ch (0x100 + n)
   else
     write_ui8 ch n
 
@@ -175,7 +175,7 @@ let kind ch inst =
     write_ui8 ch (opcode + int_of_kind kind)
 
 let unparse_local_instruction ch opcode value =
-  if value < 0xFF
+  if value <= 0xFF
   then (
     write_ui8 ch opcode;
     write_ui8 ch value
@@ -304,19 +304,22 @@ let other consts count ch = function
       write_ui8 ch 16;
       write_ui8 ch n
   | OpLdc1 n ->
-      write_ui8 ch 18;
-      (try (* not shown in the backtrace otherwise *)
-	 write_ui8 ch (constant_to_int consts n)
-       with _ -> failwith "constant index greater than 0xFF in ldc")
-  | OpLdc1w n ->
-      write_ui8 ch 19;
-      write_constant ch consts n
+      let index = constant_to_int consts n in
+	if
+	  index <= 0xFF
+	then (
+	  write_ui8 ch 18;
+	  write_ui8 ch index;
+	) else (
+	  write_ui8 ch 19;
+	  write_ui16 ch index;
+	)
   | OpLdc2w n ->
       write_ui8 ch 20;
       write_constant ch consts n
   | OpIInc (index, incr) ->
       if
-	index < 0xFF && 0x80 >= - incr && incr < 0x80
+	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
       then (
 	write_ui8 ch 132;
 	write_ui8 ch index;
@@ -329,7 +332,7 @@ let other consts count ch = function
       )
   | OpRet pc ->
       if
-	pc < 0xFF
+	pc <= 0xFF
       then (
 	write_ui8 ch 169;
 	write_ui8 ch pc

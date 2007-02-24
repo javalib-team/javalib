@@ -79,7 +79,7 @@ let parse_opcode op ch consts wide =
 	| 18 ->
 	    OpLdc1 (get_constant consts (IO.read_byte ch))
 	| 19 ->
-	    OpLdc1w (get_constant consts (read_ui16 ch))
+	    OpLdc1 (get_constant consts (read_ui16 ch))
 	| 20 ->
 	    OpLdc2w (get_constant consts (read_ui16 ch))
 	(* ---- load ----------------------------------- *)

@@ -106,7 +106,6 @@ let opcode = function
 	| OpSIPush a -> sprintf "sipush %d " a
 	    (* modified by eandre@irisa.fr 2006/05/02 *)
 	| OpLdc1 n -> sprintf "ldc1 %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
-	| OpLdc1w n -> sprintf "ldc1w %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
 	| OpLdc2w n -> sprintf "ldc2w %s" (let s = IO.output_string () in dump_constant s n ; IO.close_out s)
 
 	| OpLoad (k,n) -> sprintf "%cload %d" (kind k) n

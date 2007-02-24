@@ -25,4 +25,6 @@ type error_msg =
   
 exception Error of string
 
+(* Parse a Java class file. See {!JCode} for details about the code
+   attribute. *)
 val parse_class : IO.input -> JClass.jclass

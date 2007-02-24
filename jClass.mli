@@ -100,7 +100,6 @@ type opcode =
 	| OpBIPush of int
 	| OpSIPush of int
 	| OpLdc1 of constant
-	| OpLdc1w of constant
 	| OpLdc2w of constant
 
 	| OpLoad of kind * int
