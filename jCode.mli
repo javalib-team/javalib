@@ -28,4 +28,7 @@ exception Invalid_opcode of int
    wide and should be read accordingly. *)
 val parse_opcode : int -> IO.input -> JClass.constant array -> bool -> JClass.opcode
 
+(* For testing *)
+val parse_instruction : IO.input -> (unit -> int ) -> JClass.constant array -> JClass.opcode
+
 val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array

@@ -362,7 +362,6 @@ let other consts count ch = function
   | OpNewArray at ->
       write_ui8 ch 188;
       write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) array_type)
-  | OpWide -> ()
   | OpAMultiNewArray (c, dims) ->
       write_ui8 ch 197;
       write_constant ch consts (ConstClass c);
@@ -588,8 +587,7 @@ let rec nops code i =
 
 (* Length of an instruction (as read in the classfile) :
    - 0 for OpInvalid
-   - 1 + number of following OpInvalids otherwise.
-   Attention aux wides! *)
+   - 1 + number of following OpInvalids otherwise. *)
 let length code i =
   match code.(i) with
     | OpInvalid ->

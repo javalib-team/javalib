@@ -361,12 +361,6 @@ let parse_opcode op ch consts wide =
 		OpMonitorEnter
 	| 195 ->
 		OpMonitorExit
-	| 196 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       because there was a (big) error *)
-	    if wide
-	    then failwith "wide wide"
-	    else OpWide
 	| 197 ->
 	    let c = get_class consts ch in
 	    let dims = IO.read_byte ch in
@@ -384,41 +378,25 @@ let parse_opcode op ch consts wide =
 		OpBreakpoint
 	| 209 ->
 		OpRetW (read_ui16 ch)
-	| n ->
-	    raise Exit
+	| _ ->
+	    raise (Invalid_opcode op)
 
+let parse_instruction ch pos consts =
+  let p = pos() in
+  let op = IO.read_byte ch in
+    if op = 196
+    then parse_opcode (IO.read_byte ch) ch consts true
+    else (
+      if (op = 170 || op = 171) && (p + 1) mod 4 > 0
+      then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
+      parse_opcode op ch consts false
+    )
 
-(* L'utilisation des wides est pas très claire. Lors du parsing,
-   il vaudrait mieux mettre l'instruction au bon offset, et pas après. *)
-
-(* Modified by eandre@irisa.fr 2006/05/19
-   in order to accept wide offsets *)
 let parse_code ch consts len =
   let ch , pos = IO.pos_in ch in
   let code = Array.create len OpInvalid in
-
-  (* Modified by Tifn in order to delete wide offsets :-) *)
-  let rec step wide =
-    let p = pos() in
-    let op = IO.read_byte ch in
-      if (op = 170 || op = 171) && (p + 1) mod 4 > 0 then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
-      try
-	let my_code =
-	  try
-	    parse_opcode op ch consts wide
-	  with
-	      e ->
-		prerr_endline ("error when parsing instruction " ^ string_of_int p);
-		raise e in
-	  match my_code with
-	    | OpWide -> step true
-	    | c -> c
-      with
-	  Exit -> raise (Invalid_opcode op)
-  in
     while pos() < len do
       let p = pos() in
-	code.(p) <- step false
+	code.(p) <- parse_instruction ch pos consts
     done;
     code
-      

@@ -217,9 +217,6 @@ type opcode =
 	| OpInstanceOf of class_name
 	| OpMonitorEnter
 	| OpMonitorExit
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       because there was a (big) error *)
-	| OpWide
 	| OpAMultiNewArray of class_name * int (* ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int

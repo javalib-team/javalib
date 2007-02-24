@@ -224,9 +224,6 @@ let opcode = function
 	| OpInstanceOf c -> sprintf "instanceof %s" (class_name c)
 	| OpMonitorEnter -> "monitorenter"
 	| OpMonitorExit -> "monitorexit"
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       because there was a (big) error *)
-	| OpWide -> "wide"
 	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (class_name a) b
 	| OpIfNull n -> sprintf "ifnull %d" n
 	| OpIfNonNull n -> sprintf "ifnonnull %d" n
