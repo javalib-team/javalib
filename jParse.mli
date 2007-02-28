@@ -17,6 +17,14 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** Parsing. *)
+
+(** Parse a Java class file. See {!JCode.parse_code} for details about the code
+    attribute. *)
+val parse_class : IO.input -> JClass.jclass
+
+(**/**)
+
 type error_msg =
 	| Invalid_data
 	| Invalid_constant of int
@@ -25,6 +33,3 @@ type error_msg =
   
 exception Error of string
 
-(* Parse a Java class file. See {!JCode} for details about the code
-   attribute. *)
-val parse_class : IO.input -> JClass.jclass

@@ -19,9 +19,14 @@
 
 (* Last modified by eandre@irisa.fr 2006/06/08 *)
 
+(** Dumping. *)
+
 open JClass
 
+(** Dump a whole class file. *)
 val dump : 'a IO.output -> jclass -> unit
+
+(** {2 Basic elements.} *)
 
 val class_name : class_name -> string
 val access_flags : access_flag list -> string
@@ -29,6 +34,8 @@ val signature : string -> signature -> string
 val kind : kind -> char
 val array_type : array_type -> string
 val opcode : opcode -> string
+
+(** {2 Larger parts.} *)
 
 (* Replaced 'b by jclass 2006/06/08 *)
 val dump_constant : 'a IO.output -> constant -> unit

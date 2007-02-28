@@ -57,10 +57,10 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {!modules: JClass}
 
 {b {L Parsing and Unparsing}}
-{!modules: JConsts JCode JParse JUnparse}
+{!modules: JParse JUnparse}
 
 {b {L Other}}
-{!modules: JDump}
+{!modules: JDump JConsts JCode}
 
 {b {L Indexes}}
 

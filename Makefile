@@ -37,8 +37,8 @@ opt: javaLib.cmxa
 
 install: all opt
 	-mkdir $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jCode.cmi jDump.cmi jUnparse.cmi $(INSTALL_DIR)
-	cp -f jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
+	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jDump.cmi jUnparse.cmi $(INSTALL_DIR)
+	cp -f jClass.mli jConsts.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
 
 sample:
 	$(OCAMLC) -I $(EXTLIB_PATH) extLib.cma javaLib.cma sample.ml -o sample.exe

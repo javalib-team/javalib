@@ -17,7 +17,23 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** Bytecode instructions parsing. *)
+
+(** You should not need to directly access this module normally. *)
+
 open ExtLib
+
+(** Parses a sequence of instructions of given size (in bytes) and
+    returns an array of instructions. Each instruction is at the index
+    corresponding to its absolute offset. The array is padded with the
+    OpInvalid instruction. The absolute and relative offset that appear
+    in the instructions are therefore valid positions in the array.
+    OpInvalid may be interpreted as nop, or the direct successor of
+    an instruction can alternatively by defined as the first following
+    non-OpInvalid instruction. *)
+val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array
+
+(**/**)
 
 exception Invalid_opcode of int
 
@@ -31,12 +47,3 @@ val parse_opcode : int -> IO.input -> JClass.constant array -> bool -> JClass.op
 (* For testing *)
 val parse_instruction : IO.input -> (unit -> int ) -> JClass.constant array -> JClass.opcode
 
-(* Parses a sequence of instructions of given size (in bytes) and
-   returns an array of instructions. Each instruction is at the index
-   corresponding to its absolute offset. The array is padded with the
-   OpInvalid instruction. The absolute and relative offset that appear
-   in the instructions are therefore valid positions in the array.
-   OpInvalid may be interpreted as nop, or the direct successor of
-   an instruction can alternatively by defined as the first following
-   non-OpInvalid instruction. *)
-val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array

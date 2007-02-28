@@ -19,7 +19,11 @@
 
 (* Last modified by eandre@irisa.fr 2006/05/19 *)
 
+(** Ocaml representation of a Java class file. *)
 
+(** {2 Basic Elements.} *)
+
+(* This is not a good idea because class_name can be an array type. *)
 type class_name = string list
 
 type signature =
@@ -32,7 +36,7 @@ type signature =
 	| TShort
 	| TBool
 	| TObject of class_name
-	| TArray of signature * int option (* Number of dimensions if <> 1 *)
+	| TArray of signature * int option (** Number of dimensions if <> 1 *)
 	| TMethod of signature list * signature option
 
 type constant =
@@ -55,14 +59,14 @@ type access_flag =
 	| AccProtected
 	| AccStatic
 	| AccFinal
-	| AccSynchronized (* Also used as "Special" *)
+	| AccSynchronized (** Also used as "Special" *)
 	| AccVolatile
 	| AccTransient
 	| AccNative
 	| AccInterface
 	| AccAbstract
 	| AccStrict
-	| AccRFU of int (* Four bits reserved for future use *)
+	| AccRFU of int (** Four bits (RFU 1 .. RFU 4) reserved for future use *)
 
 type access_flags = access_flag list
 
@@ -150,7 +154,7 @@ type opcode =
 	| OpIXor
 	| OpLXor
 
-	| OpIInc of int * int (* index, increment *)
+	| OpIInc of int * int (** index, increment *)
 
 	| OpI2L
 	| OpI2F
@@ -205,7 +209,7 @@ type opcode =
 	| OpInvokeVirtual of class_name * string * signature
 	| OpInvokeNonVirtual of class_name * string * signature
 	| OpInvokeStatic of class_name * string * signature
-	| OpInvokeInterface of class_name * string * signature * int (* count *)
+	| OpInvokeInterface of class_name * string * signature * int (** count *)
 
 	| OpNew of class_name
 	| OpNewArray of array_type
@@ -216,7 +220,7 @@ type opcode =
 	| OpInstanceOf of class_name
 	| OpMonitorEnter
 	| OpMonitorExit
-	| OpAMultiNewArray of class_name * int (* ClassInfo, dims *)
+	| OpAMultiNewArray of class_name * int (** ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int
 	| OpGotoW of int
@@ -237,23 +241,25 @@ type verification_type =
 	| VNull
 	| VUninitializedThis
 	| VObject of class_name
-	| VUninitialized of int (* creation point *)
+	| VUninitialized of int (** creation point *)
 
-type attribute =
-	| AttributeSourceFile of string
-	| AttributeConstant of constant
-	| AttributeCode of jcode
-	| AttributeLineNumberTable of (int * int) list
-	| AttributeUnknown of string * string
-	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
+(** {2 Substructures.} *)
 
-and jcode = {
+type jcode = {
 	c_max_stack : int;
 	c_max_locals : int;
 	c_code : opcodes;
 	c_exc_tbl : jexception list;
 	c_attributes : attribute list;
 }
+
+and attribute =
+	| AttributeSourceFile of string
+	| AttributeConstant of constant
+	| AttributeCode of jcode
+	| AttributeLineNumberTable of (int * int) list
+	| AttributeUnknown of string * string
+	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
 
 type jfield = {
 	f_name : string;
