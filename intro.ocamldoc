@@ -1,0 +1,67 @@
+{b {L Introduction}}
+
+JavaLib is a library to access .class files from OCaml.
+Look at sample.ml sources to see how you can parse and dump a class file.
+The command "sample Main.class" will parse and dump the class file.
+
+{2 Quick start}
+
+{b {L Prerequisites}}
+
+- [Extlib]
+- [CamlZip] (to include the module [File] in next release)
+
+{b {L Installing}}
+
+Edit Makefile to configure your install path and ExtLib path. Then:
+- 	[make install]
+- 	[make doc] if you want the html documentation.
+
+{b {L Documentation}}
+
+For documentation you can :
+- browse the api below
+- read http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html
+  for more informations about the class file format
+- send an email to Tiphaine.Turpin.no\@spam.irisa.fr.
+
+{b {L About this version}}
+
+This version adds some features (and fixes some bugs) to the latest version
+(1.0) distributed by Nicolas Cannasse while keeping the same interface
+with the following exceptions:
+- a few changes in the instruction set
+- the AttributeStackMap constructor
+- the AccRFU constructor
+- an additional parameter in the function JCode.parse_opcode
+
+{b {L Authors}}
+
+JavaLib was initially developped by Nicolas Cannasse.
+
+Frédéric Besson made some corrections.
+
+Laurent Hubert then modified it during an internship at IRISA (Rennes, France)
+in the Lande team, during the summer 2005.
+
+Étienne André then modified it during an internship at IRISA
+in the Lande team, between March and July 2006.
+These modifications mainly concerned an error about the "wide"
+instruction, which was definitely not properly coded.
+
+Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
+
+{2 API}
+
+{b {L Data structures}}
+{!modules: JClass}
+
+{b {L Parsing and Unparsing}}
+{!modules: JConsts JCode JParse JUnparse}
+
+{b {L Other}}
+{!modules: JDump}
+
+{b {L Indexes}}
+
+{!indexlist}

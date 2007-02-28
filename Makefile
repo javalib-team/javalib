@@ -20,8 +20,10 @@
 # last modified by eandre@irisa.fr 19/05/2006
 
 OCAMLC = ocamlc -g
+OCAMLDOC = ocamldoc
 INSTALL_DIR = /home/turpin/experiences/javaLib/
 EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
+INCLUDE = -I $(EXTLIB_PATH)
 
 # ------ 
 
@@ -35,7 +37,7 @@ opt: javaLib.cmxa
 
 install: all opt
 	-mkdir $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jCode.cmi jDump.cmi jUnparse.cmi jTest.cmi $(INSTALL_DIR)
+	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jCode.cmi jDump.cmi jUnparse.cmi $(INSTALL_DIR)
 	cp -f jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
 
 sample:
@@ -47,21 +49,27 @@ sample.opt:
 javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
 	$(OCAMLC) -I $(EXTLIB_PATH) -a $(FILES:+=cmo) -o javaLib.cma
 
-javaLib: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
-	$(OCAMLC) -I $(EXTLIB_PATH) -custom extLib.cma $(FILES:+=cmo) -o javaLib
+# javaLib: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
+# 	$(OCAMLC) -I $(EXTLIB_PATH) -custom extLib.cma $(FILES:+=cmo) -o javaLib
 
-exe:
-	make javaLib
-	chmod 775 javaLib
-	./javaLib
+# exe:
+# 	make javaLib
+# 	chmod 775 javaLib
+# 	./javaLib
 
 javaLib.cmxa: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmx)
 	ocamlopt -a $(FILES:+=cmx) -o javaLib.cmxa
 
+doc: $(FILES:+=cmi)
+	mkdir -p doc
+	$(OCAMLDOC) -keep-code -d doc -html -stars -colorize-code -intro intro.ocamldoc -t JavaLib $(INCLUDE) \
+	jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(FILES:+=ml)
+
 clean:
 	rm -rf $(FILES:+=cmo) $(FILES:+=cmx) $(FILES:+=cmi) $(FILES:+=o) $(FILES:+=obj)
-	rm -rf sample.cmo sample.cmi sample.cmx sample.o sample.obj sample.exe sample.opt.exe 
+	rm -rf sample.cmo sample.cmi sample.cmx sample.o sample.obj sample.exe sample.opt.exe
 	rm -rf jClass.cmi javaLib.cma javaLib.cmxa javaLib.lib javaLib.a
+	rm -rf doc
 	rm -rf *.ml~ *.mli~ Makefile~
 
 .ml.cmo:
