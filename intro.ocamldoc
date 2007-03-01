@@ -27,13 +27,13 @@ For documentation you can :
 
 {b {L About this version}}
 
-This version adds some features (and fixes some bugs) to the latest version
-(1.0) distributed by Nicolas Cannasse while keeping the same interface
-with the following exceptions:
-- a few changes in the instruction set
-- the AttributeStackMap constructor
-- the AccRFU constructor
-- an additional parameter in the function JCode.parse_opcode
+This version has a slightly different interface from the previous one.
+All references to the constant pool have been removed from the data
+structures, and replaced by their value, making the use of the library
+easier. The constant pool is still present however.
+
+Some wide instructions also have been removed, and merged with their
+simple version.
 
 {b {L Authors}}
 
