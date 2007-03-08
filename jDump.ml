@@ -82,7 +82,7 @@ let dump_constant2 ch kind (cl,f,sign) =
 	IO.printf ch "%s : %s" kind (signature (class_name cl ^ "::" ^ f) sign)
 
 let dump_constant ch = function
-	| ConstClass cl -> IO.printf ch "class %s" (class_name cl)
+	| ConstClass cl -> IO.printf ch "class %s" (signature "" cl)
 	| ConstField x -> dump_constant2 ch "field" x
 	| ConstMethod x -> dump_constant2 ch "method" x
 	| ConstInterfaceMethod x -> dump_constant2 ch "interface-method" x
@@ -215,15 +215,15 @@ let opcode = function
 
 	| OpNew c -> sprintf "new %s" (class_name c)
 	| OpNewArray t -> sprintf "newarray %s" (array_type t)
-	| OpANewArray c -> sprintf "anewarray %s" (class_name c)
+	| OpANewArray c -> sprintf "anewarray %s" (signature "" c)
 	| OpArrayLength -> "arraylength"
 	    (* Modified by eandre@irisa.fr 2006/06/08 *)
 	| OpThrow -> "athrow"
-	| OpCheckCast c -> sprintf "checkcast %s" (class_name c)
-	| OpInstanceOf c -> sprintf "instanceof %s" (class_name c)
+	| OpCheckCast c -> sprintf "checkcast %s" (signature "" c)
+	| OpInstanceOf c -> sprintf "instanceof %s" (signature "" c)
 	| OpMonitorEnter -> "monitorenter"
 	| OpMonitorExit -> "monitorexit"
-	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (class_name a) b
+	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (signature "" a) b
 	| OpIfNull n -> sprintf "ifnull %d" n
 	| OpIfNonNull n -> sprintf "ifnonnull %d" n
 	| OpGotoW n -> sprintf "gotow %d" n
@@ -242,7 +242,7 @@ let dump_stackmap ch (offset,locals,stack) =
 		| VLong -> "Long"
 		| VNull -> "Null"
 		| VUninitializedThis -> "UninitializedThis"
-		| VObject c -> sprintf "Object %s" (class_name c)
+		| VObject c -> sprintf "Object %s" (signature "" c)
 		| VUninitialized off -> sprintf "Uninitialized %d" off
 	in
 	IO.printf ch "\n      offset=%d,\n      locals=[" offset;

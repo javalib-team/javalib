@@ -348,21 +348,21 @@ let parse_opcode op ch consts wide =
 			| 11 -> ATLong
 			| _ -> raise Exit)
 	| 189 ->
-		OpANewArray (get_class consts ch)
+		OpANewArray (get_signature consts ch)
 	| 190 ->
 		OpArrayLength
 	| 191 ->
 		OpThrow
 	| 192 ->
-		OpCheckCast (get_class consts ch)
+		OpCheckCast (get_signature consts ch)
 	| 193 ->
-		OpInstanceOf (get_class consts ch)
+		OpInstanceOf (get_signature consts ch)
 	| 194 ->
 		OpMonitorEnter
 	| 195 ->
 		OpMonitorExit
 	| 197 ->
-	    let c = get_class consts ch in
+	    let c = get_signature consts ch in
 	    let dims = IO.read_byte ch in
 	      OpAMultiNewArray (c,dims)
 	| 198 -> 

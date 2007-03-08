@@ -23,9 +23,11 @@
 
 (** {2 Basic Elements.} *)
 
-(* This is not a good idea because class_name can be an array type. *)
+(** Somthing like [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
+(** Signatures parsed from CONSTANT_NameAndType_info structures
+    and sometimes CONSTANT_Class_info structures. *)
 type signature =
 	| TByte
 	| TChar
@@ -40,7 +42,7 @@ type signature =
 	| TMethod of signature list * signature option
 
 type constant =
-	| ConstClass of class_name
+	| ConstClass of signature
 	| ConstField of (class_name * string * signature)
 	| ConstMethod of (class_name * string * signature)
 	| ConstInterfaceMethod of (class_name * string * signature)
@@ -213,14 +215,14 @@ type opcode =
 
 	| OpNew of class_name
 	| OpNewArray of array_type
-	| OpANewArray of class_name
+	| OpANewArray of signature
 	| OpArrayLength
 	| OpThrow
-	| OpCheckCast of class_name
-	| OpInstanceOf of class_name
+	| OpCheckCast of signature
+	| OpInstanceOf of signature
 	| OpMonitorEnter
 	| OpMonitorExit
-	| OpAMultiNewArray of class_name * int (** ClassInfo, dims *)
+	| OpAMultiNewArray of signature * int (** ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int
 	| OpGotoW of int
@@ -240,7 +242,7 @@ type verification_type =
 	| VLong
 	| VNull
 	| VUninitializedThis
-	| VObject of class_name
+	| VObject of signature
 	| VUninitialized of int (** creation point *)
 
 (** {2 Substructures.} *)

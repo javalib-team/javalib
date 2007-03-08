@@ -253,7 +253,7 @@ let ui16 ch inst =
 (* Instructions with one class_name argument *)
 let class_name consts ch inst =
   let c, opcode = match inst with
-    | OpNew i -> i, 187
+    | OpNew i -> (TObject i), 187
     | OpANewArray i -> i, 189
     | OpCheckCast i -> i, 192
     | OpInstanceOf i -> i, 193
@@ -458,18 +458,18 @@ let unparse_constant ch consts =
     function
       | ConstClass c ->
 	  write_ui8 ch 7;
-	  write_constant (ConstStringUTF8 (encode_class_name c))
+	  write_constant (ConstStringUTF8 (unparse_signature c))
       | ConstField (c, s, signature) ->
 	  write_ui8 ch 9;
-	  write_constant (ConstClass c);
+	  write_constant (ConstClass (TObject c));
 	  write_constant (ConstNameAndType (s, signature))
       | ConstMethod (c, s, signature) ->
 	  write_ui8 ch 10;
-	  write_constant (ConstClass c);
+	  write_constant (ConstClass (TObject c));
 	  write_constant (ConstNameAndType (s, signature))
       | ConstInterfaceMethod (c, s, signature) ->
 	  write_ui8 ch 11;
-	  write_constant (ConstClass c);
+	  write_constant (ConstClass (TObject c));
 	  write_constant (ConstNameAndType (s, signature))
       | ConstString s ->
 	  write_ui8 ch 8;
@@ -627,7 +627,7 @@ let unparse_code_attribute ch consts code =
 	    write_ui16 ch e.e_end;
 	    write_ui16 ch e.e_handler;
 	    match e.e_catch_type with
-	      | Some cl -> write_constant ch consts (ConstClass cl)
+	      | Some cl -> write_constant ch consts (ConstClass (TObject cl))
 	      | None -> write_ui16 ch 0)
 	 code.c_exc_tbl;
        write_with_size write_ui16 ch
@@ -676,15 +676,15 @@ let unparse_class ch c =
   let ch' = output_string ()
   and consts = DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags c.j_flags);
-    write_constant ch' consts (ConstClass c.j_name);
+    write_constant ch' consts (ConstClass (TObject c.j_name));
     write_ui16 ch'
       (match c.j_super with
-	 | Some super -> constant_to_int consts (ConstClass super)
+	 | Some super -> constant_to_int consts (ConstClass (TObject super))
 	 | None -> 0);
     let unparse unparse = write_with_size write_ui16 ch' unparse in
       unparse
 	(function int ->
-	   write_constant ch' consts (ConstClass int))
+	   write_constant ch' consts (ConstClass (TObject int)))
 	c.j_interfaces;
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;

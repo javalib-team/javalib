@@ -40,6 +40,7 @@ val error : string -> 'a
 
 val get_constant : JClass.constant array -> int -> JClass.constant
 
+val get_signature : JClass.constant array -> IO.input -> JClass.signature
 val get_class : JClass.constant array -> IO.input -> JClass.class_name
 
 val get_string : JClass.constant array -> IO.input -> string

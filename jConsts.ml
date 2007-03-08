@@ -38,11 +38,16 @@ let get_constant c n =
 	| ConstUnusable -> error ("Unusable constant index " ^ string_of_int n);
 	| x -> x
 
-let get_class consts ch =
+let get_signature consts ch =
 	match get_constant consts (read_ui16 ch) with
 	| ConstClass n -> n
 	| _ -> error "Invalid class index"
-	
+
+let get_class consts ch =
+  match get_signature consts ch with
+    | TObject c -> c
+    | _ -> failwith "array type descriptor not allowed here"
+
 let get_field consts ch =
 	match get_constant consts (read_ui16 ch) with
 	| ConstField (c, f, s) -> c, f, s

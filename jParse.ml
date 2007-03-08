@@ -164,7 +164,7 @@ let parse_stackmap_frame consts ch =
 		| 4 -> VLong
 		| 5 -> VNull
 		| 6 -> VUninitializedThis
-		| 7 -> VObject (get_class consts ch)
+		| 7 -> VObject (get_signature consts ch)
 		| 8 -> VUninitialized (read_ui16 ch)
 		| n -> prerr_endline ("type = " ^ string_of_int n); raise Exit
 	in let parse_type_info_array ch nb_item =
@@ -199,7 +199,7 @@ let rec parse_code consts ch =
 		    | 0 -> None
 		    | ct ->
 			match get_constant consts ct with
-			  | ConstClass c -> Some c
+			  | ConstClass (TObject c) -> Some c
 			  | _ -> error "Invalid class index"
 		in
 		{
@@ -286,13 +286,13 @@ let rec expand_constant consts n =
 	let error() = error "Malformed constant" in
 	let expand cl nt =
 		match expand_constant consts cl , expand_constant consts nt with
-		| ConstClass c , ConstNameAndType (n,s) -> (c,n,s)
+		| ConstClass (TObject c) , ConstNameAndType (n,s) -> (c,n,s)
 		| _ , _ -> error()
 	in
 	match consts.(n) with
 	| ConstantClass i -> 
 		(match expand_constant consts i with
-		| ConstStringUTF8 s -> ConstClass (String.nsplit s "/")
+		| ConstStringUTF8 s -> ConstClass (parse_signature s)
 		| _ -> error())
 	| ConstantField (cl,nt) -> ConstField (expand cl nt)
 	| ConstantMethod (cl,nt) -> ConstMethod (expand cl nt)
@@ -334,7 +334,7 @@ let parse_class ch =
 	let super_idx = read_ui16 ch in
 	let super = (if super_idx = 0 then None else
 		match get_constant consts super_idx with
-		| ConstClass name -> Some name
+		| ConstClass (TObject name) -> Some name
 		| _ -> error "Invalid super index")
 	in
 	let interface_count = read_ui16 ch in
