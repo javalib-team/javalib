@@ -404,6 +404,14 @@ let unparse_instruction ch consts count inst =
 (* Signature and classname encoding *)
 (************************************)
 
+let encode_class_name = function
+  | t :: q ->
+      List.fold_left
+	(fun s x -> s ^ "/" ^ x)
+	t
+	q
+  | [] -> invalid_arg "encode_class_name"
+
 let rec unparse_signature = function
   | TByte -> "B"
   | TChar -> "C"
@@ -414,15 +422,7 @@ let rec unparse_signature = function
   | TShort -> "S"
   | TBool -> "Z"
   | TObject c ->
-      let c = match c with
-	| t :: q ->
-	    List.fold_left
-	      (fun c s -> c ^ "/" ^ s)
-	      t
-	      q
-	| [] -> assert false
-      in
-	"L" ^ c ^ ";"
+      "L" ^ encode_class_name c ^ ";"
   | TArray (s, size) ->
       let desc = ref "" in
 	for i = 1 to
@@ -442,13 +442,12 @@ let rec unparse_signature = function
 	   | Some s -> unparse_signature s
 	   | None -> "V")
 
-let encode_class_name = function
-  | t :: q ->
-      List.fold_left
-	(fun s x -> s ^ "/" ^ x)
-	t
-	q
-  | [] -> invalid_arg "encode_class_name"
+
+let unparse_objectType = function
+  | TObject c ->
+      encode_class_name c
+  | TArray _ as s -> unparse_signature s
+  | _ -> invalid_arg "unparse_signature"
 
 (* Constant pool unparsing *)
 (***************************)
@@ -458,7 +457,7 @@ let unparse_constant ch consts =
     function
       | ConstClass c ->
 	  write_ui8 ch 7;
-	  write_constant (ConstStringUTF8 (unparse_signature c))
+	  write_constant (ConstStringUTF8 (unparse_objectType c))
       | ConstField (c, s, signature) ->
 	  write_ui8 ch 9;
 	  write_constant (ConstClass (TObject c));

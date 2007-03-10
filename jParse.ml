@@ -103,57 +103,108 @@ let parse_access_flags ch =
 *)
 	!flags
 
-let rec parse_signature_part s =
-	if String.length s = 0 then raise Exit;
-	match s.[0] with
-	| 'B' -> TByte, 1
-	| 'C' -> TChar, 1
-	| 'D' -> TDouble, 1
-	| 'F' -> TFloat, 1
-	| 'I' -> TInt, 1
-	| 'J' -> TLong, 1
-	| 'S' -> TShort, 1
-	| 'Z' -> TBool, 1
-	| 'L' -> 
-		(try
-			let s1 , _ = String.split s ";" in
-			let len = String.length s1 in
-			TObject (String.nsplit (String.sub s1 1 (len - 1)) "/") , len + 1
-		with
-			Invalid_string -> raise Exit)
-	| '[' ->
-		let p = ref 1 in
-		while !p < String.length s && s.[!p] >= '0' && s.[!p] <= '9' do
-			incr p;
-		done;
-		let size = (if !p > 1 then Some (int_of_string (String.sub s 1 (!p - 1))) else None) in
-		let s , l = parse_signature_part (String.sub s !p (String.length s - !p)) in
-		TArray (s,size) , l + !p
-	| '(' ->
-		let p = ref 1 in
-		let args = ref [] in
-		while !p < String.length s && s.[!p] <> ')' do
-			let a , l = parse_signature_part (String.sub s !p (String.length s - !p)) in
-			args := a :: !args;
-			p := !p + l;
-		done;
-		incr p;
-		if !p >= String.length s then raise Exit;
-		let ret , l = (match s.[!p] with 'V' -> None , 1 | _ -> 
-			let s, l = parse_signature_part (String.sub s !p (String.length s - !p)) in
-			Some s, l
-		) in
-		TMethod (List.rev !args,ret) , !p + l
-	| _ ->
-		raise Exit
+(* Validate an utf8 string and return a stream of characters. *)
+let read_utf8 s =
+  UTF8.validate s;
+  let index = ref 0 in
+    Stream.from
+      (function _ ->
+	 if UTF8.out_of_range s ! index
+	 then None
+	 else
+	   let c = UTF8.look s ! index in
+	     index := UTF8.next s ! index;
+	     Some c)
+
+(* Java ident, with unicode letter and numbers, starting with a letter. *)
+let rec parse_ident buff = parser
+  | [< 'c when c <> UChar.of_char ';'
+	 && c <> UChar.of_char '/'; (* should be a letter *)
+       name =
+	 (UTF8.Buf.add_char buff c;
+	  parse_more_ident buff) >] -> name
+
+and parse_more_ident buff = parser
+  | [< 'c when c <> UChar.of_char ';'
+	 && c <> UChar.of_char '/'; (* should be a letter or a number *)
+       name =
+	 (UTF8.Buf.add_char buff c;
+	  parse_more_ident buff) >] -> name
+  | [< >] ->
+      UTF8.Buf.contents buff
+
+(* Qualified name (internally encoded with '/'). *)
+let rec parse_name = parser
+  | [< ident = parse_ident (UTF8.Buf.create 0);
+       name = parse_more_name >] -> ident :: name
+
+and parse_more_name = parser
+  | [< 'slash when slash = UChar.of_char '/';
+       name = parse_name >] -> name
+  | [< >] -> []
+
+(* Java type. *)
+let rec parse_type = parser
+  | [< 'b when b = UChar.of_char 'B' >] -> TByte
+  | [< 'c when c = UChar.of_char 'C' >] -> TChar
+  | [< 'd when d = UChar.of_char 'D' >] -> TDouble
+  | [< 'f when f = UChar.of_char 'F' >] -> TFloat
+  | [< 'i when i = UChar.of_char 'I' >] -> TInt
+  | [< 'j when j = UChar.of_char 'J' >] -> TLong
+  | [< 's when s = UChar.of_char 'S' >] -> TShort
+  | [< 'z when z = UChar.of_char 'Z' >] -> TBool
+
+  | [< 'l when l = UChar.of_char 'L';
+       name = parse_name;
+       'semicolon when semicolon = UChar.of_char ';' >] -> TObject name
+
+  | [< a = parse_array >] -> a
+
+(* Java array type. *)
+and parse_array = parser
+  | [< 'lbracket when lbracket = UChar.of_char '['; typ = parse_type >] ->
+      TArray (typ, None)
+
+let rec parse_types = parser
+  | [< typ = parse_type ; types = parse_types >] -> typ :: types
+  | [< >] -> []
+
+let parse_type_option = parser
+  | [< typ = parse_type >] -> Some typ
+  | [< >] -> None
+
+(* A class name, possibly an array class. *)
+let parse_ot = parser
+  | [< array = parse_array >] -> array
+  | [< name = parse_name >] -> TObject name
+
+(* Java signature. *)
+let rec parse_sig = parser
+    (* We cannot delete that because of "NameAndType" constants. *)
+  | [< typ = parse_type >] -> typ
+  | [< 'lpar when lpar = UChar.of_char '(';
+       types = parse_types;
+       'rpar when rpar = UChar.of_char ')';
+       typ = parse_type_option >] ->
+      TMethod (types, typ)
+
+let parse_objectType s =
+  try
+    parse_ot (read_utf8 s)
+  with
+      Stream.Failure -> failwith ("invalid object type " ^ s)
+
+let parse_type s =
+  try
+    parse_type (read_utf8 s)
+  with
+      Stream.Failure -> failwith ("invalid type " ^ s)
 
 let parse_signature s =
-	try
-		let sign , l = parse_signature_part s in
-		if String.length s <> l then raise Exit;
-		sign
-	with
-		Exit -> error ("Invalid signature '" ^ s ^ "'")
+  try
+    parse_sig (read_utf8 s)
+  with
+      Stream.Failure -> error ("Invalid signature " ^ s)
 
 let parse_stackmap_frame consts ch =
 	let parse_type_info ch = match IO.read_byte ch with
@@ -249,7 +300,7 @@ and parse_attribute consts ch =
 let parse_field consts ch =
 	let acc = parse_access_flags ch in
 	let name = get_string consts ch in
-	let sign = parse_signature (get_string consts ch) in
+	let sign = parse_type (get_string consts ch) in
 	let attrib_count = read_ui16 ch in
 	let attribs = List.init attrib_count (fun _ -> parse_attribute consts ch) in
 	{
@@ -291,9 +342,9 @@ let rec expand_constant consts n =
 	in
 	match consts.(n) with
 	| ConstantClass i -> 
-		(match expand_constant consts i with
-		| ConstStringUTF8 s -> ConstClass (parse_signature s)
-		| _ -> error())
+	    (match expand_constant consts i with
+	       | ConstStringUTF8 s -> ConstClass (parse_objectType s)
+	       | _ -> error())
 	| ConstantField (cl,nt) -> ConstField (expand cl nt)
 	| ConstantMethod (cl,nt) -> ConstMethod (expand cl nt)
 	| ConstantInterfaceMethod (cl,nt) -> ConstInterfaceMethod (expand cl nt)

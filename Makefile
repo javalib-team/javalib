@@ -19,7 +19,8 @@
 
 # last modified by eandre@irisa.fr 19/05/2006
 
-OCAMLC = ocamlc -g
+OCAMLC = ocamlc -pp camlp4o -g
+OCAMLOPT = ocamlopt -pp camlp4o
 OCAMLDOC = ocamldoc
 INSTALL_DIR = /home/turpin/experiences/javaLib/
 EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
@@ -44,7 +45,7 @@ sample:
 	$(OCAMLC) -I $(EXTLIB_PATH) extLib.cma javaLib.cma sample.ml -o sample.exe
 
 sample.opt:
-	ocamlopt -I $(EXTLIB_PATH) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
+	$(OCAMLOPT) -I $(EXTLIB_PATH) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
 
 javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
 	$(OCAMLC) -I $(EXTLIB_PATH) -a $(FILES:+=cmo) -o javaLib.cma
@@ -58,7 +59,7 @@ javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
 # 	./javaLib
 
 javaLib.cmxa: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmx)
-	ocamlopt -a $(FILES:+=cmx) -o javaLib.cmxa
+	$(OCAMLOPT) -a $(FILES:+=cmx) -o javaLib.cmxa
 
 doc: $(FILES:+=cmi)
 	mkdir -p doc
@@ -76,7 +77,7 @@ clean:
 	$(OCAMLC) -I $(EXTLIB_PATH) -c $*.ml 
 
 .ml.cmx:
-	ocamlopt -I $(EXTLIB_PATH) -c $*.ml 
+	$(OCAMLOPT) -I $(EXTLIB_PATH) -c $*.ml 
 
 .mli.cmi:
 	$(OCAMLC) -I $(EXTLIB_PATH) -c $*.mli
