@@ -412,7 +412,7 @@ let encode_class_name = function
 	q
   | [] -> invalid_arg "encode_class_name"
 
-let rec unparse_signature = function
+let rec unparse_value_signature = function
   | TByte -> "B"
   | TChar -> "C"
   | TDouble -> "D"
@@ -430,23 +430,27 @@ let rec unparse_signature = function
 	do
 	  desc := ! desc ^ "["
 	done;
-	! desc ^ unparse_signature s
-  | TMethod (sigs, s) ->
+	! desc ^ unparse_value_signature s
+
+let rec unparse_method_signature (sigs, s) =
       List.fold_left
 	(fun desc s ->
-	   desc ^ unparse_signature s)
+	   desc ^ unparse_value_signature s)
 	"("
 	sigs
       ^ ")"
       ^ (match s with
-	   | Some s -> unparse_signature s
+	   | Some s -> unparse_value_signature s
 	   | None -> "V")
 
+let rec unparse_signature = function
+  | SValue v -> unparse_value_signature v
+  | SMethod m ->unparse_method_signature m
 
 let unparse_objectType = function
   | TObject c ->
       encode_class_name c
-  | TArray _ as s -> unparse_signature s
+  | TArray _ as s -> unparse_value_signature s
   | _ -> invalid_arg "unparse_signature"
 
 (* Constant pool unparsing *)
@@ -461,15 +465,15 @@ let unparse_constant ch consts =
       | ConstField (c, s, signature) ->
 	  write_ui8 ch 9;
 	  write_constant (ConstClass (TObject c));
-	  write_constant (ConstNameAndType (s, signature))
+	  write_constant (ConstNameAndType (s, SValue signature))
       | ConstMethod (c, s, signature) ->
 	  write_ui8 ch 10;
 	  write_constant (ConstClass (TObject c));
-	  write_constant (ConstNameAndType (s, signature))
+	  write_constant (ConstNameAndType (s, SMethod signature))
       | ConstInterfaceMethod (c, s, signature) ->
 	  write_ui8 ch 11;
 	  write_constant (ConstClass (TObject c));
-	  write_constant (ConstNameAndType (s, signature))
+	  write_constant (ConstNameAndType (s, SMethod signature))
       | ConstString s ->
 	  write_ui8 ch 8;
 	  write_constant (ConstStringUTF8 s)
@@ -644,7 +648,7 @@ let unparse_field ch consts field =
   write_ui16 ch (unparse_flags field.f_flags);
   write_constant ch consts (ConstStringUTF8 field.f_name);
   write_constant ch consts
-    (ConstStringUTF8 (unparse_signature field.f_signature));
+    (ConstStringUTF8 (unparse_value_signature field.f_signature));
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     field.f_attributes
@@ -663,7 +667,7 @@ let unparse_method ch consts methode =
   write_ui16 ch (unparse_flags methode.m_flags);
   write_constant ch consts (ConstStringUTF8 methode.m_name);
   write_constant ch consts
-    (ConstStringUTF8 (unparse_signature methode.m_signature));
+    (ConstStringUTF8 (unparse_method_signature methode.m_signature));
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     methode.m_attributes

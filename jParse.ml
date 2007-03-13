@@ -178,15 +178,18 @@ let parse_ot = parser
   | [< array = parse_array >] -> array
   | [< name = parse_name >] -> TObject name
 
-(* Java signature. *)
-let rec parse_sig = parser
-    (* We cannot delete that because of "NameAndType" constants. *)
-  | [< typ = parse_type >] -> typ
+let parse_method_sig = parser
   | [< 'lpar when lpar = UChar.of_char '(';
        types = parse_types;
        'rpar when rpar = UChar.of_char ')';
        typ = parse_type_option >] ->
-      TMethod (types, typ)
+      (types, typ)
+
+(* Java signature. *)
+let rec parse_sig = parser
+    (* We cannot delete that because of "NameAndType" constants. *)
+  | [< typ = parse_type >] -> SValue typ
+  | [< sign = parse_method_sig >] -> SMethod sign
 
 let parse_objectType s =
   try
@@ -199,6 +202,12 @@ let parse_type s =
     parse_type (read_utf8 s)
   with
       Stream.Failure -> failwith ("invalid type " ^ s)
+
+let parse_method_signature s =
+  try
+    parse_method_sig (read_utf8 s)
+  with
+      Stream.Failure -> error ("Invalid method signature " ^ s)
 
 let parse_signature s =
   try
@@ -313,7 +322,7 @@ let parse_field consts ch =
 let parse_method consts ch =
 	let acc = parse_access_flags ch in
 	let name = get_string consts ch in
-	let sign = parse_signature (get_string consts ch) in
+	let sign = parse_method_signature (get_string consts ch) in
 	let attrib_count = read_ui16 ch in
 	let code = ref None in
 	let attribs = List.init attrib_count (fun _ -> 
@@ -345,9 +354,18 @@ let rec expand_constant consts n =
 	    (match expand_constant consts i with
 	       | ConstStringUTF8 s -> ConstClass (parse_objectType s)
 	       | _ -> error())
-	| ConstantField (cl,nt) -> ConstField (expand cl nt)
-	| ConstantMethod (cl,nt) -> ConstMethod (expand cl nt)
-	| ConstantInterfaceMethod (cl,nt) -> ConstInterfaceMethod (expand cl nt)
+	| ConstantField (cl,nt) ->
+	    (match expand cl nt with
+	       | c, n, SValue v -> ConstField (c, n, v)
+	       | _, _, SMethod _ -> error())
+	| ConstantMethod (cl,nt) ->
+	    (match expand cl nt with
+	       | c, n, SMethod v -> ConstMethod (c, n, v)
+	       | _, _, SValue _ -> error())
+	| ConstantInterfaceMethod (cl,nt) ->
+	    (match expand cl nt with
+	       | c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
+	       | _, _, SValue _ -> error())
 	| ConstantString i ->
 		(match expand_constant consts i with
 		| ConstStringUTF8 s -> ConstString s

@@ -23,29 +23,35 @@
 
 (** {2 Basic Elements.} *)
 
-(** Somthing like [\["java" ; "lang" ; "Object"\]]. *)
+(** Something like [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
-(** Signatures parsed from CONSTANT_NameAndType_info structures
-    and sometimes CONSTANT_Class_info structures. *)
+(** Signature of a "value" (field, argument...) *)
+type value_signature =
+  |  TByte
+  | TChar
+  | TDouble
+  | TFloat
+  | TInt
+  | TLong
+  | TShort
+  | TBool
+  | TObject of class_name
+  | TArray of value_signature * int option (** Number of dimensions if <> 1 *)
+
+(** Method signature. *)
+type method_signature = value_signature list * value_signature option
+
+(** Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type signature =
-	| TByte
-	| TChar
-	| TDouble
-	| TFloat
-	| TInt
-	| TLong
-	| TShort
-	| TBool
-	| TObject of class_name
-	| TArray of signature * int option (** Number of dimensions if <> 1 *)
-	| TMethod of signature list * signature option
+  | SValue of value_signature
+  | SMethod of method_signature
 
 type constant =
-	| ConstClass of signature
-	| ConstField of (class_name * string * signature)
-	| ConstMethod of (class_name * string * signature)
-	| ConstInterfaceMethod of (class_name * string * signature)
+	| ConstClass of value_signature
+	| ConstField of (class_name * string * value_signature)
+	| ConstMethod of (class_name * string * method_signature)
+	| ConstInterfaceMethod of (class_name * string * method_signature)
 	| ConstString of string
 	| ConstInt of int32
 	| ConstFloat of float
@@ -204,25 +210,25 @@ type opcode =
 	| OpAReturn
 	| OpReturnVoid
 
-	| OpGetStatic of class_name * string * signature
-	| OpPutStatic of class_name * string * signature
-	| OpGetField of class_name * string * signature
-	| OpPutField of class_name * string * signature
-	| OpInvokeVirtual of class_name * string * signature
-	| OpInvokeNonVirtual of class_name * string * signature
-	| OpInvokeStatic of class_name * string * signature
-	| OpInvokeInterface of class_name * string * signature * int (** count *)
+	| OpGetStatic of class_name * string * value_signature
+	| OpPutStatic of class_name * string * value_signature
+	| OpGetField of class_name * string * value_signature
+	| OpPutField of class_name * string * value_signature
+	| OpInvokeVirtual of class_name * string * method_signature
+	| OpInvokeNonVirtual of class_name * string * method_signature
+	| OpInvokeStatic of class_name * string * method_signature
+	| OpInvokeInterface of class_name * string * method_signature * int (** count *)
 
 	| OpNew of class_name
 	| OpNewArray of array_type
-	| OpANewArray of signature
+	| OpANewArray of value_signature
 	| OpArrayLength
 	| OpThrow
-	| OpCheckCast of signature
-	| OpInstanceOf of signature
+	| OpCheckCast of value_signature
+	| OpInstanceOf of value_signature
 	| OpMonitorEnter
 	| OpMonitorExit
-	| OpAMultiNewArray of signature * int (** ClassInfo, dims *)
+	| OpAMultiNewArray of value_signature * int (** ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int
 	| OpGotoW of int
@@ -242,7 +248,7 @@ type verification_type =
 	| VLong
 	| VNull
 	| VUninitializedThis
-	| VObject of signature
+	| VObject of value_signature
 	| VUninitialized of int (** creation point *)
 
 (** {2 Substructures.} *)
@@ -265,14 +271,14 @@ and attribute =
 
 type jfield = {
 	f_name : string;
-	f_signature : signature;
+	f_signature : value_signature;
 	f_flags : access_flags;
 	f_attributes : attribute list;
 }
 
 type jmethod = {
 	m_name : string;
-	m_signature : signature;
+	m_signature : method_signature;
 	m_flags : access_flags;	
 	m_code : jcode option;
 	m_attributes : attribute list;

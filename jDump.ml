@@ -45,7 +45,7 @@ let access_flags = function
 			| AccRFU i -> "rfu" ^ string_of_int i
 		) flags) ^ " "
 
-let rec signature name = function
+let rec value_signature name = function
 	| TByte -> "byte " ^ name
 	| TChar -> "char " ^ name
 	| TDouble -> "double " ^ name
@@ -56,11 +56,16 @@ let rec signature name = function
 	| TBool -> "bool " ^ name
 	| TObject cl -> class_name cl ^ " " ^ name
 	| TArray (s,size) ->
-		signature name s ^ "[" ^ (match size with None -> "" | Some n -> string_of_int n) ^ "]"
-	| TMethod (sl,sr) ->
+		value_signature name s ^ "[" ^ (match size with None -> "" | Some n -> string_of_int n) ^ "]"
+
+let method_signature name (sl,sr) =
 		(match sr with
 		| None -> "void " ^ name
-		| Some s -> signature name s) ^ "(" ^ String.concat "," (List.map (signature "") sl) ^ ")"
+		| Some s -> value_signature name s) ^ "(" ^ String.concat "," (List.map (value_signature "") sl) ^ ")"
+
+let signature name = function
+  | SValue v -> value_signature name v
+  | SMethod m -> method_signature name m
 
 let kind = function
 	| KInt -> 'i'
@@ -78,14 +83,11 @@ let array_type = function
 	| ATInt -> "int"
 	| ATLong -> "long"
 
-let dump_constant2 ch kind (cl,f,sign) =
-	IO.printf ch "%s : %s" kind (signature (class_name cl ^ "::" ^ f) sign)
-
 let dump_constant ch = function
-	| ConstClass cl -> IO.printf ch "class %s" (signature "" cl)
-	| ConstField x -> dump_constant2 ch "field" x
-	| ConstMethod x -> dump_constant2 ch "method" x
-	| ConstInterfaceMethod x -> dump_constant2 ch "interface-method" x
+	| ConstClass cl -> IO.printf ch "class %s" (value_signature "" cl)
+	| ConstField (cl,f,sign) -> IO.printf ch "field : %s"(value_signature (class_name cl ^ "::" ^ f) sign)
+	| ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
+	| ConstInterfaceMethod (cl,f,sign) -> IO.printf ch "interface-method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
 	| ConstString s -> IO.printf ch "string '%s'" s
 	| ConstInt i -> IO.printf ch "int %ld" i
 	| ConstFloat f -> IO.printf ch "float %f" f
@@ -204,26 +206,26 @@ let opcode = function
 	| OpAReturn -> "areturn"
 	| OpReturnVoid -> "return"
 
-	| OpGetStatic (c, name, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpPutStatic (c, name, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpPutField (c, name, sign) -> sprintf "putfield %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpGetField (c, name, sign) -> sprintf "getfield %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpInvokeNonVirtual (c, name, sign) -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpInvokeStatic (c, name, sign) -> sprintf "invokestatic %s.%s:%s" (class_name c) name (signature "" sign)
-	| OpInvokeInterface (c, name, sign, count) -> sprintf "invokeinterface %s.%s:%s,%d" (class_name c) name (signature "" sign) count
+	| OpGetStatic (c, name, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) name (value_signature "" sign)
+	| OpPutStatic (c, name, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) name (value_signature "" sign)
+	| OpPutField (c, name, sign) -> sprintf "putfield %s.%s:%s" (class_name c) name (value_signature "" sign)
+	| OpGetField (c, name, sign) -> sprintf "getfield %s.%s:%s" (class_name c) name (value_signature "" sign)
+	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
+	| OpInvokeNonVirtual (c, name, sign) -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
+	| OpInvokeStatic (c, name, sign) -> sprintf "invokestatic %s.%s:%s" (class_name c) name (method_signature "" sign)
+	| OpInvokeInterface (c, name, sign, count) -> sprintf "invokeinterface %s.%s:%s,%d" (class_name c) name (method_signature "" sign) count
 
 	| OpNew c -> sprintf "new %s" (class_name c)
 	| OpNewArray t -> sprintf "newarray %s" (array_type t)
-	| OpANewArray c -> sprintf "anewarray %s" (signature "" c)
+	| OpANewArray c -> sprintf "anewarray %s" (value_signature "" c)
 	| OpArrayLength -> "arraylength"
 	    (* Modified by eandre@irisa.fr 2006/06/08 *)
 	| OpThrow -> "athrow"
-	| OpCheckCast c -> sprintf "checkcast %s" (signature "" c)
-	| OpInstanceOf c -> sprintf "instanceof %s" (signature "" c)
+	| OpCheckCast c -> sprintf "checkcast %s" (value_signature "" c)
+	| OpInstanceOf c -> sprintf "instanceof %s" (value_signature "" c)
 	| OpMonitorEnter -> "monitorenter"
 	| OpMonitorExit -> "monitorexit"
-	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (signature "" a) b
+	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (value_signature "" a) b
 	| OpIfNull n -> sprintf "ifnull %d" n
 	| OpIfNonNull n -> sprintf "ifnonnull %d" n
 	| OpGotoW n -> sprintf "gotow %d" n
@@ -242,7 +244,7 @@ let dump_stackmap ch (offset,locals,stack) =
 		| VLong -> "Long"
 		| VNull -> "Null"
 		| VUninitializedThis -> "UninitializedThis"
-		| VObject c -> sprintf "Object %s" (signature "" c)
+		| VObject c -> sprintf "Object %s" (value_signature "" c)
 		| VUninitialized off -> sprintf "Uninitialized %d" off
 	in
 	IO.printf ch "\n      offset=%d,\n      locals=[" offset;
@@ -279,11 +281,11 @@ and dump_attrib ch cl = function
 	| AttributeUnknown (s,_) -> IO.printf ch "    ?%s\n" s
 
 let dump_field ch cl f =
-	IO.printf ch "  %s%s\n" (access_flags f.f_flags) (signature f.f_name f.f_signature);
+	IO.printf ch "  %s%s\n" (access_flags f.f_flags) (value_signature f.f_name f.f_signature);
 	List.iter (dump_attrib ch cl) f.f_attributes
 
 let dump_method ch cl m =
-	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (signature m.m_name m.m_signature);
+	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_signature);
 	List.iter (dump_attrib ch cl) m.m_attributes;
 	IO.write ch '\n'
 
