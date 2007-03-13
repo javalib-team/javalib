@@ -323,13 +323,13 @@ let parse_opcode op ch consts wide =
 	    let c, m, s = get_method consts ch in
 	      OpInvokeVirtual (c, m, s)
 	| 183 ->
-	    let c, m, s = get_method consts ch in
+	    let TObject c, m, s = get_method consts ch in
 	      OpInvokeNonVirtual (c, m, s)
 	| 184 ->
-	    let c, m, s = get_method consts ch in
+	    let TObject c, m, s = get_method consts ch in
 	      OpInvokeStatic (c, m, s)
 	| 185 ->
-	    let c, m, s = get_interface_method consts ch in
+	    let TObject c, m, s = get_interface_method consts ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
 	      OpInvokeInterface (c, m, s, nargs)

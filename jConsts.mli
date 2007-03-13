@@ -49,7 +49,7 @@ val get_field : JClass.constant array -> IO.input ->
   JClass.class_name * string * JClass.value_signature
 
 val get_method : JClass.constant array -> IO.input ->
-  JClass.class_name * string * JClass.method_signature
+  JClass.value_signature * string * JClass.method_signature
 
 val get_interface_method : JClass.constant array -> IO.input ->
-  JClass.class_name * string * JClass.method_signature
+  JClass.value_signature * string * JClass.method_signature

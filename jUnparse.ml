@@ -270,8 +270,8 @@ let field_or_method consts ch inst =
     | OpGetField (c, n, s) -> ConstField (c, n, s), 180
     | OpPutField (c, n, s) -> ConstField (c, n, s), 181
     | OpInvokeVirtual (c, n, s) -> ConstMethod (c, n, s), 182
-    | OpInvokeNonVirtual (c, n, s) -> ConstMethod (c, n, s), 183
-    | OpInvokeStatic (c, n, s) -> ConstMethod (c, n, s), 184
+    | OpInvokeNonVirtual (c, n, s) -> ConstMethod (TObject c, n, s), 183
+    | OpInvokeStatic (c, n, s) -> ConstMethod (TObject c, n, s), 184
     | _ -> invalid_arg "field_or_method"
   in
       write_ui8 ch opcode;
@@ -359,7 +359,7 @@ let other consts count ch = function
 	tbl
   | OpInvokeInterface (c, m, s, nargs) ->
       write_ui8 ch 185;
-      write_constant ch consts (ConstInterfaceMethod (c, m, s));
+      write_constant ch consts (ConstInterfaceMethod (TObject c, m, s));
       write_ui8 ch nargs;
       write_ui8 ch 0
   | OpNewArray at ->
@@ -468,11 +468,11 @@ let unparse_constant ch consts =
 	  write_constant (ConstNameAndType (s, SValue signature))
       | ConstMethod (c, s, signature) ->
 	  write_ui8 ch 10;
-	  write_constant (ConstClass (TObject c));
+	  write_constant (ConstClass c);
 	  write_constant (ConstNameAndType (s, SMethod signature))
       | ConstInterfaceMethod (c, s, signature) ->
 	  write_ui8 ch 11;
-	  write_constant (ConstClass (TObject c));
+	  write_constant (ConstClass c);
 	  write_constant (ConstNameAndType (s, SMethod signature))
       | ConstString s ->
 	  write_ui8 ch 8;

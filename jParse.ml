@@ -343,33 +343,33 @@ let parse_method consts ch =
 	}
 
 let rec expand_constant consts n =
-	let error() = error "Malformed constant" in
 	let expand cl nt =
 		match expand_constant consts cl , expand_constant consts nt with
-		| ConstClass (TObject c) , ConstNameAndType (n,s) -> (c,n,s)
-		| _ , _ -> error()
+		| ConstClass c , ConstNameAndType (n,s) -> (c,n,s)
+		| ConstClass _ , ConstNameAndType _ -> failwith "Class is not a class"
+		| _ , _ -> failwith "Malformed Class or NameAndType Constant"
 	in
 	match consts.(n) with
 	| ConstantClass i -> 
 	    (match expand_constant consts i with
 	       | ConstStringUTF8 s -> ConstClass (parse_objectType s)
-	       | _ -> error())
+	       | _ -> failwith "")
 	| ConstantField (cl,nt) ->
 	    (match expand cl nt with
-	       | c, n, SValue v -> ConstField (c, n, v)
-	       | _, _, SMethod _ -> error())
+	       | TObject c, n, SValue v -> ConstField (c, n, v)
+	       | _, _, SMethod _ -> failwith "")
 	| ConstantMethod (cl,nt) ->
 	    (match expand cl nt with
 	       | c, n, SMethod v -> ConstMethod (c, n, v)
-	       | _, _, SValue _ -> error())
+	       | _, _, SValue _ -> failwith "")
 	| ConstantInterfaceMethod (cl,nt) ->
 	    (match expand cl nt with
 	       | c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
-	       | _, _, SValue _ -> error())
+	       | _, _, SValue _ -> failwith "")
 	| ConstantString i ->
 		(match expand_constant consts i with
 		| ConstStringUTF8 s -> ConstString s
-		| _ -> error())
+		| _ -> failwith "Malformed String Constant")
 	| ConstantInt i -> ConstInt i
 	| ConstantFloat f -> ConstFloat f
 	| ConstantLong l -> ConstLong l
@@ -377,7 +377,7 @@ let rec expand_constant consts n =
 	| ConstantNameAndType (n,t) ->
 		(match expand_constant consts n , expand_constant consts t with
 		| ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
-		| _ -> error())
+		| _ -> failwith "Malformed NameAndType Constant")
 	| ConstantStringUTF8 s -> ConstStringUTF8 s
 	| ConstantUnusable -> ConstUnusable
 

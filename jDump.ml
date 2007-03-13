@@ -86,8 +86,8 @@ let array_type = function
 let dump_constant ch = function
 	| ConstClass cl -> IO.printf ch "class %s" (value_signature "" cl)
 	| ConstField (cl,f,sign) -> IO.printf ch "field : %s"(value_signature (class_name cl ^ "::" ^ f) sign)
-	| ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
-	| ConstInterfaceMethod (cl,f,sign) -> IO.printf ch "interface-method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
+	| ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (value_signature "" cl ^ "::" ^ f) sign)
+	| ConstInterfaceMethod (cl,f,sign) -> IO.printf ch "interface-method : %s"(method_signature (value_signature "" cl ^ "::" ^ f) sign)
 	| ConstString s -> IO.printf ch "string '%s'" s
 	| ConstInt i -> IO.printf ch "int %ld" i
 	| ConstFloat f -> IO.printf ch "float %f" f
@@ -210,7 +210,7 @@ let opcode = function
 	| OpPutStatic (c, name, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) name (value_signature "" sign)
 	| OpPutField (c, name, sign) -> sprintf "putfield %s.%s:%s" (class_name c) name (value_signature "" sign)
 	| OpGetField (c, name, sign) -> sprintf "getfield %s.%s:%s" (class_name c) name (value_signature "" sign)
-	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
+	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (value_signature "" c) name (method_signature "" sign)
 	| OpInvokeNonVirtual (c, name, sign) -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
 	| OpInvokeStatic (c, name, sign) -> sprintf "invokestatic %s.%s:%s" (class_name c) name (method_signature "" sign)
 	| OpInvokeInterface (c, name, sign, count) -> sprintf "invokeinterface %s.%s:%s,%d" (class_name c) name (method_signature "" sign) count

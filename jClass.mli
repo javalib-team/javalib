@@ -50,8 +50,8 @@ type signature =
 type constant =
 	| ConstClass of value_signature
 	| ConstField of (class_name * string * value_signature)
-	| ConstMethod of (class_name * string * method_signature)
-	| ConstInterfaceMethod of (class_name * string * method_signature)
+	| ConstMethod of (value_signature * string * method_signature)
+	| ConstInterfaceMethod of (value_signature * string * method_signature)
 	| ConstString of string
 	| ConstInt of int32
 	| ConstFloat of float
@@ -214,7 +214,7 @@ type opcode =
 	| OpPutStatic of class_name * string * value_signature
 	| OpGetField of class_name * string * value_signature
 	| OpPutField of class_name * string * value_signature
-	| OpInvokeVirtual of class_name * string * method_signature
+	| OpInvokeVirtual of value_signature * string * method_signature
 	| OpInvokeNonVirtual of class_name * string * method_signature
 	| OpInvokeStatic of class_name * string * method_signature
 	| OpInvokeInterface of class_name * string * method_signature * int (** count *)
