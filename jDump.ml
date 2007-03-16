@@ -271,7 +271,7 @@ let rec dump_code ch cl code =
 
 and dump_attrib ch cl = function
 	| AttributeSourceFile s -> IO.printf ch "    source = %s\n" s
-	| AttributeConstant c -> IO.printf ch "    const "; dump_constant ch c; IO.printf ch "\n";
+	| AttributeConstant c -> IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
 	| AttributeCode code -> IO.printf ch "    code "; dump_code ch cl code;
 	    (* added by eandre@irisa.fr 2006/06/08 *)
 	    IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.c_exc_tbl

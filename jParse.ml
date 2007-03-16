@@ -295,7 +295,7 @@ and parse_attribute consts ch =
 	| "ConstantValue" ->
 	    if alen <> 2 then error();
 	    (match get_constant consts (read_ui16 ch) with
-	       | ConstValue _ as c -> 
+	       | ConstValue c -> 
 		   AttributeConstant c
 	       | _ -> error())
 	| "Code" ->

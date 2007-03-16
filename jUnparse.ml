@@ -571,7 +571,7 @@ let unparse_attribute_not_code ch consts =
 	  write_utf8 "ConstantValue";
 	  write_with_length write_i32 ch
 	    (function ch ->
-	   write_constant ch consts c)
+	   write_constant ch consts (ConstValue c))
       | AttributeLineNumberTable l ->
 	  write_utf8 "LineNumberTable";
 	  write_with_length write_i32 ch

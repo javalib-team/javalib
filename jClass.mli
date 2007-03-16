@@ -257,7 +257,7 @@ type jcode = {
 
 and attribute =
 	| AttributeSourceFile of string
-	| AttributeConstant of constant
+	| AttributeConstant of constant_value
 	| AttributeCode of jcode
 	| AttributeLineNumberTable of (int * int) list
 	| AttributeUnknown of string * string
