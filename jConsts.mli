@@ -40,16 +40,18 @@ val error : string -> 'a
 
 val get_constant : JClass.constant array -> int -> JClass.constant
 
-val get_signature : JClass.constant array -> IO.input -> JClass.value_signature
+val get_constant_value : JClass.constant array -> int -> JClass.constant_value
+
+val get_object_type : JClass.constant array -> IO.input -> JClass.object_type
 val get_class : JClass.constant array -> IO.input -> JClass.class_name
 
 val get_string : JClass.constant array -> IO.input -> string
 
 val get_field : JClass.constant array -> IO.input ->
-  JClass.class_name * string * JClass.value_signature
+  JClass.class_name * string * JClass.field_signature
 
 val get_method : JClass.constant array -> IO.input ->
-  JClass.value_signature * string * JClass.method_signature
+  JClass.object_type * string * JClass.method_signature
 
 val get_interface_method : JClass.constant array -> IO.input ->
-  JClass.value_signature * string * JClass.method_signature
+  JClass.class_name * string * JClass.method_signature

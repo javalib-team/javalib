@@ -77,11 +77,11 @@ let parse_opcode op ch consts wide =
 		OpSIPush (b1,b2) *)
 	    OpSIPush (read_i16 ch)
 	| 18 ->
-	    OpLdc1 (get_constant consts (IO.read_byte ch))
+	    OpLdc1 (get_constant_value consts (IO.read_byte ch))
 	| 19 ->
-	    OpLdc1 (get_constant consts (read_ui16 ch))
+	    OpLdc1 (get_constant_value consts (read_ui16 ch))
 	| 20 ->
-	    OpLdc2w (get_constant consts (read_ui16 ch))
+	    OpLdc2w (get_constant_value consts (read_ui16 ch))
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
 	    (* Modified by eandre@irisa.fr 2006/05/19
@@ -323,13 +323,17 @@ let parse_opcode op ch consts wide =
 	    let c, m, s = get_method consts ch in
 	      OpInvokeVirtual (c, m, s)
 	| 183 ->
-	    let TObject c, m, s = get_method consts ch in
-	      OpInvokeNonVirtual (c, m, s)
+	    (match get_method consts ch with
+	       | TClass c, m, s ->
+		   OpInvokeNonVirtual (c, m, s)
+	       | _ -> failwith "invokespecial in an array class")
 	| 184 ->
-	    let TObject c, m, s = get_method consts ch in
-	      OpInvokeStatic (c, m, s)
+	    (match get_method consts ch with
+	       | TClass c, m, s ->
+		   OpInvokeStatic (c, m, s)
+	       | _ -> failwith "invokestatic in an array class")
 	| 185 ->
-	    let TObject c, m, s = get_interface_method consts ch in
+	    let c, m, s = get_interface_method consts ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
 	      OpInvokeInterface (c, m, s, nargs)
@@ -338,31 +342,31 @@ let parse_opcode op ch consts wide =
 		OpNew (get_class consts ch)
 	| 188 ->
 		OpNewArray (match IO.read_byte ch with
-			| 4 -> ATBool
-			| 5 -> ATChar
-			| 6 -> ATFloat
-			| 7 -> ATDouble
-			| 8 -> ATByte
-			| 9 -> ATShort
-			| 10 -> ATInt
-			| 11 -> ATLong
+			| 4 -> TBool
+			| 5 -> TChar
+			| 6 -> TFloat
+			| 7 -> TDouble
+			| 8 -> TByte
+			| 9 -> TShort
+			| 10 -> TInt
+			| 11 -> TLong
 			| _ -> raise Exit)
 	| 189 ->
-		OpANewArray (get_signature consts ch)
+		OpANewArray (get_object_type consts ch)
 	| 190 ->
 		OpArrayLength
 	| 191 ->
 		OpThrow
 	| 192 ->
-		OpCheckCast (get_signature consts ch)
+		OpCheckCast (get_object_type consts ch)
 	| 193 ->
-		OpInstanceOf (get_signature consts ch)
+		OpInstanceOf (get_object_type consts ch)
 	| 194 ->
 		OpMonitorEnter
 	| 195 ->
 		OpMonitorExit
 	| 197 ->
-	    let c = get_signature consts ch in
+	    let c = get_object_type consts ch in
 	    let dims = IO.read_byte ch in
 	      OpAMultiNewArray (c,dims)
 	| 198 -> 

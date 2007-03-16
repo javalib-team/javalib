@@ -38,14 +38,19 @@ let get_constant c n =
 	| ConstUnusable -> error ("Unusable constant index " ^ string_of_int n);
 	| x -> x
 
-let get_signature consts ch =
+let get_constant_value c n =
+  match get_constant c n with
+    | ConstValue v -> v
+    | _ -> error "Invalie constant value index"
+
+let get_object_type consts ch =
 	match get_constant consts (read_ui16 ch) with
-	| ConstClass n -> n
-	| _ -> error "Invalid class index"
+	  | ConstValue (ConstClass n) -> n
+	  | _ -> error "Invalid class index"
 
 let get_class consts ch =
-  match get_signature consts ch with
-    | TObject c -> c
+  match get_object_type consts ch with
+    | TClass c -> c
     | _ -> failwith "array type descriptor not allowed here"
 
 let get_field consts ch =
@@ -85,7 +90,7 @@ let constant_to_int cp c =
 	let i = DynArray.length cp in
 	  DynArray.add cp c;
 	  (match c with
-	     | ConstLong _ | ConstDouble _ ->
+	     | ConstValue (ConstLong _ | ConstDouble _) ->
 		 DynArray.add cp ConstUnusable
 	     | _ -> ());
 	  i

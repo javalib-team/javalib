@@ -253,14 +253,14 @@ let ui16 ch inst =
 (* Instructions with one class_name argument *)
 let class_name consts ch inst =
   let c, opcode = match inst with
-    | OpNew i -> (TObject i), 187
+    | OpNew i -> (TClass i), 187
     | OpANewArray i -> i, 189
     | OpCheckCast i -> i, 192
     | OpInstanceOf i -> i, 193
     | _ -> invalid_arg "class_name"
   in
     write_ui8 ch opcode;
-    write_constant ch consts (ConstClass c)
+    write_constant ch consts (ConstValue (ConstClass c))
 
 (* Instruction with a (class_name * string * signature) argument *)
 let field_or_method consts ch inst =
@@ -270,22 +270,22 @@ let field_or_method consts ch inst =
     | OpGetField (c, n, s) -> ConstField (c, n, s), 180
     | OpPutField (c, n, s) -> ConstField (c, n, s), 181
     | OpInvokeVirtual (c, n, s) -> ConstMethod (c, n, s), 182
-    | OpInvokeNonVirtual (c, n, s) -> ConstMethod (TObject c, n, s), 183
-    | OpInvokeStatic (c, n, s) -> ConstMethod (TObject c, n, s), 184
+    | OpInvokeNonVirtual (c, n, s) -> ConstMethod (TClass c, n, s), 183
+    | OpInvokeStatic (c, n, s) -> ConstMethod (TClass c, n, s), 184
     | _ -> invalid_arg "field_or_method"
   in
       write_ui8 ch opcode;
       write_constant ch consts arg
 
-let array_type = [|
-  ATBool;
-  ATChar;
-  ATFloat;
-  ATDouble;
-  ATByte;
-  ATShort;
-  ATInt;
-  ATLong
+let basic_type = [|
+  TBool;
+  TChar;
+  TFloat;
+  TDouble;
+  TByte;
+  TShort;
+  TInt;
+  TLong
 |]
 
 let padding ch count =
@@ -304,7 +304,7 @@ let other consts count ch = function
       write_ui8 ch 16;
       write_ui8 ch n
   | OpLdc1 n ->
-      let index = constant_to_int consts n in
+      let index = constant_to_int consts (ConstValue n) in
 	if
 	  index <= 0xFF
 	then (
@@ -316,7 +316,7 @@ let other consts count ch = function
 	)
   | OpLdc2w n ->
       write_ui8 ch 20;
-      write_constant ch consts n
+      write_constant ch consts (ConstValue n)
   | OpIInc (index, incr) ->
       if
 	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
@@ -359,15 +359,15 @@ let other consts count ch = function
 	tbl
   | OpInvokeInterface (c, m, s, nargs) ->
       write_ui8 ch 185;
-      write_constant ch consts (ConstInterfaceMethod (TObject c, m, s));
+      write_constant ch consts (ConstInterfaceMethod (c, m, s));
       write_ui8 ch nargs;
       write_ui8 ch 0
   | OpNewArray at ->
       write_ui8 ch 188;
-      write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) array_type)
+      write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
   | OpAMultiNewArray (c, dims) ->
       write_ui8 ch 197;
-      write_constant ch consts (ConstClass c);
+      write_constant ch consts (ConstValue (ConstClass c));
       write_ui8 ch dims
   | OpGotoW i ->
       write_ui8 ch 200;
@@ -412,7 +412,7 @@ let encode_class_name = function
 	q
   | [] -> invalid_arg "encode_class_name"
 
-let rec unparse_value_signature = function
+let unparse_basic_type = function
   | TByte -> "B"
   | TChar -> "C"
   | TDouble -> "D"
@@ -421,16 +421,16 @@ let rec unparse_value_signature = function
   | TLong -> "J"
   | TShort -> "S"
   | TBool -> "Z"
-  | TObject c ->
+
+let rec unparse_object_type = function
+  | TClass c ->
       "L" ^ encode_class_name c ^ ";"
-  | TArray (s, size) ->
-      let desc = ref "" in
-	for i = 1 to
-	  match size with Some s -> s | None -> 1
-	do
-	  desc := ! desc ^ "["
-	done;
-	! desc ^ unparse_value_signature s
+  | TArray s ->
+      "[" ^ unparse_value_signature s
+
+and unparse_value_signature = function
+  | TBasic b -> unparse_basic_type b
+  | TObject o -> unparse_object_type o
 
 let rec unparse_method_signature (sigs, s) =
       List.fold_left
@@ -447,48 +447,52 @@ let rec unparse_signature = function
   | SValue v -> unparse_value_signature v
   | SMethod m ->unparse_method_signature m
 
+(* Unparse an type that must be an object.Therefore, there is no
+   L ; around the classname (if this is a class). *)
 let unparse_objectType = function
-  | TObject c ->
+  | TClass c ->
       encode_class_name c
-  | TArray _ as s -> unparse_value_signature s
-  | _ -> invalid_arg "unparse_signature"
+  | TArray _ as s -> unparse_object_type s
 
 (* Constant pool unparsing *)
 (***************************)
 
+let unparse_constant_value ch consts = function
+  | ConstString s ->
+      write_ui8 ch 8;
+      write_constant ch consts (ConstStringUTF8 s)
+  | ConstInt i ->
+      write_ui8 ch 3;
+      write_real_i32 ch i
+  | ConstFloat f ->
+      write_ui8 ch 4;
+      write_real_i32 ch (Int32.bits_of_float f)
+  | ConstLong l ->
+      write_ui8 ch 5;
+      write_i64 ch l
+  | ConstDouble d ->
+      write_ui8 ch 6;
+      write_double ch d
+  | ConstClass c ->
+      write_ui8 ch 7;
+      write_constant ch consts (ConstStringUTF8 (unparse_objectType c))
+
 let unparse_constant ch consts =
   let write_constant = write_constant ch consts in
     function
-      | ConstClass c ->
-	  write_ui8 ch 7;
-	  write_constant (ConstStringUTF8 (unparse_objectType c))
+      | ConstValue v -> unparse_constant_value ch consts v
       | ConstField (c, s, signature) ->
 	  write_ui8 ch 9;
-	  write_constant (ConstClass (TObject c));
+	  write_constant (ConstValue (ConstClass (TClass c)));
 	  write_constant (ConstNameAndType (s, SValue signature))
       | ConstMethod (c, s, signature) ->
 	  write_ui8 ch 10;
-	  write_constant (ConstClass c);
+	  write_constant (ConstValue (ConstClass c));
 	  write_constant (ConstNameAndType (s, SMethod signature))
       | ConstInterfaceMethod (c, s, signature) ->
 	  write_ui8 ch 11;
-	  write_constant (ConstClass c);
+	  write_constant (ConstValue (ConstClass (TClass c)));
 	  write_constant (ConstNameAndType (s, SMethod signature))
-      | ConstString s ->
-	  write_ui8 ch 8;
-	  write_constant (ConstStringUTF8 s)
-      | ConstInt i ->
-	  write_ui8 ch 3;
-	  write_real_i32 ch i
-      | ConstFloat f ->
-	  write_ui8 ch 4;
-	  write_real_i32 ch (Int32.bits_of_float f)
-      | ConstLong l ->
-	  write_ui8 ch 5;
-	  write_i64 ch l
-      | ConstDouble d ->
-	  write_ui8 ch 6;
-	  write_double ch d
       | ConstNameAndType (s, signature) ->
 	  write_ui8 ch 12;
 	  write_constant (ConstStringUTF8 s);
@@ -546,7 +550,7 @@ let unparse_stackmap_attribute ch consts stackmap =
 		   | VNull -> write_ui8 ch 5
 		   | VUninitializedThis -> write_ui8 ch 6
 		   | VObject o ->
-		       write_ui8 ch 7 ; write_constant ch consts(ConstClass o)
+		       write_ui8 ch 7 ; write_constant ch consts(ConstValue (ConstClass o))
 		   | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
 	    in
 	      write_ui16 ch pc;
@@ -630,7 +634,7 @@ let unparse_code_attribute ch consts code =
 	    write_ui16 ch e.e_end;
 	    write_ui16 ch e.e_handler;
 	    match e.e_catch_type with
-	      | Some cl -> write_constant ch consts (ConstClass (TObject cl))
+	      | Some cl -> write_constant ch consts (ConstValue (ConstClass (TClass cl)))
 	      | None -> write_ui16 ch 0)
 	 code.c_exc_tbl;
        write_with_size write_ui16 ch
@@ -679,15 +683,15 @@ let unparse_class ch c =
   let ch' = output_string ()
   and consts = DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags c.j_flags);
-    write_constant ch' consts (ConstClass (TObject c.j_name));
+    write_constant ch' consts (ConstValue (ConstClass (TClass c.j_name)));
     write_ui16 ch'
       (match c.j_super with
-	 | Some super -> constant_to_int consts (ConstClass (TObject super))
+	 | Some super -> constant_to_int consts (ConstValue (ConstClass (TClass super)))
 	 | None -> 0);
     let unparse unparse = write_with_size write_ui16 ch' unparse in
       unparse
 	(function int ->
-	   write_constant ch' consts (ConstClass (TObject int)))
+	   write_constant ch' consts (ConstValue (ConstClass (TClass int))))
 	c.j_interfaces;
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;

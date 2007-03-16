@@ -144,7 +144,7 @@ and parse_more_name = parser
   | [< >] -> []
 
 (* Java type. *)
-let rec parse_type = parser
+let parse_basic_type = parser
   | [< 'b when b = UChar.of_char 'B' >] -> TByte
   | [< 'c when c = UChar.of_char 'C' >] -> TChar
   | [< 'd when d = UChar.of_char 'D' >] -> TDouble
@@ -154,16 +154,21 @@ let rec parse_type = parser
   | [< 's when s = UChar.of_char 'S' >] -> TShort
   | [< 'z when z = UChar.of_char 'Z' >] -> TBool
 
+let rec parse_object_type = parser
   | [< 'l when l = UChar.of_char 'L';
        name = parse_name;
-       'semicolon when semicolon = UChar.of_char ';' >] -> TObject name
+       'semicolon when semicolon = UChar.of_char ';' >] -> TClass name
 
   | [< a = parse_array >] -> a
+
+and parse_type = parser
+  | [< b = parse_basic_type >] -> TBasic b
+  | [< o = parse_object_type >] -> TObject o
 
 (* Java array type. *)
 and parse_array = parser
   | [< 'lbracket when lbracket = UChar.of_char '['; typ = parse_type >] ->
-      TArray (typ, None)
+      TArray typ
 
 let rec parse_types = parser
   | [< typ = parse_type ; types = parse_types >] -> typ :: types
@@ -176,7 +181,7 @@ let parse_type_option = parser
 (* A class name, possibly an array class. *)
 let parse_ot = parser
   | [< array = parse_array >] -> array
-  | [< name = parse_name >] -> TObject name
+  | [< name = parse_name >] -> TClass name
 
 let parse_method_sig = parser
   | [< 'lpar when lpar = UChar.of_char '(';
@@ -224,7 +229,7 @@ let parse_stackmap_frame consts ch =
 		| 4 -> VLong
 		| 5 -> VNull
 		| 6 -> VUninitializedThis
-		| 7 -> VObject (get_signature consts ch)
+		| 7 -> VObject (get_object_type consts ch)
 		| 8 -> VUninitialized (read_ui16 ch)
 		| n -> prerr_endline ("type = " ^ string_of_int n); raise Exit
 	in let parse_type_info_array ch nb_item =
@@ -259,7 +264,7 @@ let rec parse_code consts ch =
 		    | 0 -> None
 		    | ct ->
 			match get_constant consts ct with
-			  | ConstClass (TObject c) -> Some c
+			  | ConstValue (ConstClass (TClass c)) -> Some c
 			  | _ -> error "Invalid class index"
 		in
 		{
@@ -288,8 +293,11 @@ and parse_attribute consts ch =
 		if alen <> 2 then error();
 		AttributeSourceFile (get_string consts ch)
 	| "ConstantValue" ->
-		if alen <> 2 then error();
-		AttributeConstant (get_constant consts (read_ui16 ch))
+	    if alen <> 2 then error();
+	    (match get_constant consts (read_ui16 ch) with
+	       | ConstValue _ as c -> 
+		   AttributeConstant c
+	       | _ -> error())
 	| "Code" ->
 		(* correct length not checked *)
 		AttributeCode (parse_code consts ch)
@@ -345,35 +353,34 @@ let parse_method consts ch =
 let rec expand_constant consts n =
 	let expand cl nt =
 		match expand_constant consts cl , expand_constant consts nt with
-		| ConstClass c , ConstNameAndType (n,s) -> (c,n,s)
-		| ConstClass _ , ConstNameAndType _ -> failwith "Class is not a class"
+		| ConstValue (ConstClass c) , ConstNameAndType (n,s) -> (c,n,s)
 		| _ , _ -> failwith "Malformed Class or NameAndType Constant"
 	in
 	match consts.(n) with
 	| ConstantClass i -> 
 	    (match expand_constant consts i with
-	       | ConstStringUTF8 s -> ConstClass (parse_objectType s)
-	       | _ -> failwith "")
+	       | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
+	       | _ -> failwith "Malformed Class constant")
 	| ConstantField (cl,nt) ->
 	    (match expand cl nt with
-	       | TObject c, n, SValue v -> ConstField (c, n, v)
-	       | _, _, SMethod _ -> failwith "")
+	       | TClass c, n, SValue v -> ConstField (c, n, v)
+	       | _ -> failwith "Malformed Field Constant")
 	| ConstantMethod (cl,nt) ->
 	    (match expand cl nt with
 	       | c, n, SMethod v -> ConstMethod (c, n, v)
-	       | _, _, SValue _ -> failwith "")
+	       | _, _, SValue _ -> failwith "Malformed Method Constant")
 	| ConstantInterfaceMethod (cl,nt) ->
 	    (match expand cl nt with
-	       | c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
-	       | _, _, SValue _ -> failwith "")
+	       | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
+	       | _, _, _ -> failwith "Malformed Interface Method Constant")
 	| ConstantString i ->
 		(match expand_constant consts i with
-		| ConstStringUTF8 s -> ConstString s
+		| ConstStringUTF8 s -> ConstValue (ConstString s)
 		| _ -> failwith "Malformed String Constant")
-	| ConstantInt i -> ConstInt i
-	| ConstantFloat f -> ConstFloat f
-	| ConstantLong l -> ConstLong l
-	| ConstantDouble f -> ConstDouble f
+	| ConstantInt i -> ConstValue (ConstInt i)
+	| ConstantFloat f -> ConstValue (ConstFloat f)
+	| ConstantLong l -> ConstValue (ConstLong l)
+	| ConstantDouble f -> ConstValue (ConstDouble f)
 	| ConstantNameAndType (n,t) ->
 		(match expand_constant consts n , expand_constant consts t with
 		| ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
@@ -402,8 +409,8 @@ let parse_class ch =
 	let this = get_class consts ch in
 	let super_idx = read_ui16 ch in
 	let super = (if super_idx = 0 then None else
-		match get_constant consts super_idx with
-		| ConstClass (TObject name) -> Some name
+		match get_constant_value consts super_idx with
+		| ConstClass (TClass name) -> Some name
 		| _ -> error "Invalid super index")
 	in
 	let interface_count = read_ui16 ch in

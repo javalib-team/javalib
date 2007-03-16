@@ -23,12 +23,14 @@
 
 (** {2 Basic Elements.} *)
 
-(** Something like [\["java" ; "lang" ; "Object"\]]. *)
+(** Fully qualified ordinary class or interface name (not an array).
+    For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
-(** Signature of a "value" (field, argument...) *)
-type value_signature =
-  |  TByte
+
+(** Java basic type. *)
+type basic_type =
+  | TByte
   | TChar
   | TDouble
   | TFloat
@@ -36,72 +38,55 @@ type value_signature =
   | TLong
   | TShort
   | TBool
-  | TObject of class_name
-  | TArray of value_signature * int option (** Number of dimensions if <> 1 *)
+
+(** Java object type *)
+type object_type =
+  | TClass of class_name
+  | TArray of value_type
+
+(** Java type *)
+and value_type =
+  | TBasic of basic_type
+  | TObject of object_type
+
+(** Field signature. *)
+type field_signature = value_type
 
 (** Method signature. *)
-type method_signature = value_signature list * value_signature option
+type method_signature = value_type list * value_type option
 
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type signature =
-  | SValue of value_signature
+  | SValue of field_signature
   | SMethod of method_signature
 
+(** Constant value. *)
+type constant_value =
+  | ConstString of string
+  | ConstInt of int32
+  | ConstFloat of float
+  | ConstLong of int64
+  | ConstDouble of float
+  | ConstClass of object_type (** This is not documented in the JVM spec. *)
+
+(** Constant. *)
 type constant =
-	| ConstClass of value_signature
-	| ConstField of (class_name * string * value_signature)
-	| ConstMethod of (value_signature * string * method_signature)
-	| ConstInterfaceMethod of (value_signature * string * method_signature)
-	| ConstString of string
-	| ConstInt of int32
-	| ConstFloat of float
-	| ConstLong of int64
-	| ConstDouble of float
-	| ConstNameAndType of string * signature
-	| ConstStringUTF8 of string
-	| ConstUnusable
+  | ConstValue of constant_value
+  | ConstField of (class_name * string * field_signature)
+  | ConstMethod of (object_type * string * method_signature)
+  | ConstInterfaceMethod of (class_name * string * method_signature)
+  | ConstNameAndType of string * signature
+  | ConstStringUTF8 of string
+  | ConstUnusable
 
-type access_flag =
-	| AccPublic
-	| AccPrivate
-	| AccProtected
-	| AccStatic
-	| AccFinal
-	| AccSynchronized (** Also used as "Special" *)
-	| AccVolatile
-	| AccTransient
-	| AccNative
-	| AccInterface
-	| AccAbstract
-	| AccStrict
-	| AccRFU of int (** Four bits (RFU 1 .. RFU 4) reserved for future use *)
-
-type access_flags = access_flag list
-
-type jexception = {
-	e_start : int;
-	e_end : int;
-	e_handler : int;
-	e_catch_type : class_name option
-}
-
-type array_type =
-	| ATBool
-	| ATChar
-	| ATFloat
-	| ATDouble
-	| ATByte
-	| ATShort
-	| ATInt
-	| ATLong
-
-(* J'aurais utilisé des polymorphic variants pour généraliser l'emploi de kind. *)
+(** JVM basic type (int = short = char = byte = bool). *)
 type kind =
 	| KInt
 	| KLong
 	| KFloat
 	| KDouble
 
+(** Instruction. *)
 type opcode =
 	| OpNop
 	| OpAConstNull
@@ -111,8 +96,8 @@ type opcode =
 	| OpDConst of float
 	| OpBIPush of int
 	| OpSIPush of int
-	| OpLdc1 of constant
-	| OpLdc2w of constant
+	| OpLdc1 of constant_value
+	| OpLdc2w of constant_value
 
 	| OpLoad of kind * int
 	| OpALoad of int
@@ -210,25 +195,25 @@ type opcode =
 	| OpAReturn
 	| OpReturnVoid
 
-	| OpGetStatic of class_name * string * value_signature
-	| OpPutStatic of class_name * string * value_signature
-	| OpGetField of class_name * string * value_signature
-	| OpPutField of class_name * string * value_signature
-	| OpInvokeVirtual of value_signature * string * method_signature
+	| OpGetStatic of class_name * string * field_signature
+	| OpPutStatic of class_name * string * field_signature
+	| OpGetField of class_name * string * field_signature
+	| OpPutField of class_name * string * field_signature
+	| OpInvokeVirtual of object_type * string * method_signature
 	| OpInvokeNonVirtual of class_name * string * method_signature
 	| OpInvokeStatic of class_name * string * method_signature
 	| OpInvokeInterface of class_name * string * method_signature * int (** count *)
 
 	| OpNew of class_name
-	| OpNewArray of array_type
-	| OpANewArray of value_signature
+	| OpNewArray of basic_type
+	| OpANewArray of object_type
 	| OpArrayLength
 	| OpThrow
-	| OpCheckCast of value_signature
-	| OpInstanceOf of value_signature
+	| OpCheckCast of object_type
+	| OpInstanceOf of object_type
 	| OpMonitorEnter
 	| OpMonitorExit
-	| OpAMultiNewArray of value_signature * int (** ClassInfo, dims *)
+	| OpAMultiNewArray of object_type * int (** ClassInfo, dims *)
 	| OpIfNull of int
 	| OpIfNonNull of int
 	| OpGotoW of int
@@ -240,6 +225,15 @@ type opcode =
 
 type opcodes = opcode array
 
+(** Exception handler. *)
+type jexception = {
+	e_start : int;
+	e_end : int;
+	e_handler : int;
+	e_catch_type : class_name option
+}
+
+(** Stackmap type. *)
 type verification_type = 
 	| VTop 
 	| VInteger 
@@ -248,7 +242,7 @@ type verification_type =
 	| VLong
 	| VNull
 	| VUninitializedThis
-	| VObject of value_signature
+	| VObject of object_type
 	| VUninitialized of int (** creation point *)
 
 (** {2 Substructures.} *)
@@ -269,9 +263,26 @@ and attribute =
 	| AttributeUnknown of string * string
 	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
 
+type access_flag =
+	| AccPublic
+	| AccPrivate
+	| AccProtected
+	| AccStatic
+	| AccFinal
+	| AccSynchronized (** Also used as "Special" *)
+	| AccVolatile
+	| AccTransient
+	| AccNative
+	| AccInterface
+	| AccAbstract
+	| AccStrict
+	| AccRFU of int (** Four bits (RFU 1 .. RFU 4) reserved for future use *)
+
+type access_flags = access_flag list
+
 type jfield = {
 	f_name : string;
-	f_signature : value_signature;
+	f_signature : field_signature;
 	f_flags : access_flags;
 	f_attributes : attribute list;
 }
