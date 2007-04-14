@@ -9,7 +9,7 @@ The command "sample Main.class" will parse and dump the class file.
 {b {L Prerequisites}}
 
 - [Extlib]
-- [CamlZip] (to include the module [File] in next release)
+- [CamlZip]
 
 {b {L Installing}}
 
@@ -55,6 +55,9 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 
 {b {L Data structures}}
 {!modules: JClass}
+
+{b {L High level access to classes}}
+{!modules: JFile}
 
 {b {L Parsing and Unparsing}}
 {!modules: JParse JUnparse}

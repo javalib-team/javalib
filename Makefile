@@ -21,16 +21,16 @@
 
 OCAMLC = ocamlc -pp camlp4o -g
 OCAMLOPT = ocamlopt -pp camlp4o
-OCAMLDOC = ocamldoc
+OCAMLDOC = ocamldoc -pp camlp4o
 INSTALL_DIR = /home/turpin/experiences/javaLib/
 EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
-INCLUDE = -I $(EXTLIB_PATH)
+INCLUDE = -I $(EXTLIB_PATH)  -I +site-packages/camlzip -I +site-packages/stublibs
 
 # ------ 
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
-FILES =  jDump.+ jConsts.+ jUnparse.+ jCode.+ jParse.+ jTest.+
+FILES =  jDump.+ jConsts.+ jUnparse.+ jCode.+ jParse.+ jFile.+ jTest.+
 
 all: javaLib.cma
 
@@ -38,20 +38,20 @@ opt: javaLib.cmxa
 
 install: all opt
 	-mkdir $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jDump.cmi jUnparse.cmi $(INSTALL_DIR)
-	cp -f jClass.mli jConsts.mli jParse.mli jDump.mli jUnparse.mli $(INSTALL_DIR)
+	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jDump.cmi jUnparse.cmi jFile.cmi $(INSTALL_DIR)
+	cp -f jClass.mli jConsts.mli jParse.mli jDump.mli jUnparse.mli jFile.mli $(INSTALL_DIR)
 
 sample:
-	$(OCAMLC) -I $(EXTLIB_PATH) extLib.cma javaLib.cma sample.ml -o sample.exe
+	$(OCAMLC)  $(INCLUDE) extLib.cma javaLib.cma sample.ml -o sample.exe
 
 sample.opt:
-	$(OCAMLOPT) -I $(EXTLIB_PATH) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
+	$(OCAMLOPT)  $(INCLUDE) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
 
 javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
-	$(OCAMLC) -I $(EXTLIB_PATH) -a $(FILES:+=cmo) -o javaLib.cma
+	$(OCAMLC)  $(INCLUDE) -a $(FILES:+=cmo) -o javaLib.cma
 
 # javaLib: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
-# 	$(OCAMLC) -I $(EXTLIB_PATH) -custom extLib.cma $(FILES:+=cmo) -o javaLib
+# 	$(OCAMLC)  $(INCLUDE) -custom extLib.cma $(FILES:+=cmo) -o javaLib
 
 # exe:
 # 	make javaLib
@@ -64,7 +64,7 @@ javaLib.cmxa: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmx)
 doc: $(FILES:+=cmi)
 	mkdir -p doc
 	$(OCAMLDOC) -keep-code -d doc -html -stars -colorize-code -intro intro.ocamldoc -t JavaLib $(INCLUDE) \
-	jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli $(FILES:+=ml)
+	jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli jFile.mli $(FILES:+=ml)
 
 clean:
 	rm -rf $(FILES:+=cmo) $(FILES:+=cmx) $(FILES:+=cmi) $(FILES:+=o) $(FILES:+=obj)
@@ -74,10 +74,10 @@ clean:
 	rm -rf *.ml~ *.mli~ Makefile~
 
 .ml.cmo:
-	$(OCAMLC) -I $(EXTLIB_PATH) -c $*.ml 
+	$(OCAMLC)  $(INCLUDE) -c $*.ml 
 
 .ml.cmx:
-	$(OCAMLOPT) -I $(EXTLIB_PATH) -c $*.ml 
+	$(OCAMLOPT)  $(INCLUDE) -c $*.ml 
 
 .mli.cmi:
-	$(OCAMLC) -I $(EXTLIB_PATH) -c $*.mli
+	$(OCAMLC)  $(INCLUDE) -c $*.mli
