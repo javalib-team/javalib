@@ -19,12 +19,20 @@
 
 # last modified by eandre@irisa.fr 19/05/2006
 
-OCAMLC = ocamlc -pp camlp4o -g
+# Installation directory
+prefix=/usr/local
+exec_prefix=$(prefix)
+libdir=$(exec_prefix)/lib
+
+# Dependencies
+EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
+CAMLZIP_PATH = +site-packages/camlzip
+
+OCAMLC = ocamlc -pp camlp4o
 OCAMLOPT = ocamlopt -pp camlp4o
 OCAMLDOC = ocamldoc -pp camlp4o
-INSTALL_DIR = /home/turpin/experiences/javaLib/
-EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
-INCLUDE = -I $(EXTLIB_PATH)  -I +site-packages/camlzip -I +site-packages/stublibs
+INSTALL_DIR = $(libdir)/javaLib/
+INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
 
@@ -37,7 +45,7 @@ all: javaLib.cma
 opt: javaLib.cmxa
 
 install: all opt
-	-mkdir $(INSTALL_DIR)
+	mkdir -p $(INSTALL_DIR)
 	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jDump.cmi jUnparse.cmi jFile.cmi $(INSTALL_DIR)
 	cp -f jClass.mli jConsts.mli jParse.mli jDump.mli jUnparse.mli jFile.mli $(INSTALL_DIR)
 

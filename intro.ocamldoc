@@ -13,9 +13,13 @@ The command "sample Main.class" will parse and dump the class file.
 
 {b {L Installing}}
 
-Edit Makefile to configure your install path and ExtLib path. Then:
+Edit Makefile to configure the EXTLIB_PATH, CAMLZIP_PATH and libdir environment
+variables. Then:
 - 	[make install]
 - 	[make doc] if you want the html documentation.
+
+Note that, depending on the location of the CamlZip shared library, you may need
+to specify a -dllpath option when linking the main program for bytecode compilation.
 
 {b {L Documentation}}
 
@@ -39,12 +43,12 @@ simple version.
 
 JavaLib was initially developped by Nicolas Cannasse.
 
-FrÃ©dÃ©ric Besson made some corrections.
+Frédéric Besson made some corrections.
 
 Laurent Hubert then modified it during an internship at IRISA (Rennes, France)
 in the Lande team, during the summer 2005.
 
-Ã‰tienne AndrÃ© then modified it during an internship at IRISA
+Étienne André then modified it during an internship at IRISA
 in the Lande team, between March and July 2006.
 These modifications mainly concerned an error about the "wide"
 instruction, which was definitely not properly coded.
