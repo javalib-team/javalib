@@ -45,9 +45,10 @@ let parse_code ch consts len =
     while pos() < len do
       let p = pos() in
       let ch, ch' = input_copy ch in
-	code.(p) <- JCode.parse_instruction ch pos consts;
+	code.(p) <- JInstruction.opcode2instruction consts (JCode.parse_full_opcode ch pos consts);
 	let ch', count = pos_out ch' in
-	  JUnparse.unparse_instruction ch' (DynArray.of_array consts) (function () -> p + count ()) code.(p);
+	  JCode.unparse_instruction ch' (DynArray.of_array consts) (function () -> p + count ())
+	    (JInstruction.instruction2opcode consts code.(p));
 	  if
 	    not (IO.close_out ch')
 	  then failwith ("bad unparsing for " ^ JDump.opcode code.(p))

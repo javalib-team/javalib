@@ -17,8 +17,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(* Last modified by eandre@irisa.fr 2006/05/19 *)
-
 (** Ocaml representation of a Java class file. *)
 
 (** {2 Basic Elements.} *)

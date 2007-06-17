@@ -38,7 +38,7 @@ INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
-FILES =  jDump.+ jConsts.+ jUnparse.+ jCode.+ jParse.+ jFile.+ jTest.+
+FILES =  jDump.+ jConsts.+ jCode.+ jInstruction.+ jUnparse.+ jParse.+ jFile.+ jTest.+
 
 all: javaLib.cma
 
@@ -55,7 +55,7 @@ sample:
 sample.opt:
 	$(OCAMLOPT)  $(INCLUDE) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
 
-javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
+javaLib.cma:  jClass.cmi jOpCode.cmi $(FILES:+=cmi) $(FILES:+=cmo)
 	$(OCAMLC)  $(INCLUDE) -a $(FILES:+=cmo) -o javaLib.cma
 
 # javaLib: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
@@ -66,18 +66,18 @@ javaLib.cma: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
 # 	chmod 775 javaLib
 # 	./javaLib
 
-javaLib.cmxa: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmx)
+javaLib.cmxa:  jClass.cmi jOpCode.cmi $(FILES:+=cmi) $(FILES:+=cmx)
 	$(OCAMLOPT) -a $(FILES:+=cmx) -o javaLib.cmxa
 
 doc: $(FILES:+=cmi)
 	mkdir -p doc
 	$(OCAMLDOC) -keep-code -d doc -html -stars -colorize-code -intro intro.ocamldoc -t JavaLib $(INCLUDE) \
-	jClass.mli jConsts.mli jCode.mli jParse.mli jDump.mli jUnparse.mli jFile.mli $(FILES:+=ml)
+	jClass.mli jOpCode.mli jConsts.mli jCode.mli jParse.mli jDump.mli jInstruction.mli jUnparse.mli jFile.mli $(FILES:+=ml)
 
 clean:
 	rm -rf $(FILES:+=cmo) $(FILES:+=cmx) $(FILES:+=cmi) $(FILES:+=o) $(FILES:+=obj)
 	rm -rf sample.cmo sample.cmi sample.cmx sample.o sample.obj sample.exe sample.opt.exe
-	rm -rf jClass.cmi javaLib.cma javaLib.cmxa javaLib.lib javaLib.a
+	rm -rf jClass.cmi jOpCode.cmi javaLib.cma javaLib.cmxa javaLib.lib javaLib.a
 	rm -rf doc
 	rm -rf *.ml~ *.mli~ Makefile~
 

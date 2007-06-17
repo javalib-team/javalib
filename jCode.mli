@@ -17,33 +17,25 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** Bytecode instructions parsing. *)
+(** Low level (un)parsing of bytecode instructions. *)
 
-(** You should not need to directly access this module normally. *)
+(** Parse a sequence of instructions of given size (in bytes) and
+    returns an array of instructions. *)
+val parse_code : IO.input -> JClass.constant array -> int -> JOpCode.opcode array
 
-open ExtLib
-
-(** Parses a sequence of instructions of given size (in bytes) and
-    returns an array of instructions. Each instruction is at the index
-    corresponding to its absolute offset. The array is padded with the
-    OpInvalid instruction. The absolute and relative offset that appear
-    in the instructions are therefore valid positions in the array.
-    OpInvalid may be interpreted as nop, or the direct successor of
-    an instruction can alternatively by defined as the first following
-    non-OpInvalid instruction. *)
-val parse_code : IO.input -> JClass.constant array -> int -> JClass.opcode array
+(** Unparse a sequence of instructions. Provided constants are kept unchanged.
+    Missing constant are added at the end of the constant pool if
+    needed. *)
+val unparse_code :
+  'a IO.output -> JClass.constant DynArray.t -> JOpCode.opcode array -> unit
 
 (**/**)
 
 exception Invalid_opcode of int
 
-(* Modified by eandre@irisa.fr 2006/05/19
-   in order to accept wide offsets
+(* For testing. *)
 
-   The boolean indicates that this instruction was preceded by a
-   wide and should be read accordingly. *)
-val parse_opcode : int -> IO.input -> JClass.constant array -> bool -> JClass.opcode
-
-(* For testing *)
-val parse_instruction : IO.input -> (unit -> int ) -> JClass.constant array -> JClass.opcode
-
+val parse_full_opcode :
+  IO.input -> (unit -> int) -> JClass.constant array -> JOpCode.opcode
+val unparse_instruction :
+  'a IO.output -> JClass.constant DynArray.t -> (unit -> int) -> JOpCode.opcode -> unit

@@ -249,10 +249,10 @@ let rec parse_code consts ch =
 	let max_locals = read_ui16 ch in
 	let clen = read_i32 ch in
 	let code = 
-		(try			
-			JCode.parse_code ch consts clen
-		with
-			JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n))
+	  try
+	    JInstruction.opcodes2code consts (JCode.parse_code ch consts clen)
+	  with
+	      JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n)
 	in
 	let exc_tbl_length = read_ui16 ch in
 	let exc_tbl = List.init exc_tbl_length (fun _ ->

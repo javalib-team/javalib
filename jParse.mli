@@ -19,8 +19,8 @@
 
 (** Parsing. *)
 
-(** Parse a Java class file. See {!JCode.parse_code} for details about the code
-    attribute. *)
+(** Parse a Java class file. See {!JInstruction.opcodes2code} for details about
+    the code attribute. *)
 val parse_class : IO.input -> JClass.jclass
 
 (**/**)

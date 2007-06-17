@@ -58,7 +58,7 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {2 API}
 
 {b {L Data structures}}
-{!modules: JClass}
+{!modules: JClass JOpCode}
 
 {b {L High level access to classes}}
 {!modules: JFile}
@@ -67,7 +67,7 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {!modules: JParse JUnparse}
 
 {b {L Other}}
-{!modules: JDump JConsts JCode}
+{!modules: JDump JConsts JCode JInstruction}
 
 {b {L Indexes}}
 

@@ -55,3 +55,17 @@ val get_method : JClass.constant array -> IO.input ->
 
 val get_interface_method : JClass.constant array -> IO.input ->
   JClass.class_name * string * JClass.method_signature
+
+(* This should go somewhere else. *)
+
+val write_ui8 : 'a IO.output -> int -> unit
+val write_i8 : 'a IO.output -> int -> unit
+val write_constant :
+  'a IO.output -> JClass.constant DynArray.t -> JClass.constant -> unit
+val write_string_with_length :
+  ('a IO.output -> int -> 'b) -> 'a IO.output -> string -> unit
+val write_with_length :
+  ('a IO.output -> int -> 'b) ->
+  'a IO.output -> (string IO.output -> 'c) -> unit
+val write_with_size :
+  ('a -> int -> 'b) -> 'a -> ('c -> unit) -> 'c list -> unit

@@ -17,12 +17,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(* file modified by eandre@irisa.fr 2006/05/19 *)
-
+open IO
 open IO.BigEndian
 open ExtList
 open JClass
 open JConsts
+open JOpCode
+
+(* OpCodes Parsing *)
+(*******************)
 
 exception Invalid_opcode of int
 
@@ -33,263 +36,242 @@ let kind = function
 	| 3 -> KDouble
 	| _ -> assert false
 	    
-
-(* Added by eandre@irisa.fr 2006/05/19
-   in order to accept wide offsets*)
 let read_unsigned ch wide =
   if wide then read_ui16 ch else IO.read_byte ch
 
-
-(* Added by eandre@irisa.fr 2006/05/19
-   in order to accept wide offsets*)
 let read_signed ch wide =
   if wide then read_i16 ch else IO.read_signed_byte ch
 
-
-(* Modified by eandre@irisa.fr 2006/05/19
-   in order to accept wide offsets*)
 let parse_opcode op ch consts wide =
   match op with
 	| 0 ->
-		OpNop
+		OpCodeNop
 	(* ---- push ----------------------------------- *)
 	| 1 ->
-		OpAConstNull
+		OpCodeAConstNull
 	| 2 ->
-		OpIConst Int32.minus_one
+		OpCodeIConst Int32.minus_one
 	| 3 | 4 | 5 | 6 | 7 | 8 ->
-		OpIConst (Int32.of_int (op - 3))
+		OpCodeIConst (Int32.of_int (op - 3))
 	| 9 ->
-		OpLConst Int64.zero
+		OpCodeLConst Int64.zero
 	| 10 ->
-		OpLConst Int64.one
+		OpCodeLConst Int64.one
 	| 11 | 12 | 13 ->
-		OpFConst (float_of_int (op - 11))
+		OpCodeFConst (float_of_int (op - 11))
 	| 14 ->
-		OpDConst 0.
+		OpCodeDConst 0.
 	| 15 ->
-		OpDConst 1.
+		OpCodeDConst 1.
 	| 16 ->
-		OpBIPush (IO.read_byte ch)
+		OpCodeBIPush (IO.read_byte ch)
 	| 17 ->
 (*		let b1 = IO.read_byte ch in
 		let b2 = IO.read_byte ch in
-		OpSIPush (b1,b2) *)
-	    OpSIPush (read_i16 ch)
+		OpCodeSIPush (b1,b2) *)
+	    OpCodeSIPush (read_i16 ch)
 	| 18 ->
-	    OpLdc1 (get_constant_value consts (IO.read_byte ch))
+	    OpCodeLdc1 (get_constant_value consts (IO.read_byte ch))
 	| 19 ->
-	    OpLdc1 (get_constant_value consts (read_ui16 ch))
+	    OpCodeLdc1 (get_constant_value consts (read_ui16 ch))
 	| 20 ->
-	    OpLdc2w (get_constant_value consts (read_ui16 ch))
+	    OpCodeLdc2w (get_constant_value consts (read_ui16 ch))
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
-		OpLoad (kind (op - 21),read_unsigned ch wide)
+		OpCodeLoad (kind (op - 21),read_unsigned ch wide)
 	| 25 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
-		OpALoad (read_unsigned ch wide)
+		OpCodeALoad (read_unsigned ch wide)
 	| 26 | 27 | 28 | 29 ->
-		OpLoad (KInt,op - 26)
+		OpCodeLoad (KInt,op - 26)
 	| 30 | 31 | 32 | 33 ->
-		OpLoad (KLong,op - 30)
+		OpCodeLoad (KLong,op - 30)
 	| 34 | 35 | 36 | 37 ->
-		OpLoad (KFloat,op - 34)
+		OpCodeLoad (KFloat,op - 34)
 	| 38 | 39 | 40 | 41 ->
-		OpLoad (KDouble,op - 38)
+		OpCodeLoad (KDouble,op - 38)
 	| 42 | 43 | 44 | 45 ->
-		OpALoad (op - 42)
+		OpCodeALoad (op - 42)
 	(* ---- array load ---------------------------- *)
 	| 46 | 47 | 48 | 49 ->
-		OpArrayLoad (kind (op - 46))
+		OpCodeArrayLoad (kind (op - 46))
 	| 50 ->
-		OpAALoad
+		OpCodeAALoad
 	| 51 ->
-		OpBALoad
+		OpCodeBALoad
 	| 52 ->
-		OpCALoad
+		OpCodeCALoad
 	| 53 ->
-		OpSALoad		
+		OpCodeSALoad		
 	(* ---- store ----------------------------------- *)
 	| 54 | 55 | 56 | 57 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
-		OpStore (kind (op - 54),read_unsigned ch wide)
+		OpCodeStore (kind (op - 54),read_unsigned ch wide)
 	| 58 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
-		OpAStore (read_unsigned ch wide)
+		OpCodeAStore (read_unsigned ch wide)
 	| 59 | 60 | 61 | 62 ->
-		OpStore (KInt , op - 59)
+		OpCodeStore (KInt , op - 59)
 	| 63 | 64 | 65 | 66 ->
-		OpStore (KLong , op - 63)
+		OpCodeStore (KLong , op - 63)
 	| 67 | 68 | 69 | 70 ->
-		OpStore (KFloat , op - 67)
+		OpCodeStore (KFloat , op - 67)
 	| 71 | 72 | 73 | 74 ->
-		OpStore (KDouble , op - 71)
+		OpCodeStore (KDouble , op - 71)
 	| 75 | 76 | 77 | 78 ->
-		OpAStore (op - 75)
+		OpCodeAStore (op - 75)
 	(* ---- array store ---------------------------- *)
 	| 79 | 80 | 81 | 82 ->
-		OpArrayStore (kind (op - 79))
+		OpCodeArrayStore (kind (op - 79))
 	| 83 ->
-		OpAAStore
+		OpCodeAAStore
 	| 84 ->
-		OpBAStore
+		OpCodeBAStore
 	| 85 ->
-		OpCAStore
+		OpCodeCAStore
 	| 86 ->
-		OpSAStore
+		OpCodeSAStore
 	(* ---- stack ---------------------------------- *)
 	| 87 ->
-		OpPop
+		OpCodePop
 	| 88 ->
-		OpPop2
+		OpCodePop2
 	| 89 ->
-		OpDup
+		OpCodeDup
 	| 90 ->
-		OpDupX1
+		OpCodeDupX1
 	| 91 ->
-		OpDupX2
+		OpCodeDupX2
 	| 92 ->
-		OpDup2
+		OpCodeDup2
 	| 93 ->
-		OpDup2X1
+		OpCodeDup2X1
 	| 94 ->
-		OpDup2X2
+		OpCodeDup2X2
 	| 95 ->
-		OpSwap
+		OpCodeSwap
 	(* ---- arithmetics ---------------------------- *)
 	| 96 | 97 | 98 | 99 ->
-		OpAdd (kind (op - 96))
+		OpCodeAdd (kind (op - 96))
 	| 100 | 101 | 102 | 103 ->
-		OpSub (kind (op - 100))
+		OpCodeSub (kind (op - 100))
 	| 104 | 105 | 106 | 107 ->
-		OpMult (kind (op - 104))
+		OpCodeMult (kind (op - 104))
 	| 108 | 109 | 110 | 111 ->
-		OpDiv (kind (op - 108))
+		OpCodeDiv (kind (op - 108))
 	| 112 | 113 | 114 | 115 ->
-		OpRem (kind (op - 112))
+		OpCodeRem (kind (op - 112))
 	| 116 | 117 | 118 | 119 ->
-		OpNeg (kind (op - 116))
+		OpCodeNeg (kind (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
-		OpIShl 
+		OpCodeIShl 
 	| 121 ->
-		OpLShl
+		OpCodeLShl
 	| 122 ->
-		OpIShr
+		OpCodeIShr
 	| 123 ->
-		OpLShr
+		OpCodeLShr
 	| 124 ->
-		OpIUShr
+		OpCodeIUShr
 	| 125 ->
-		OpLUShr
+		OpCodeLUShr
 	| 126 ->
-		OpIAnd
+		OpCodeIAnd
 	| 127 ->
-		OpLAnd
+		OpCodeLAnd
 	| 128 ->
-		OpIOr
+		OpCodeIOr
 	| 129 ->
-		OpLOr
+		OpCodeLOr
 	| 130 ->
-		OpIXor
+		OpCodeIXor
 	| 131 ->
-		OpLXor
+		OpCodeLXor
 	(* ---- incr ----------------------------------- *)
 	| 132 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
 		let idx = read_unsigned ch wide in
 		let c = read_signed ch wide in
-		OpIInc (idx,c)
+		OpCodeIInc (idx,c)
 	(* ---- conversions ---------------------------- *)
 	| 133 ->
-		OpI2L 
+		OpCodeI2L 
 	| 134 ->
-		OpI2F
+		OpCodeI2F
 	| 135 ->
-		OpI2D
+		OpCodeI2D
 	| 136 ->
-		OpL2I
+		OpCodeL2I
 	| 137 ->
-		OpL2F
+		OpCodeL2F
 	| 138 ->
-		OpL2D
+		OpCodeL2D
 	| 139 ->
-		OpF2I
+		OpCodeF2I
 	| 140 ->
-		OpF2L
+		OpCodeF2L
 	| 141 ->
-		OpF2D
+		OpCodeF2D
 	| 142 ->
-		OpD2I
+		OpCodeD2I
 	| 143 ->
-		OpD2L
+		OpCodeD2L
 	| 144 ->
-		OpD2F
+		OpCodeD2F
 	| 145 ->
-		OpI2B
+		OpCodeI2B
 	| 146 ->
-		OpI2C
+		OpCodeI2C
 	| 147 ->
-		OpI2S
+		OpCodeI2S
 	(* ---- jumps ---------------------------------- *)
 	| 148 ->
-		OpLCmp
+		OpCodeLCmp
 	| 149 ->
-		OpFCmpL
+		OpCodeFCmpL
 	| 150 ->
-		OpFCmpG
+		OpCodeFCmpG
 	| 151 ->
-		OpDCmpL
+		OpCodeDCmpL
 	| 152 ->
-		OpDCmpG
+		OpCodeDCmpG
 	| 153 ->
-		OpIfEq (read_i16 ch)
+		OpCodeIfEq (read_i16 ch)
 	| 154 ->
-		OpIfNe (read_i16 ch)
+		OpCodeIfNe (read_i16 ch)
 	| 155 ->
-		OpIfLt (read_i16 ch)
+		OpCodeIfLt (read_i16 ch)
 	| 156 ->
-		OpIfGe (read_i16 ch)
+		OpCodeIfGe (read_i16 ch)
 	| 157 ->
-		OpIfGt (read_i16 ch)
+		OpCodeIfGt (read_i16 ch)
 	| 158 ->
-		OpIfLe (read_i16 ch)
+		OpCodeIfLe (read_i16 ch)
 	| 159 ->
-		OpICmpEq (read_i16 ch)
+		OpCodeICmpEq (read_i16 ch)
 	| 160 ->
-		OpICmpNe (read_i16 ch)
+		OpCodeICmpNe (read_i16 ch)
 	| 161 ->
-		OpICmpLt (read_i16 ch)
+		OpCodeICmpLt (read_i16 ch)
 	| 162 ->
-		OpICmpGe (read_i16 ch)
+		OpCodeICmpGe (read_i16 ch)
 	| 163 ->
-		OpICmpGt (read_i16 ch)
+		OpCodeICmpGt (read_i16 ch)
 	| 164 ->
-		OpICmpLe (read_i16 ch)
+		OpCodeICmpLe (read_i16 ch)
 	| 165 ->
-		OpACmpEq (read_i16 ch)
+		OpCodeACmpEq (read_i16 ch)
 	| 166 ->
-		OpACmpNe (read_i16 ch)
+		OpCodeACmpNe (read_i16 ch)
 	| 167 ->
-		OpGoto (read_i16 ch)
+		OpCodeGoto (read_i16 ch)
 	| 168 ->
-		OpJsr (read_i16 ch)
+		OpCodeJsr (read_i16 ch)
 	| 169 ->
-	    (* Modified by eandre@irisa.fr 2006/05/19
-	       in order to accept wide offsets*)
-		OpRet (read_unsigned ch wide)
+		OpCodeRet (read_unsigned ch wide)
 	| 170 ->
 		let def = read_i32 ch in
 		let low = read_real_i32 ch in
 		let high = read_real_i32 ch in
 		let tbl = Array.init (Int32.to_int (Int32.sub high low) + 1) (fun _ -> read_i32 ch) in
-		OpTableSwitch (def,low,high,tbl)
+		OpCodeTableSwitch (def,low,high,tbl)
 	| 171 ->
 		let def = read_i32 ch in
 		let npairs = read_i32 ch in
@@ -298,50 +280,50 @@ let parse_opcode op ch consts wide =
 			let j = read_i32 ch in
 			v , j
 		) in
-		OpLookupSwitch (def,tbl)
+		OpCodeLookupSwitch (def,tbl)
 	(* ---- returns --------------------------------- *)
 	| 172 | 173 | 174 | 175 ->
-		OpReturn (kind (op - 172))
+		OpCodeReturn (kind (op - 172))
 	| 176 ->
-		OpAReturn
+		OpCodeAReturn
 	| 177 ->
-		OpReturnVoid
+		OpCodeReturnVoid
 	(* ---- OO ------------------------------------- *)
 	| 178 ->
 	    let c, f, s = get_field consts ch in
-	      OpGetStatic (c, f, s)
+	      OpCodeGetStatic (c, f, s)
 	| 179 ->
 	    let c, f, s = get_field consts ch in
-	      OpPutStatic (c, f, s)
+	      OpCodePutStatic (c, f, s)
 	| 180 ->
 	    let c, f, s = get_field consts ch in
-	      OpGetField (c, f, s)
+	      OpCodeGetField (c, f, s)
 	| 181 ->
 	    let c, f, s = get_field consts ch in
-	      OpPutField (c, f, s)
+	      OpCodePutField (c, f, s)
 	| 182 ->
 	    let c, m, s = get_method consts ch in
-	      OpInvokeVirtual (c, m, s)
+	      OpCodeInvokeVirtual (c, m, s)
 	| 183 ->
 	    (match get_method consts ch with
 	       | TClass c, m, s ->
-		   OpInvokeNonVirtual (c, m, s)
+		   OpCodeInvokeNonVirtual (c, m, s)
 	       | _ -> failwith "invokespecial in an array class")
 	| 184 ->
 	    (match get_method consts ch with
 	       | TClass c, m, s ->
-		   OpInvokeStatic (c, m, s)
+		   OpCodeInvokeStatic (c, m, s)
 	       | _ -> failwith "invokestatic in an array class")
 	| 185 ->
 	    let c, m, s = get_interface_method consts ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
-	      OpInvokeInterface (c, m, s, nargs)
+	      OpCodeInvokeInterface (c, m, s, nargs)
 	(* ---- others --------------------------------- *)
 	| 187 ->
-		OpNew (get_class consts ch)
+		OpCodeNew (get_class consts ch)
 	| 188 ->
-		OpNewArray (match IO.read_byte ch with
+		OpCodeNewArray (match IO.read_byte ch with
 			| 4 -> TBool
 			| 5 -> TChar
 			| 6 -> TFloat
@@ -352,40 +334,40 @@ let parse_opcode op ch consts wide =
 			| 11 -> TLong
 			| _ -> raise Exit)
 	| 189 ->
-		OpANewArray (get_object_type consts ch)
+		OpCodeANewArray (get_object_type consts ch)
 	| 190 ->
-		OpArrayLength
+		OpCodeArrayLength
 	| 191 ->
-		OpThrow
+		OpCodeThrow
 	| 192 ->
-		OpCheckCast (get_object_type consts ch)
+		OpCodeCheckCast (get_object_type consts ch)
 	| 193 ->
-		OpInstanceOf (get_object_type consts ch)
+		OpCodeInstanceOf (get_object_type consts ch)
 	| 194 ->
-		OpMonitorEnter
+		OpCodeMonitorEnter
 	| 195 ->
-		OpMonitorExit
+		OpCodeMonitorExit
 	| 197 ->
 	    let c = get_object_type consts ch in
 	    let dims = IO.read_byte ch in
-	      OpAMultiNewArray (c,dims)
+	      OpCodeAMultiNewArray (c,dims)
 	| 198 -> 
-	    OpIfNull (read_i16 ch)
+	    OpCodeIfNull (read_i16 ch)
 	| 199 -> 
-	    OpIfNonNull (read_i16 ch)
+	    OpCodeIfNonNull (read_i16 ch)
 
 	| 200 ->
-		OpGotoW (read_i32 ch)
+		OpCodeGotoW (read_i32 ch)
 	| 201 ->
-		OpJsrW (read_i32 ch)
+		OpCodeJsrW (read_i32 ch)
 	| 202 ->
-		OpBreakpoint
+		OpCodeBreakpoint
 	| 209 ->
-		OpRetW (read_ui16 ch)
+		OpCodeRetW (read_ui16 ch)
 	| _ ->
 	    raise (Invalid_opcode op)
 
-let parse_instruction ch pos consts =
+let parse_full_opcode ch pos consts =
   let p = pos() in
   let op = IO.read_byte ch in
     if op = 196
@@ -398,9 +380,363 @@ let parse_instruction ch pos consts =
 
 let parse_code ch consts len =
   let ch , pos = IO.pos_in ch in
-  let code = Array.create len OpInvalid in
+  let code = Array.create len OpCodeInvalid in
     while pos() < len do
       let p = pos() in
-	code.(p) <- parse_instruction ch pos consts
+	code.(p) <- parse_full_opcode ch pos consts
     done;
     code
+
+(* OpCodes unparsing *)
+(**************************)
+
+module OpCodecodeMap =
+  Map.Make(struct type t = opcode let compare = compare end)
+
+let simple_table =
+  List.fold_left
+    (fun m (offset, opcodes) ->
+       fst
+	 (Array.fold_left
+	    (fun (m, code) op ->
+	       OpCodecodeMap.add op code m, succ code)
+	    (m, offset)
+	    opcodes))
+    OpCodecodeMap.empty
+    [
+      050, [|OpCodeAALoad;
+	     OpCodeBALoad;
+	     OpCodeCALoad;
+	     OpCodeSALoad
+	   |];
+      083, [|OpCodeAAStore;
+	     OpCodeBAStore;
+	     OpCodeCAStore;
+	     OpCodeSAStore
+	   |];
+      087, [|OpCodePop;
+	     OpCodePop2;
+	     OpCodeDup;
+	     OpCodeDupX1;
+	     OpCodeDupX2;
+	     OpCodeDup2;
+	     OpCodeDup2X1;
+	     OpCodeDup2X2;
+	     OpCodeSwap
+	   |];
+      120, [|OpCodeIShl;
+	     OpCodeLShl;
+	     OpCodeIShr;
+	     OpCodeLShr;
+	     OpCodeIUShr;
+	     OpCodeLUShr;
+	     OpCodeIAnd;
+	     OpCodeLAnd;
+	     OpCodeIOr;
+	     OpCodeLOr;
+	     OpCodeIXor;
+	     OpCodeLXor
+	   |];
+      133, [|OpCodeI2L;
+	     OpCodeI2F;
+	     OpCodeI2D;
+	     OpCodeL2I;
+	     OpCodeL2F;
+	     OpCodeL2D;
+	     OpCodeF2I;
+	     OpCodeF2L;
+	     OpCodeF2D;
+	     OpCodeD2I;
+	     OpCodeD2L;
+	     OpCodeD2F;
+	     OpCodeI2B;
+	     OpCodeI2C;
+	     OpCodeI2S
+	   |];
+      148, [|OpCodeLCmp;
+	     OpCodeFCmpL;
+	     OpCodeFCmpG;
+	     OpCodeDCmpL;
+	     OpCodeDCmpG
+	   |];
+      000, [|OpCodeNop;
+	     OpCodeAConstNull
+	   |];
+      176, [|OpCodeAReturn;
+	     OpCodeReturnVoid
+	   |];
+      190, [|OpCodeArrayLength;
+	     OpCodeThrow
+	   |];
+      194, [|OpCodeMonitorEnter;
+	     OpCodeMonitorExit
+	   |];
+      202, [|OpCodeBreakpoint|]
+    ]
+
+(* Instruction without arguments *)
+let simple ch op =
+  try
+    write_ui8 ch
+      (OpCodecodeMap.find op simple_table)
+  with
+      Not_found -> invalid_arg "simple"
+
+let int_of_kind = function
+  | KInt -> 0
+  | KLong -> 1
+  | KFloat -> 2
+  | KDouble -> 3
+
+(* Instructions with a kind argument added to the base opcode. *)
+let kind ch inst =
+  let kind, opcode = match inst with
+    | OpCodeArrayLoad k -> k, 46
+    | OpCodeArrayStore k -> k, 79
+    | OpCodeAdd i -> i, 96
+    | OpCodeSub i -> i, 100
+    | OpCodeMult i -> i, 104
+    | OpCodeDiv i -> i, 108
+    | OpCodeRem i -> i, 112
+    | OpCodeNeg i -> i, 116
+    | OpCodeReturn k -> k, 172
+    | _ -> invalid_arg "kind"
+  in
+    write_ui8 ch (opcode + int_of_kind kind)
+
+let unparse_local_instruction ch opcode value =
+  if value <= 0xFF
+  then (
+    write_ui8 ch opcode;
+    write_ui8 ch value
+  ) else (
+    write_ui8 ch 196;
+    write_ui8 ch opcode;
+    write_ui16 ch value
+  )
+
+(* Instructions xload, xstore (but not xaload, xastore) *)
+let ilfda_loadstore ch instr =
+  let value = match instr with
+    | OpCodeLoad (_, value)
+    | OpCodeALoad value
+    | OpCodeStore (_, value)
+    | OpCodeAStore value -> value
+    | _ -> invalid_arg "ilfd_loadstore"
+  in
+    if value < 4
+    then
+      write_ui8 ch
+	(value +
+	   match instr with
+	     | OpCodeLoad (kind, _) -> 26 + 4 * int_of_kind kind
+	     | OpCodeALoad _ -> 42
+	     | OpCodeStore (kind, _) -> 59 + 4 * int_of_kind kind
+	     | OpCodeAStore _ -> 75
+	     | _ -> assert false)
+    else
+      unparse_local_instruction ch
+	(match instr with
+	   | OpCodeLoad (kind, _) -> 21 +  int_of_kind kind
+	   | OpCodeALoad _ -> 25
+	   | OpCodeStore (kind, _) -> 54 +  int_of_kind kind
+	   | OpCodeAStore _ -> 58
+	   | _ -> assert false)
+	value
+
+(* Instructions with one 16 bits signed argument *)
+let i16 ch inst =
+  let i, opcode = match inst with
+    | OpCodeSIPush i -> i, 17
+    | OpCodeIfEq i -> i, 153
+    | OpCodeIfNe i -> i, 154
+    | OpCodeIfLt i -> i, 155
+    | OpCodeIfGe i -> i, 156
+    | OpCodeIfGt i -> i, 157
+    | OpCodeIfLe i -> i, 158
+    | OpCodeICmpEq i -> i, 159
+    | OpCodeICmpNe i -> i, 160
+    | OpCodeICmpLt i -> i, 161
+    | OpCodeICmpGe i -> i, 162
+    | OpCodeICmpGt i -> i, 163
+    | OpCodeICmpLe i -> i, 164
+    | OpCodeACmpEq i -> i, 165
+    | OpCodeACmpNe i -> i, 166
+    | OpCodeGoto i -> i, 167
+    | OpCodeJsr i -> i, 168
+    | OpCodeIfNull i -> i, 198
+    | OpCodeIfNonNull i -> i, 199
+    | _ -> invalid_arg "i16"
+  in
+    write_ui8 ch opcode;
+    write_i16 ch i
+
+(* Instructions with one 16 bits unsigned argument *)
+let ui16 ch inst =
+  let i, opcode = match inst with
+    | OpCodeRetW i -> i, 209
+    | _ -> invalid_arg "ui16"
+  in
+    write_ui8 ch opcode;
+    write_ui16 ch i
+
+(* Instructions with one class_name argument *)
+let class_name consts ch inst =
+  let c, opcode = match inst with
+    | OpCodeNew i -> (TClass i), 187
+    | OpCodeANewArray i -> i, 189
+    | OpCodeCheckCast i -> i, 192
+    | OpCodeInstanceOf i -> i, 193
+    | _ -> invalid_arg "class_name"
+  in
+    write_ui8 ch opcode;
+    write_constant ch consts (ConstValue (ConstClass c))
+
+(* Instruction with a (class_name * string * signature) argument *)
+let field_or_method consts ch inst =
+  let arg, opcode = match inst with
+    | OpCodeGetStatic (c, n, s) -> ConstField (c, n, s), 178
+    | OpCodePutStatic (c, n, s) -> ConstField (c, n, s), 179
+    | OpCodeGetField (c, n, s) -> ConstField (c, n, s), 180
+    | OpCodePutField (c, n, s) -> ConstField (c, n, s), 181
+    | OpCodeInvokeVirtual (c, n, s) -> ConstMethod (c, n, s), 182
+    | OpCodeInvokeNonVirtual (c, n, s) -> ConstMethod (TClass c, n, s), 183
+    | OpCodeInvokeStatic (c, n, s) -> ConstMethod (TClass c, n, s), 184
+    | _ -> invalid_arg "field_or_method"
+  in
+      write_ui8 ch opcode;
+      write_constant ch consts arg
+
+let basic_type = [|
+  TBool;
+  TChar;
+  TFloat;
+  TDouble;
+  TByte;
+  TShort;
+  TInt;
+  TLong
+|]
+
+let padding ch count =
+  flush ch;
+  for i = 1 + (count () - 1) mod 4 to 3 do
+    write_ui8 ch 0
+  done
+
+(* Everything else *)
+let other consts count ch = function
+  | OpCodeIConst n -> write_ui8 ch (3 + Int32.to_int n)
+  | OpCodeLConst n -> write_ui8 ch (9 + Int64.to_int n)
+  | OpCodeFConst n -> write_ui8 ch (11 + int_of_float n)
+  | OpCodeDConst n -> write_ui8 ch (14 + int_of_float n)
+  | OpCodeBIPush n ->
+      write_ui8 ch 16;
+      write_ui8 ch n
+  | OpCodeLdc1 n ->
+      let index = constant_to_int consts (ConstValue n) in
+	if
+	  index <= 0xFF
+	then (
+	  write_ui8 ch 18;
+	  write_ui8 ch index;
+	) else (
+	  write_ui8 ch 19;
+	  write_ui16 ch index;
+	)
+  | OpCodeLdc2w n ->
+      write_ui8 ch 20;
+      write_constant ch consts (ConstValue n)
+  | OpCodeIInc (index, incr) ->
+      if
+	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
+      then (
+	write_ui8 ch 132;
+	write_ui8 ch index;
+	write_i8 ch incr
+      ) else (
+	write_ui8 ch 196;
+	write_ui8 ch 132;
+	write_ui16 ch index;
+	write_i16 ch incr
+      )
+  | OpCodeRet pc ->
+      if
+	pc <= 0xFF
+      then (
+	write_ui8 ch 169;
+	write_ui8 ch pc
+      ) else (
+	write_ui8 ch 196;
+	write_ui8 ch 169;
+	write_ui16 ch pc
+      )
+  | OpCodeTableSwitch (def, low, high, tbl) ->
+      write_ui8 ch 170;
+      padding ch count;
+      write_i32 ch def;
+      write_real_i32 ch low;
+      write_real_i32 ch high;
+      Array.iter (write_i32 ch) tbl
+  | OpCodeLookupSwitch (def, tbl) ->
+      write_ui8 ch 171;
+      padding ch count;
+      write_i32 ch def;
+      write_with_size write_i32 ch
+	(function v, j ->
+	   write_real_i32 ch v;
+	   write_i32 ch j)
+	tbl
+  | OpCodeInvokeInterface (c, m, s, nargs) ->
+      write_ui8 ch 185;
+      write_constant ch consts (ConstInterfaceMethod (c, m, s));
+      write_ui8 ch nargs;
+      write_ui8 ch 0
+  | OpCodeNewArray at ->
+      write_ui8 ch 188;
+      write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
+  | OpCodeAMultiNewArray (c, dims) ->
+      write_ui8 ch 197;
+      write_constant ch consts (ConstValue (ConstClass c));
+      write_ui8 ch dims
+  | OpCodeGotoW i ->
+      write_ui8 ch 200;
+      write_i32 ch i
+  | OpCodeJsrW i ->
+      write_ui8 ch 201;
+      write_i32 ch i
+  | OpCodeInvalid -> ()
+  | _ -> invalid_arg "other"
+
+let unparse_instruction ch consts count inst =
+  try
+    List.iter
+      (function unparse ->
+	 try
+	   unparse ch inst;
+	   raise Exit
+	 with
+	     Invalid_argument _ -> ())
+      [
+	simple;
+	kind;
+	ilfda_loadstore;
+	i16;
+	ui16;
+	class_name consts;
+	field_or_method consts;
+	other consts count
+      ];
+    assert false
+  with
+      Exit -> ()
+
+let unparse_code ch consts code =
+  let ch, count = pos_out ch in
+    Array.iteri
+      (fun i opcode ->
+      (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
+	 if not (opcode = OpCodeInvalid || count () = i)
+	 then invalid_arg "Wrong bytecode sequence";
+	 unparse_instruction ch consts count opcode)
+      code

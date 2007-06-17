@@ -19,19 +19,8 @@
 
 (** Unparsing. *)
 
-(** Unparses a class to a file. Provided constants are kept unchanged.
-    Missing constant are added at the end of the constant pool if
-    needed. The Code attribute for methods is assumed to be such that
-    the distance between the offset of two successive non-OpInvalid
-    instructions is at least the length of the optimal coding for
-    the first instruction (for example, iload_0 vs iload 0). The code
-    is padded with nops if this length is shorter. OpWides are
-    ignored, i.e., an instruction preceded by an OpWide is written at
-    the offset of the OpWide. Note that the constants refered to by
-    a ldc-like instruction should be present in the provided constant
-    pool at an index that is compatible with their length: if a wide
-    form is needed but the instruction was read as a "simple" form,
-    the writing will fail. *)
+(** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
+    information *)
 val unparse_class : 'a IO.output -> JClass.jclass -> unit
 
 (**/**)
@@ -48,6 +37,3 @@ val unparse_constant_pool :
   'a IO.output ->
   JClass.constant DynArray.t ->
   unit
-
-(* For testing: *)
-val unparse_instruction : 'a IO.output -> JClass.constant DynArray.t -> (unit -> int) -> JClass.opcode -> unit

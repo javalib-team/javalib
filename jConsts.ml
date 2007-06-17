@@ -18,6 +18,7 @@
  *)
 
 open JClass
+open IO
 open IO.BigEndian
 open ExtList
 open ExtString
@@ -94,3 +95,34 @@ let constant_to_int cp c =
 		 DynArray.add cp ConstUnusable
 	     | _ -> ());
 	  i
+
+(* Usefull functions *)
+(*********************)
+
+(* write_byte doesn't check anything *)
+let write_ui8 ch n =
+  if n < 0 || n > 0xFF then raise (Overflow "write_ui8");
+  write_byte ch n
+
+let write_i8 ch n =
+  if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
+  if n < 0 then
+    write_ui8 ch (0x100 + n)
+  else
+    write_ui8 ch n
+
+let write_constant ch cp c =
+  write_ui16 ch (constant_to_int cp c)
+
+let write_string_with_length length ch s =
+  length ch (String.length s);
+  nwrite ch s
+
+let write_with_length length ch write =
+  let ch' = output_string () in
+    write ch';
+    write_string_with_length length ch (close_out ch')
+
+let write_with_size size ch write l =
+  size ch (List.length l);
+  List.iter write l
