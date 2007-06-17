@@ -27,7 +27,7 @@
     OpInvalid may be interpreted as nop, or the direct successor of
     an instruction can alternatively by defined as the first following
     non-OpInvalid instruction. *)
-val opcodes2code : 'a -> JOpCode.opcode array -> JClass.opcode array
+val opcodes2code : JClass.constant array -> JOpCode.opcode array -> JClass.opcode array
 
 (** Maps a high level code to a valid arrray of low level bytecode
     instructions. The distance between the offset of two successive
@@ -47,7 +47,7 @@ val code2opcodes :
 (* For testing. *)
 
 (** Low level to high level bytecode instruction. *)
-val opcode2instruction : 'a -> JOpCode.opcode -> JClass.opcode
+val opcode2instruction : JClass.constant array -> JOpCode.opcode -> JClass.opcode
 
 (** High level to low level bytecode instruction. *)
-val instruction2opcode : 'a -> JClass.opcode -> JOpCode.opcode
+val instruction2opcode : JClass.constant DynArray.t -> JClass.opcode -> JOpCode.opcode

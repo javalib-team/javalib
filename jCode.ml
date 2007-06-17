@@ -42,7 +42,7 @@ let read_unsigned ch wide =
 let read_signed ch wide =
   if wide then read_i16 ch else IO.read_signed_byte ch
 
-let parse_opcode op ch consts wide =
+let parse_opcode op ch wide =
   match op with
 	| 0 ->
 		OpCodeNop
@@ -71,11 +71,11 @@ let parse_opcode op ch consts wide =
 		OpCodeSIPush (b1,b2) *)
 	    OpCodeSIPush (read_i16 ch)
 	| 18 ->
-	    OpCodeLdc1 (get_constant_value consts (IO.read_byte ch))
+	    OpCodeLdc1 (IO.read_byte ch)
 	| 19 ->
-	    OpCodeLdc1 (get_constant_value consts (read_ui16 ch))
+	    OpCodeLdc1 (read_ui16 ch)
 	| 20 ->
-	    OpCodeLdc2w (get_constant_value consts (read_ui16 ch))
+	    OpCodeLdc2w (read_ui16 ch)
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
 		OpCodeLoad (kind (op - 21),read_unsigned ch wide)
@@ -290,38 +290,27 @@ let parse_opcode op ch consts wide =
 		OpCodeReturnVoid
 	(* ---- OO ------------------------------------- *)
 	| 178 ->
-	    let c, f, s = get_field consts ch in
-	      OpCodeGetStatic (c, f, s)
+	    OpCodeGetStatic (read_ui16 ch)
 	| 179 ->
-	    let c, f, s = get_field consts ch in
-	      OpCodePutStatic (c, f, s)
+	    OpCodePutStatic (read_ui16 ch)
 	| 180 ->
-	    let c, f, s = get_field consts ch in
-	      OpCodeGetField (c, f, s)
+	    OpCodeGetField (read_ui16 ch)
 	| 181 ->
-	    let c, f, s = get_field consts ch in
-	      OpCodePutField (c, f, s)
+	    OpCodePutField (read_ui16 ch)
 	| 182 ->
-	    let c, m, s = get_method consts ch in
-	      OpCodeInvokeVirtual (c, m, s)
+	    OpCodeInvokeVirtual (read_ui16 ch)
 	| 183 ->
-	    (match get_method consts ch with
-	       | TClass c, m, s ->
-		   OpCodeInvokeNonVirtual (c, m, s)
-	       | _ -> failwith "invokespecial in an array class")
+	    OpCodeInvokeNonVirtual (read_ui16 ch)
 	| 184 ->
-	    (match get_method consts ch with
-	       | TClass c, m, s ->
-		   OpCodeInvokeStatic (c, m, s)
-	       | _ -> failwith "invokestatic in an array class")
+	    OpCodeInvokeStatic (read_ui16 ch)
 	| 185 ->
-	    let c, m, s = get_interface_method consts ch in
+	    let index = read_ui16 ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
-	      OpCodeInvokeInterface (c, m, s, nargs)
+	      OpCodeInvokeInterface (index, nargs)
 	(* ---- others --------------------------------- *)
 	| 187 ->
-		OpCodeNew (get_class consts ch)
+		OpCodeNew (read_ui16 ch)
 	| 188 ->
 		OpCodeNewArray (match IO.read_byte ch with
 			| 4 -> TBool
@@ -334,21 +323,21 @@ let parse_opcode op ch consts wide =
 			| 11 -> TLong
 			| _ -> raise Exit)
 	| 189 ->
-		OpCodeANewArray (get_object_type consts ch)
+		OpCodeANewArray (read_ui16 ch)
 	| 190 ->
 		OpCodeArrayLength
 	| 191 ->
 		OpCodeThrow
 	| 192 ->
-		OpCodeCheckCast (get_object_type consts ch)
+		OpCodeCheckCast (read_ui16 ch)
 	| 193 ->
-		OpCodeInstanceOf (get_object_type consts ch)
+		OpCodeInstanceOf (read_ui16 ch)
 	| 194 ->
 		OpCodeMonitorEnter
 	| 195 ->
 		OpCodeMonitorExit
 	| 197 ->
-	    let c = get_object_type consts ch in
+	    let c = read_ui16 ch in
 	    let dims = IO.read_byte ch in
 	      OpCodeAMultiNewArray (c,dims)
 	| 198 -> 
@@ -367,23 +356,23 @@ let parse_opcode op ch consts wide =
 	| _ ->
 	    raise (Invalid_opcode op)
 
-let parse_full_opcode ch pos consts =
+let parse_full_opcode ch pos =
   let p = pos() in
   let op = IO.read_byte ch in
     if op = 196
-    then parse_opcode (IO.read_byte ch) ch consts true
+    then parse_opcode (IO.read_byte ch) ch true
     else (
       if (op = 170 || op = 171) && (p + 1) mod 4 > 0
       then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
-      parse_opcode op ch consts false
+      parse_opcode op ch false
     )
 
-let parse_code ch consts len =
+let parse_code ch len =
   let ch , pos = IO.pos_in ch in
   let code = Array.create len OpCodeInvalid in
     while pos() < len do
       let p = pos() in
-	code.(p) <- parse_full_opcode ch pos consts
+	code.(p) <- parse_full_opcode ch pos
     done;
     code
 
@@ -575,37 +564,21 @@ let i16 ch inst =
 let ui16 ch inst =
   let i, opcode = match inst with
     | OpCodeRetW i -> i, 209
+    | OpCodeNew i -> i, 187
+    | OpCodeANewArray i -> i, 189
+    | OpCodeCheckCast i -> i, 192
+    | OpCodeInstanceOf i -> i, 193
+    | OpCodeGetStatic i -> i, 178
+    | OpCodePutStatic i -> i, 179
+    | OpCodeGetField i -> i, 180
+    | OpCodePutField i -> i, 181
+    | OpCodeInvokeVirtual i -> i, 182
+    | OpCodeInvokeNonVirtual i -> i, 183
+    | OpCodeInvokeStatic i -> i, 184
     | _ -> invalid_arg "ui16"
   in
     write_ui8 ch opcode;
     write_ui16 ch i
-
-(* Instructions with one class_name argument *)
-let class_name consts ch inst =
-  let c, opcode = match inst with
-    | OpCodeNew i -> (TClass i), 187
-    | OpCodeANewArray i -> i, 189
-    | OpCodeCheckCast i -> i, 192
-    | OpCodeInstanceOf i -> i, 193
-    | _ -> invalid_arg "class_name"
-  in
-    write_ui8 ch opcode;
-    write_constant ch consts (ConstValue (ConstClass c))
-
-(* Instruction with a (class_name * string * signature) argument *)
-let field_or_method consts ch inst =
-  let arg, opcode = match inst with
-    | OpCodeGetStatic (c, n, s) -> ConstField (c, n, s), 178
-    | OpCodePutStatic (c, n, s) -> ConstField (c, n, s), 179
-    | OpCodeGetField (c, n, s) -> ConstField (c, n, s), 180
-    | OpCodePutField (c, n, s) -> ConstField (c, n, s), 181
-    | OpCodeInvokeVirtual (c, n, s) -> ConstMethod (c, n, s), 182
-    | OpCodeInvokeNonVirtual (c, n, s) -> ConstMethod (TClass c, n, s), 183
-    | OpCodeInvokeStatic (c, n, s) -> ConstMethod (TClass c, n, s), 184
-    | _ -> invalid_arg "field_or_method"
-  in
-      write_ui8 ch opcode;
-      write_constant ch consts arg
 
 let basic_type = [|
   TBool;
@@ -625,7 +598,7 @@ let padding ch count =
   done
 
 (* Everything else *)
-let other consts count ch = function
+let other count ch = function
   | OpCodeIConst n -> write_ui8 ch (3 + Int32.to_int n)
   | OpCodeLConst n -> write_ui8 ch (9 + Int64.to_int n)
   | OpCodeFConst n -> write_ui8 ch (11 + int_of_float n)
@@ -633,20 +606,19 @@ let other consts count ch = function
   | OpCodeBIPush n ->
       write_ui8 ch 16;
       write_ui8 ch n
-  | OpCodeLdc1 n ->
-      let index = constant_to_int consts (ConstValue n) in
-	if
-	  index <= 0xFF
-	then (
-	  write_ui8 ch 18;
-	  write_ui8 ch index;
-	) else (
-	  write_ui8 ch 19;
-	  write_ui16 ch index;
-	)
-  | OpCodeLdc2w n ->
+  | OpCodeLdc1 index ->
+      if
+	index <= 0xFF
+      then (
+	write_ui8 ch 18;
+	write_ui8 ch index;
+      ) else (
+	write_ui8 ch 19;
+	write_ui16 ch index;
+      )
+  | OpCodeLdc2w index ->
       write_ui8 ch 20;
-      write_constant ch consts (ConstValue n)
+      write_ui16 ch index
   | OpCodeIInc (index, incr) ->
       if
 	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
@@ -687,9 +659,9 @@ let other consts count ch = function
 	   write_real_i32 ch v;
 	   write_i32 ch j)
 	tbl
-  | OpCodeInvokeInterface (c, m, s, nargs) ->
+  | OpCodeInvokeInterface (index, nargs) ->
       write_ui8 ch 185;
-      write_constant ch consts (ConstInterfaceMethod (c, m, s));
+      write_ui16 ch index;
       write_ui8 ch nargs;
       write_ui8 ch 0
   | OpCodeNewArray at ->
@@ -697,7 +669,7 @@ let other consts count ch = function
       write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
   | OpCodeAMultiNewArray (c, dims) ->
       write_ui8 ch 197;
-      write_constant ch consts (ConstValue (ConstClass c));
+      write_ui16 ch c;
       write_ui8 ch dims
   | OpCodeGotoW i ->
       write_ui8 ch 200;
@@ -708,7 +680,7 @@ let other consts count ch = function
   | OpCodeInvalid -> ()
   | _ -> invalid_arg "other"
 
-let unparse_instruction ch consts count inst =
+let unparse_instruction ch count inst =
   try
     List.iter
       (function unparse ->
@@ -723,20 +695,18 @@ let unparse_instruction ch consts count inst =
 	ilfda_loadstore;
 	i16;
 	ui16;
-	class_name consts;
-	field_or_method consts;
-	other consts count
+	other count
       ];
     assert false
   with
       Exit -> ()
 
-let unparse_code ch consts code =
+let unparse_code ch code =
   let ch, count = pos_out ch in
     Array.iteri
       (fun i opcode ->
       (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
 	 if not (opcode = OpCodeInvalid || count () = i)
 	 then invalid_arg "Wrong bytecode sequence";
-	 unparse_instruction ch consts count opcode)
+	 unparse_instruction ch count opcode)
       code

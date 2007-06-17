@@ -229,7 +229,7 @@ let parse_stackmap_frame consts ch =
 		| 4 -> VLong
 		| 5 -> VNull
 		| 6 -> VUninitializedThis
-		| 7 -> VObject (get_object_type consts ch)
+		| 7 -> VObject (get_object_type consts (read_ui16 ch))
 		| 8 -> VUninitialized (read_ui16 ch)
 		| n -> prerr_endline ("type = " ^ string_of_int n); raise Exit
 	in let parse_type_info_array ch nb_item =
@@ -250,7 +250,7 @@ let rec parse_code consts ch =
 	let clen = read_i32 ch in
 	let code = 
 	  try
-	    JInstruction.opcodes2code consts (JCode.parse_code ch consts clen)
+	    JInstruction.opcodes2code consts (JCode.parse_code ch clen)
 	  with
 	      JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n)
 	in
@@ -406,7 +406,7 @@ let parse_class ch =
 	) in
 	let consts = Array.mapi (fun i _ -> expand_constant consts i) consts in
 	let flags = parse_access_flags ch in
-	let this = get_class consts ch in
+	let this = get_class consts (read_ui16 ch) in
 	let super_idx = read_ui16 ch in
 	let super = (if super_idx = 0 then None else
 		match get_constant_value consts super_idx with
@@ -414,7 +414,7 @@ let parse_class ch =
 		| _ -> error "Invalid super index")
 	in
 	let interface_count = read_ui16 ch in
-	let interfaces = List.init interface_count (fun _ -> get_class consts ch) in
+	let interfaces = List.init interface_count (fun _ -> get_class consts (read_ui16 ch)) in
 	let field_count = read_ui16 ch in
 	let fields = List.init field_count (fun _ -> parse_field consts ch) in
 	let method_count = read_ui16 ch in

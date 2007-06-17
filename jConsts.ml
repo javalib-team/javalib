@@ -44,28 +44,28 @@ let get_constant_value c n =
     | ConstValue v -> v
     | _ -> error "Invalie constant value index"
 
-let get_object_type consts ch =
-	match get_constant consts (read_ui16 ch) with
+let get_object_type consts i =
+	match get_constant consts i with
 	  | ConstValue (ConstClass n) -> n
 	  | _ -> error "Invalid class index"
 
-let get_class consts ch =
-  match get_object_type consts ch with
+let get_class consts i =
+  match get_object_type consts i with
     | TClass c -> c
     | _ -> failwith "array type descriptor not allowed here"
 
-let get_field consts ch =
-	match get_constant consts (read_ui16 ch) with
+let get_field consts i =
+	match get_constant consts i with
 	| ConstField (c, f, s) -> c, f, s
 	| _ -> error "Invalid field index"
 	
-let get_method consts ch =
-	match get_constant consts (read_ui16 ch) with
+let get_method consts i =
+	match get_constant consts i with
 	| ConstMethod (c, m, s) -> c, m, s
 	| _ -> error "Invalid method index"
 	
-let get_interface_method consts ch =
-	match get_constant consts (read_ui16 ch) with
+let get_interface_method consts i =
+	match get_constant consts i with
 	| ConstInterfaceMethod (c, m, s) -> c, m, s
 	| _ -> error "Invalid interface method index"
 	

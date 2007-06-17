@@ -32,8 +32,8 @@ let opcode2instruction consts = function
 	| OpCodeDConst v -> OpDConst v
 	| OpCodeBIPush v -> OpBIPush v
 	| OpCodeSIPush v -> OpSIPush v
-	| OpCodeLdc1 v -> OpLdc1 v
-	| OpCodeLdc2w v -> OpLdc2w v
+	| OpCodeLdc1 n -> OpLdc1 (get_constant_value consts n)
+	| OpCodeLdc2w n -> OpLdc2w (get_constant_value consts n)
 
 	| OpCodeLoad (k, l) -> OpLoad (k, l)
 	| OpCodeALoad l -> OpALoad l
@@ -131,25 +131,44 @@ let opcode2instruction consts = function
 	| OpCodeAReturn -> OpAReturn
 	| OpCodeReturnVoid -> OpReturnVoid
 
-	| OpCodeGetStatic (c, n, s) -> OpGetStatic (c, n, s)
-	| OpCodePutStatic (c, n, s) -> OpPutStatic (c, n, s)
-	| OpCodeGetField (c, n, s) -> OpGetField (c, n, s)
-	| OpCodePutField (c, n, s) -> OpPutField (c, n, s)
-	| OpCodeInvokeVirtual (t, n, s) -> OpInvokeVirtual (t, n, s)
-	| OpCodeInvokeNonVirtual (t, n, s) -> OpInvokeNonVirtual (t, n, s)
-	| OpCodeInvokeStatic (t, n, s) -> OpInvokeStatic (t, n, s)
-	| OpCodeInvokeInterface (t, n, s, c) -> OpInvokeInterface (t, n, s, c)
+	| OpCodeGetStatic i ->
+	    let c, n, s = get_field consts i in
+	      OpGetStatic (c, n, s)
+	| OpCodePutStatic i ->
+	    let c, n, s = get_field consts i in
+	      OpPutStatic (c, n, s)
+	| OpCodeGetField i ->
+	    let c, n, s = get_field consts i in
+	      OpGetField (c, n, s)
+	| OpCodePutField i ->
+	    let c, n, s = get_field consts i in
+	      OpPutField (c, n, s)
+	| OpCodeInvokeVirtual i ->
+	    let t, n, s = get_method consts i in
+	      OpInvokeVirtual (t, n, s)
+	| OpCodeInvokeNonVirtual i ->
+	    (match get_method consts i with
+	       | TClass t, n, s -> OpInvokeNonVirtual (t, n, s)
+	       | _ -> failwith "invokespecial in an array class")
+	| OpCodeInvokeStatic i ->
+	    (match get_method consts i with
+	       | TClass t, n, s -> OpInvokeStatic (t, n, s)
+	       | _ -> failwith "invokestatic in an array class")
+	| OpCodeInvokeInterface (i, c) ->
+	    let t, n, s = get_interface_method consts i in
+	      OpInvokeInterface (t, n, s, c)
 
-	| OpCodeNew n -> OpNew n
+	| OpCodeNew i -> OpNew (get_class consts i)
 	| OpCodeNewArray bt -> OpNewArray bt
-	| OpCodeANewArray ot -> OpANewArray ot
+	| OpCodeANewArray i -> OpANewArray (get_object_type consts i)
 	| OpCodeArrayLength -> OpArrayLength
 	| OpCodeThrow -> OpThrow
-	| OpCodeCheckCast ot -> OpCheckCast ot
-	| OpCodeInstanceOf ot -> OpInstanceOf ot
+	| OpCodeCheckCast i -> OpCheckCast (get_object_type consts i)
+	| OpCodeInstanceOf i -> OpInstanceOf (get_object_type consts i)
 	| OpCodeMonitorEnter -> OpMonitorEnter
 	| OpCodeMonitorExit -> OpMonitorExit
-	| OpCodeAMultiNewArray (ot, dims) -> OpAMultiNewArray (ot, dims)
+	| OpCodeAMultiNewArray (ot, dims) ->
+	    OpAMultiNewArray (get_object_type consts ot, dims)
 	| OpCodeIfNull pc -> OpIfNull pc
 	| OpCodeIfNonNull pc -> OpIfNonNull pc
 	| OpCodeGotoW pc -> OpGotoW pc
@@ -171,8 +190,8 @@ let instruction2opcode consts = function
 	| OpDConst v -> OpCodeDConst v
 	| OpBIPush v -> OpCodeBIPush v
 	| OpSIPush v -> OpCodeSIPush v
-	| OpLdc1 v -> OpCodeLdc1 v
-	| OpLdc2w v -> OpCodeLdc2w v
+	| OpLdc1 v -> OpCodeLdc1 (constant_to_int consts (ConstValue v))
+	| OpLdc2w v -> OpCodeLdc2w (constant_to_int consts (ConstValue v))
 
 	| OpLoad (k, l) -> OpCodeLoad (k, l)
 	| OpALoad l -> OpCodeALoad l
@@ -270,25 +289,40 @@ let instruction2opcode consts = function
 	| OpAReturn -> OpCodeAReturn
 	| OpReturnVoid -> OpCodeReturnVoid
 
-	| OpGetStatic (c, n, s) -> OpCodeGetStatic (c, n, s)
-	| OpPutStatic (c, n, s) -> OpCodePutStatic (c, n, s)
-	| OpGetField (c, n, s) -> OpCodeGetField (c, n, s)
-	| OpPutField (c, n, s) -> OpCodePutField (c, n, s)
-	| OpInvokeVirtual (t, n, s) -> OpCodeInvokeVirtual (t, n, s)
-	| OpInvokeNonVirtual (t, n, s) -> OpCodeInvokeNonVirtual (t, n, s)
-	| OpInvokeStatic (t, n, s) -> OpCodeInvokeStatic (t, n, s)
-	| OpInvokeInterface (t, n, s, c) -> OpCodeInvokeInterface (t, n, s, c)
+	| OpGetStatic (c, n, s) ->
+	    OpCodeGetStatic (constant_to_int consts (ConstField (c, n, s)))
+	| OpPutStatic (c, n, s) ->
+	    OpCodePutStatic (constant_to_int consts (ConstField (c, n, s)))
+	| OpGetField (c, n, s) ->
+	    OpCodeGetField (constant_to_int consts (ConstField (c, n, s)))
+	| OpPutField (c, n, s) ->
+	    OpCodePutField (constant_to_int consts (ConstField (c, n, s)))
+	| OpInvokeVirtual (t, n, s) ->
+	    OpCodeInvokeVirtual
+	      (constant_to_int consts (ConstMethod (t, n, s)))
+	| OpInvokeNonVirtual (t, n, s) ->
+	    OpCodeInvokeNonVirtual
+	      (constant_to_int consts (ConstMethod (TClass t, n, s)))
+	| OpInvokeStatic (t, n, s) ->
+	    OpCodeInvokeStatic
+	      (constant_to_int consts (ConstMethod (TClass t, n, s)))
+	| OpInvokeInterface (t, n, s, c) ->
+	    OpCodeInvokeInterface
+	      (constant_to_int consts (ConstInterfaceMethod (t, n, s)), c)
 
-	| OpNew n -> OpCodeNew n
+	| OpNew n ->
+	    OpCodeNew
+	      (constant_to_int consts (ConstValue (ConstClass (TClass n))))
 	| OpNewArray bt -> OpCodeNewArray bt
-	| OpANewArray ot -> OpCodeANewArray ot
+	| OpANewArray ot -> OpCodeANewArray (constant_to_int consts (ConstValue (ConstClass ot)))
 	| OpArrayLength -> OpCodeArrayLength
 	| OpThrow -> OpCodeThrow
-	| OpCheckCast ot -> OpCodeCheckCast ot
-	| OpInstanceOf ot -> OpCodeInstanceOf ot
+	| OpCheckCast ot -> OpCodeCheckCast (constant_to_int consts (ConstValue (ConstClass ot)))
+	| OpInstanceOf ot -> OpCodeInstanceOf (constant_to_int consts (ConstValue (ConstClass ot)))
 	| OpMonitorEnter -> OpCodeMonitorEnter
 	| OpMonitorExit -> OpCodeMonitorExit
-	| OpAMultiNewArray (ot, dims) -> OpCodeAMultiNewArray (ot, dims)
+	| OpAMultiNewArray (i, dims) ->
+	    OpCodeAMultiNewArray (constant_to_int consts (ConstValue (ConstClass i)), dims)
 	| OpIfNull pc -> OpCodeIfNull pc
 	| OpIfNonNull pc -> OpCodeIfNonNull pc
 	| OpGotoW pc -> OpCodeGotoW pc
@@ -304,7 +338,7 @@ let opcode_length consts offset opcode =
     for i = 1 to offset mod 4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
-    JCode.unparse_instruction ch consts count opcode;
+    JCode.unparse_instruction ch count opcode;
     let length = count () - (offset mod 4) in
       assert (String.length (close_out ch) - (offset mod 4) = length);
       length

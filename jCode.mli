@@ -21,13 +21,13 @@
 
 (** Parse a sequence of instructions of given size (in bytes) and
     returns an array of instructions. *)
-val parse_code : IO.input -> JClass.constant array -> int -> JOpCode.opcode array
+val parse_code : IO.input -> int -> JOpCode.opcode array
 
 (** Unparse a sequence of instructions. Provided constants are kept unchanged.
     Missing constant are added at the end of the constant pool if
     needed. *)
 val unparse_code :
-  'a IO.output -> JClass.constant DynArray.t -> JOpCode.opcode array -> unit
+  'a IO.output -> JOpCode.opcode array -> unit
 
 (**/**)
 
@@ -36,6 +36,6 @@ exception Invalid_opcode of int
 (* For testing. *)
 
 val parse_full_opcode :
-  IO.input -> (unit -> int) -> JClass.constant array -> JOpCode.opcode
+  IO.input -> (unit -> int) -> JOpCode.opcode
 val unparse_instruction :
-  'a IO.output -> JClass.constant DynArray.t -> (unit -> int) -> JOpCode.opcode -> unit
+  'a IO.output -> (unit -> int) -> JOpCode.opcode -> unit

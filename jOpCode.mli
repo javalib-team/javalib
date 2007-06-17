@@ -30,8 +30,8 @@ type opcode =
 	| OpCodeDConst of float
 	| OpCodeBIPush of int
 	| OpCodeSIPush of int
-	| OpCodeLdc1 of constant_value
-	| OpCodeLdc2w of constant_value
+	| OpCodeLdc1 of int
+	| OpCodeLdc2w of int
 
 	| OpCodeLoad of kind * int
 	| OpCodeALoad of int
@@ -129,25 +129,25 @@ type opcode =
 	| OpCodeAReturn
 	| OpCodeReturnVoid
 
-	| OpCodeGetStatic of class_name * string * field_signature
-	| OpCodePutStatic of class_name * string * field_signature
-	| OpCodeGetField of class_name * string * field_signature
-	| OpCodePutField of class_name * string * field_signature
-	| OpCodeInvokeVirtual of object_type * string * method_signature
-	| OpCodeInvokeNonVirtual of class_name * string * method_signature
-	| OpCodeInvokeStatic of class_name * string * method_signature
-	| OpCodeInvokeInterface of class_name * string * method_signature * int (** count *)
+	| OpCodeGetStatic of int
+	| OpCodePutStatic of int
+	| OpCodeGetField of int
+	| OpCodePutField of int
+	| OpCodeInvokeVirtual of int
+	| OpCodeInvokeNonVirtual of int
+	| OpCodeInvokeStatic of int
+	| OpCodeInvokeInterface of int * int (** count *)
 
-	| OpCodeNew of class_name
+	| OpCodeNew of int
 	| OpCodeNewArray of basic_type
-	| OpCodeANewArray of object_type
+	| OpCodeANewArray of int
 	| OpCodeArrayLength
 	| OpCodeThrow
-	| OpCodeCheckCast of object_type
-	| OpCodeInstanceOf of object_type
+	| OpCodeCheckCast of int
+	| OpCodeInstanceOf of int
 	| OpCodeMonitorEnter
 	| OpCodeMonitorExit
-	| OpCodeAMultiNewArray of object_type * int (** ClassInfo, dims *)
+	| OpCodeAMultiNewArray of int * int (** ClassInfo, dims *)
 	| OpCodeIfNull of int
 	| OpCodeIfNonNull of int
 	| OpCodeGotoW of int

@@ -42,18 +42,18 @@ val get_constant : JClass.constant array -> int -> JClass.constant
 
 val get_constant_value : JClass.constant array -> int -> JClass.constant_value
 
-val get_object_type : JClass.constant array -> IO.input -> JClass.object_type
-val get_class : JClass.constant array -> IO.input -> JClass.class_name
+val get_object_type : JClass.constant array -> int -> JClass.object_type
+val get_class : JClass.constant array -> int -> JClass.class_name
 
 val get_string : JClass.constant array -> IO.input -> string
 
-val get_field : JClass.constant array -> IO.input ->
+val get_field : JClass.constant array -> int ->
   JClass.class_name * string * JClass.field_signature
 
-val get_method : JClass.constant array -> IO.input ->
+val get_method : JClass.constant array -> int ->
   JClass.object_type * string * JClass.method_signature
 
-val get_interface_method : JClass.constant array -> IO.input ->
+val get_interface_method : JClass.constant array -> int ->
   JClass.class_name * string * JClass.method_signature
 
 (* This should go somewhere else. *)

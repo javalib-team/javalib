@@ -221,7 +221,7 @@ let unparse_code_attribute ch consts code =
        write_ui16 ch code.c_max_locals;
        write_with_length write_i32 ch
 	 (function ch ->
-	    JCode.unparse_code ch consts (JInstruction.code2opcodes consts code.c_code));
+	    JCode.unparse_code ch (JInstruction.code2opcodes consts code.c_code));
        write_with_size write_ui16 ch
 	 (function e ->
 	    write_ui16 ch e.e_start;
