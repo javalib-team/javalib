@@ -39,14 +39,14 @@ let encode_class_name = function
   | [] -> invalid_arg "encode_class_name"
 
 let unparse_basic_type = function
-  | TByte -> "B"
-  | TChar -> "C"
-  | TDouble -> "D"
-  | TFloat -> "F"
-  | TInt -> "I"
-  | TLong -> "J"
-  | TShort -> "S"
-  | TBool -> "Z"
+  | `Byte -> "B"
+  | `Char -> "C"
+  | `Double -> "D"
+  | `Float -> "F"
+  | `Int -> "I"
+  | `Long -> "J"
+  | `Short -> "S"
+  | `Bool -> "Z"
 
 let rec unparse_object_type = function
   | TClass c ->

@@ -25,17 +25,51 @@
     For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
+(** Numerical types that are not smaller than int. *)
+type other_num = [
+| `Long
+| `Float
+| `Double
+]
+
+(** JVM basic type (int = short = char = byte = bool). *)
+type jvm_basic_type = [
+| `Int2Bool
+| other_num
+]
+
+(** JVM type (int = short = char = byte = bool, all objects have the same type). *)
+type jvm_type = [
+| jvm_basic_type
+| `Object
+]
+
+(** JVM array element type (byte = bool, all objects have the same type). *)
+type jvm_array_type = [
+| `Int
+| `Short
+| `Char
+| `ByteBool
+| other_num
+| `Object
+]
+
+(** JVM return type (byte = bool, all objects have the same type). *)
+type jvm_return_type = [
+|  jvm_basic_type
+| `Object
+| `Void
+]
 
 (** Java basic type. *)
-type basic_type =
-  | TByte
-  | TChar
-  | TDouble
-  | TFloat
-  | TInt
-  | TLong
-  | TShort
-  | TBool
+type java_basic_type = [
+| `Int
+| `Short
+| `Char
+| `Byte
+| `Bool
+| other_num
+]
 
 (** Java object type *)
 type object_type =
@@ -44,7 +78,7 @@ type object_type =
 
 (** Java type *)
 and value_type =
-  | TBasic of basic_type
+  | TBasic of java_basic_type
   | TObject of object_type
 
 (** Field signature. *)
@@ -77,149 +111,123 @@ type constant =
   | ConstStringUTF8 of string
   | ConstUnusable
 
-(** JVM basic type (int = short = char = byte = bool). *)
-type kind =
-	| KInt
-	| KLong
-	| KFloat
-	| KDouble
-
 (** Instruction. *)
 type opcode =
-	| OpNop
-	| OpAConstNull
-	| OpIConst of int32
-	| OpLConst of int64
-	| OpFConst of float
-	| OpDConst of float
-	| OpBIPush of int
-	| OpSIPush of int
-	| OpLdc1 of constant_value
-	| OpLdc2w of constant_value
 
-	| OpLoad of kind * int
-	| OpALoad of int
+  (* Access to a local variable *)
+  | OpLoad of jvm_type * int
+  | OpStore of jvm_type * int
+  | OpIInc of int * int (** index, increment *)
 
-	| OpArrayLoad of kind
-	| OpAALoad
-	| OpBALoad
-	| OpCALoad
-	| OpSALoad
+  (* Stack permutation *)
+  | OpPop
+  | OpPop2
+  | OpDup
+  | OpDupX1
+  | OpDupX2
+  | OpDup2
+  | OpDup2X1
+  | OpDup2X2
+  | OpSwap
 
-	| OpStore of kind * int
-	| OpAStore of int
+  (* Constant loading *)
+  | OpConst of [
+      `ANull (** AConstNull  *)
+    | `I of int32
+    | `L of int64
+    | `F of float
+    | `D of float
+    | `B of int (** BIPush *)
+    | `S of int
+    ]
+  | OpLdc of constant_value
 
-	| OpArrayStore of kind
-	| OpAAStore
-	| OpBAStore
-	| OpCAStore
-	| OpSAStore
+  (* Arithmetic *)
+  | OpAdd of jvm_basic_type
+  | OpSub of jvm_basic_type
+  | OpMult of jvm_basic_type
+  | OpDiv of jvm_basic_type
+  | OpRem of jvm_basic_type
+  | OpNeg of jvm_basic_type
 
-	| OpPop
-	| OpPop2
-	| OpDup
-	| OpDupX1
-	| OpDupX2
-	| OpDup2
-	| OpDup2X1
-	| OpDup2X2
-	| OpSwap
+  (* Logic *)
+  | OpIShl (* Use an I/L argument *)
+  | OpLShl
+  | OpIShr
+  | OpLShr
+  | OpIUShr
+  | OpLUShr
+  | OpIAnd
+  | OpLAnd
+  | OpIOr
+  | OpLOr
+  | OpIXor
+  | OpLXor
 
-	| OpAdd of kind
-	| OpSub of kind
-	| OpMult of kind
-	| OpDiv of kind
-	| OpRem of kind
-	| OpNeg of kind
+  (* Conversion *)
+  | OpI2L (* Use `I of [`L | `F  | `D] *)
+  | OpI2F
+  | OpI2D
+  | OpL2I
+  | OpL2F
+  | OpL2D
+  | OpF2I
+  | OpF2L
+  | OpF2D
+  | OpD2I
+  | OpD2L
+  | OpD2F
+  | OpI2B (* Those three are different *)
+  | OpI2C
+  | OpI2S
 
-	| OpIShl
-	| OpLShl
-	| OpIShr
-	| OpLShr
-	| OpIUShr
-	| OpLUShr
-	| OpIAnd
-	| OpLAnd
-	| OpIOr
-	| OpLOr
-	| OpIXor
-	| OpLXor
+  | OpCmp of [`L | `FL | `FG | `DL | `DG]
 
-	| OpIInc of int * int (** index, increment *)
+  (* Conditional jump *)
+  | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
+  | OpIfCmp of [`IEq | `INe | `ILt | `IGe | `IGt | `ILe | `AEq | `ANe] * int
 
-	| OpI2L
-	| OpI2F
-	| OpI2D
-	| OpL2I
-	| OpL2F
-	| OpL2D
-	| OpF2I
-	| OpF2L
-	| OpF2D
-	| OpD2I
-	| OpD2L
-	| OpD2F
-	| OpI2B
-	| OpI2C
-	| OpI2S
+  (* Unconditional jump *)
+  | OpGoto of int
+  | OpJsr of int
+  | OpRet of int
+  | OpTableSwitch of int * int32 * int32 * int array
+  | OpLookupSwitch of int * (int32 * int) list
 
-	| OpLCmp
-	| OpFCmpL
-	| OpFCmpG
-	| OpDCmpL
-	| OpDCmpG
-	| OpIfEq of int
-	| OpIfNe of int
-	| OpIfLt of int
-	| OpIfGe of int
-	| OpIfGt of int
-	| OpIfLe of int
-	| OpICmpEq of int
-	| OpICmpNe of int
-	| OpICmpLt of int
-	| OpICmpGe of int
-	| OpICmpGt of int
-	| OpICmpLe of int
-	| OpACmpEq of int
-	| OpACmpNe of int
-	| OpGoto of int
-	| OpJsr of int
-	| OpRet of int
+  (* Heap and static fields *)
+  | OpNew of class_name
+  | OpNewArray of value_type
+  | OpAMultiNewArray of object_type * int (** ClassInfo, dims *)
+  | OpCheckCast of object_type
+  | OpInstanceOf of object_type
+  | OpGetStatic of class_name * string * field_signature
+  | OpPutStatic of class_name * string * field_signature
+  | OpGetField of class_name * string * field_signature
+  | OpPutField of class_name * string * field_signature
+  | OpArrayLength
+  | OpArrayLoad of jvm_array_type
+  | OpArrayStore of jvm_array_type
 
-	| OpTableSwitch of int * int32 * int32 * int array
-	| OpLookupSwitch of int * (int32 * int) list
+  (* Method invocation and return *)
+  | OpInvoke
+      of [
+	`Virtual of object_type
+      | `Special of class_name
+      | `Static of class_name
+      | `Interface of class_name
+      ]
+	* string * method_signature
+  | OpReturn of jvm_return_type
 
-	| OpReturn of kind
-	| OpAReturn
-	| OpReturnVoid
+  (* Exceptions and threads *)
+  | OpThrow
+  | OpMonitorEnter
+  | OpMonitorExit
 
-	| OpGetStatic of class_name * string * field_signature
-	| OpPutStatic of class_name * string * field_signature
-	| OpGetField of class_name * string * field_signature
-	| OpPutField of class_name * string * field_signature
-	| OpInvokeVirtual of object_type * string * method_signature
-	| OpInvokeNonVirtual of class_name * string * method_signature
-	| OpInvokeStatic of class_name * string * method_signature
-	| OpInvokeInterface of class_name * string * method_signature * int (** count *)
-
-	| OpNew of class_name
-	| OpNewArray of basic_type
-	| OpANewArray of object_type
-	| OpArrayLength
-	| OpThrow
-	| OpCheckCast of object_type
-	| OpInstanceOf of object_type
-	| OpMonitorEnter
-	| OpMonitorExit
-	| OpAMultiNewArray of object_type * int (** ClassInfo, dims *)
-	| OpIfNull of int
-	| OpIfNonNull of int
-	| OpGotoW of int
-	| OpJsrW of int
-	| OpBreakpoint
-	| OpRetW of int
-
-	| OpInvalid
+  (* Other *)
+  | OpNop
+  | OpBreakpoint
+  | OpInvalid
 
 type opcodes = opcode array
 
@@ -278,28 +286,30 @@ type access_flag =
 
 type access_flags = access_flag list
 
+(* Flags and attributes should be related for fields, methods and classes. *)
+
 type jfield = {
 	f_name : string;
 	f_signature : field_signature;
-	f_flags : access_flags;
-	f_attributes : attribute list;
+	f_flags : access_flags (* Should be specialized *);
+	f_attributes : attribute list (* Should be specialized *);
 }
 
 type jmethod = {
 	m_name : string;
 	m_signature : method_signature;
-	m_flags : access_flags;	
-	m_code : jcode option;
-	m_attributes : attribute list;
+	m_flags : access_flags (* Should be specialized *);	
+	m_code : jcode option; (* Remove that *)
+	m_attributes : attribute list (* Should be specialized *);
 }
 
 type jclass = {
 	j_name : class_name;
-	j_super : class_name option;
+	j_super : class_name option (* Remove the option *);
 	j_interfaces : class_name list;
 	j_consts : constant array;
-	j_flags : access_flags;
+	j_flags : access_flags (* Should be specialized *);
 	j_fields : jfield list;
 	j_methods : jmethod list;
-	j_attributes : attribute list;
+	j_attributes : attribute list (* Should be specialized *);
 }

@@ -29,11 +29,18 @@ open JOpCode
 
 exception Invalid_opcode of int
 
-let kind = function
-	| 0 -> KInt
-	| 1 -> KLong
-	| 2 -> KFloat
-	| 3 -> KDouble
+let jvm_basic_type = function
+	| 0 -> `Int2Bool
+	| 1 -> `Long
+	| 2 -> `Float
+	| 3 -> `Double
+	| _ -> assert false
+	    
+let jvm_basic_type' = function
+	| 0 -> `Int
+	| 1 -> `Long
+	| 2 -> `Float
+	| 3 -> `Double
 	| _ -> assert false
 	    
 let read_unsigned ch wide =
@@ -73,27 +80,27 @@ let parse_opcode op ch wide =
 	| 18 ->
 	    OpCodeLdc1 (IO.read_byte ch)
 	| 19 ->
-	    OpCodeLdc1 (read_ui16 ch)
+	    OpCodeLdc1w (read_ui16 ch)
 	| 20 ->
 	    OpCodeLdc2w (read_ui16 ch)
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
-		OpCodeLoad (kind (op - 21),read_unsigned ch wide)
+		OpCodeLoad (jvm_basic_type (op - 21),read_unsigned ch wide)
 	| 25 ->
 		OpCodeALoad (read_unsigned ch wide)
 	| 26 | 27 | 28 | 29 ->
-		OpCodeLoad (KInt,op - 26)
+		OpCodeLoad (`Int2Bool,op - 26)
 	| 30 | 31 | 32 | 33 ->
-		OpCodeLoad (KLong,op - 30)
+		OpCodeLoad (`Long,op - 30)
 	| 34 | 35 | 36 | 37 ->
-		OpCodeLoad (KFloat,op - 34)
+		OpCodeLoad (`Float,op - 34)
 	| 38 | 39 | 40 | 41 ->
-		OpCodeLoad (KDouble,op - 38)
+		OpCodeLoad (`Double,op - 38)
 	| 42 | 43 | 44 | 45 ->
 		OpCodeALoad (op - 42)
 	(* ---- array load ---------------------------- *)
 	| 46 | 47 | 48 | 49 ->
-		OpCodeArrayLoad (kind (op - 46))
+		OpCodeArrayLoad (jvm_basic_type' (op - 46))
 	| 50 ->
 		OpCodeAALoad
 	| 51 ->
@@ -104,22 +111,22 @@ let parse_opcode op ch wide =
 		OpCodeSALoad		
 	(* ---- store ----------------------------------- *)
 	| 54 | 55 | 56 | 57 ->
-		OpCodeStore (kind (op - 54),read_unsigned ch wide)
+		OpCodeStore (jvm_basic_type (op - 54),read_unsigned ch wide)
 	| 58 ->
 		OpCodeAStore (read_unsigned ch wide)
 	| 59 | 60 | 61 | 62 ->
-		OpCodeStore (KInt , op - 59)
+		OpCodeStore (`Int2Bool , op - 59)
 	| 63 | 64 | 65 | 66 ->
-		OpCodeStore (KLong , op - 63)
+		OpCodeStore (`Long , op - 63)
 	| 67 | 68 | 69 | 70 ->
-		OpCodeStore (KFloat , op - 67)
+		OpCodeStore (`Float , op - 67)
 	| 71 | 72 | 73 | 74 ->
-		OpCodeStore (KDouble , op - 71)
+		OpCodeStore (`Double , op - 71)
 	| 75 | 76 | 77 | 78 ->
 		OpCodeAStore (op - 75)
 	(* ---- array store ---------------------------- *)
 	| 79 | 80 | 81 | 82 ->
-		OpCodeArrayStore (kind (op - 79))
+		OpCodeArrayStore (jvm_basic_type' (op - 79))
 	| 83 ->
 		OpCodeAAStore
 	| 84 ->
@@ -149,17 +156,17 @@ let parse_opcode op ch wide =
 		OpCodeSwap
 	(* ---- arithmetics ---------------------------- *)
 	| 96 | 97 | 98 | 99 ->
-		OpCodeAdd (kind (op - 96))
+		OpCodeAdd (jvm_basic_type (op - 96))
 	| 100 | 101 | 102 | 103 ->
-		OpCodeSub (kind (op - 100))
+		OpCodeSub (jvm_basic_type (op - 100))
 	| 104 | 105 | 106 | 107 ->
-		OpCodeMult (kind (op - 104))
+		OpCodeMult (jvm_basic_type (op - 104))
 	| 108 | 109 | 110 | 111 ->
-		OpCodeDiv (kind (op - 108))
+		OpCodeDiv (jvm_basic_type (op - 108))
 	| 112 | 113 | 114 | 115 ->
-		OpCodeRem (kind (op - 112))
+		OpCodeRem (jvm_basic_type (op - 112))
 	| 116 | 117 | 118 | 119 ->
-		OpCodeNeg (kind (op - 116))
+		OpCodeNeg (jvm_basic_type (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
 		OpCodeIShl 
@@ -283,7 +290,7 @@ let parse_opcode op ch wide =
 		OpCodeLookupSwitch (def,tbl)
 	(* ---- returns --------------------------------- *)
 	| 172 | 173 | 174 | 175 ->
-		OpCodeReturn (kind (op - 172))
+		OpCodeReturn (jvm_basic_type (op - 172))
 	| 176 ->
 		OpCodeAReturn
 	| 177 ->
@@ -313,14 +320,14 @@ let parse_opcode op ch wide =
 		OpCodeNew (read_ui16 ch)
 	| 188 ->
 		OpCodeNewArray (match IO.read_byte ch with
-			| 4 -> TBool
-			| 5 -> TChar
-			| 6 -> TFloat
-			| 7 -> TDouble
-			| 8 -> TByte
-			| 9 -> TShort
-			| 10 -> TInt
-			| 11 -> TLong
+			| 4 -> `Bool
+			| 5 -> `Char
+			| 6 -> `Float
+			| 7 -> `Double
+			| 8 -> `Byte
+			| 9 -> `Short
+			| 10 -> `Int
+			| 11 -> `Long
 			| _ -> raise Exit)
 	| 189 ->
 		OpCodeANewArray (read_ui16 ch)
@@ -471,17 +478,17 @@ let simple ch op =
   with
       Not_found -> invalid_arg "simple"
 
-let int_of_kind = function
-  | KInt -> 0
-  | KLong -> 1
-  | KFloat -> 2
-  | KDouble -> 3
+let int_of_jvm_basic_type = function
+  | `Int2Bool -> 0
+  | `Long -> 1
+  | `Float -> 2
+  | `Double -> 3
 
-(* Instructions with a kind argument added to the base opcode. *)
-let kind ch inst =
-  let kind, opcode = match inst with
-    | OpCodeArrayLoad k -> k, 46
-    | OpCodeArrayStore k -> k, 79
+(* Instructions with a jvm_basic_type argument added to the base opcode. *)
+let jvm_basic_type ch inst =
+  let jvm_basic_type, opcode = match inst with
+    | OpCodeArrayLoad k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 46
+    | OpCodeArrayStore k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 79
     | OpCodeAdd i -> i, 96
     | OpCodeSub i -> i, 100
     | OpCodeMult i -> i, 104
@@ -489,9 +496,9 @@ let kind ch inst =
     | OpCodeRem i -> i, 112
     | OpCodeNeg i -> i, 116
     | OpCodeReturn k -> k, 172
-    | _ -> invalid_arg "kind"
+    | _ -> invalid_arg "jvm_basic_type"
   in
-    write_ui8 ch (opcode + int_of_kind kind)
+    write_ui8 ch (opcode + int_of_jvm_basic_type jvm_basic_type)
 
 let unparse_local_instruction ch opcode value =
   if value <= 0xFF
@@ -518,17 +525,17 @@ let ilfda_loadstore ch instr =
       write_ui8 ch
 	(value +
 	   match instr with
-	     | OpCodeLoad (kind, _) -> 26 + 4 * int_of_kind kind
+	     | OpCodeLoad (jvm_basic_type, _) -> 26 + 4 * int_of_jvm_basic_type jvm_basic_type
 	     | OpCodeALoad _ -> 42
-	     | OpCodeStore (kind, _) -> 59 + 4 * int_of_kind kind
+	     | OpCodeStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
 	     | OpCodeAStore _ -> 75
 	     | _ -> assert false)
     else
       unparse_local_instruction ch
 	(match instr with
-	   | OpCodeLoad (kind, _) -> 21 +  int_of_kind kind
+	   | OpCodeLoad (jvm_basic_type, _) -> 21 +  int_of_jvm_basic_type jvm_basic_type
 	   | OpCodeALoad _ -> 25
-	   | OpCodeStore (kind, _) -> 54 +  int_of_kind kind
+	   | OpCodeStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
 	   | OpCodeAStore _ -> 58
 	   | _ -> assert false)
 	value
@@ -563,6 +570,7 @@ let i16 ch inst =
 (* Instructions with one 16 bits unsigned argument *)
 let ui16 ch inst =
   let i, opcode = match inst with
+    | OpCodeLdc1w i -> i, 19
     | OpCodeRetW i -> i, 209
     | OpCodeNew i -> i, 187
     | OpCodeANewArray i -> i, 189
@@ -581,14 +589,14 @@ let ui16 ch inst =
     write_ui16 ch i
 
 let basic_type = [|
-  TBool;
-  TChar;
-  TFloat;
-  TDouble;
-  TByte;
-  TShort;
-  TInt;
-  TLong
+  `Bool;
+  `Char;
+  `Float;
+  `Double;
+  `Byte;
+  `Short;
+  `Int;
+  `Long
 |]
 
 let padding ch count =
@@ -607,15 +615,8 @@ let other count ch = function
       write_ui8 ch 16;
       write_ui8 ch n
   | OpCodeLdc1 index ->
-      if
-	index <= 0xFF
-      then (
-	write_ui8 ch 18;
-	write_ui8 ch index;
-      ) else (
-	write_ui8 ch 19;
-	write_ui16 ch index;
-      )
+      write_ui8 ch 18;
+      write_ui8 ch index
   | OpCodeLdc2w index ->
       write_ui8 ch 20;
       write_ui16 ch index
@@ -691,7 +692,7 @@ let unparse_instruction ch count inst =
 	     Invalid_argument _ -> ())
       [
 	simple;
-	kind;
+	jvm_basic_type;
 	ilfda_loadstore;
 	i16;
 	ui16;

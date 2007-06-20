@@ -19,6 +19,19 @@
 
 (** Low level representation of instructions. *)
 
+(** The following conventions are respected:
+    - specialized instructions for particular immediate values are
+    coded as their generic form
+    - instruction that exist with all Java basic types or all JVM basic
+    types are coded with the same opcode and a type argument, when they
+    have the same specialized forms
+    - immediate values are encoded into the apropriate Caml type
+    - references to the constant pool are given by their index
+    - instructions that may be preceded by the "Wide" opcode are coded
+    in the same way (same constructor) for normal and extended format
+    - instruction that have a extended format with a dedicated opcode
+    are coded with a separate constructor. *)
+
 open JClass
 
 type opcode =
@@ -31,21 +44,22 @@ type opcode =
 	| OpCodeBIPush of int
 	| OpCodeSIPush of int
 	| OpCodeLdc1 of int
+	| OpCodeLdc1w of int
 	| OpCodeLdc2w of int
 
-	| OpCodeLoad of kind * int
+	| OpCodeLoad of jvm_basic_type * int
 	| OpCodeALoad of int
 
-	| OpCodeArrayLoad of kind
+	| OpCodeArrayLoad of [`Int | other_num]
 	| OpCodeAALoad
 	| OpCodeBALoad
 	| OpCodeCALoad
 	| OpCodeSALoad
 
-	| OpCodeStore of kind * int
+	| OpCodeStore of jvm_basic_type * int
 	| OpCodeAStore of int
 
-	| OpCodeArrayStore of kind
+	| OpCodeArrayStore of [`Int | other_num]
 	| OpCodeAAStore
 	| OpCodeBAStore
 	| OpCodeCAStore
@@ -61,12 +75,12 @@ type opcode =
 	| OpCodeDup2X2
 	| OpCodeSwap
 
-	| OpCodeAdd of kind
-	| OpCodeSub of kind
-	| OpCodeMult of kind
-	| OpCodeDiv of kind
-	| OpCodeRem of kind
-	| OpCodeNeg of kind
+	| OpCodeAdd of jvm_basic_type
+	| OpCodeSub of jvm_basic_type
+	| OpCodeMult of jvm_basic_type
+	| OpCodeDiv of jvm_basic_type
+	| OpCodeRem of jvm_basic_type
+	| OpCodeNeg of jvm_basic_type
 
 	| OpCodeIShl
 	| OpCodeLShl
@@ -125,7 +139,7 @@ type opcode =
 	| OpCodeTableSwitch of int * int32 * int32 * int array
 	| OpCodeLookupSwitch of int * (int32 * int) list
 
-	| OpCodeReturn of kind
+	| OpCodeReturn of jvm_basic_type
 	| OpCodeAReturn
 	| OpCodeReturnVoid
 
@@ -139,7 +153,7 @@ type opcode =
 	| OpCodeInvokeInterface of int * int (** count *)
 
 	| OpCodeNew of int
-	| OpCodeNewArray of basic_type
+	| OpCodeNewArray of java_basic_type
 	| OpCodeANewArray of int
 	| OpCodeArrayLength
 	| OpCodeThrow

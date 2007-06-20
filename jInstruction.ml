@@ -23,35 +23,59 @@ open JConsts
 open IO
 open IO.BigEndian
 
+let count =
+  List.fold_left
+    (fun n vt ->
+       n + match vt with
+	 | TBasic (`Double | `Long) -> 2
+	 | _ -> 1)
+    1
+
 let opcode2instruction consts = function
 	| OpCodeNop -> OpNop
-	| OpCodeAConstNull -> OpAConstNull
-	| OpCodeIConst v -> OpIConst v
-	| OpCodeLConst v -> OpLConst v
-	| OpCodeFConst v -> OpFConst v
-	| OpCodeDConst v -> OpDConst v
-	| OpCodeBIPush v -> OpBIPush v
-	| OpCodeSIPush v -> OpSIPush v
-	| OpCodeLdc1 n -> OpLdc1 (get_constant_value consts n)
-	| OpCodeLdc2w n -> OpLdc2w (get_constant_value consts n)
+	| OpCodeAConstNull -> OpConst `ANull
+	| OpCodeIConst v -> OpConst (`I v)
+	| OpCodeLConst v -> OpConst (`L v)
+	| OpCodeFConst v -> OpConst (`F v)
+	| OpCodeDConst v -> OpConst (`D v)
+	| OpCodeBIPush v -> OpConst (`B v)
+	| OpCodeSIPush v -> OpConst (`S v)
+	| OpCodeLdc1 n
+	| OpCodeLdc1w n ->
+	    OpLdc
+	      (match get_constant_value consts n with
+		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ as c -> c
+		 | ConstLong _ | ConstDouble _ -> failwith "invalid constant for Ldc1")
+	| OpCodeLdc2w n ->
+	    OpLdc
+	      (match get_constant_value consts n with
+		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
+		     failwith "invalid constant for Ldc2"
+		 | ConstLong _ | ConstDouble _ as c -> c)
 
-	| OpCodeLoad (k, l) -> OpLoad (k, l)
-	| OpCodeALoad l -> OpALoad l
+	| OpCodeLoad (k, l) ->
+	    OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
+	| OpCodeALoad l -> OpLoad (`Object, l)
 
-	| OpCodeArrayLoad k -> OpArrayLoad k
-	| OpCodeAALoad -> OpAALoad
-	| OpCodeBALoad -> OpBALoad
-	| OpCodeCALoad -> OpCALoad
-	| OpCodeSALoad -> OpSALoad
+	| OpCodeArrayLoad k ->
+	    OpArrayLoad (k : [`Int | other_num] :> [> `Int | other_num])
+	| OpCodeAALoad -> OpArrayLoad `Object
+	| OpCodeBALoad -> OpArrayLoad `ByteBool
+	| OpCodeCALoad -> OpArrayLoad `Char
+	| OpCodeSALoad -> OpArrayLoad `Short
 
-	| OpCodeStore (k, l) -> OpStore (k, l)
-	| OpCodeAStore l -> OpAStore l
 
-	| OpCodeArrayStore k -> OpArrayStore k
-	| OpCodeAAStore -> OpAAStore
-	| OpCodeBAStore -> OpBAStore
-	| OpCodeCAStore -> OpCAStore
-	| OpCodeSAStore -> OpSAStore
+	| OpCodeStore (k, l) ->
+	    OpStore ((k : jvm_basic_type :> [> jvm_basic_type]), l)
+	| OpCodeAStore l -> OpStore (`Object, l)
+
+	| OpCodeArrayStore k ->
+	    OpArrayStore (k : [`Int | other_num] :> [> `Int | other_num])
+
+	| OpCodeAAStore -> OpArrayStore `Object
+	| OpCodeBAStore -> OpArrayStore `ByteBool
+	| OpCodeCAStore -> OpArrayStore `Char
+	| OpCodeSAStore -> OpArrayStore `Short
 
 	| OpCodePop -> OpPop
 	| OpCodePop2 -> OpPop2
@@ -101,25 +125,25 @@ let opcode2instruction consts = function
 	| OpCodeI2C -> OpI2C
 	| OpCodeI2S -> OpI2S
 
-	| OpCodeLCmp -> OpLCmp
-	| OpCodeFCmpL -> OpFCmpL
-	| OpCodeFCmpG -> OpFCmpG
-	| OpCodeDCmpL -> OpDCmpL
-	| OpCodeDCmpG -> OpDCmpG
-	| OpCodeIfEq pc -> OpIfEq pc
-	| OpCodeIfNe pc -> OpIfNe pc
-	| OpCodeIfLt pc -> OpIfLt pc
-	| OpCodeIfGe pc -> OpIfGe pc
-	| OpCodeIfGt pc -> OpIfGt pc
-	| OpCodeIfLe pc -> OpIfLe pc
-	| OpCodeICmpEq pc -> OpICmpEq pc
-	| OpCodeICmpNe pc -> OpICmpNe pc
-	| OpCodeICmpLt pc -> OpICmpLt pc
-	| OpCodeICmpGe pc -> OpICmpGe pc
-	| OpCodeICmpGt pc -> OpICmpGt pc
-	| OpCodeICmpLe pc -> OpICmpLe pc
-	| OpCodeACmpEq pc -> OpACmpEq pc
-	| OpCodeACmpNe pc -> OpACmpNe pc
+	| OpCodeLCmp -> OpCmp `L
+	| OpCodeFCmpL -> OpCmp `FL
+	| OpCodeFCmpG -> OpCmp `FG
+	| OpCodeDCmpL -> OpCmp `DL
+	| OpCodeDCmpG -> OpCmp `DG
+	| OpCodeIfEq pc -> OpIf (`Eq, pc)
+	| OpCodeIfNe pc -> OpIf (`Ne, pc)
+	| OpCodeIfLt pc -> OpIf (`Lt, pc)
+	| OpCodeIfGe pc -> OpIf (`Ge, pc)
+	| OpCodeIfGt pc -> OpIf (`Gt, pc)
+	| OpCodeIfLe pc -> OpIf (`Le, pc)
+	| OpCodeICmpEq pc -> OpIfCmp (`IEq, pc)
+	| OpCodeICmpNe pc -> OpIfCmp (`INe, pc)
+	| OpCodeICmpLt pc -> OpIfCmp (`ILt, pc)
+	| OpCodeICmpGe pc -> OpIfCmp (`IGe, pc)
+	| OpCodeICmpGt pc -> OpIfCmp (`IGt, pc)
+	| OpCodeICmpLe pc -> OpIfCmp (`ILe, pc)
+	| OpCodeACmpEq pc -> OpIfCmp (`AEq, pc)
+	| OpCodeACmpNe pc -> OpIfCmp (`ANe, pc)
 	| OpCodeGoto pc -> OpGoto pc
 	| OpCodeJsr pc -> OpJsr pc
 	| OpCodeRet l -> OpRet l
@@ -127,9 +151,9 @@ let opcode2instruction consts = function
 	| OpCodeTableSwitch (def, low, high, tbl) -> OpTableSwitch  (def, low, high, tbl)
 	| OpCodeLookupSwitch (def, tbl) -> OpLookupSwitch (def, tbl)
 
-	| OpCodeReturn k -> OpReturn k
-	| OpCodeAReturn -> OpAReturn
-	| OpCodeReturnVoid -> OpReturnVoid
+	| OpCodeReturn k -> OpReturn (k : jvm_basic_type :> [> jvm_basic_type])
+	| OpCodeAReturn -> OpReturn `Object
+	| OpCodeReturnVoid -> OpReturn `Void
 
 	| OpCodeGetStatic i ->
 	    let c, n, s = get_field consts i in
@@ -145,22 +169,24 @@ let opcode2instruction consts = function
 	      OpPutField (c, n, s)
 	| OpCodeInvokeVirtual i ->
 	    let t, n, s = get_method consts i in
-	      OpInvokeVirtual (t, n, s)
+	      OpInvoke (`Virtual t, n, s)
 	| OpCodeInvokeNonVirtual i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvokeNonVirtual (t, n, s)
+	       | TClass t, n, s -> OpInvoke (`Special t, n, s)
 	       | _ -> failwith "invokespecial in an array class")
 	| OpCodeInvokeStatic i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvokeStatic (t, n, s)
+	       | TClass t, n, s -> OpInvoke (`Static t, n, s)
 	       | _ -> failwith "invokestatic in an array class")
 	| OpCodeInvokeInterface (i, c) ->
-	    let t, n, s = get_interface_method consts i in
-	      OpInvokeInterface (t, n, s, c)
+	    let t, n, (vts, _ as s) = get_interface_method consts i in
+	      if count vts <> c
+	      then failwith "wrong count in invokeinterface";
+	      OpInvoke (`Interface t, n, s)
 
 	| OpCodeNew i -> OpNew (get_class consts i)
-	| OpCodeNewArray bt -> OpNewArray bt
-	| OpCodeANewArray i -> OpANewArray (get_object_type consts i)
+	| OpCodeNewArray bt -> OpNewArray (TBasic bt)
+	| OpCodeANewArray i -> OpNewArray (TObject (get_object_type consts i))
 	| OpCodeArrayLength -> OpArrayLength
 	| OpCodeThrow -> OpThrow
 	| OpCodeCheckCast i -> OpCheckCast (get_object_type consts i)
@@ -169,12 +195,12 @@ let opcode2instruction consts = function
 	| OpCodeMonitorExit -> OpMonitorExit
 	| OpCodeAMultiNewArray (ot, dims) ->
 	    OpAMultiNewArray (get_object_type consts ot, dims)
-	| OpCodeIfNull pc -> OpIfNull pc
-	| OpCodeIfNonNull pc -> OpIfNonNull pc
-	| OpCodeGotoW pc -> OpGotoW pc
-	| OpCodeJsrW pc -> OpJsrW pc
+	| OpCodeIfNull pc -> OpIf (`Null, pc)
+	| OpCodeIfNonNull pc -> OpIf (`NonNull, pc)
+	| OpCodeGotoW pc -> OpGoto pc
+	| OpCodeJsrW pc -> OpJsr pc
 	| OpCodeBreakpoint -> OpBreakpoint
-	| OpCodeRetW l -> OpRetW l
+	| OpCodeRetW l -> OpRet l
 
 	| OpCodeInvalid -> OpInvalid
 
@@ -183,33 +209,49 @@ let opcodes2code consts opcodes =
 
 let instruction2opcode consts = function
 	| OpNop -> OpCodeNop
-	| OpAConstNull -> OpCodeAConstNull
-	| OpIConst v -> OpCodeIConst v
-	| OpLConst v -> OpCodeLConst v
-	| OpFConst v -> OpCodeFConst v
-	| OpDConst v -> OpCodeDConst v
-	| OpBIPush v -> OpCodeBIPush v
-	| OpSIPush v -> OpCodeSIPush v
-	| OpLdc1 v -> OpCodeLdc1 (constant_to_int consts (ConstValue v))
-	| OpLdc2w v -> OpCodeLdc2w (constant_to_int consts (ConstValue v))
+	| OpConst x ->
+	    (match x with
+	       | `ANull -> OpCodeAConstNull
+	       | `I v -> OpCodeIConst v
+	       | `L v -> OpCodeLConst v
+	       | `F v -> OpCodeFConst v
+	       | `D v -> OpCodeDConst v
+	       | `B v -> OpCodeBIPush v
+	       | `S v -> OpCodeSIPush v)
+	| OpLdc v ->
+	    let index = (constant_to_int consts (ConstValue v)) in
+	      (match v with
+		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
+		     if index <= 0xFF
+		     then OpCodeLdc1 index
+		     else OpCodeLdc1w index
+		 | ConstLong _ | ConstDouble _ -> OpCodeLdc2w index)
 
-	| OpLoad (k, l) -> OpCodeLoad (k, l)
-	| OpALoad l -> OpCodeALoad l
+	| OpLoad (k, l) ->
+	    (match k with
+	       | `Object -> OpCodeALoad l
+	       | #jvm_basic_type as k -> OpCodeLoad (k, l))
 
-	| OpArrayLoad k -> OpCodeArrayLoad k
-	| OpAALoad -> OpCodeAALoad
-	| OpBALoad -> OpCodeBALoad
-	| OpCALoad -> OpCodeCALoad
-	| OpSALoad -> OpCodeSALoad
+	| OpArrayLoad k ->
+	    (match k with
+	       | `Object -> OpCodeAALoad
+	       | `ByteBool -> OpCodeBALoad
+	       | `Char -> OpCodeCALoad
+	       | `Short -> OpCodeSALoad
+	       | `Int | #other_num as k -> OpCodeArrayLoad k)
 
-	| OpStore (k, l) -> OpCodeStore (k, l)
-	| OpAStore l -> OpCodeAStore l
+	| OpStore (k, l) ->
+	    (match k with
+	       | `Object -> OpCodeAStore l
+	       | #jvm_basic_type as k -> OpCodeStore (k, l))
 
-	| OpArrayStore k -> OpCodeArrayStore k
-	| OpAAStore -> OpCodeAAStore
-	| OpBAStore -> OpCodeBAStore
-	| OpCAStore -> OpCodeCAStore
-	| OpSAStore -> OpCodeSAStore
+	| OpArrayStore k ->
+	    (match k with
+	       | `Object -> OpCodeAAStore
+	       | `ByteBool -> OpCodeBAStore
+	       | `Char -> OpCodeCAStore
+	       | `Short -> OpCodeSAStore
+	       | `Int | #other_num as k -> OpCodeArrayStore k)
 
 	| OpPop -> OpCodePop
 	| OpPop2 -> OpCodePop2
@@ -259,35 +301,54 @@ let instruction2opcode consts = function
 	| OpI2C -> OpCodeI2C
 	| OpI2S -> OpCodeI2S
 
-	| OpLCmp -> OpCodeLCmp
-	| OpFCmpL -> OpCodeFCmpL
-	| OpFCmpG -> OpCodeFCmpG
-	| OpDCmpL -> OpCodeDCmpL
-	| OpDCmpG -> OpCodeDCmpG
-	| OpIfEq pc -> OpCodeIfEq pc
-	| OpIfNe pc -> OpCodeIfNe pc
-	| OpIfLt pc -> OpCodeIfLt pc
-	| OpIfGe pc -> OpCodeIfGe pc
-	| OpIfGt pc -> OpCodeIfGt pc
-	| OpIfLe pc -> OpCodeIfLe pc
-	| OpICmpEq pc -> OpCodeICmpEq pc
-	| OpICmpNe pc -> OpCodeICmpNe pc
-	| OpICmpLt pc -> OpCodeICmpLt pc
-	| OpICmpGe pc -> OpCodeICmpGe pc
-	| OpICmpGt pc -> OpCodeICmpGt pc
-	| OpICmpLe pc -> OpCodeICmpLe pc
-	| OpACmpEq pc -> OpCodeACmpEq pc
-	| OpACmpNe pc -> OpCodeACmpNe pc
-	| OpGoto pc -> OpCodeGoto pc
-	| OpJsr pc -> OpCodeJsr pc
-	| OpRet l -> OpCodeRet l
+	| OpCmp x ->
+	    (match x with
+	       | `L -> OpCodeLCmp
+	       | `FL -> OpCodeFCmpL
+	       | `FG -> OpCodeFCmpG
+	       | `DL -> OpCodeDCmpL
+	       | `DG -> OpCodeDCmpG)
+	| OpIf (x, pc) ->
+	    (match x with
+		 `Eq -> OpCodeIfEq pc
+	       | `Ne -> OpCodeIfNe pc
+	       | `Lt -> OpCodeIfLt pc
+	       | `Ge -> OpCodeIfGe pc
+	       | `Gt -> OpCodeIfGt pc
+	       | `Le -> OpCodeIfLe pc
+	       | `Null -> OpCodeIfNull pc
+	       | `NonNull -> OpCodeIfNonNull pc)
+	| OpIfCmp (x, pc) ->
+	    (match x with
+		 `IEq -> OpCodeICmpEq pc
+	       | `INe -> OpCodeICmpNe pc
+	       | `ILt -> OpCodeICmpLt pc
+	       | `IGe -> OpCodeICmpGe pc
+	       | `IGt -> OpCodeICmpGt pc
+	       | `ILe -> OpCodeICmpLe pc
+	       | `AEq -> OpCodeACmpEq pc
+	       | `ANe -> OpCodeACmpNe pc)
+	| OpGoto pc ->
+ 	    if - 0x8000 <= pc && pc <= 0x7FFF
+	    then OpCodeGoto pc
+	    else OpCodeGotoW pc
+	| OpJsr pc ->
+ 	    if - 0x8000 <= pc && pc <= 0x7FFF
+	    then OpCodeJsr pc
+	    else OpCodeJsrW pc
+	| OpRet l ->
+ 	    if l <= 0xFFFF
+	    then OpCodeRet l
+	    else OpCodeRetW l
 
 	| OpTableSwitch (def, low, high, tbl) -> OpCodeTableSwitch  (def, low, high, tbl)
 	| OpLookupSwitch (def, tbl) -> OpCodeLookupSwitch (def, tbl)
 
-	| OpReturn k -> OpCodeReturn k
-	| OpAReturn -> OpCodeAReturn
-	| OpReturnVoid -> OpCodeReturnVoid
+	| OpReturn k ->
+	    (match k with
+	       | `Object -> OpCodeAReturn
+	       | `Void -> OpCodeReturnVoid
+	       | #jvm_basic_type as k -> OpCodeReturn k)
 
 	| OpGetStatic (c, n, s) ->
 	    OpCodeGetStatic (constant_to_int consts (ConstField (c, n, s)))
@@ -297,24 +358,29 @@ let instruction2opcode consts = function
 	    OpCodeGetField (constant_to_int consts (ConstField (c, n, s)))
 	| OpPutField (c, n, s) ->
 	    OpCodePutField (constant_to_int consts (ConstField (c, n, s)))
-	| OpInvokeVirtual (t, n, s) ->
-	    OpCodeInvokeVirtual
-	      (constant_to_int consts (ConstMethod (t, n, s)))
-	| OpInvokeNonVirtual (t, n, s) ->
-	    OpCodeInvokeNonVirtual
-	      (constant_to_int consts (ConstMethod (TClass t, n, s)))
-	| OpInvokeStatic (t, n, s) ->
-	    OpCodeInvokeStatic
-	      (constant_to_int consts (ConstMethod (TClass t, n, s)))
-	| OpInvokeInterface (t, n, s, c) ->
-	    OpCodeInvokeInterface
-	      (constant_to_int consts (ConstInterfaceMethod (t, n, s)), c)
+	| OpInvoke (x, n, (vts, _ as s)) ->
+	    (match x with
+	       | `Virtual t ->
+		   OpCodeInvokeVirtual
+		     (constant_to_int consts (ConstMethod (t, n, s)))
+	       | `Special t ->
+		   OpCodeInvokeNonVirtual
+		     (constant_to_int consts (ConstMethod (TClass t, n, s)))
+	       | `Static t ->
+		   OpCodeInvokeStatic
+		     (constant_to_int consts (ConstMethod (TClass t, n, s)))
+	       | `Interface t ->
+		   OpCodeInvokeInterface
+		     (constant_to_int consts (ConstInterfaceMethod (t, n, s)), count vts))
 
 	| OpNew n ->
 	    OpCodeNew
 	      (constant_to_int consts (ConstValue (ConstClass (TClass n))))
-	| OpNewArray bt -> OpCodeNewArray bt
-	| OpANewArray ot -> OpCodeANewArray (constant_to_int consts (ConstValue (ConstClass ot)))
+	| OpNewArray t ->
+	    (match t with
+	       | TBasic bt -> OpCodeNewArray bt
+	       | TObject ot ->
+		   OpCodeANewArray (constant_to_int consts (ConstValue (ConstClass ot))))
 	| OpArrayLength -> OpCodeArrayLength
 	| OpThrow -> OpCodeThrow
 	| OpCheckCast ot -> OpCodeCheckCast (constant_to_int consts (ConstValue (ConstClass ot)))
@@ -323,12 +389,7 @@ let instruction2opcode consts = function
 	| OpMonitorExit -> OpCodeMonitorExit
 	| OpAMultiNewArray (i, dims) ->
 	    OpCodeAMultiNewArray (constant_to_int consts (ConstValue (ConstClass i)), dims)
-	| OpIfNull pc -> OpCodeIfNull pc
-	| OpIfNonNull pc -> OpCodeIfNonNull pc
-	| OpGotoW pc -> OpCodeGotoW pc
-	| OpJsrW pc -> OpCodeJsrW pc
 	| OpBreakpoint -> OpCodeBreakpoint
-	| OpRetW l -> OpCodeRetW l
 
 	| OpInvalid -> OpCodeInvalid
 

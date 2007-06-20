@@ -31,8 +31,8 @@ val dump : 'a IO.output -> jclass -> unit
 val class_name : class_name -> string
 val access_flags : access_flag list -> string
 val signature : string -> signature -> string
-val kind : kind -> char
-val basic_type : basic_type -> string
+val jvm_basic_type : jvm_basic_type -> char
+val basic_type : java_basic_type -> string
 val opcode : opcode -> string
 
 (** {2 Larger parts.} *)

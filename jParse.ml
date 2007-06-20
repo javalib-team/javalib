@@ -145,14 +145,14 @@ and parse_more_name = parser
 
 (* Java type. *)
 let parse_basic_type = parser
-  | [< 'b when b = UChar.of_char 'B' >] -> TByte
-  | [< 'c when c = UChar.of_char 'C' >] -> TChar
-  | [< 'd when d = UChar.of_char 'D' >] -> TDouble
-  | [< 'f when f = UChar.of_char 'F' >] -> TFloat
-  | [< 'i when i = UChar.of_char 'I' >] -> TInt
-  | [< 'j when j = UChar.of_char 'J' >] -> TLong
-  | [< 's when s = UChar.of_char 'S' >] -> TShort
-  | [< 'z when z = UChar.of_char 'Z' >] -> TBool
+  | [< 'b when b = UChar.of_char 'B' >] -> `Byte
+  | [< 'c when c = UChar.of_char 'C' >] -> `Char
+  | [< 'd when d = UChar.of_char 'D' >] -> `Double
+  | [< 'f when f = UChar.of_char 'F' >] -> `Float
+  | [< 'i when i = UChar.of_char 'I' >] -> `Int
+  | [< 'j when j = UChar.of_char 'J' >] -> `Long
+  | [< 's when s = UChar.of_char 'S' >] -> `Short
+  | [< 'z when z = UChar.of_char 'Z' >] -> `Bool
 
 let rec parse_object_type = parser
   | [< 'l when l = UChar.of_char 'L';

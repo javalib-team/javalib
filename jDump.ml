@@ -46,14 +46,14 @@ let access_flags = function
 		) flags) ^ " "
 
 let basic_type = function
-  | TBool -> "bool"
-  | TChar -> "char"
-  | TFloat -> "float"
-  | TDouble -> "double"
-  | TByte -> "byte"
-  | TShort -> "short"
-  | TInt -> "int"
-  | TLong -> "long"
+  | `Bool -> "bool"
+  | `Char -> "char"
+  | `Float -> "float"
+  | `Double -> "double"
+  | `Byte -> "byte"
+  | `Short -> "short"
+  | `Int -> "int"
+  | `Long -> "long"
 
 let rec object_value_signature name = function
 	| TClass cl -> class_name cl ^ " " ^ name
@@ -73,11 +73,11 @@ let signature name = function
   | SValue v -> value_signature name v
   | SMethod m -> method_signature name m
 
-let kind = function
-	| KInt -> 'i'
-	| KLong -> 'l'
-	| KFloat -> 'f'
-	| KDouble -> 'd'
+let jvm_basic_type = function
+	| `Int2Bool -> 'i'
+	| `Long -> 'l'
+	| `Float -> 'f'
+	| `Double -> 'd'
 
 let dump_constant_value ch = function
   | ConstString s -> IO.printf ch "string '%s'" s
@@ -98,34 +98,45 @@ let dump_constant ch = function
 
 let opcode = function
 	| OpNop -> "nop"
-	| OpAConstNull -> "aconstnull"
-	| OpIConst i -> sprintf "iconst %ld" i
-	| OpLConst i -> sprintf "lconst %Ld" i
-	| OpFConst f -> sprintf "fconst %f" f
-	| OpDConst f -> sprintf "dconst %f" f
-	| OpBIPush n -> sprintf "bipush %d" n
-	| OpSIPush a -> sprintf "sipush %d " a
+	| OpConst x ->
+	    (match x with
+	       | `ANull -> "aconstnull"
+	       | `I i -> sprintf "iconst %ld" i
+	       | `L i -> sprintf "lconst %Ld" i
+	       | `F f -> sprintf "fconst %f" f
+	       | `D f -> sprintf "dconst %f" f
+	       | `B n -> sprintf "bipush %d" n
+	       | `S a -> sprintf "sipush %d " a)
 	    (* modified by eandre@irisa.fr 2006/05/02 *)
-	| OpLdc1 n -> sprintf "ldc1 %s" (let s = IO.output_string () in dump_constant_value s n ; IO.close_out s)
-	| OpLdc2w n -> sprintf "ldc2w %s" (let s = IO.output_string () in dump_constant_value s n ; IO.close_out s)
+	| OpLdc n -> sprintf "ldc %s" (let s = IO.output_string () in dump_constant_value s n ; IO.close_out s)
 
-	| OpLoad (k,n) -> sprintf "%cload %d" (kind k) n
-	| OpALoad n -> sprintf "aload %d" n
+	| OpLoad (k,n) ->
+	    (match k with
+	       | `Object -> sprintf "aload %d" n
+	       | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%cload %d" (jvm_basic_type k) n)
 
-	| OpArrayLoad k -> sprintf "%caload" (kind k)
-	| OpAALoad -> "aaload"
-	| OpBALoad -> "baload"
-	| OpCALoad -> "caload"
-	| OpSALoad -> "saload"
+	| OpArrayLoad k ->
+	    (match k with
+	       | `Object -> "aaload"
+	       | `ByteBool -> "baload"
+	       | `Char -> "caload"
+	       | `Short -> "saload"
+	       | `Int -> sprintf "%caload" (jvm_basic_type `Int2Bool)
+	       | `Long | `Float | `Double as k -> sprintf "%caload" (jvm_basic_type k))
 
-	| OpStore (k,n) -> sprintf "%cstore %d" (kind k) n
-	| OpAStore n -> sprintf "astore %d" n
+	| OpStore (k,n) ->
+	    (match k with
+	       | `Object -> sprintf "astore %d" n
+	       | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%cstore %d" (jvm_basic_type k) n)
 
-	| OpArrayStore k -> sprintf "%castore" (kind k)
-	| OpAAStore -> "aastore"
-	| OpBAStore -> "bastore"
-	| OpCAStore -> "castore"
-	| OpSAStore -> "sastore"
+	| OpArrayStore k ->
+	    (match k with
+	       | `Object -> "aastore"
+	       | `ByteBool -> "bastore"
+	       | `Char -> "castore"
+	       | `Short -> "sastore"
+	       | `Int -> sprintf "%castore" (jvm_basic_type `Int2Bool)
+	       | `Long | `Float | `Double as k -> sprintf "%castore" (jvm_basic_type k))
 
 	| OpPop -> "pop"
 	| OpPop2 -> "pop2"
@@ -137,12 +148,12 @@ let opcode = function
 	| OpDup2X2 -> "dup2X2"
 	| OpSwap -> "swap"
 
-	| OpAdd k -> sprintf "%cadd" (kind k)
-	| OpSub k -> sprintf "%csub" (kind k)
-	| OpMult k -> sprintf "%cmult" (kind k)
-	| OpDiv k -> sprintf "%cdiv" (kind k)
-	| OpRem k -> sprintf "%crem" (kind k)
-	| OpNeg k -> sprintf "%cneg" (kind k)
+	| OpAdd k -> sprintf "%cadd" (jvm_basic_type k)
+	| OpSub k -> sprintf "%csub" (jvm_basic_type k)
+	| OpMult k -> sprintf "%cmult" (jvm_basic_type k)
+	| OpDiv k -> sprintf "%cdiv" (jvm_basic_type k)
+	| OpRem k -> sprintf "%crem" (jvm_basic_type k)
+	| OpNeg k -> sprintf "%cneg" (jvm_basic_type k)
 
 	| OpIShl -> "ishl"
 	| OpLShl -> "lshl"
@@ -175,25 +186,33 @@ let opcode = function
 	| OpI2C -> "i2c"
 	| OpI2S -> "i2s"
 
-	| OpLCmp -> "lcmp"
-	| OpFCmpL -> "fcmpl"
-	| OpFCmpG -> "fcmpg"
-	| OpDCmpL -> "dcmpl"
-	| OpDCmpG -> "dcmpg"
-	| OpIfEq n -> sprintf "ifeq %d" n
-	| OpIfNe n -> sprintf "ifne %d" n
-	| OpIfLt n -> sprintf "iflt %d" n
-	| OpIfGe n -> sprintf "ifge %d" n
-	| OpIfGt n -> sprintf "ifgt %d" n
-	| OpIfLe n -> sprintf "ifle %d" n
-	| OpICmpEq n -> sprintf "ifcmpeq %d" n
-	| OpICmpNe n -> sprintf "ifcmpne %d" n
-	| OpICmpLt n -> sprintf "ifcmplt %d" n
-	| OpICmpGe n -> sprintf "ifcmpge %d" n
-	| OpICmpGt n -> sprintf "ifcmpgt %d" n
-	| OpICmpLe n -> sprintf "ifcmpme %d" n
-	| OpACmpEq n -> sprintf "ifacmpeq %d" n
-	| OpACmpNe n -> sprintf "ifacmpne %d" n
+	| OpCmp x ->
+	    (match x with
+	       | `L -> "lcmp"
+	       | `FL -> "fcmpl"
+	       | `FG -> "fcmpg"
+	       | `DL -> "dcmpl"
+	       | `DG -> "dcmpg")
+	| OpIf (x, n) ->
+	    (match x with
+		 `Eq -> sprintf "ifeq %d" n
+	       | `Ne -> sprintf "ifne %d" n
+	       | `Lt -> sprintf "iflt %d" n
+	       | `Ge -> sprintf "ifge %d" n
+	       | `Gt -> sprintf "ifgt %d" n
+	       | `Le -> sprintf "ifle %d" n
+	       | `Null -> sprintf "ifnull %d" n
+	       | `NonNull -> sprintf "ifnonnull %d" n)
+	| OpIfCmp (x, n) ->
+	    (match x with
+		 `IEq -> sprintf "ifcmpeq %d" n
+	       | `INe -> sprintf "ifcmpne %d" n
+	       | `ILt -> sprintf "ifcmplt %d" n
+	       | `IGe -> sprintf "ifcmpge %d" n
+	       | `IGt -> sprintf "ifcmpgt %d" n
+	       | `ILe -> sprintf "ifcmpme %d" n
+	       | `AEq -> sprintf "ifacmpeq %d" n
+	       | `ANe -> sprintf "ifacmpne %d" n)
 	| OpGoto n -> sprintf "goto %d" n
 	| OpJsr n -> sprintf "jsr %d" n
 	| OpRet n -> sprintf "ret %d" n
@@ -201,22 +220,27 @@ let opcode = function
 	| OpTableSwitch (def,min,max,tbl) -> "tableswitch <...>"
 	| OpLookupSwitch (def,pairs) -> "lookupswitch <...>"
 
-	| OpReturn k -> sprintf "%creturn" (kind k)
-	| OpAReturn -> "areturn"
-	| OpReturnVoid -> "return"
+	| OpReturn k ->
+	    (match k with
+	       | `Object -> "areturn"
+	       | `Void -> "return"
+	       | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%creturn" (jvm_basic_type k))
 
 	| OpGetStatic (c, name, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) name (value_signature "" sign)
 	| OpPutStatic (c, name, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) name (value_signature "" sign)
 	| OpPutField (c, name, sign) -> sprintf "putfield %s.%s:%s" (class_name c) name (value_signature "" sign)
 	| OpGetField (c, name, sign) -> sprintf "getfield %s.%s:%s" (class_name c) name (value_signature "" sign)
-	| OpInvokeVirtual (c, name, sign) -> sprintf "invokevirtual %s.%s:%s" (object_value_signature "" c) name (method_signature "" sign)
-	| OpInvokeNonVirtual (c, name, sign) -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
-	| OpInvokeStatic (c, name, sign) -> sprintf "invokestatic %s.%s:%s" (class_name c) name (method_signature "" sign)
-	| OpInvokeInterface (c, name, sign, count) -> sprintf "invokeinterface %s.%s:%s,%d" (class_name c) name (method_signature "" sign) count
-
+	| OpInvoke (x, name, sign) ->
+	    (match x with
+	       | `Virtual c -> sprintf "invokevirtual %s.%s:%s" (object_value_signature "" c) name (method_signature "" sign)
+	       | `Special c -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) name (method_signature "" sign)
+	       | `Static c -> sprintf "invokestatic %s.%s:%s" (class_name c) name (method_signature "" sign)
+	       | `Interface c -> sprintf "invokeinterface %s.%s:%s" (class_name c) name (method_signature "" sign))
 	| OpNew c -> sprintf "new %s" (class_name c)
-	| OpNewArray t -> sprintf "newarray %s" (basic_type t)
-	| OpANewArray c -> sprintf "anewarray %s" (object_value_signature "" c)
+	| OpNewArray t ->
+	    (match t with
+	       | TBasic t -> sprintf "newarray %s" (basic_type t)
+	       | TObject c -> sprintf "anewarray %s" (object_value_signature "" c))
 	| OpArrayLength -> "arraylength"
 	    (* Modified by eandre@irisa.fr 2006/06/08 *)
 	| OpThrow -> "athrow"
@@ -225,12 +249,7 @@ let opcode = function
 	| OpMonitorEnter -> "monitorenter"
 	| OpMonitorExit -> "monitorexit"
 	| OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (object_value_signature "" a) b
-	| OpIfNull n -> sprintf "ifnull %d" n
-	| OpIfNonNull n -> sprintf "ifnonnull %d" n
-	| OpGotoW n -> sprintf "gotow %d" n
-	| OpJsrW n -> sprintf "jrsw %d" n
 	| OpBreakpoint -> "breakpoint"
-	| OpRetW n -> sprintf "retw %d" n
 
 	| OpInvalid -> "invalid"
 
