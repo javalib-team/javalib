@@ -198,6 +198,38 @@ let unparse_attribute_not_code ch consts =
 	  write_with_length write_i32 ch
 	    (function ch ->
 	   write_constant ch consts (ConstValue c))
+      | AttributeExceptions l ->
+	  write_utf8 "Exceptions";
+	  write_with_length write_i32 ch
+	    (function ch ->
+	       write_with_size write_ui16 ch
+		 (function c ->
+		    write_constant ch consts (ConstValue (ConstClass (TClass c))))
+		 l)
+      | AttributeInnerClasses l ->
+	  write_utf8 "InnerClasses";
+	  write_with_length write_i32 ch
+	    (function ch ->
+	       write_with_size write_ui16 ch
+		 (function inner, outer, inner_name, flags ->
+		    (match inner with
+		       | None -> write_ui16 ch 0
+		       | Some inner ->
+			   write_constant ch consts (ConstValue (ConstClass (TClass inner))));
+		    (match outer with
+		       | None -> write_ui16 ch 0
+		       | Some outer ->
+			   write_constant ch consts (ConstValue (ConstClass (TClass outer))));
+		    (match inner_name with
+		       | None -> write_ui16 ch 0
+		       | Some inner_name ->
+			   write_constant ch consts (ConstStringUTF8 inner_name));
+		    write_ui16 ch (unparse_flags flags))
+		 l)
+      | AttributeSynthetic ->
+	  write_utf8 "Synthetic";
+	  write_with_length write_i32 ch
+	    (function ch -> write_ui16 ch 0)
       | AttributeLineNumberTable l ->
 	  write_utf8 "LineNumberTable";
 	  write_with_length write_i32 ch
@@ -220,6 +252,10 @@ let unparse_attribute_not_code ch consts =
 		      (ConstStringUTF8 (unparse_value_signature signature));
 		    write_ui16 ch index)
 		 l)
+      | AttributeDeprecated ->
+	  write_utf8 "Deprecated";
+	  write_with_length write_i32 ch
+	    (function ch -> write_ui16 ch 0)
       | AttributeStackMap s -> unparse_stackmap_attribute ch consts s
       | AttributeUnknown (name, contents) ->
 	  write_utf8 name;

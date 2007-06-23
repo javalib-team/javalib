@@ -69,14 +69,14 @@ let get_interface_method consts i =
 	| ConstInterfaceMethod (c, m, s) -> c, m, s
 	| _ -> error "Invalid interface method index"
 	
-let get_string consts ch =
-  let i = read_ui16 ch in
+let get_string' consts i =
 	match get_constant consts i with
 	| ConstStringUTF8 s -> s
 	| c ->
 	    let s = IO.output_string () in
 	      JDump.dump_constant s c;
 	      error ("Invalid string " ^ IO.close_out s ^ " at index " ^ string_of_int i)
+let get_string consts ch = get_string' consts (read_ui16 ch)
 
 let constant_to_int cp c =
   if c = ConstUnusable

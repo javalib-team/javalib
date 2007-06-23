@@ -253,23 +253,6 @@ type verification_type =
 
 (** {2 Substructures.} *)
 
-type jcode = {
-	c_max_stack : int;
-	c_max_locals : int;
-	c_code : opcodes;
-	c_exc_tbl : jexception list;
-	c_attributes : attribute list;
-}
-
-and attribute =
-	| AttributeSourceFile of string
-	| AttributeConstant of constant_value
-	| AttributeCode of jcode
-	| AttributeLineNumberTable of (int * int) list
-	| AttributeLocalVariableTable of (int * int * string * value_type * int) list
-	| AttributeUnknown of string * string
-	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
-
 type access_flag =
 	| AccPublic
 	| AccPrivate
@@ -288,6 +271,30 @@ type access_flag =
 type access_flags = access_flag list
 
 (* Flags and attributes should be related for fields, methods and classes. *)
+
+type jcode = {
+	c_max_stack : int;
+	c_max_locals : int;
+	c_code : opcodes;
+	c_exc_tbl : jexception list;
+	c_attributes : attribute list;
+}
+
+and attribute =
+	| AttributeSourceFile of string
+	| AttributeConstant of constant_value
+	| AttributeCode of jcode
+	| AttributeExceptions of class_name list
+	| AttributeInnerClasses of
+	    (class_name option * class_name option * string option * access_flags) list
+	    (* inner_class_info, outer_class_info, inner_name, inner_class_access_flags *)
+	| AttributeSynthetic
+	| AttributeLineNumberTable of (int * int) list
+	| AttributeLocalVariableTable of (int * int * string * value_type * int) list
+	    (* start_pc, length, name, type, index *)
+	| AttributeDeprecated
+	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
+	| AttributeUnknown of string * string
 
 type jfield = {
 	f_name : string;

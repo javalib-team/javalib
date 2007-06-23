@@ -301,6 +301,38 @@ and parse_attribute consts ch =
 	| "Code" ->
 		(* correct length not checked *)
 		AttributeCode (parse_code consts ch)
+	| "Exceptions" ->
+	    let nentry = read_ui16 ch in
+	      if nentry * 2 + 2 <> alen then error();
+	      AttributeExceptions
+		(List.init
+		   nentry
+		   (function _ ->
+		      get_class consts (read_ui16 ch)))
+	| "InnerClasses" ->
+	    let nentry = read_ui16 ch in
+	      if nentry * 8 + 2 <> alen then error();
+	      AttributeInnerClasses
+		(List.init
+		   nentry
+		   (function _ ->
+		      let inner =
+			match (read_ui16 ch) with
+			  | 0 -> None
+			  | i -> Some (get_class consts i) in
+		      let outer =
+			match (read_ui16 ch) with
+			  | 0 -> None
+			  | i -> Some (get_class consts i) in
+		      let inner_name =
+			match (read_ui16 ch) with
+			  | 0 -> None
+			  | i -> Some (get_string' consts i) in
+		      let flags = parse_access_flags ch in
+			inner, outer, inner_name, flags)) 
+	| "Synthetic" ->
+	    if alen <> 0 then error ();
+	    AttributeSynthetic
 	| "LineNumberTable" ->
 		let nentry = read_ui16 ch in
 		if nentry * 4 + 2 <> alen then error();
@@ -311,13 +343,16 @@ and parse_attribute consts ch =
 	      AttributeLocalVariableTable
 		(List.init
 		   nentry
-		   (fun _ ->
+		   (function _ ->
 		      let start_pc = read_ui16 ch in
 		      let length = read_ui16 ch in
 		      let name = (get_string consts ch) in
 		      let signature = parse_type (get_string consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
+	| "Deprecated" ->
+	    if alen <> 0 then error ();
+	    AttributeDeprecated
 	| "StackMap" ->
 		let nb_stackmap_frames = read_ui16 ch in
 		AttributeStackMap (List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ))

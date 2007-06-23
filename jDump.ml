@@ -294,6 +294,9 @@ and dump_attrib ch cl = function
 	| AttributeCode code -> IO.printf ch "    code "; dump_code ch cl code;
 	    (* added by eandre@irisa.fr 2006/06/08 *)
 	    IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.c_exc_tbl
+	| AttributeExceptions _ -> IO.printf ch "    exceptions\n"
+	| AttributeInnerClasses _ -> IO.printf ch "    inner-classes\n"
+	| AttributeSynthetic -> IO.printf ch "    synthetic\n"
 	| AttributeLineNumberTable lines -> IO.printf ch "    line-numbers\n"
 	| AttributeLocalVariableTable variables ->
 	    IO.printf ch "    local-variables\n";
@@ -305,6 +308,7 @@ and dump_attrib ch cl = function
 		   (value_signature name signature)
 		   index)
 	      variables
+	| AttributeDeprecated -> IO.printf ch "    deprecated\n"
 	| AttributeStackMap stackmap_frames -> IO.printf ch "    stackmap = ["; List.iter (dump_stackmap ch) stackmap_frames; IO.printf ch "]\n";
 	| AttributeUnknown (s,_) -> IO.printf ch "    ?%s\n" s
 

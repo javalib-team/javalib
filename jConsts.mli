@@ -46,6 +46,7 @@ val get_object_type : JClass.constant array -> int -> JClass.object_type
 val get_class : JClass.constant array -> int -> JClass.class_name
 
 val get_string : JClass.constant array -> IO.input -> string
+val get_string' : JClass.constant array -> int -> string
 
 val get_field : JClass.constant array -> int ->
   JClass.class_name * string * JClass.field_signature
