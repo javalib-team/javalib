@@ -305,6 +305,19 @@ and parse_attribute consts ch =
 		let nentry = read_ui16 ch in
 		if nentry * 4 + 2 <> alen then error();
 		AttributeLineNumberTable (List.init nentry (fun _ -> let pc = read_ui16 ch in let line = read_ui16 ch in pc , line)) 
+	| "LocalVariableTable" ->
+	    let nentry = read_ui16 ch in
+	      if nentry * 10 + 2 <> alen then error();
+	      AttributeLocalVariableTable
+		(List.init
+		   nentry
+		   (fun _ ->
+		      let start_pc = read_ui16 ch in
+		      let length = read_ui16 ch in
+		      let name = (get_string consts ch) in
+		      let signature = parse_type (get_string consts ch) in
+		      let index = read_ui16 ch in
+			start_pc, length, name, signature, index))
 	| "StackMap" ->
 		let nb_stackmap_frames = read_ui16 ch in
 		AttributeStackMap (List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ))

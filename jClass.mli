@@ -266,6 +266,7 @@ and attribute =
 	| AttributeConstant of constant_value
 	| AttributeCode of jcode
 	| AttributeLineNumberTable of (int * int) list
+	| AttributeLocalVariableTable of (int * int * string * value_type * int) list
 	| AttributeUnknown of string * string
 	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
 

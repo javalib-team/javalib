@@ -71,7 +71,7 @@ let rec unparse_method_signature (sigs, s) =
 
 let rec unparse_signature = function
   | SValue v -> unparse_value_signature v
-  | SMethod m ->unparse_method_signature m
+  | SMethod m -> unparse_method_signature m
 
 (* Unparse an type that must be an object.Therefore, there is no
    L ; around the classname (if this is a class). *)
@@ -206,6 +206,19 @@ let unparse_attribute_not_code ch consts =
 		 (function pc, line ->
 		    write_ui16 ch pc;
 		    write_ui16 ch line)
+		 l)
+      | AttributeLocalVariableTable l ->
+	  write_utf8 "LocalVariableTable";
+	  write_with_length write_i32 ch
+	    (function ch ->
+	       write_with_size write_ui16 ch
+		 (function start_pc, length, name, signature, index ->
+		    write_ui16 ch start_pc;
+		    write_utf8 name;
+		    write_ui16 ch length;
+		    write_constant ch consts
+		      (ConstStringUTF8 (unparse_value_signature signature));
+		    write_ui16 ch index)
 		 l)
       | AttributeStackMap s -> unparse_stackmap_attribute ch consts s
       | AttributeUnknown (name, contents) ->

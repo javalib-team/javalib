@@ -295,6 +295,16 @@ and dump_attrib ch cl = function
 	    (* added by eandre@irisa.fr 2006/06/08 *)
 	    IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.c_exc_tbl
 	| AttributeLineNumberTable lines -> IO.printf ch "    line-numbers\n"
+	| AttributeLocalVariableTable variables ->
+	    IO.printf ch "    local-variables\n";
+	    List.iter
+	      (function start_pc, length, name, signature, index ->
+		 IO.printf ch "      from %d to %d, %s at %d\n"
+		   start_pc
+		   (start_pc + length)
+		   (value_signature name signature)
+		   index)
+	      variables
 	| AttributeStackMap stackmap_frames -> IO.printf ch "    stackmap = ["; List.iter (dump_stackmap ch) stackmap_frames; IO.printf ch "]\n";
 	| AttributeUnknown (s,_) -> IO.printf ch "    ?%s\n" s
 
