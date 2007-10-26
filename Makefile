@@ -19,19 +19,14 @@
 
 # last modified by eandre@irisa.fr 19/05/2006
 
-# Installation directory
-prefix=/usr/local
-exec_prefix=$(prefix)
-libdir=$(exec_prefix)/lib
-
 # Dependencies
-EXTLIB_PATH = /usr/lib/ocaml/site-packages/extlib/
-CAMLZIP_PATH = +site-packages/camlzip
+EXTLIB_PATH=+extlib
+CAMLZIP_PATH=+zip
 
 OCAMLC = ocamlc -pp camlp4o
 OCAMLOPT = ocamlopt -pp camlp4o
 OCAMLDOC = ocamldoc -pp camlp4o
-INSTALL_DIR = $(libdir)/javaLib/
+INSTALL_DIR = `ocamlc -where`/javaLib
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
