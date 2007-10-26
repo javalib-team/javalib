@@ -374,28 +374,21 @@ type implementation =
   | Native
   | Java of code
 
-type concrete_method = {
+(* l'attribut final n'a pas vraiment de sens pour une méthode
+   statique, mais c'est autorisé dans la spec JVM. *)
+type normal_method = {
   static : bool;
   final : bool;
   synchronized : bool;
   strict : bool;
-  implementation : implementation
-}
-(* l'attribut final n'a pas vraiment de sens pour une méthode statique. *)
-
-type class_method_type =
-  | Abstract
-  | Concrete of concrete_method
-
-type class_method = {
   cm_access: access;
   cm_signature : method_signature;
-  method_type : class_method_type;
   cm_exceptions : class_name list;
-  cm_attributes : attributes
+  cm_attributes : attributes;
+  implementation : implementation
 }
 
-type interface_method = {
+type abstract_method = {
   im_access: [`Public | `Protected | `Default];
   im_signature : method_signature;
   im_exceptions : class_name list;
@@ -406,45 +399,46 @@ type interface_method = {
    est forcément concrète, et ne peut pas être statique, finale ou
    synchronisée :
 
-"A specific instance initialization method (§3.9) may have at most one
-of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set and may also
-have its ACC_STRICT flag set, but may not have any of the other flags
-in Table 4.5 set."
+   "A specific instance initialization method (§3.9) may have at most one
+   of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set and may also
+   have its ACC_STRICT flag set, but may not have any of the other flags
+   in Table 4.5 set."
 
+   => on peut typer differement les méthodes d'initialisation (class
+   et instance), mais ça risque d'allourdir les choses.
 *)
 
-(* Question : qu'est-ce qui empêche une classe concrète d'avoir des
-   méthodes ou des champs abstraits ? *)
 
 (* Classes and interfaces. *)
 (***************************)
 
-type class_type =
-  | Final
-  | Abstract
-  | Normal
+type abstract_class_method =
+    | Abstract of abstract_method
+    | Normal of normal_method
 
-type pclass = {
-  class_type : class_type;
-  super : bool;
-  super_class : class_name; (* useless if we use a map *)
-  c_fields : class_field Map.Make(String).t;
-  c_methods : class_method Map.Make(String).t
+type abstract_class = {
+  super_class : class_name option; (* redundant if we use a map *)
+  ac_fields : class_field Map.Make(String).t;
+  ac_methods : abstract_class_method Map.Make(String).t
 }
 
-(* Finalement, la seule différence entre une classe abstraite et une
-   classe concrète, c'est le final, donc autant tout fusionner (sauf
-   si on ajoute des contraintes sur le contenu). *)
+type normal_class = {
+  final : bool;
+  super_class : class_name option; (* redundant if we use a map *)
+  c_fields : class_field Map.Make(String).t;
+  c_methods : normal_method Map.Make(String).t
+}
 
-type pinterface = {
+type interface = {
   (* super-class must be java.lang.Object. *)
   i_fields : interface_field Map.Make(String).t;
   i_methods : interface_method Map.Make(String).t
 }
 
 type class_file_type =
-  | Class of pclass
-  | Interface of pinterface
+  | NormalClass of normal_class
+  | AbstractClass of abstract_class
+  | Interface of interface
 
 type class_file = {
   c_access : [`Public | `Default];
