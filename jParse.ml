@@ -20,7 +20,7 @@
 (* file modified by eandre@irisa.fr 2006/03/23 *)
 
 (* added by eandre@irisa.fr 23/03/2006 *)
-open JClass
+open JClassLow
 open IO.BigEndian
 open ExtList
 open ExtString
@@ -250,7 +250,7 @@ let rec parse_code consts ch =
 	let clen = read_i32 ch in
 	let code = 
 	  try
-	    JInstruction.opcodes2code consts (JCode.parse_code ch clen)
+	    JCode.parse_code ch clen
 	  with
 	      JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n)
 	in
@@ -436,7 +436,7 @@ let rec expand_constant consts n =
 	| ConstantStringUTF8 s -> ConstStringUTF8 s
 	| ConstantUnusable -> ConstUnusable
 
-let parse_class ch =
+let parse_class_low_level ch =
 	let magic = read_real_i32 ch in
 	if magic <> 0xCAFEBABEl then error "Invalid header";
 	let _version_minor = read_ui16 ch in
@@ -479,3 +479,5 @@ let parse_class ch =
 		j_methods = methods;
 		j_attributes = attribs;
 	}
+
+let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)

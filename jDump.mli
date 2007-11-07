@@ -19,9 +19,9 @@
 
 (* Last modified by eandre@irisa.fr 2006/06/08 *)
 
-(** Dumping. *)
+(** Dumping of low level classes. *)
 
-open JClass
+open JClassLow
 
 (** Dump a whole class file. *)
 val dump : 'a IO.output -> jclass -> unit
@@ -39,6 +39,8 @@ val opcode : opcode -> string
 
 (* Replaced 'b by jclass 2006/06/08 *)
 val dump_constant : 'a IO.output -> constant -> unit
+val dump_constantpool : 'a IO.output -> constant array -> unit
+val dump_super : 'a IO.output -> class_name option -> unit
 val dump_code : 'a IO.output -> jclass -> jcode -> unit
 val dump_attrib : 'a IO.output -> jclass -> attribute -> unit
 val dump_field : 'a IO.output -> jclass -> jfield -> unit

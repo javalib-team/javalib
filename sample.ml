@@ -19,6 +19,6 @@
 
 if Array.length Sys.argv = 1 then failwith "Class file argument required";
 let ch = IO.input_channel (open_in_bin Sys.argv.(1)) in
-let cl = JParse.parse_class ch in
+let cl = JParse.parse_class_low_level ch in
 IO.close_in ch;
 JDump.dump (IO.output_channel stdout) cl

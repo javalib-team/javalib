@@ -20,9 +20,8 @@
 open IO
 open IO.BigEndian
 open ExtList
-open JClass
+open JClassLow
 open JConsts
-open JOpCode
 
 (* OpCodes Parsing *)
 (*******************)

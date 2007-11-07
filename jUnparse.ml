@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClass
+open JClassLow
 open JConsts
 open IO
 open IO.BigEndian
@@ -159,134 +159,119 @@ let unparse_flags flags =
 (* Attributes unparsing *)
 (************************)
 
-let unparse_stackmap_attribute ch consts stackmap =
-  write_constant ch consts (ConstStringUTF8 "StackMap");
-  write_with_length write_i32 ch
-    (function ch ->
-       write_with_size write_ui16 ch
-	 (function pc, lt, st ->
-	    let unparse_list =
-	      write_with_size write_ui16 ch
-		(function
-		   | VTop  -> write_ui8 ch 0
-		   | VInteger  -> write_ui8 ch 1
-		   | VFloat -> write_ui8 ch 2
-		   | VDouble -> write_ui8 ch 3
-		   | VLong -> write_ui8 ch 4
-		   | VNull -> write_ui8 ch 5
-		   | VUninitializedThis -> write_ui8 ch 6
-		   | VObject o ->
-		       write_ui8 ch 7 ; write_constant ch consts(ConstValue (ConstClass o))
-		   | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
-	    in
-	      write_ui16 ch pc;
-	      unparse_list lt;
-	      unparse_list st)
-	 stackmap)
+let unparse_stackmap_attribute consts stackmap =
+  let ch = output_string ()
+  in
+    write_with_size write_ui16 ch
+      (function pc, lt, st ->
+	let unparse_list =
+	  write_with_size write_ui16 ch
+	    (function
+	      | VTop  -> write_ui8 ch 0
+	      | VInteger  -> write_ui8 ch 1
+	      | VFloat -> write_ui8 ch 2
+	      | VDouble -> write_ui8 ch 3
+	      | VLong -> write_ui8 ch 4
+	      | VNull -> write_ui8 ch 5
+	      | VUninitializedThis -> write_ui8 ch 6
+	      | VObject o ->
+		  write_ui8 ch 7 ; write_constant ch consts(ConstValue (ConstClass o))
+	      | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
+	in
+	  write_ui16 ch pc;
+	  unparse_list lt;
+	  unparse_list st)
+      stackmap;
+    ("StackMap",close_out ch)
 
-let unparse_attribute_not_code ch consts =
-  let write_utf8 name =
-    write_constant ch consts (ConstStringUTF8 name) in
+let rec unparse_attribute_to_strings consts =
+  let ch = output_string () in
+  let write_utf8 name = write_constant ch consts (ConstStringUTF8 name) in
     function
       | AttributeSourceFile s ->
-	  write_utf8 "SourceFile";
-	  write_with_length write_i32 ch
-	    (function ch ->
-	       write_constant ch consts (ConstStringUTF8 s))
+	  write_constant ch consts (ConstStringUTF8 s);
+	  ("SourceFile",close_out ch)
       | AttributeConstant c ->
-	  write_utf8 "ConstantValue";
-	  write_with_length write_i32 ch
-	    (function ch ->
-	   write_constant ch consts (ConstValue c))
+	  write_constant ch consts (ConstValue c);
+	  ("ConstantValue",close_out ch)
       | AttributeExceptions l ->
-	  write_utf8 "Exceptions";
-	  write_with_length write_i32 ch
-	    (function ch ->
-	       write_with_size write_ui16 ch
-		 (function c ->
-		    write_constant ch consts (ConstValue (ConstClass (TClass c))))
-		 l)
+	  write_with_size write_ui16 ch
+	    (function c ->
+	      write_constant ch consts (ConstValue (ConstClass (TClass c))))
+	    l;
+	  ("Exceptions",close_out ch)
       | AttributeInnerClasses l ->
-	  write_utf8 "InnerClasses";
-	  write_with_length write_i32 ch
-	    (function ch ->
-	       write_with_size write_ui16 ch
-		 (function inner, outer, inner_name, flags ->
-		    (match inner with
-		       | None -> write_ui16 ch 0
-		       | Some inner ->
-			   write_constant ch consts (ConstValue (ConstClass (TClass inner))));
-		    (match outer with
-		       | None -> write_ui16 ch 0
-		       | Some outer ->
-			   write_constant ch consts (ConstValue (ConstClass (TClass outer))));
-		    (match inner_name with
-		       | None -> write_ui16 ch 0
-		       | Some inner_name ->
-			   write_constant ch consts (ConstStringUTF8 inner_name));
-		    write_ui16 ch (unparse_flags flags))
-		 l)
+	  write_with_size write_ui16 ch
+	    (function inner, outer, inner_name, flags ->
+	      (match inner with
+		| None -> write_ui16 ch 0
+		| Some inner ->
+		    write_constant ch consts (ConstValue (ConstClass (TClass inner))));
+	      (match outer with
+		| None -> write_ui16 ch 0
+		| Some outer ->
+		    write_constant ch consts (ConstValue (ConstClass (TClass outer))));
+	      (match inner_name with
+		| None -> write_ui16 ch 0
+		| Some inner_name ->
+		    write_constant ch consts (ConstStringUTF8 inner_name));
+	      write_ui16 ch (unparse_flags flags))
+	    l;
+	  ("InnerClasses",close_out ch)
       | AttributeSynthetic ->
-	  write_utf8 "Synthetic";
-	  write_with_length write_i32 ch
-	    (function ch -> write_ui16 ch 0)
+	  write_ui16 ch 0;
+	  ("Synthetic",close_out ch)
       | AttributeLineNumberTable l ->
-	  write_utf8 "LineNumberTable";
-	  write_with_length write_i32 ch
-	    (function ch ->
-	       write_with_size write_ui16 ch
-		 (function pc, line ->
-		    write_ui16 ch pc;
-		    write_ui16 ch line)
-		 l)
+	  write_with_size write_ui16 ch
+	    (function pc, line ->
+	      write_ui16 ch pc;
+	      write_ui16 ch line)
+	    l;
+	  ("LineNumberTable",close_out ch)
       | AttributeLocalVariableTable l ->
-	  write_utf8 "LocalVariableTable";
+	  write_with_size write_ui16 ch
+	    (function start_pc, length, name, signature, index ->
+	      write_ui16 ch start_pc;
+	      write_utf8 name;
+	      write_ui16 ch length;
+	      write_constant ch consts
+		(ConstStringUTF8 (unparse_value_signature signature));
+	      write_ui16 ch index)
+	    l;
+	  ("LocalVariableTable",close_out ch)
+      | AttributeDeprecated ->
+	  write_ui16 ch 0;
+	  ("Deprecated",close_out ch)
+      | AttributeStackMap s -> 
+	  ignore (close_out ch);
+	  unparse_stackmap_attribute consts s
+      | AttributeUnknown (name, contents) ->
+	  (name,contents)
+      | AttributeCode code -> 
+	  write_ui16 ch code.c_max_stack;
+	  write_ui16 ch code.c_max_locals;
 	  write_with_length write_i32 ch
 	    (function ch ->
-	       write_with_size write_ui16 ch
-		 (function start_pc, length, name, signature, index ->
-		    write_ui16 ch start_pc;
-		    write_utf8 name;
-		    write_ui16 ch length;
-		    write_constant ch consts
-		      (ConstStringUTF8 (unparse_value_signature signature));
-		    write_ui16 ch index)
-		 l)
-      | AttributeDeprecated ->
-	  write_utf8 "Deprecated";
-	  write_with_length write_i32 ch
-	    (function ch -> write_ui16 ch 0)
-      | AttributeStackMap s -> unparse_stackmap_attribute ch consts s
-      | AttributeUnknown (name, contents) ->
-	  write_utf8 name;
-	  write_string_with_length write_i32 ch contents
-      | AttributeCode code -> invalid_arg "code"
+	      JCode.unparse_code ch code.c_code);
+	  write_with_size write_ui16 ch
+	    (function e ->
+	      write_ui16 ch e.e_start;
+	      write_ui16 ch e.e_end;
+	      write_ui16 ch e.e_handler;
+	      match e.e_catch_type with
+		| Some cl -> write_constant ch consts (ConstValue (ConstClass (TClass cl)))
+		| None -> write_ui16 ch 0)
+	    code.c_exc_tbl;
+	  write_with_size write_ui16 ch
+	    (unparse_attribute ch consts)
+	    code.c_attributes;
+	  ("Code",close_out ch)
 
-let unparse_code_attribute ch consts code =
-  write_constant ch consts (ConstStringUTF8 "Code");
-  write_with_length write_i32 ch
-    (function ch ->
-       write_ui16 ch code.c_max_stack;
-       write_ui16 ch code.c_max_locals;
-       write_with_length write_i32 ch
-	 (function ch ->
-	    JCode.unparse_code ch (JInstruction.code2opcodes consts code.c_code));
-       write_with_size write_ui16 ch
-	 (function e ->
-	    write_ui16 ch e.e_start;
-	    write_ui16 ch e.e_end;
-	    write_ui16 ch e.e_handler;
-	    match e.e_catch_type with
-	      | Some cl -> write_constant ch consts (ConstValue (ConstClass (TClass cl)))
-	      | None -> write_ui16 ch 0)
-	 code.c_exc_tbl;
-       write_with_size write_ui16 ch
-	 (unparse_attribute_not_code ch consts)
-	 code.c_attributes)
-
-let unparse_attribute ch consts = function
-  | AttributeCode code -> unparse_code_attribute ch consts code
-  | attr -> unparse_attribute_not_code ch consts attr
+and unparse_attribute ch consts attr =
+  let (name,content) = unparse_attribute_to_strings consts attr
+  in 
+    write_constant ch consts (ConstStringUTF8 name);
+    write_string_with_length write_i32 ch content
 
 (* Fields, methods and classes *)
 (*******************************)
@@ -319,7 +304,7 @@ let unparse_method ch consts methode =
     (unparse_attribute ch consts)
     methode.m_attributes
 
-let unparse_class ch c =
+let unparse_class_low_level ch c =
   write_real_i32 ch 0xCAFEBABEl;
   write_ui16 ch version_minor;
   write_ui16 ch version_major;
@@ -341,3 +326,6 @@ let unparse_class ch c =
       unparse (unparse_attribute ch' consts) c.j_attributes;
       unparse_constant_pool ch consts;
       nwrite ch (close_out ch')
+
+let unparse_class ch c =
+  unparse_class_low_level ch (JHigh2Low.high2low_class c)

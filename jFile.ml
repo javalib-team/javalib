@@ -1,3 +1,25 @@
+(*
+ *  This file is part of JavaLib
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine.Turpin@irisa.fr
+ *  Laurent.Hubert@irisa.fr
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; if not, write to the Free Software
+ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *)
+
+open JClassLow
 open JClass
 
 let list sep = function
@@ -91,7 +113,7 @@ let apply_to_jar f other s =
 	   if Filename.check_suffix e.Zip.filename ".class"
 	   then (
 	     let input = IO.input_string (Zip.read_entry jar e) in
-	     let c = JParse.parse_class input in
+	     let c = JParse.parse_class_low_level input in
 	       IO.close_in input;
 	       f c
 	   ) else other jar e)
@@ -119,7 +141,7 @@ let fold class_path f file =
 	  (function c ->
 	     let ch = open_in_bin c in
 	     let input = IO.input_channel ch in
-	     let classe = JParse.parse_class input in
+	     let classe = JParse.parse_class_low_level input in
 	       IO.close_in input;
 	       match f with
 		 | `read f ->
@@ -133,7 +155,7 @@ let fold class_path f file =
 			  0o755);
 		       let f = open_out_bin (Filename.concat output_dir c) in
 		       let output = IO.output_channel f in
-			 JUnparse.unparse_class output classe;
+			 JUnparse.unparse_class_low_level output classe;
 			 IO.close_out output)
 	  (Filename.concat class_path c)
       with
@@ -158,7 +180,7 @@ let fold class_path f file =
 			 let c = replace_dot class_name ^ ".class"
 			 and contents =
 			   let s = IO.output_string () in
-			     JUnparse.unparse_class s classe;
+			     JUnparse.unparse_class_low_level s classe;
 			     IO.close_out s in
 			   Zip.add_entry contents jar' c)
 		      (fun jar e ->
@@ -192,10 +214,24 @@ let fold class_path f files =
   with No_class_found c ->
     failwith ("no class found for " ^ c)
 
-let read class_path f accu files =
+let read_low class_path f accu files =
   let accu = ref accu in
     fold class_path (`read (function classe -> accu := f ! accu classe)) files;
     ! accu
 
-let transform class_path output_dir f files =
+let read class_path f accu files = 
+  let accu = ref accu in
+    fold class_path 
+      (`read 
+	  (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
+      files;
+    ! accu
+
+let transform_low class_path output_dir f files =
   fold class_path (`transform (output_dir, f)) files
+
+let transform class_path output_dir f files =
+  fold class_path 
+    (`transform
+	(output_dir,fun c -> JHigh2Low.high2low_class (f (JLow2High.low2high_class c))))
+    files

@@ -1,6 +1,8 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2004 Nicolas Cannasse
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine.Turpin@irisa.fr
+ *  Laurent.Hubert@irisa.fr
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,21 +19,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** Parsing. *)
+(** Tranformation of high level classes to low level classes. *)
 
-(** Parse a Java class file and return the low level representation. *)
-val parse_class_low_level : IO.input -> JClassLow.jclass
 
-(** Parse a Java class file and return the high level representation. *)
-val parse_class : IO.input -> JClass.class_file
-
-(**/**)
-
-type error_msg =
-	| Invalid_data
-	| Invalid_constant of int
-	| Invalid_access_flags of int
-	| Custom of string
-  
-exception Error of string
-
+(** Convert a high level class to a lower level class.*)
+val high2low_class : JClass.class_file -> JClassLow.jclass

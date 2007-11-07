@@ -21,19 +21,27 @@
 
 (** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
     information *)
-val unparse_class : 'a IO.output -> JClass.jclass -> unit
+val unparse_class_low_level : 'a IO.output -> JClassLow.jclass -> unit
+
+(** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
+    information *)
+val unparse_class : 'a IO.output -> JClass.class_file -> unit
+
+(** Unparses an attribute to a couple [(name, content)] where [name]
+    is the code-name of the attribute and [content] as encoded in a
+    [.class] file. *)
+val unparse_attribute_to_strings : JClassLow.constant DynArray.t -> JClassLow.attribute -> string * string
 
 (**/**)
 
 (* For statistics: *)
 
 val unparse_stackmap_attribute :
-  'a IO.output ->
-  JClass.constant DynArray.t ->
-  (int * JClass.verification_type list * JClass.verification_type list) list ->
-  unit
+  JClassLow.constant DynArray.t ->
+  (int * JClassLow.verification_type list * JClassLow.verification_type list) list ->
+  (string * string)
 
 val unparse_constant_pool :
   'a IO.output ->
-  JClass.constant DynArray.t ->
+  JClassLow.constant DynArray.t ->
   unit

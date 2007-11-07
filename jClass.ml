@@ -19,6 +19,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** This implementation is only to provide MapFieldSignature and MapMethodSignature.*)
+
 (** High level Ocaml representation of a Java class file. *)
 
 open JClassLow
@@ -233,25 +235,12 @@ type abstract_method = {
   am_attributes : attributes
 }
 
-(* Contrainte supplémentaire : une méthode d'initialisation (d'instance)
-   est forcément concrète, et ne peut pas être statique, finale ou
-   synchronisée :
-
-   "A specific instance initialization method (§3.9) may have at most one
-   of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set and may also
-   have its ACC_STRICT flag set, but may not have any of the other flags
-   in Table 4.5 set."
-
-   L: => on peut typer differement les méthodes d'initialisation (class
-   et instance), mais ça risque d'allourdir les choses.
-*)
-
 
 (** {2 Classes and interfaces.} *)
 (***************************)
 
-module FieldMap : Map.S with type key = field_signature
-module MethodMap : Map.S with type key = method_signature
+module FieldMap = Map.Make(struct type t = field_signature let compare = compare end)
+module MethodMap = Map.Make(struct type t = method_signature let compare = compare end)
 
 type abstract_class_method =
     | AbstractMethod of abstract_method

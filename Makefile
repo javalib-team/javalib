@@ -23,64 +23,69 @@
 EXTLIB_PATH=+extlib
 CAMLZIP_PATH=+zip
 
-OCAMLC = ocamlc -pp camlp4o
-OCAMLOPT = ocamlopt -pp camlp4o
-OCAMLDOC = ocamldoc -pp camlp4o
+OCAMLC = ocamlc.opt -dtypes -g -pp camlp4o
+OCAMLOPT = ocamlopt.opt -pp camlp4o
+OCAMLDOC = ocamldoc.opt -pp camlp4o
+OCAMLDEP = ocamldep.opt -pp camlp4o
+OCAMLMKTOP = ocamlmktop
 INSTALL_DIR = `ocamlc -where`/javaLib
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
+MODULES=jClass jDump jConsts jCode jInstruction jHigh2Low jUnparse	\
+jLow2High jParse jFile jProgram
+MODULE_INTERFACES=jClassLow jClass jDump jConsts jCode jInstruction	\
+jUnparse jParse jLow2High jHigh2Low jFile jProgram
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
-FILES =  jDump.+ jConsts.+ jCode.+ jInstruction.+ jUnparse.+ jParse.+ jFile.+ jTest.+
+all: javaLib.cma javaLib.cmxa
 
-all: javaLib.cma
-
-opt: javaLib.cmxa
-
-install: all opt
+install: javaLib.cma javaLib.cmxa
 	mkdir -p $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a jClass.cmi jParse.cmi jConsts.cmi jDump.cmi jUnparse.cmi jFile.cmi $(INSTALL_DIR)
-	cp -f jClass.mli jConsts.mli jParse.mli jDump.mli jUnparse.mli jFile.mli $(INSTALL_DIR)
+	cp -f javaLib.cma javaLib.cmxa javaLib.a $(MODULE_INTERFACES:=.cmi) $(INSTALL_DIR)
+	cp -f $(MODULE_INTERFACES:=.mli) $(INSTALL_DIR)
+
+ocaml:
+	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma
+
+tests:javaLib.cma tests.ml
+	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma javaLib.cma tests.ml
+tests.opt:javaLib.cmxa tests.ml
+	$(OCAMLOPT) $(INCLUDE) -o $@ unix.cmxa zip.cmxa extLib.cmxa javaLib.cmxa tests.ml
 
 sample:
-	$(OCAMLC)  $(INCLUDE) extLib.cma javaLib.cma sample.ml -o sample.exe
+	$(OCAMLC) $(INCLUDE) extLib.cma javaLib.cma sample.ml -o $@
 
 sample.opt:
-	$(OCAMLOPT)  $(INCLUDE) extLib.cmxa javaLib.cmxa sample.ml -o sample.opt.exe
+	$(OCAMLOPT) $(INCLUDE) extLib.cmxa javaLib.cmxa sample.ml -o $@
 
-javaLib.cma:  jClass.cmi jOpCode.cmi $(FILES:+=cmi) $(FILES:+=cmo)
-	$(OCAMLC)  $(INCLUDE) -a $(FILES:+=cmo) -o javaLib.cma
+javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
+	$(OCAMLC) -a $(MODULES:=.cmo) -o $@
 
-# javaLib: jClass.cmi $(FILES:+=cmi) $(FILES:+=cmo)
-# 	$(OCAMLC)  $(INCLUDE) -custom extLib.cma $(FILES:+=cmo) -o javaLib
+javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
+	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
 
-# exe:
-# 	make javaLib
-# 	chmod 775 javaLib
-# 	./javaLib
-
-javaLib.cmxa:  jClass.cmi jOpCode.cmi $(FILES:+=cmi) $(FILES:+=cmx)
-	$(OCAMLOPT) -a $(FILES:+=cmx) -o javaLib.cmxa
-
-doc: $(FILES:+=cmi)
+doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml)
 	mkdir -p doc
-	$(OCAMLDOC) -keep-code -d doc -html -stars -colorize-code -intro intro.ocamldoc -t JavaLib $(INCLUDE) \
-	jClass.mli jOpCode.mli jConsts.mli jCode.mli jParse.mli jDump.mli jInstruction.mli jUnparse.mli jFile.mli $(FILES:+=ml)
+	$(OCAMLDOC) $(INCLUDE) -keep-code -d doc -html -stars -colorize-code \
+		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 
 clean:
-	rm -rf $(FILES:+=cmo) $(FILES:+=cmx) $(FILES:+=cmi) $(FILES:+=o) $(FILES:+=obj)
-	rm -rf sample.cmo sample.cmi sample.cmx sample.o sample.obj sample.exe sample.opt.exe
-	rm -rf jClass.cmi jOpCode.cmi javaLib.cma javaLib.cmxa javaLib.lib javaLib.a
-	rm -rf doc
-	rm -rf *.ml~ *.mli~ Makefile~
+	rm -rf doc .depend *.cmi *.cmo *.cmx *.annot *.cma *.cmxa *.obj *.o *.a *~ 
+	rm -rf ocaml tests tests.opt sample sample.opt
+
+# Dependencies
+.depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+	$(OCAMLDEP) $(INCLUDES) $^ > $@
+-include .depend
 
 .ml.cmo:
-	$(OCAMLC)  $(INCLUDE) -c $*.ml 
+	$(OCAMLC) $(INCLUDE) -c $<
 
-.ml.cmx:
-	$(OCAMLOPT)  $(INCLUDE) -c $*.ml 
+
+%.cmx %.o:%.ml
+	$(OCAMLOPT) $(INCLUDE) -c $<
 
 .mli.cmi:
-	$(OCAMLC)  $(INCLUDE) -c $*.mli
+	$(OCAMLC) $(INCLUDE) -c $<

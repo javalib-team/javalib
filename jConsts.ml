@@ -17,7 +17,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClass
+open JClassLow
 open IO
 open IO.BigEndian
 open ExtList
@@ -82,7 +82,7 @@ let constant_to_int cp c =
   if c = ConstUnusable
   then invalid_arg "constant_to_int";
   try
-    DynArray.index_of (( = ) c) cp
+    DynArray.index_of (fun c' -> 0 = compare c c') cp (* [nan <> nan], where as [0 = compare nan nan] *)
   with
       Not_found ->
 	if DynArray.length cp = 0

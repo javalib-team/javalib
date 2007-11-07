@@ -17,8 +17,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JOpCode
 open JClass
+open JClassLow
 open JConsts
 open IO
 open IO.BigEndian
@@ -157,32 +157,32 @@ let opcode2instruction consts = function
 
 	| OpCodeGetStatic i ->
 	    let c, n, s = get_field consts i in
-	      OpGetStatic (c, n, s)
+	      OpGetStatic (c, {fs_name = n; fs_type = s})
 	| OpCodePutStatic i ->
 	    let c, n, s = get_field consts i in
-	      OpPutStatic (c, n, s)
+	      OpPutStatic (c, {fs_name = n; fs_type = s})
 	| OpCodeGetField i ->
 	    let c, n, s = get_field consts i in
-	      OpGetField (c, n, s)
+	      OpGetField (c, {fs_name = n; fs_type = s})
 	| OpCodePutField i ->
 	    let c, n, s = get_field consts i in
-	      OpPutField (c, n, s)
+	      OpPutField (c, {fs_name = n; fs_type = s})
 	| OpCodeInvokeVirtual i ->
 	    let t, n, s = get_method consts i in
-	      OpInvoke (`Virtual t, n, s)
+	      OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
 	| OpCodeInvokeNonVirtual i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvoke (`Special t, n, s)
+	       | TClass t, n, s -> OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
 	       | _ -> failwith "invokespecial in an array class")
 	| OpCodeInvokeStatic i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvoke (`Static t, n, s)
+	       | TClass t, n, s -> OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
 	       | _ -> failwith "invokestatic in an array class")
 	| OpCodeInvokeInterface (i, c) ->
 	    let t, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c
 	      then failwith "wrong count in invokeinterface";
-	      OpInvoke (`Interface t, n, s)
+	      OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
 
 	| OpCodeNew i -> OpNew (get_class consts i)
 	| OpCodeNewArray bt -> OpNewArray (TBasic bt)
@@ -350,28 +350,28 @@ let instruction2opcode consts = function
 	       | `Void -> OpCodeReturnVoid
 	       | #jvm_basic_type as k -> OpCodeReturn k)
 
-	| OpGetStatic (c, n, s) ->
-	    OpCodeGetStatic (constant_to_int consts (ConstField (c, n, s)))
-	| OpPutStatic (c, n, s) ->
-	    OpCodePutStatic (constant_to_int consts (ConstField (c, n, s)))
-	| OpGetField (c, n, s) ->
-	    OpCodeGetField (constant_to_int consts (ConstField (c, n, s)))
-	| OpPutField (c, n, s) ->
-	    OpCodePutField (constant_to_int consts (ConstField (c, n, s)))
-	| OpInvoke (x, n, (vts, _ as s)) ->
+	| OpGetStatic (c, s) ->
+	    OpCodeGetStatic (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	| OpPutStatic (c, s) ->
+	    OpCodePutStatic (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	| OpGetField (c, s) ->
+	    OpCodeGetField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	| OpPutField (c, s) ->
+	    OpCodePutField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	| OpInvoke (x, s) ->
 	    (match x with
 	       | `Virtual t ->
 		   OpCodeInvokeVirtual
-		     (constant_to_int consts (ConstMethod (t, n, s)))
+		     (constant_to_int consts (ConstMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
 	       | `Special t ->
 		   OpCodeInvokeNonVirtual
-		     (constant_to_int consts (ConstMethod (TClass t, n, s)))
+		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
 	       | `Static t ->
 		   OpCodeInvokeStatic
-		     (constant_to_int consts (ConstMethod (TClass t, n, s)))
+		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
 	       | `Interface t ->
 		   OpCodeInvokeInterface
-		     (constant_to_int consts (ConstInterfaceMethod (t, n, s)), count vts))
+		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_value))), count s.ms_parameters))
 
 	| OpNew n ->
 	    OpCodeNew

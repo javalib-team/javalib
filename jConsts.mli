@@ -24,7 +24,7 @@
 
 (** Low level access to the constant pool. This is usefull for adding
     a user-defined attribute that refers to the constant pool. *)
-val constant_to_int : JClass.constant DynArray.t -> JClass.constant -> int
+val constant_to_int : JClassLow.constant DynArray.t -> JClassLow.constant -> int
 
 (**/**)
 
@@ -38,31 +38,31 @@ exception Error of string
 
 val error : string -> 'a
 
-val get_constant : JClass.constant array -> int -> JClass.constant
+val get_constant : JClassLow.constant array -> int -> JClassLow.constant
 
-val get_constant_value : JClass.constant array -> int -> JClass.constant_value
+val get_constant_value : JClassLow.constant array -> int -> JClassLow.constant_value
 
-val get_object_type : JClass.constant array -> int -> JClass.object_type
-val get_class : JClass.constant array -> int -> JClass.class_name
+val get_object_type : JClassLow.constant array -> int -> JClassLow.object_type
+val get_class : JClassLow.constant array -> int -> JClassLow.class_name
 
-val get_string : JClass.constant array -> IO.input -> string
-val get_string' : JClass.constant array -> int -> string
+val get_string : JClassLow.constant array -> IO.input -> string
+val get_string' : JClassLow.constant array -> int -> string
 
-val get_field : JClass.constant array -> int ->
-  JClass.class_name * string * JClass.field_signature
+val get_field : JClassLow.constant array -> int ->
+  JClassLow.class_name * string * JClassLow.field_signature
 
-val get_method : JClass.constant array -> int ->
-  JClass.object_type * string * JClass.method_signature
+val get_method : JClassLow.constant array -> int ->
+  JClassLow.object_type * string * JClassLow.method_signature
 
-val get_interface_method : JClass.constant array -> int ->
-  JClass.class_name * string * JClass.method_signature
+val get_interface_method : JClassLow.constant array -> int ->
+  JClassLow.class_name * string * JClassLow.method_signature
 
 (* This should go somewhere else. *)
 
 val write_ui8 : 'a IO.output -> int -> unit
 val write_i8 : 'a IO.output -> int -> unit
 val write_constant :
-  'a IO.output -> JClass.constant DynArray.t -> JClass.constant -> unit
+  'a IO.output -> JClassLow.constant DynArray.t -> JClassLow.constant -> unit
 val write_string_with_length :
   ('a IO.output -> int -> 'b) -> 'a IO.output -> string -> unit
 val write_with_length :
