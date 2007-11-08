@@ -13,8 +13,7 @@ The command "sample Main.class" will parse and dump the class file.
 
 {b {L Installing}}
 
-Edit Makefile to configure the EXTLIB_PATH, CAMLZIP_PATH and libdir environment
-variables. Then:
+Edit Makefile.config (see Makefile.config.example). Then:
 - 	[make install]
 - 	[make doc] if you want the html documentation.
 
@@ -61,10 +60,10 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {!modules: JClass JClassLow}
 
 {b {L High level access to classes}}
-{!modules: JFile}
+{!modules: JFile JProgram}
 
 {b {L Parsing and Unparsing}}
-{!modules: JParse JUnparse JLow2High}
+{!modules: JParse JUnparse JLow2High JHigh2Low}
 
 {b {L Other}}
 {!modules: JDump JConsts JCode JInstruction}

@@ -17,18 +17,13 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-# last modified by eandre@irisa.fr 19/05/2006
+include Makefile.config
 
-# Dependencies
-EXTLIB_PATH=+extlib
-CAMLZIP_PATH=+zip
-
-OCAMLC = ocamlc.opt -dtypes -g -pp camlp4o
-OCAMLOPT = ocamlopt.opt -pp camlp4o
-OCAMLDOC = ocamldoc.opt -pp camlp4o
-OCAMLDEP = ocamldep.opt -pp camlp4o
+OCAMLC = ocamlc.opt -dtypes -g -pp camlp4o.opt
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt
+OCAMLDOC = ocamldoc.opt -pp camlp4o.opt
+OCAMLDEP = ocamldep.opt -pp camlp4o.opt
 OCAMLMKTOP = ocamlmktop
-INSTALL_DIR = `ocamlc -where`/javaLib
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 

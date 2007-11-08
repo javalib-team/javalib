@@ -218,7 +218,7 @@ type implementation =
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
-type normal_method = {
+type concrete_method = {
   nm_static : bool;
   nm_final : bool;
   nm_synchronized : bool;
@@ -244,7 +244,7 @@ module MethodMap = Map.Make(struct type t = method_signature let compare = compa
 
 type abstract_class_method =
     | AbstractMethod of abstract_method
-    | NormalMethod of normal_method
+    | ConcreteMethod of concrete_method
 
 (** Abstract classes cannot be final and may contain abstract methods.*)
 type abstract_class = {
@@ -253,19 +253,19 @@ type abstract_class = {
   ac_methods : abstract_class_method MethodMap.t
 }
 
-(** Normal classes cannot contains abstract methods.*)
+(** Concrete classes cannot contains abstract methods.*)
 type normal_class = {
   nc_final : bool;
   nc_super_class : class_name option; (* redundant if we use a map *)
   nc_fields : class_field FieldMap.t;
-  nc_methods : normal_method MethodMap.t
+  nc_methods : concrete_method MethodMap.t
 }
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
 type interface = {
   (* super-class must be java.lang.Object. *)
-  i_initializer : normal_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
 }
@@ -277,11 +277,11 @@ type inner_class = {
   ic_access : access;
   ic_static : bool;
   ic_final : bool;
-  ic_type : [`NormalClass|`Abstract|`Interface]
+  ic_type : [`ConcreteClass|`Abstract|`Interface]
 }
 
 type class_file_type =
-  | NormalClass of normal_class
+  | ConcreteClass of normal_class
   | AbstractClass of abstract_class
   | Interface of interface
 

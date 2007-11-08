@@ -9,3 +9,4 @@ Here is some stuff that need to be done:
 - check : an interface can contains a class initializer
   (ex:com/sun/imageio/plugins/bmp/BMPConstants) and it is not
   documented
+- use a well-defined set of exceptions (remove failwith)

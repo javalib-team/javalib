@@ -34,7 +34,9 @@ type method_signature = {
   ms_return_value:value_type option;
 }
 
-(** Instruction. *)
+(** {2 Bytecode instructions.} *)
+(********************************)
+
 type opcode =
 
   (* Access to a local variable *)
@@ -177,13 +179,11 @@ type field_type =
   | Final
   | Volatile
 
-(* TODO: Nouveaux types pour les champs ; ce serait pas mal de mettre
-   en commun un certain nombre de choses. *)
 type class_field = {
   cf_access: access;
   cf_static : bool;
   cf_type : field_type;
-  cf_value : constant_value option; (* Valable seulement pour un champ static final. *)
+  cf_value : constant_value option; (** Only if the field is static final. *)
   cf_transient : bool;
   cf_attributes : attributes
 }
@@ -191,7 +191,7 @@ type class_field = {
 (** Fields of interfaces are implicitly [public], [static] and
     [final].*)
 type interface_field = {
-  if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
   if_attributes : attributes
 }
 
@@ -216,7 +216,7 @@ type implementation =
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
-type normal_method = {
+type concrete_method = {
   nm_static : bool;
   nm_final : bool;
   nm_synchronized : bool;
@@ -255,28 +255,28 @@ module MethodMap : Map.S with type key = method_signature
 
 type abstract_class_method =
     | AbstractMethod of abstract_method
-    | NormalMethod of normal_method
+    | ConcreteMethod of concrete_method
 
 (** Abstract classes cannot be final and may contain abstract methods.*)
 type abstract_class = {
-  ac_super_class : class_name option; (* redundant if we use a map *)
+  ac_super_class : class_name option;
   ac_fields : class_field FieldMap.t;
   ac_methods : abstract_class_method MethodMap.t
 }
 
-(** Normal classes cannot contains abstract methods.*)
+(** Concrete classes cannot contains abstract methods.*)
 type normal_class = {
   nc_final : bool;
-  nc_super_class : class_name option; (* redundant if we use a map *)
+  nc_super_class : class_name option;
   nc_fields : class_field FieldMap.t;
-  nc_methods : normal_method MethodMap.t
+  nc_methods : concrete_method MethodMap.t
 }
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
 type interface = {
   (* super-class must be java.lang.Object. *)
-  i_initializer : normal_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
 }
@@ -288,11 +288,11 @@ type inner_class = {
   ic_access : access;
   ic_static : bool;
   ic_final : bool;
-  ic_type : [`NormalClass|`Abstract|`Interface]
+  ic_type : [`ConcreteClass|`Abstract|`Interface]
 }
 
 type class_file_type =
-  | NormalClass of normal_class
+  | ConcreteClass of normal_class
   | AbstractClass of abstract_class
   | Interface of interface
 
@@ -300,7 +300,7 @@ type class_file_type =
 type class_file = {
   name : class_name;
   c_access : [`Public | `Default];
-  interfaces : class_name list; (* useless if we use a map *)
+  interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   sourcefile : string option;
   c_deprecated : bool;

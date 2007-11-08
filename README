@@ -40,7 +40,8 @@ INSTALL
 -------
 
 get recent version of Extlib at http://ocaml-lib.sf.net
-edit Makefile to configure your install path and ExtLib path
+install CamlZip
+edit Makefile.config to configure the paths (see Makefile.config.example)
 > make install
 
 

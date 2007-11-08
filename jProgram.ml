@@ -31,11 +31,11 @@ type abstract_class = {
   ac_methods : abstract_class_method MethodMap.t
 }
 
-and normal_class = {
+and concrete_class = {
   nc_final : bool;
   nc_super_class : class_file option;
   nc_fields : class_field FieldMap.t;
-  nc_methods : normal_method MethodMap.t
+  nc_methods : concrete_method MethodMap.t
 }
 
 and interface = {
@@ -45,7 +45,7 @@ and interface = {
 }
 
 and class_file_type =
-    | NormalClass of normal_class
+    | ConcreteClass of concrete_class
     | AbstractClass of abstract_class
     | Interface of interface
 
@@ -105,7 +105,7 @@ let add_classFile c program =
 	    ac_fields = c.JClass.ac_fields;
 	    ac_methods = c.JClass.ac_methods;
 	  }
-      | JClass.NormalClass c ->
+      | JClass.ConcreteClass c ->
 	  let super = 
 	    begin
 	      match c.JClass.nc_super_class with
@@ -114,7 +114,7 @@ let add_classFile c program =
 		    try Some (ClassMap.find super program)
 		    with Not_found -> raise (Class_not_found super)
 	    end
-	  in NormalClass {
+	  in ConcreteClass {
 	    nc_final = c.JClass.nc_final;
 	    nc_super_class = super;
 	    nc_fields = c.JClass.nc_fields;
@@ -204,15 +204,15 @@ exception Found_Class of class_file
 let defines_method ms c = match c.class_file_type with
   | Interface i -> MethodMap.mem ms i.i_methods
   | AbstractClass ac -> MethodMap.mem ms ac.ac_methods 
-  | NormalClass nc -> MethodMap.mem ms nc.nc_methods 
+  | ConcreteClass nc -> MethodMap.mem ms nc.nc_methods 
 let defines_field fs c = match c.class_file_type with
   | Interface i -> FieldMap.mem fs i.i_fields
   | AbstractClass ac -> FieldMap.mem fs ac.ac_fields 
-  | NormalClass nc -> FieldMap.mem fs nc.nc_fields 
+  | ConcreteClass nc -> FieldMap.mem fs nc.nc_fields 
 let super c = match c.class_file_type with
   | Interface i -> Some i.i_super
   | AbstractClass ac -> ac.ac_super_class
-  | NormalClass nc -> nc.nc_super_class
+  | ConcreteClass nc -> nc.nc_super_class
 
 
 
@@ -228,8 +228,8 @@ let get_method c ms =
 	AbstractMethod (MethodMap.find ms c.i_methods)
     | AbstractClass c ->
 	MethodMap.find ms c.ac_methods
-    | NormalClass c ->
-	NormalMethod (MethodMap.find ms c.nc_methods)
+    | ConcreteClass c ->
+	ConcreteMethod (MethodMap.find ms c.nc_methods)
 
 let get_field c fs =
   match c.class_file_type with
@@ -237,7 +237,7 @@ let get_field c fs =
 	InterfaceField (FieldMap.find fs c.i_fields)
     | AbstractClass c ->
 	ClassField (FieldMap.find fs c.ac_fields)
-    | NormalClass c ->
+    | ConcreteClass c ->
 	ClassField (FieldMap.find fs c.nc_fields)
 
 
@@ -280,12 +280,12 @@ let rec resolve_interface_method' ms c : unit =
 
 let resolve_method ms c : class_file =
   match c.class_file_type with
-    | NormalClass _ ->
+    | ConcreteClass _ ->
 	begin
 	  let c' = resolve_method' ms c
 	  in match get_method c' ms with
 	    | AbstractMethod _ -> raise AbstractMethodError
-	    | NormalMethod _ -> c'
+	    | ConcreteMethod _ -> c'
 	end
     | AbstractClass _ ->
 	let rec resolve_abstract_method ms c : class_file =
@@ -306,7 +306,7 @@ let resolve_method ms c : class_file =
 
 let resolve_interface_method ms c : class_file =
   match c.class_file_type with
-    | NormalClass _
+    | ConcreteClass _
     | AbstractClass _ -> raise IncompatibleClassChangeError
     | Interface i ->
 	try 
@@ -323,19 +323,22 @@ let lookup_virtual_method ms c : class_file =
     with NoSuchMethodError -> raise AbstractMethodError
   in match get_method c ms with
       | AbstractMethod m -> raise AbstractMethodError
-      | NormalMethod m -> c'
+      | ConcreteMethod m -> c'
 
 let lookup_interface_method = lookup_virtual_method
 
 
 (* {2 Access to the hierarchy} *)
 
+(** The name of a real class, i.e., not an interface or an implicit array class name. *)
 type className = class_name
+
 type interfaceName = class_name
+
 let classOrInterfaceName_of_ident p cn =
   let c = ClassMap.find cn p 
   in match c.class_file_type with
-    | NormalClass _ | AbstractClass _ -> `Class c.name
+    | ConcreteClass _ | AbstractClass _ -> `Class c.name
     | Interface _ -> `Interface c.name
 
 let rec extends_class' c1 c2 : bool =

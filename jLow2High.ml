@@ -267,7 +267,7 @@ let low2high_nmethod consts = function m ->
 let low2high_anmethod consts = function m ->
   if List.exists ((=)AccAbstract) m.m_flags
   then AbstractMethod (low2high_amethod consts m)
-  else NormalMethod (low2high_nmethod consts m)
+  else ConcreteMethod (low2high_nmethod consts m)
 
 
 let low2high_normal_class consts = function nc ->
@@ -372,7 +372,7 @@ let low2high_innerclass = function
 	  then `Interface
 	  else if List.exists ((=)AccAbstract) inner_class_access_flags
 	  then `Abstract
-	  else `NormalClass
+	  else `ConcreteClass
       }
 
 let low2high_class cl = 
@@ -423,7 +423,7 @@ let low2high_class cl =
 	      then failwith "An abstract class cannot be final."
               else AbstractClass (low2high_abstract_class consts cl)
 	  else
-            NormalClass (low2high_normal_class consts cl)
+            ConcreteClass (low2high_normal_class consts cl)
       with Failure msg -> failwith ("in class "^JDump.class_name my_name^": "^msg)
     in 
       {

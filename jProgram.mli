@@ -39,11 +39,11 @@ type abstract_class = {
   ac_methods : abstract_class_method MethodMap.t
 }
 
-and normal_class = {
+and concrete_class = {
   nc_final : bool;
   nc_super_class : class_file option;
   nc_fields : class_field FieldMap.t;
-  nc_methods : normal_method MethodMap.t
+  nc_methods : concrete_method MethodMap.t
 }
 
 and interface = {
@@ -53,7 +53,7 @@ and interface = {
 }
 
 and class_file_type =
-    | NormalClass of normal_class
+    | ConcreteClass of concrete_class
     | AbstractClass of abstract_class
     | Interface of interface
 

@@ -57,7 +57,7 @@ let h2l_inner_classes = function
 	  @ (match ic.ic_type with
 	    | `Interface -> [AccAbstract;AccInterface]
 	    | `Abstract -> [AccAbstract]
-	    | `NormalClass -> [])
+	    | `ConcreteClass -> [])
 	in (inner_class_info,outer_class_info,inner_name,inner_class_access_flags)
       in
 	[AttributeInnerClasses (List.map h2l_ic icl)]
@@ -149,7 +149,7 @@ let h2l_amethod consts ms m =
 
 let h2l_anmethod consts ms = function
   | AbstractMethod m -> h2l_amethod consts ms m
-  | NormalMethod m -> h2l_nmethod consts ms m
+  | ConcreteMethod m -> h2l_nmethod consts ms m
 
 let h2l_normalclass consts c c' =
   {c' with 
@@ -195,7 +195,7 @@ let high2low_class c =
 	@ (h2l_other_attributes c.c_other_attributes);
     } in
   let c'=match c.class_file_type with
-    | NormalClass c -> h2l_normalclass consts c c'
+    | ConcreteClass c -> h2l_normalclass consts c c'
     | AbstractClass c -> h2l_abstractclass consts c c'
     | Interface c -> h2l_interface consts c c'
   in {c' with j_consts = DynArray.to_array consts}
