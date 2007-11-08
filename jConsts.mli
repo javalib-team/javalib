@@ -49,13 +49,13 @@ val get_string : JClassLow.constant array -> IO.input -> string
 val get_string' : JClassLow.constant array -> int -> string
 
 val get_field : JClassLow.constant array -> int ->
-  JClassLow.class_name * string * JClassLow.field_signature
+  JClassLow.class_name * string * JClassLow.field_type
 
 val get_method : JClassLow.constant array -> int ->
-  JClassLow.object_type * string * JClassLow.method_signature
+  JClassLow.object_type * string * JClassLow.method_type
 
 val get_interface_method : JClassLow.constant array -> int ->
-  JClassLow.class_name * string * JClassLow.method_signature
+  JClassLow.class_name * string * JClassLow.method_type
 
 (* This should go somewhere else. *)
 
