@@ -113,7 +113,7 @@ let h2l_nmethod consts ms m =
   let code = h2l_code2attribute consts m.implementation 
   in 
     {m_name = ms.ms_name;
-     m_signature = (ms.ms_parameters, ms.ms_return_value);
+     m_signature = (ms.ms_parameters, m.nm_return_type);
      m_flags =
 	(if m.nm_static then [AccStatic] else [])
 	@ (if m.nm_final then [AccFinal] else [])
@@ -137,7 +137,7 @@ let h2l_nmethod consts ms m =
 
 let h2l_amethod consts ms m = 
   {m_name = ms.ms_name;
-   m_signature = (ms.ms_parameters, ms.ms_return_value);
+   m_signature = (ms.ms_parameters, m.am_return_type);
    m_flags = AccAbstract::(access2flags m.am_access);
    m_code = None;
    m_attributes =
@@ -168,7 +168,7 @@ let h2l_abstractclass consts c c' =
   }
 
 let h2l_interface consts c c' =
-  let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_value=None} in
+  let clinit_signature = {ms_name="<clinit>";ms_parameters=[]} in
   {c' with 
     j_super = Some ["java";"lang";"Object"];
     j_flags = AccInterface::AccAbstract::c'.j_flags;

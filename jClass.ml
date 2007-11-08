@@ -32,8 +32,7 @@ type field_signature = {
 
 type method_signature = {
   ms_name:string;
-  ms_parameters:value_type list;
-  ms_return_value:value_type option;
+  ms_parameters:value_type list
 }
 
 (** Instruction. *)
@@ -141,7 +140,7 @@ type opcode =
       | `Static of class_name
       | `Interface of class_name
       ]
-	* method_signature
+	* method_signature * value_type option
   | OpReturn of jvm_return_type
 
   (* Exceptions and threads *)
@@ -226,13 +225,15 @@ type concrete_method = {
   nm_access: access;
   nm_exceptions : class_name list;
   nm_attributes : attributes;
-  implementation : implementation
+  implementation : implementation;
+  nm_return_type : value_type option
 }
 
 type abstract_method = {
   am_access: [`Public | `Protected | `Default];
   am_exceptions : class_name list;
-  am_attributes : attributes
+  am_attributes : attributes;
+  am_return_type : value_type option
 }
 
 

@@ -169,20 +169,20 @@ let opcode2instruction consts = function
 	      OpPutField (c, {fs_name = n; fs_type = s})
 	| OpCodeInvokeVirtual i ->
 	    let t, n, s = get_method consts i in
-	      OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
+	      OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s}, snd s)
 	| OpCodeInvokeNonVirtual i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
+	       | TClass t, n, s -> OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s}, snd s)
 	       | _ -> failwith "invokespecial in an array class")
 	| OpCodeInvokeStatic i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
+	       | TClass t, n, s -> OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s}, snd s)
 	       | _ -> failwith "invokestatic in an array class")
 	| OpCodeInvokeInterface (i, c) ->
 	    let t, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c
 	      then failwith "wrong count in invokeinterface";
-	      OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s; ms_return_value = snd s})
+	      OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s}, snd s)
 
 	| OpCodeNew i -> OpNew (get_class consts i)
 	| OpCodeNewArray bt -> OpNewArray (TBasic bt)
@@ -358,20 +358,20 @@ let instruction2opcode consts = function
 	    OpCodeGetField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
 	| OpPutField (c, s) ->
 	    OpCodePutField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
-	| OpInvoke (x, s) ->
+	| OpInvoke (x, s, r) ->
 	    (match x with
 	       | `Virtual t ->
 		   OpCodeInvokeVirtual
-		     (constant_to_int consts (ConstMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
+		     (constant_to_int consts (ConstMethod (t, s.ms_name, (s.ms_parameters,r))))
 	       | `Special t ->
 		   OpCodeInvokeNonVirtual
-		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
+		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,r))))
 	       | `Static t ->
 		   OpCodeInvokeStatic
-		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_value))))
+		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,r))))
 	       | `Interface t ->
 		   OpCodeInvokeInterface
-		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_value))), count s.ms_parameters))
+		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,r))), count s.ms_parameters))
 
 	| OpNew n ->
 	    OpCodeNew

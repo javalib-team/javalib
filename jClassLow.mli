@@ -82,15 +82,15 @@ and value_type =
   | TObject of object_type
 
 (** Field signature. *)
-type field_type = value_type
+type field_descriptor = value_type
 
 (** Method signature. *)
-type method_type = value_type list * value_type option
+type method_descriptor = value_type list * value_type option
 
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type signature =
-  | SValue of field_type
-  | SMethod of method_type
+  | SValue of field_descriptor
+  | SMethod of method_descriptor
 
 (** Constant value. *)
 type constant_value =
@@ -104,9 +104,9 @@ type constant_value =
 (** Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstField of (class_name * string * field_type)
-  | ConstMethod of (object_type * string * method_type)
-  | ConstInterfaceMethod of (class_name * string * method_type)
+  | ConstField of (class_name * string * field_descriptor)
+  | ConstMethod of (object_type * string * method_descriptor)
+  | ConstInterfaceMethod of (class_name * string * method_descriptor)
   | ConstNameAndType of string * signature
   | ConstStringUTF8 of string
   | ConstUnusable
@@ -318,14 +318,14 @@ and attribute =
 
 type jfield = {
 	f_name : string;
-	f_signature : field_type;
+	f_signature : field_descriptor;
 	f_flags : access_flags (* Should be specialized *);
 	f_attributes : attribute list (* Should be specialized *);
 }
 
 type jmethod = {
 	m_name : string;
-	m_signature : method_type;
+	m_signature : method_descriptor;
 	m_flags : access_flags (* Should be specialized *);	
 	m_code : jcode option; (* Remove that *)
 	m_attributes : attribute list (* Should be specialized *);

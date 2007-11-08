@@ -206,6 +206,7 @@ let low2high_amethod consts = function m ->
 	  (List.filter
 	      (function AttributeExceptions _ -> false| _ -> true) 
 	      m.m_attributes);
+    am_return_type = snd m.m_signature
   }
 
 let low2high_nmethod consts = function m ->
@@ -262,6 +263,7 @@ let low2high_nmethod consts = function m ->
 		 Native)
 	in find_Code m.m_attributes
       end;
+    nm_return_type = snd m.m_signature
   }
 
 let low2high_anmethod consts = function m ->
@@ -287,8 +289,7 @@ let low2high_normal_class consts = function nc ->
       (fun map meth -> 
 	MethodMap.add 
 	  {ms_name=meth.m_name;
-	   ms_parameters=fst meth.m_signature;
-	   ms_return_value= snd meth.m_signature;}
+	   ms_parameters=fst meth.m_signature}
 	  (try low2high_nmethod consts meth
 	  with Failure msg -> failwith ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg))
 	  map)
@@ -312,8 +313,7 @@ let low2high_abstract_class consts = function ac ->
       (fun map meth -> 
 	MethodMap.add 
 	  {ms_name=meth.m_name;
-	   ms_parameters=fst meth.m_signature;
-	   ms_return_value= snd meth.m_signature;}
+	   ms_parameters=fst meth.m_signature}
 	  (try low2high_anmethod consts meth
 	  with Failure msg -> failwith ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg))
 	  map)
@@ -348,8 +348,7 @@ let low2high_interface consts = function i ->
 	(fun map meth -> 
 	  MethodMap.add 
 	    {ms_name=meth.m_name;
-	     ms_parameters=fst meth.m_signature;
-	     ms_return_value= snd meth.m_signature;}
+	     ms_parameters=fst meth.m_signature}
 	    (try low2high_amethod consts meth
 	      with Failure msg -> failwith ("method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg))
 	    map)
