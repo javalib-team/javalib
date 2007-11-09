@@ -90,6 +90,12 @@ val add_classFile : JClass.class_file -> t -> t
 val load_program : string -> t
 val store_program : string -> t -> unit
 
+(** {2 Iterators}*)
+
+val iter : (class_file -> unit) -> program -> unit
+val fold : ('b -> class_file -> 'b) -> 'b -> program -> 'b
+
+
 (** {2 Access functions to fields and methods}*)
 
 type any_method = abstract_class_method

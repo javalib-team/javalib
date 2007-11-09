@@ -175,6 +175,10 @@ let load_program filename : program =
   in close_in ch; p
 
 
+(* Iterators *)
+let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
+let iter f p = ClassMap.iter (fun _ c -> f c) p
+
 type any_method = abstract_class_method
 type any_field =
     | InterfaceField of interface_field
