@@ -230,8 +230,8 @@ let rec unparse_attribute_to_strings consts =
 	  write_with_size write_ui16 ch
 	    (function start_pc, length, name, signature, index ->
 	      write_ui16 ch start_pc;
-	       write_constant ch consts (ConstStringUTF8 name);
 	      write_ui16 ch length;
+	      write_constant ch consts (ConstStringUTF8 name);
 	      write_constant ch consts
 		(ConstStringUTF8 (unparse_value_signature signature));
 	      write_ui16 ch index)
