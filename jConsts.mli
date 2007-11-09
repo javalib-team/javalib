@@ -20,7 +20,7 @@
 (** Access to the constant pool. *)
 
 (** You should not need this module for normal classfiles, as the
-    parsing/unparsing function take care of the constant pool. *)
+    parsing/unparsing functions take care of the constant pool. *)
 
 (** Low level access to the constant pool. This is usefull for adding
     a user-defined attribute that refers to the constant pool. *)
