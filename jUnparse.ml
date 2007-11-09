@@ -186,7 +186,6 @@ let unparse_stackmap_attribute consts stackmap =
 
 let rec unparse_attribute_to_strings consts =
   let ch = output_string () in
-  let write_utf8 name = write_constant ch consts (ConstStringUTF8 name) in
     function
       | AttributeSourceFile s ->
 	  write_constant ch consts (ConstStringUTF8 s);
@@ -219,7 +218,6 @@ let rec unparse_attribute_to_strings consts =
 	    l;
 	  ("InnerClasses",close_out ch)
       | AttributeSynthetic ->
-	  write_ui16 ch 0;
 	  ("Synthetic",close_out ch)
       | AttributeLineNumberTable l ->
 	  write_with_size write_ui16 ch
@@ -232,7 +230,7 @@ let rec unparse_attribute_to_strings consts =
 	  write_with_size write_ui16 ch
 	    (function start_pc, length, name, signature, index ->
 	      write_ui16 ch start_pc;
-	      write_utf8 name;
+	       write_constant ch consts (ConstStringUTF8 name);
 	      write_ui16 ch length;
 	      write_constant ch consts
 		(ConstStringUTF8 (unparse_value_signature signature));
@@ -240,7 +238,6 @@ let rec unparse_attribute_to_strings consts =
 	    l;
 	  ("LocalVariableTable",close_out ch)
       | AttributeDeprecated ->
-	  write_ui16 ch 0;
 	  ("Deprecated",close_out ch)
       | AttributeStackMap s -> 
 	  ignore (close_out ch);
