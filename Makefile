@@ -67,8 +67,10 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml)
 		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 
 clean:
-	rm -rf doc .depend *.cmi *.cmo *.cmx *.annot *.cma *.cmxa *.obj *.o *.a *~ 
-	rm -rf ocaml tests tests.opt sample sample.opt
+	rm -rf .depend *.cmo *.cmx *.annot *.obj *.o *.a *~
+
+cleanall: clean
+	rm -rf doc ocaml tests tests.opt sample sample.opt *.cmi *.cma *.cmxa
 
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)

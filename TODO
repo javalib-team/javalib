@@ -1,12 +1,18 @@
 Here is some stuff that need to be done:
 - add fields "other_flags" to field/method/class/inner_class records
-- currently, when using JClass, one has to open JClassLow, 
-   we should try to avoid that
-- jDump : we should dump the constant pool, the tableswitch and lookupswith instructions
+- currently, when using JClass, one has to open JClassLow, we should
+  try to avoid that
+- jDump : we should dump the constant pool, the tableswitch and
+  lookupswith instructions
 - it seems that many things are not dump by jDump
-- adopt a more uniform naming convention between JClass and JClassLow
 - adapt JDump to dump high level classes
+- adopt a more uniform naming convention between JClass and JClassLow
 - check : an interface can contains a class initializer
   (ex:com/sun/imageio/plugins/bmp/BMPConstants) and it is not
   documented
 - use a well-defined set of exceptions (remove failwith)
+- add lazy parsing (keeping the code attributes unparsed until really
+  needed) (think of marshaling and compacity)
+- add "lazy loading": automatically load from a class-path classes
+  that are needed by the 'main' classes (it's to avoid loading the
+  full run-time, but just the part used by the current program)
