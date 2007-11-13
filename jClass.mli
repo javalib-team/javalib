@@ -266,11 +266,11 @@ type abstract_class = {
 }
 
 (** Concrete classes cannot contains abstract methods.*)
-type normal_class = {
-  nc_final : bool;
-  nc_super_class : class_name option;
-  nc_fields : class_field FieldMap.t;
-  nc_methods : concrete_method MethodMap.t
+type concrete_class = {
+  cc_final : bool;
+  cc_super_class : class_name option;
+  cc_fields : class_field FieldMap.t;
+  cc_methods : concrete_method MethodMap.t
 }
 
 (** Interfaces cannot be final and can only contains abstract
@@ -293,7 +293,7 @@ type inner_class = {
 }
 
 type class_file_type =
-  | ConcreteClass of normal_class
+  | ConcreteClass of concrete_class
   | AbstractClass of abstract_class
   | Interface of interface
 

@@ -272,11 +272,11 @@ let low2high_anmethod consts = function m ->
   else ConcreteMethod (low2high_nmethod consts m)
 
 
-let low2high_normal_class consts = function nc ->
+let low2high_concrete_class consts = function nc ->
   {
-    nc_final = List.exists ((=)AccFinal) nc.j_flags;
-    nc_super_class = nc.j_super;
-    nc_fields = List.fold_left 
+    cc_final = List.exists ((=)AccFinal) nc.j_flags;
+    cc_super_class = nc.j_super;
+    cc_fields = List.fold_left 
       (fun m f -> 
 	FieldMap.add 
 	  {fs_name=f.f_name;fs_type=f.f_signature} 
@@ -285,7 +285,7 @@ let low2high_normal_class consts = function nc ->
 	  m)
       FieldMap.empty
       nc.j_fields;
-    nc_methods = List.fold_left 
+    cc_methods = List.fold_left 
       (fun map meth -> 
 	MethodMap.add 
 	  {ms_name=meth.m_name;
@@ -422,7 +422,7 @@ let low2high_class cl =
 	      then failwith "An abstract class cannot be final."
               else AbstractClass (low2high_abstract_class consts cl)
 	  else
-            ConcreteClass (low2high_normal_class consts cl)
+            ConcreteClass (low2high_concrete_class consts cl)
       with Failure msg -> failwith ("in class "^JDump.class_name my_name^": "^msg)
     in 
       {

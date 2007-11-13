@@ -32,10 +32,10 @@ type abstract_class = {
 }
 
 and concrete_class = {
-  nc_final : bool;
-  nc_super_class : class_file option;
-  nc_fields : class_field FieldMap.t;
-  nc_methods : concrete_method MethodMap.t
+  cc_final : bool;
+  cc_super_class : class_file option;
+  cc_fields : class_field FieldMap.t;
+  cc_methods : concrete_method MethodMap.t
 }
 
 and interface = {
@@ -108,17 +108,17 @@ let add_classFile c program =
       | JClass.ConcreteClass c ->
 	  let super = 
 	    begin
-	      match c.JClass.nc_super_class with
+	      match c.JClass.cc_super_class with
 		| None -> None
 		| Some super ->
 		    try Some (ClassMap.find super program)
 		    with Not_found -> raise (Class_not_found super)
 	    end
 	  in ConcreteClass {
-	    nc_final = c.JClass.nc_final;
-	    nc_super_class = super;
-	    nc_fields = c.JClass.nc_fields;
-	    nc_methods = c.JClass.nc_methods;
+	    cc_final = c.JClass.cc_final;
+	    cc_super_class = super;
+	    cc_fields = c.JClass.cc_fields;
+	    cc_methods = c.JClass.cc_methods;
 	  }
   in 
        ClassMap.add 
@@ -208,15 +208,15 @@ exception Found_Class of class_file
 let defines_method ms c = match c.class_file_type with
   | Interface i -> MethodMap.mem ms i.i_methods
   | AbstractClass ac -> MethodMap.mem ms ac.ac_methods 
-  | ConcreteClass nc -> MethodMap.mem ms nc.nc_methods 
+  | ConcreteClass nc -> MethodMap.mem ms nc.cc_methods 
 let defines_field fs c = match c.class_file_type with
   | Interface i -> FieldMap.mem fs i.i_fields
   | AbstractClass ac -> FieldMap.mem fs ac.ac_fields 
-  | ConcreteClass nc -> FieldMap.mem fs nc.nc_fields 
+  | ConcreteClass nc -> FieldMap.mem fs nc.cc_fields 
 let super c = match c.class_file_type with
   | Interface i -> Some i.i_super
   | AbstractClass ac -> ac.ac_super_class
-  | ConcreteClass nc -> nc.nc_super_class
+  | ConcreteClass nc -> nc.cc_super_class
 
 
 
@@ -233,7 +233,7 @@ let get_method c ms =
     | AbstractClass c ->
 	MethodMap.find ms c.ac_methods
     | ConcreteClass c ->
-	ConcreteMethod (MethodMap.find ms c.nc_methods)
+	ConcreteMethod (MethodMap.find ms c.cc_methods)
 
 let get_field c fs =
   match c.class_file_type with
@@ -242,7 +242,7 @@ let get_field c fs =
     | AbstractClass c ->
 	ClassField (FieldMap.find fs c.ac_fields)
     | ConcreteClass c ->
-	ClassField (FieldMap.find fs c.nc_fields)
+	ClassField (FieldMap.find fs c.cc_fields)
 
 
 let rec resolve_field fs c : class_file =
@@ -407,3 +407,4 @@ let implemented_interfaces p cn =
   in rem_dbl (implemented_interfaces' (ClassMap.find cn p))
 
 (* val firstCommonSuperClass : t -> className -> className -> className *)
+

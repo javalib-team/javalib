@@ -40,10 +40,10 @@ type abstract_class = {
 }
 
 and concrete_class = {
-  nc_final : bool;
-  nc_super_class : class_file option;
-  nc_fields : class_field FieldMap.t;
-  nc_methods : concrete_method MethodMap.t
+  cc_final : bool;
+  cc_super_class : class_file option;
+  cc_fields : class_field FieldMap.t;
+  cc_methods : concrete_method MethodMap.t
 }
 
 and interface = {
@@ -219,7 +219,8 @@ val implements : t ->  className -> interfaceName -> bool
 
 
 (** [super_class p cn] returns the super class of cn.
-    @raise Not_found if [cn] is not in [p]. *)
+    @raise Not_found if [cn] is not in [p] or if [cn] has no super
+    class. *)
 val super_class : t -> className -> className
 
 (** [implemented_interfaces p cn] returns the interfaces implemented
