@@ -23,5 +23,4 @@ Here is some stuff that need to be done:
   pruning edges to handles of subclasses of java.lang.Exception and
   not subclasses of java.lang.RuntimeException for instruction that
   are known not to throw declared exception (should be everything
-  except method calls).  - JProgram : add children to the program
-  hierarchy (cf. svn:certified/java_while/untrusted/mlsoot)
+  except method calls).

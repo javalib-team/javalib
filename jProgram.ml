@@ -57,12 +57,18 @@ and class_file = {
   c_deprecated : bool;
   inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  class_file_type : class_file_type
+  class_file_type : class_file_type;
+  mutable children : class_file ClassMap.t;
 }
 
 
 type program = class_file ClassMap.t
 type t = program
+
+let super c = match c.class_file_type with
+  | Interface i -> Some i.i_super
+  | AbstractClass ac -> ac.ac_super_class
+  | ConcreteClass nc -> nc.cc_super_class
 
 (** [Class_not_found c] is raised when trying to add a class when its
     super class or one of its implemented interfaces is not yet in the
@@ -121,18 +127,30 @@ let add_classFile c program =
 	    cc_methods = c.JClass.cc_methods;
 	  }
   in 
-       ClassMap.add 
-	 c.JClass.name
-	 {name = c.JClass.name;
-	  c_access = c.JClass.c_access;
-	  interfaces = imap;
-	  sourcefile = c.JClass.sourcefile;
-	  c_deprecated = c.JClass.c_deprecated;
-	  inner_classes = c.JClass.inner_classes;
-	  c_other_attributes = c.JClass.c_other_attributes;
-	  class_file_type = cft;}
-	 program
-
+  let c' =
+    {name = c.JClass.name;
+     c_access = c.JClass.c_access;
+     interfaces = imap;
+     sourcefile = c.JClass.sourcefile;
+     c_deprecated = c.JClass.c_deprecated;
+     inner_classes = c.JClass.inner_classes;
+     c_other_attributes = c.JClass.c_other_attributes;
+     class_file_type = cft;
+     children = ClassMap.empty;}
+  in
+    begin
+      ClassMap.iter
+	(fun _ i -> i.children <- ClassMap.add c'.name c' i.children)
+	c'.interfaces;
+      match super c' with
+	| None -> ();
+	| Some parent -> 
+	    parent.children <- ClassMap.add c'.name c' parent.children 
+    end;
+    ClassMap.add 
+      c'.name
+      c'
+      program
 
 let parse_program class_path names =
   (* build a map of all the JClass.class_file that are going to be
@@ -213,10 +231,6 @@ let defines_field fs c = match c.class_file_type with
   | Interface i -> FieldMap.mem fs i.i_fields
   | AbstractClass ac -> FieldMap.mem fs ac.ac_fields 
   | ConcreteClass nc -> FieldMap.mem fs nc.cc_fields 
-let super c = match c.class_file_type with
-  | Interface i -> Some i.i_super
-  | AbstractClass ac -> ac.ac_super_class
-  | ConcreteClass nc -> nc.cc_super_class
 
 
 

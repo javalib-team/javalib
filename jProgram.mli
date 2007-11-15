@@ -65,7 +65,8 @@ and class_file = {
   c_deprecated : bool;
   inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  class_file_type : class_file_type
+  class_file_type : class_file_type;
+  mutable children : class_file ClassMap.t;
 }
 
 (** {2 The [program] structure} *)
