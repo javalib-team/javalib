@@ -28,9 +28,9 @@ INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
 MODULES=jClass jDump jConsts jCode jInstruction jHigh2Low jUnparse	\
-jLow2High jParse jFile jProgram
+jLow2High jParse jFile jProgram jControlFlow
 MODULE_INTERFACES=jClassLow jClass jDump jConsts jCode jInstruction	\
-jUnparse jParse jLow2High jHigh2Low jFile jProgram
+jUnparse jParse jLow2High jHigh2Low jFile jProgram jControlFlow
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 

@@ -16,3 +16,12 @@ Here is some stuff that need to be done:
 - add "lazy loading": automatically load from a class-path classes
   that are needed by the 'main' classes (it's to avoid loading the
   full run-time, but just the part used by the current program)
+- take in account visibility in JProgram (lookups and resolves of fields
+  and methods)
+- test lookups and resolves by comparing with jvm traces
+- JControlFlow : improve precession of exceptional_successors by
+  pruning edges to handles of subclasses of java.lang.Exception and
+  not subclasses of java.lang.RuntimeException for instruction that
+  are known not to throw declared exception (should be everything
+  except method calls).  - JProgram : add children to the program
+  hierarchy (cf. svn:certified/java_while/untrusted/mlsoot)
