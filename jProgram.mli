@@ -131,12 +131,14 @@ val get_class : t -> class_name -> class_file
     @raise Not_found if [c] does not contain a method with signature [ms].
 *)
 val get_method : class_file -> method_signature -> any_method
+val get_methods : class_file -> method_signature list
 
 (** [get_field c fs] returns the field with signature [fs] in class
     [c], if any.
     @raise Not_found if [c] does not contain a field with signature [fs].
 *)
 val get_field : class_file -> field_signature -> any_field
+val get_fields : class_file -> field_signature list 
 
 (** [get_class p cn] returns the class named [cn] in program [p], if
     any.
@@ -154,13 +156,23 @@ val resolve_class : program -> class_name -> class_file
 val resolve_method : method_signature -> class_file -> class_file
 
 (** [resolve_interface_method ms c] return the interface that defines
-    the method [ms], if any.  The caller is responsible to check that
+    the method [ms], or [java.lang.Object] if no interface defines
+    [ms] but [Object] does.  The caller is responsible to check that
     the interface and the method defined in the interface are visible
     from the current class.
     @raise NoSuchMethodError if the method is not found.
     @raise IncompatibleClassChangeError if [c] is not an interface.
 *)
 val resolve_interface_method : method_signature -> class_file -> class_file
+
+(** [resolve_all_interface_methods ms c] return the list of interfaces
+    of [c] that defines the method [ms].  The list is ordered by
+    increasing distant in the inheritance hierarchy.  The caller is
+    responsible to check that the interface and the method defined in
+    the interface are visible from the current class.
+*)
+val resolve_all_interface_methods : method_signature -> class_file -> class_file list
+
 
 (** [resolve_field fs c] returns the class or interface that defines
     the field [fs], if any.
@@ -203,33 +215,39 @@ val classOrInterfaceName_of_ident : t -> class_name ->
    [`Class of className | `Interface of interfaceName]
 
 (** [extends_class p cn1 cn2] returns [true] if [cn2] is a super-class
-    of [cn1].
+    of [cn1]. An class extends itself.
     @raise Not_found if [cn1] or [cn2] cannot be found in [p]. *)
 val extends_class : t ->  className -> className -> bool
+val extends_class_ref : class_file -> class_file -> bool
 
 (** [extends_interface p in1 in2] returns true if [in2] is a
-    super-interface of [in1].
+    super-interface of [in1]. An interface extends itself.
     @raise Not_found if [in1] cannot be found in [p]. *)
 val extends_interface : t ->  interfaceName -> interfaceName -> bool
+val extends_interface_ref : class_file -> class_file -> bool
 
 (** [implements p cn1 in2] returns true if [in2] is a
     super-interface of [cn1].
     @raise Not_found if [cn1] cannot be found in [p]. *)
 val implements : t ->  className -> interfaceName -> bool
-
+val implements_ref : class_file -> class_file -> bool
 
 (** [super_class p cn] returns the super class of cn.
     @raise Not_found if [cn] is not in [p] or if [cn] has no super
     class. *)
 val super_class : t -> className -> className
+val super_class_ref : class_file -> class_file option
 
 (** [implemented_interfaces p cn] returns the interfaces implemented
     by [cn], super-classes of [cn], or extended by those
     super-interfaces. *)
 val implemented_interfaces : t -> className -> interfaceName list
+val implemented_interfaces_ref : class_file -> class_file list
 
 (** [super_interfaces p iname] returns the explicit and implicit
     super-interfaces of [iname].*)
 val super_interfaces : t -> interfaceName -> interfaceName list
+val super_interfaces_ref : class_file -> class_file list
 
-(* val firstCommonSuperClass : t -> className -> className -> className *)
+val firstCommonSuperClass : t -> className -> className -> className
+val firstCommonSuperClass_ref : class_file -> class_file -> class_file
