@@ -109,18 +109,18 @@ let h2l_ifield consts fs f =
       @ (h2l_attributes f.if_attributes);
   }
 
-let h2l_nmethod consts ms m =
+let h2l_cmethod consts ms m =
   let code = h2l_code2attribute consts m.implementation 
   in 
     {m_name = ms.ms_name;
-     m_signature = (ms.ms_parameters, m.nm_return_type);
+     m_signature = (ms.ms_parameters, m.cm_return_type);
      m_flags =
-	(if m.nm_static then [AccStatic] else [])
-	@ (if m.nm_final then [AccFinal] else [])
-	@ (if m.nm_synchronized then [AccSynchronized] else [])
-	@ (if m.nm_strict then [AccStrict] else [])
+	(if m.cm_static then [AccStatic] else [])
+	@ (if m.cm_final then [AccFinal] else [])
+	@ (if m.cm_synchronized then [AccSynchronized] else [])
+	@ (if m.cm_strict then [AccStrict] else [])
 	@ (match m.implementation with Native -> [AccNative] |_ -> [])
-	@ (access2flags m.nm_access);
+	@ (access2flags m.cm_access);
      m_code = 
 	begin
 	  match code with
@@ -128,11 +128,11 @@ let h2l_nmethod consts ms m =
 	    | _ -> None
 	end;
      m_attributes =
-	(match m.nm_exceptions with
+	(match m.cm_exceptions with
 	  | [] -> [] 
 	  | l -> [AttributeExceptions l])
 	@ code
-	@ h2l_attributes m.nm_attributes;
+	@ h2l_attributes m.cm_attributes;
     }
 
 let h2l_amethod consts ms m = 
@@ -147,15 +147,15 @@ let h2l_amethod consts ms m =
       @ h2l_attributes m.am_attributes;
   }
 
-let h2l_anmethod consts ms = function
+let h2l_acmethod consts ms = function
   | AbstractMethod m -> h2l_amethod consts ms m
-  | ConcreteMethod m -> h2l_nmethod consts ms m
+  | ConcreteMethod m -> h2l_cmethod consts ms m
 
 let h2l_concreteclass consts c c' =
   {c' with 
     j_super = c.cc_super_class;
     j_flags = AccSynchronized::(if c.cc_final then AccFinal::c'.j_flags else c'.j_flags);
-    j_methods = MethodMap.fold (fun fs f l -> h2l_nmethod consts fs f::l) c.cc_methods [];
+    j_methods = MethodMap.fold (fun fs f l -> h2l_cmethod consts fs f::l) c.cc_methods [];
     j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.cc_fields [];
   }
 
@@ -163,7 +163,7 @@ let h2l_abstractclass consts c c' =
   {c' with 
     j_super = c.ac_super_class;
     j_flags = AccSynchronized::AccAbstract::c'.j_flags;
-    j_methods = MethodMap.fold (fun fs f l -> h2l_anmethod consts fs f::l) c.ac_methods [];
+    j_methods = MethodMap.fold (fun fs f l -> h2l_acmethod consts fs f::l) c.ac_methods [];
     j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.ac_fields [];
   }
 
@@ -173,7 +173,7 @@ let h2l_interface consts c c' =
     j_super = Some ["java";"lang";"Object"];
     j_flags = AccInterface::AccAbstract::c'.j_flags;
     j_methods = 
-      (match c.i_initializer with None -> [] | Some m -> [h2l_nmethod consts clinit_signature m])
+      (match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts clinit_signature m])
       @ MethodMap.fold (fun ms m l -> h2l_amethod consts ms m::l) c.i_methods [];
     j_fields = FieldMap.fold (fun fs f l -> h2l_ifield consts fs f::l) c.i_fields [];
   }

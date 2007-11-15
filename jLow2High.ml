@@ -209,7 +209,7 @@ let low2high_amethod consts = function m ->
     am_return_type = snd m.m_signature
   }
 
-let low2high_nmethod consts = function m ->
+let low2high_cmethod consts = function m ->
   if m.m_name = "<init>" && 
     List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
     m.m_flags
@@ -221,12 +221,12 @@ let low2high_nmethod consts = function m ->
     then failwith "Non abstract class cannot have abstract methods."
   else
   {
-    nm_static = List.exists ((=) AccStatic) m.m_flags;
-    nm_final = List.exists ((=) AccFinal) m.m_flags;
-    nm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
-    nm_strict =  List.exists ((=) AccStrict) m.m_flags;
-    nm_access = flags2access m.m_flags;
-    nm_exceptions = 
+    cm_static = List.exists ((=) AccStatic) m.m_flags;
+    cm_final = List.exists ((=) AccFinal) m.m_flags;
+    cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
+    cm_strict =  List.exists ((=) AccStrict) m.m_flags;
+    cm_access = flags2access m.m_flags;
+    cm_exceptions = 
       begin
 	let rec find_Exceptions = function
 	  | AttributeExceptions cl::l -> 
@@ -237,7 +237,7 @@ let low2high_nmethod consts = function m ->
 	  | [] -> []
 	in find_Exceptions m.m_attributes
       end;
-    nm_attributes =
+    cm_attributes =
 	low2high_attributes consts 
 	  (List.filter
 	      (function |AttributeExceptions _ | AttributeCode _ -> false| _ -> true) 
@@ -263,13 +263,13 @@ let low2high_nmethod consts = function m ->
 		 Native)
 	in find_Code m.m_attributes
       end;
-    nm_return_type = snd m.m_signature
+    cm_return_type = snd m.m_signature
   }
 
-let low2high_anmethod consts = function m ->
+let low2high_acmethod consts = function m ->
   if List.exists ((=)AccAbstract) m.m_flags
   then AbstractMethod (low2high_amethod consts m)
-  else ConcreteMethod (low2high_nmethod consts m)
+  else ConcreteMethod (low2high_cmethod consts m)
 
 
 let low2high_concrete_class consts = function nc ->
@@ -290,7 +290,7 @@ let low2high_concrete_class consts = function nc ->
 	MethodMap.add 
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
-	  (try low2high_nmethod consts meth
+	  (try low2high_cmethod consts meth
 	  with Failure msg -> failwith ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg))
 	  map)
       MethodMap.empty
@@ -314,7 +314,7 @@ let low2high_abstract_class consts = function ac ->
 	MethodMap.add 
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
-	  (try low2high_anmethod consts meth
+	  (try low2high_acmethod consts meth
 	  with Failure msg -> failwith ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg))
 	  map)
       MethodMap.empty
@@ -329,7 +329,7 @@ let low2high_interface consts = function i ->
       List.partition
 	(fun m -> m.m_name = "<clinit>" && m.m_signature = ([],None))
 	i.j_methods with
-	  | [m],others -> Some (low2high_nmethod consts m),others
+	  | [m],others -> Some (low2high_cmethod consts m),others
 	  | [],others -> None, others
 	  | _ -> failwith "has more than one class initializer <clinit>"
   in

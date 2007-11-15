@@ -34,7 +34,7 @@ jUnparse jParse jLow2High jHigh2Low jFile jProgram jControlFlow
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
-all: javaLib.cma javaLib.cmxa
+all: javaLib.cma javaLib.cmxa ocaml
 
 install: javaLib.cma javaLib.cmxa
 	mkdir -p $(INSTALL_DIR)

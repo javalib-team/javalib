@@ -216,15 +216,15 @@ type implementation =
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
 type concrete_method = {
-  nm_static : bool;
-  nm_final : bool;
-  nm_synchronized : bool;
-  nm_strict : bool;
-  nm_access: access;
-  nm_exceptions : class_name list;
-  nm_attributes : attributes;
+  cm_static : bool;
+  cm_final : bool;
+  cm_synchronized : bool;
+  cm_strict : bool;
+  cm_access: access;
+  cm_exceptions : class_name list;
+  cm_attributes : attributes;
   implementation : implementation;
-  nm_return_type : value_type option
+  cm_return_type : value_type option
 }
 
 type abstract_method = {
