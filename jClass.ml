@@ -23,7 +23,7 @@
 
 (** High level Ocaml representation of a Java class file. *)
 
-open JClassLow
+open JBasics
 
 type field_signature = {
   fs_name:string;

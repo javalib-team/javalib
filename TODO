@@ -1,7 +1,5 @@
 Here is some stuff that need to be done:
 - add fields "other_flags" to field/method/class/inner_class records
-- currently, when using JClass, one has to open JClassLow, we should
-  try to avoid that
 - jDump : we should dump the constant pool, the tableswitch and
   lookupswith instructions
 - it seems that many things are not dump by jDump

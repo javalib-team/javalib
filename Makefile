@@ -27,9 +27,9 @@ OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
-MODULES=jClass jDump jConsts jCode jInstruction jHigh2Low jUnparse	\
+MODULES= jBasics jClass jDump jCode jInstruction jHigh2Low jUnparse	\
 jLow2High jParse jFile jProgram jControlFlow
-MODULE_INTERFACES=jClassLow jClass jDump jConsts jCode jInstruction	\
+MODULE_INTERFACES=jBasics jClassLow jClass jDump jCode jInstruction	\
 jUnparse jParse jLow2High jHigh2Low jFile jProgram jControlFlow
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
@@ -67,7 +67,7 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml)
 		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 
 clean:
-	rm -rf .depend *.cmo *.cmx *.annot *.obj *.o *.a *~
+	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
 
 cleanall: clean
 	rm -rf doc ocaml tests tests.opt sample sample.opt *.cmi *.cma *.cmxa

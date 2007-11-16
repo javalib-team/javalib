@@ -20,7 +20,6 @@
  *)
 
 
-
 open IO
 
 (** {2 Tests of parsing/unparsing functions}*)
@@ -63,6 +62,7 @@ let input_copy ch =
     ch', ch''
 
 
+open JBasics
 open JClassLow
 
 let parse_code ch consts len =

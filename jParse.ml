@@ -24,7 +24,7 @@ open JClassLow
 open IO.BigEndian
 open ExtList
 open ExtString
-include JConsts
+include JBasics
 
 type tmp_constant =
 	| ConstantClass of int

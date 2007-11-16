@@ -21,6 +21,7 @@
 
 (** Dumping of low level classes. *)
 
+open JBasics
 open JClassLow
 
 (** Dump a whole class file. *)

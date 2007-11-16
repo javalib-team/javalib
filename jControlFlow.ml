@@ -19,21 +19,21 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClassLow
+open JBasics
 open JClass
 open JProgram
 
 module PP : sig
   type t
   exception NoCode of (class_name * method_signature)
-  val to_className : t -> JClassLow.class_name
+  val to_className : t -> JBasics.class_name
   val to_ConcreteClass : t -> JProgram.concrete_class
   val to_class : t -> JProgram.class_file
   val to_hardpp : t -> JProgram.class_file * JClass.code * int
   val to_softpp :
-    t -> (JClassLow.class_name * JClass.method_signature) * int
+    t -> (JBasics.class_name * JClass.method_signature) * int
   val get_first_pp :
-    JProgram.t -> JClassLow.class_name * JClass.method_signature -> t
+    JProgram.t -> JBasics.class_name * JClass.method_signature -> t
   val goto_absolute : t -> int -> t
   val goto_relative : t -> int -> t
 end =
@@ -69,7 +69,7 @@ struct
     	| _ -> raise (Invalid_argument "the program point is invalid (the class is not concrete)")
 
 
-  exception NoCode of (JClassLow.class_name * JClass.method_signature)
+  exception NoCode of (JBasics.class_name * JClass.method_signature)
   let soft2hard prog ((cn,ms),i) =
     let c = get_interface_or_class prog cn in
       match get_method c ms with

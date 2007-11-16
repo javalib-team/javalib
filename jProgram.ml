@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClassLow
+open JBasics
 open JClass
 
 module ClassMap = Map.Make(struct type t = class_name let compare = compare end)

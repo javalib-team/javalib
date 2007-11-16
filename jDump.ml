@@ -20,6 +20,7 @@
 (* last modified by eandre@irisa.fr 2006/06/08 *)
 
 
+open JBasics
 open JClassLow
 
 let class_name = String.concat "."

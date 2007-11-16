@@ -30,18 +30,18 @@ val unparse_class : 'a IO.output -> JClass.interface_or_class -> unit
 (** Unparses an attribute to a couple [(name, content)] where [name]
     is the code-name of the attribute and [content] as encoded in a
     [.class] file. *)
-val unparse_attribute_to_strings : JClassLow.constant DynArray.t -> JClassLow.attribute -> string * string
+val unparse_attribute_to_strings : JBasics.constant DynArray.t -> JClassLow.attribute -> string * string
 
 (**/**)
 
 (* For statistics: *)
 
 val unparse_stackmap_attribute :
-  JClassLow.constant DynArray.t ->
-  (int * JClassLow.verification_type list * JClassLow.verification_type list) list ->
+  JBasics.constant DynArray.t ->
+  (int * JBasics.verification_type list * JBasics.verification_type list) list ->
   (string * string)
 
 val unparse_constant_pool :
   'a IO.output ->
-  JClassLow.constant DynArray.t ->
+  JBasics.constant DynArray.t ->
   unit

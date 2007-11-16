@@ -21,7 +21,7 @@
 
 (** High level Ocaml representation of a java byte-code program. *)
 
-open JClassLow
+open JBasics
 open JClass
 
 (** {2 Navigable hierarchy} *)

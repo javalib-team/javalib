@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClassLow
+open JBasics
 open JClass
 open JProgram
 
@@ -30,12 +30,12 @@ module PP :
   sig
     type t
     exception NoCode of (class_name * method_signature)
-    val to_className : t -> JClassLow.class_name
+    val to_className : t -> JBasics.class_name
     val to_ConcreteClass : t -> JProgram.concrete_class
     val to_class : t -> JProgram.class_file
     val to_hardpp : t -> JProgram.class_file * JClass.code * int
     val to_softpp :
-      t -> (JClassLow.class_name * JClass.method_signature) * int
+      t -> (JBasics.class_name * JClass.method_signature) * int
 
     (** [get_first_pp p cn ms] gets a pointer to the first instruction of
 	the method [ms] of the class [cn].
@@ -45,7 +45,7 @@ module PP :
 
 	@raise NoCode if the method [ms] has no associated code.*)
     val get_first_pp :
-      JProgram.t -> JClassLow.class_name * JClass.method_signature -> t
+      JProgram.t -> JBasics.class_name * JClass.method_signature -> t
     val goto_absolute : t -> int -> t
     val goto_relative : t -> int -> t
   end
@@ -56,5 +56,5 @@ type pp = PP.t
 val get_opcode : pp -> JClass.opcode
 val next_instruction : PP.t -> PP.t
 val normal_successors : pp -> PP.t list
-val handlers : PP.t -> JClassLow.jexception list
+val handlers : PP.t -> JBasics.jexception list
 val exceptional_successors : PP.t -> PP.t list

@@ -27,7 +27,7 @@
     OpInvalid may be interpreted as nop, or the direct successor of
     an instruction can alternatively by defined as the first following
     non-OpInvalid instruction. *)
-val opcodes2code : JClassLow.constant array -> JClassLow.opcode array -> JClass.opcode array
+val opcodes2code : JBasics.constant array -> JClassLow.opcode array -> JClass.opcode array
 
 (** Maps a high level code to a valid arrray of low level bytecode
     instructions. The distance between the offset of two successive
@@ -40,14 +40,14 @@ val opcodes2code : JClassLow.constant array -> JClassLow.opcode array -> JClass.
     form is needed but the instruction was read as a "simple" form,
     the traduction will fail. *)
 val code2opcodes :
-  JClassLow.constant DynArray.t -> JClass.opcode array -> JClassLow.opcode array
+  JBasics.constant DynArray.t -> JClass.opcode array -> JClassLow.opcode array
 
 (**/**)
 
 (* For testing. *)
 
 (** Low level to high level bytecode instruction. *)
-val opcode2instruction : JClassLow.constant array -> JClassLow.opcode -> JClass.opcode
+val opcode2instruction : JBasics.constant array -> JClassLow.opcode -> JClass.opcode
 
 (** High level to low level bytecode instruction. *)
-val instruction2opcode : JClassLow.constant DynArray.t -> JClass.opcode -> JClassLow.opcode
+val instruction2opcode : JBasics.constant DynArray.t -> JClass.opcode -> JClassLow.opcode

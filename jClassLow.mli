@@ -19,97 +19,9 @@
 
 (** Low level representation of a Java class file. *)
 
-(** {2 Basic Elements.} *)
+open JBasics
 
-(** Fully qualified ordinary class or interface name (not an array).
-    For example: [\["java" ; "lang" ; "Object"\]]. *)
-type class_name = string list
-
-(** Numerical types that are not smaller than int. *)
-type other_num = [
-| `Long
-| `Float
-| `Double
-]
-
-(** JVM basic type (int = short = char = byte = bool). *)
-type jvm_basic_type = [
-| `Int2Bool
-| other_num
-]
-
-(** JVM type (int = short = char = byte = bool, all objects have the same type). *)
-type jvm_type = [
-| jvm_basic_type
-| `Object
-]
-
-(** JVM array element type (byte = bool, all objects have the same type). *)
-type jvm_array_type = [
-| `Int
-| `Short
-| `Char
-| `ByteBool
-| other_num
-| `Object
-]
-
-(** JVM return type (byte = bool, all objects have the same type). *)
-type jvm_return_type = [
-|  jvm_basic_type
-| `Object
-| `Void
-]
-
-(** Java basic type. *)
-type java_basic_type = [
-| `Int
-| `Short
-| `Char
-| `Byte
-| `Bool
-| other_num
-]
-
-(** Java object type *)
-type object_type =
-  | TClass of class_name
-  | TArray of value_type
-
-(** Java type *)
-and value_type =
-  | TBasic of java_basic_type
-  | TObject of object_type
-
-(** Field signature. *)
-type field_descriptor = value_type
-
-(** Method signature. *)
-type method_descriptor = value_type list * value_type option
-
-(** Signatures parsed from CONSTANT_NameAndType_info structures. *)
-type signature =
-  | SValue of field_descriptor
-  | SMethod of method_descriptor
-
-(** Constant value. *)
-type constant_value =
-  | ConstString of string
-  | ConstInt of int32
-  | ConstFloat of float
-  | ConstLong of int64
-  | ConstDouble of float
-  | ConstClass of object_type (** This is not documented in the JVM spec. *)
-
-(** Constant. *)
-type constant =
-  | ConstValue of constant_value
-  | ConstField of (class_name * string * field_descriptor)
-  | ConstMethod of (object_type * string * method_descriptor)
-  | ConstInterfaceMethod of (class_name * string * method_descriptor)
-  | ConstNameAndType of string * signature
-  | ConstStringUTF8 of string
-  | ConstUnusable
+(** {2 Low level bytecode instructions.} *)
 
 (** Instruction. *)
 type opcode =
@@ -251,27 +163,7 @@ type opcode =
 
 type opcodes = opcode array
 
-(** Exception handler. *)
-type jexception = {
-	e_start : int;
-	e_end : int;
-	e_handler : int;
-	e_catch_type : class_name option
-}
-
-(** Stackmap type. *)
-type verification_type = 
-	| VTop 
-	| VInteger 
-	| VFloat
-	| VDouble
-	| VLong
-	| VNull
-	| VUninitializedThis
-	| VObject of object_type
-	| VUninitialized of int (** creation point *)
-
-(** {2 Substructures.} *)
+(** {2 Flags, attributes and low-level structure of class files.} *)
 
 type access_flag =
 	| AccPublic

@@ -21,7 +21,7 @@ open IO
 open IO.BigEndian
 open ExtList
 open JClassLow
-open JConsts
+open JBasics
 
 (* OpCodes Parsing *)
 (*******************)

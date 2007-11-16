@@ -18,7 +18,7 @@
  *)
 
 open JClassLow
-open JConsts
+open JBasics
 open IO
 open IO.BigEndian
 open JCode
