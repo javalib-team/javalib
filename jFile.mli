@@ -54,3 +54,11 @@ val transform_low : string -> string -> (JClassLow.jclass -> JClassLow.jclass) -
     mapped to jar files, and the non-class files are kept unchanged in the
     resulting archive. Works on the high-level representation of classes. *)
 val transform : string -> string -> (JClass.class_file -> JClass.class_file) -> string list -> unit
+
+type class_path
+
+val class_path : string list -> class_path
+
+val close_class_path : class_path -> unit
+
+val lookup : class_path -> string -> JClassLow.jclass

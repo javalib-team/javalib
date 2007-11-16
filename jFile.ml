@@ -19,6 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+open ExtList
 open JClassLow
 open JClass
 
@@ -122,6 +123,55 @@ let apply_to_jar f other s =
   else
     raise (No_class_found s)
 
+type class_path = [`dir of string | `jar of Zip.in_file] list
+
+let open_path s = 
+  try
+    if
+      (Unix.stat s).Unix.st_kind = Unix.S_DIR
+    then
+      Some (`dir s)
+    else if
+      Filename.check_suffix s ".jar"
+    then
+      let jar = Zip.open_in s in
+	Some (`jar jar)
+    else
+      None
+  with
+      Unix.Unix_error (Unix.ENOENT, _, _) -> None
+
+let class_path =
+  List.filter_map open_path
+
+let close_class_path =
+  List.iter
+    (function
+       | `dir _ -> ()
+       | `jar jar -> Zip.close_in jar)
+
+(* Search for class c in a given directory or jar file *)
+let lookup c =
+  let c = replace_dot c ^ ".class" in
+    function path ->
+      try
+	let ch =
+	  match path with
+	    | `dir d ->
+		let ch = open_in_bin (Filename.concat d c) in
+		  IO.input_channel ch
+	    | `jar jar ->
+		let e = Zip.find_entry jar c in
+		  IO.input_string (Zip.read_entry jar e)
+	in
+	let c = JParse.parse_class_low_level ch in
+	  IO.close_in ch;
+	  c
+      with
+	| Unix.Unix_error (Unix.ENOENT, _, _)
+	| Not_found ->
+	    raise (No_class_found c)
+
 (* Try to read or transform a set of classes given by a string. The
    name is interpreted (in order of priority) as:
    - a directory name
@@ -130,7 +180,7 @@ let apply_to_jar f other s =
    The resulting directory, class file, or jar file if any, is written
    in the directory given as argument of the `transform constructor.
    Throws No_class_found otherwise. *)
-let fold class_path f file =
+let fold_string class_path f file =
   if not (Filename.is_implicit file)
   then
     failwith ("invalid class name " ^ file ^ ", must be implicit")
@@ -197,16 +247,22 @@ let fold class_path f file =
 let rec fold_directories f file = function
   | [] -> raise (No_class_found file)
   | class_path :: q ->
-      try fold class_path f file
+      try f class_path
       with No_class_found _ ->
 	fold_directories f file q
+
+let lookup class_path c =
+  fold_directories
+    (fun path -> lookup c path)
+    c
+    class_path
 
 (* Applies f to a list of files, in a colon-separated list of directories. *)
 let fold class_path f files =
   try
     List.iter
       (function file ->
-	 fold_directories f file
+	 fold_directories (fun class_path -> fold_string class_path f file) file
 	   (match ExtString.String.nsplit class_path ":" with
 	      | [] -> [Filename.current_dir_name]
 	      | cp -> cp))
