@@ -37,7 +37,8 @@
 
 (** [read classpath f acc names] iterates [f] over all classes specified by
     [names]. [acc] is the initial accumulator value. *)
-val read : string -> ('a -> JClass.class_file -> 'a) -> 'a -> string list -> 'a
+val read :
+  string -> ('a -> JClass.interface_or_class -> 'a) -> 'a -> string list -> 'a
 
 (** [read classpath f acc names] iterates [f] over all classes specified by
     [names]. [acc] is the initial accumulator value. *)
@@ -47,13 +48,17 @@ val read_low : string -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 
     by [names], writing the resulting classes in [outputdir]. Jar files are
     mapped to jar files, and the non-class files are kept unchanged in the
     resulting archive. Works on the low-level representation of classes. *)
-val transform_low : string -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit
+val transform_low :
+  string -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit
 
 (** [transform classpath outputdir f names] applies [f] to all classes specified
     by [names], writing the resulting classes in [outputdir]. Jar files are
     mapped to jar files, and the non-class files are kept unchanged in the
     resulting archive. Works on the high-level representation of classes. *)
-val transform : string -> string -> (JClass.class_file -> JClass.class_file) -> string list -> unit
+val transform : 
+  string -> string -> 
+  (JClass.interface_or_class -> JClass.interface_or_class) -> 
+  string list -> unit
 
 type class_path
 

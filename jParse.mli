@@ -23,7 +23,7 @@
 val parse_class_low_level : IO.input -> JClassLow.jclass
 
 (** Parse a Java class file and return the high level representation. *)
-val parse_class : IO.input -> JClass.class_file
+val parse_class : IO.input -> JClass.interface_or_class
 
 (**/**)
 

@@ -23,4 +23,4 @@
 
 
 (** Convert a high level class to a lower level class.*)
-val high2low_class : JClass.class_file -> JClassLow.jclass
+val high2low : JClass.interface_or_class -> JClassLow.jclass

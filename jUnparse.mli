@@ -25,7 +25,7 @@ val unparse_class_low_level : 'a IO.output -> JClassLow.jclass -> unit
 
 (** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
     information *)
-val unparse_class : 'a IO.output -> JClass.class_file -> unit
+val unparse_class : 'a IO.output -> JClass.interface_or_class -> unit
 
 (** Unparses an attribute to a couple [(name, content)] where [name]
     is the code-name of the attribute and [content] as encoded in a

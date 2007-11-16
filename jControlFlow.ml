@@ -47,7 +47,7 @@ struct
 
   let to_ConcreteClass (pp:t) : concrete_class =
     let (c,_,_) = pp.hardpp in
-      match c.class_file_type with
+      match c.c_class_file_type with
 	| ConcreteClass nc -> nc
 	| _ -> raise (Invalid_argument "the program point is invalid (the class is not concrete)")
 
@@ -56,14 +56,14 @@ struct
 
   let hard2soft (c,m,i) =
     let res = ref None in
-      match c.class_file_type with
+      match c.c_class_file_type with
     	| ConcreteClass cc ->
     	    begin
     	      MethodMap.iter
 		(fun ms' m' -> if m==m' then res := Some ms')
 		cc.cc_methods;
     	      match !res with
-    		| Some ms -> ((c.name,ms),i)
+    		| Some ms -> ((c.c_name,ms),i)
     		| None -> raise (Invalid_argument "the program point is invalid (the method has not been found in the class)")
     	    end
     	| _ -> raise (Invalid_argument "the program point is invalid (the class is not concrete)")
@@ -71,17 +71,18 @@ struct
 
   exception NoCode of (JClassLow.class_name * JClass.method_signature)
   let soft2hard prog ((cn,ms),i) =
-    let c = get_class prog cn in
-    let m = 
+    let c = get_interface_or_class prog cn in
       match get_method c ms with
 	| ConcreteMethod m ->
 	    begin
 	      match m.implementation with
-		| Java c -> c
 		| Native -> raise (NoCode (cn,ms))
+		| Java m ->match c with 
+		    | `Class c -> (c,m,i)
+		    | `Interface _ -> raise (NoCode (cn,ms))
 	    end
 	| AbstractMethod _ -> raise (NoCode (cn,ms))
-    in (c,m,i)
+
 
   (** @raise NoCode if the method is abstract or not found. *)
   let get_first_pp prog cms : t =
@@ -112,7 +113,7 @@ let next_instruction pp =
       incr i;
     done;
     goto_absolute pp !i
-    
+      
 let normal_successors pp =
   match get_opcode pp with
     | OpIf (_,l)

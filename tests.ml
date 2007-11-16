@@ -241,7 +241,7 @@ let eq_class c1 c2 =
     begin
       prerr_endline ((dump_to_string dump_constantpool) c1.j_consts);
       prerr_endline ((dump_to_string dump_constantpool) c2.j_consts);
-      flush stderr;
+      Pervasives.flush stderr;
       failwith ("constant pools differ")
     end;
   if List.sort compare c1.j_interfaces <> List.sort compare c2.j_interfaces 
@@ -270,7 +270,7 @@ let h2l_and_l2h_conversions class_path input_files =
       (fun _ c -> 
 	try 
 	  let c_high = JLow2High.low2high_class c in
-	  let c_low' = JHigh2Low.high2low_class c_high in
+	  let c_low' = JHigh2Low.high2low c_high in
 	    try
 	      eq_class c c_low'
 	    with Failure msg -> 
@@ -301,22 +301,22 @@ let test_jprogram class_path input_files =
   in
     prerr_endline "program build";
     prerr_string "saving program...  ";
-    flush stderr;
+    Pervasives.flush stderr;
     JProgram.store_program "library.bin" p;
     prerr_endline "program saved";
     prerr_string "loading program...  ";
-    flush stderr;
-    let p' = JProgram.load_program "library.bin" 
+    Pervasives.flush stderr;
+    let p' = JProgram.load_program "library.bin"
     in
       prerr_endline "program loaded";
-      flush stderr;
-      assert (p=p')
+      Pervasives.flush stderr;
+      () (* assert (p=p') impossible : the structure is recursive *)
 
 
 (** It should run the test suite. *)
 let _ =
-  let class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
-  and input_files = ["classes.jar";"charsets.jar" ;"dt.jar";(* "jconsole.jar"; *)"laf.jar";"jce.jar";"jsse.jar";"ui.jar"]
+  let class_path = "./jre"
+  and input_files = ["java.lang.Object";"java.lang.Throwable";"java.io.Serializable"]
   in 
     h2l_and_l2h_conversions class_path input_files;
     test_jprogram class_path input_files

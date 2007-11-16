@@ -21,6 +21,7 @@
 
 (** Tranformation of low level classes to high level classes. *)
 
+exception Invalid_class of string
 
 (** Convert a low level class to a higher level class.*)
-val low2high_class : JClassLow.jclass -> JClass.class_file
+val low2high_class : JClassLow.jclass -> JClass.interface_or_class

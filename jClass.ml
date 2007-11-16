@@ -35,6 +35,10 @@ type method_signature = {
   ms_parameters:value_type list
 }
 
+let clinit_signature = {ms_name="<clinit>";ms_parameters=[]}
+let java_lang_object = ["java";"lang";"Object"]
+
+
 (** Instruction. *)
 type opcode =
 
@@ -204,9 +208,9 @@ type code = {
   c_max_locals : int;
   c_code : opcodes;
   c_exc_tbl : jexception list;
-  line_number_table : (int * int) list option;
-  local_variable_table : (int * int * string * value_type * int) list option;
-  stack_map : (int* verification_type list * verification_type list) list option;
+  c_line_number_table : (int * int) list option;
+  c_local_variable_table : (int * int * string * value_type * int) list option;
+  c_stack_map : (int* verification_type list * verification_type list) list option;
   (** This is the MIDP version, not the JSR 202 StackMapTable attribute. *)
   c_attributes : (string * string) list;
 }
@@ -262,15 +266,6 @@ type concrete_class = {
   cc_methods : concrete_method MethodMap.t
 }
 
-(** Interfaces cannot be final and can only contains abstract
-    methods. Their super class is [java.lang.Object].*)
-type interface = {
-  (* super-class must be java.lang.Object. *)
-  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
-  i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t
-}
-
 type inner_class = {
   ic_class_name : class_name option;
   ic_outer_class_name : class_name option;
@@ -282,19 +277,44 @@ type inner_class = {
 }
 
 type class_file_type =
-  | ConcreteClass of concrete_class
-  | AbstractClass of abstract_class
-  | Interface of interface
-
+    | ConcreteClass of concrete_class
+    | AbstractClass of abstract_class
 
 type class_file = {
-  name : class_name;
+  c_name : class_name;
   c_access : [`Public | `Default];
-  interfaces : class_name list; (* useless if we use a map *)
+  c_interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
-  sourcefile : string option;
+  c_sourcefile : string option;
   c_deprecated : bool;
-  inner_classes : inner_class list;
+  c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  class_file_type : class_file_type
+  c_class_file_type : class_file_type;
 }
+
+
+(** Interfaces cannot be final and can only contains abstract
+    methods. Their super class is [java.lang.Object].*)
+type interface_file = {
+  i_name : class_name;
+  i_access : [`Public | `Default];
+  i_interfaces : class_name list;
+  i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  i_sourcefile : string option;
+  i_deprecated : bool;
+  i_inner_classes : inner_class list;
+  i_other_attributes : (string * string) list;
+  i_super : class_name; (** must be java.lang.Object. *)
+  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_fields : interface_field FieldMap.t;
+  i_methods : abstract_method MethodMap.t
+}
+
+type interface_or_class = [
+| `Interface of interface_file
+| `Class of class_file
+]
+
+let get_name = function 
+  | `Interface i -> i.i_name
+  | `Class c -> c.c_name

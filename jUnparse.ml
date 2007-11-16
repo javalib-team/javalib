@@ -325,4 +325,4 @@ let unparse_class_low_level ch c =
       nwrite ch (close_out ch')
 
 let unparse_class ch c =
-  unparse_class_low_level ch (JHigh2Low.high2low_class c)
+  unparse_class_low_level ch (JHigh2Low.high2low c)

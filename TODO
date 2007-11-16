@@ -24,3 +24,5 @@ Here is some stuff that need to be done:
   not subclasses of java.lang.RuntimeException for instruction that
   are known not to throw declared exception (should be everything
   except method calls).
+- we should define equal on JProgram.program (and JClassLow.jclass) to
+  be able to do some more serious tests

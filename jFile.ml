@@ -289,5 +289,5 @@ let transform_low class_path output_dir f files =
 let transform class_path output_dir f files =
   fold class_path 
     (`transform
-	(output_dir,fun c -> JHigh2Low.high2low_class (f (JLow2High.low2high_class c))))
+	(output_dir,fun c -> JHigh2Low.high2low (f (JLow2High.low2high_class c))))
     files

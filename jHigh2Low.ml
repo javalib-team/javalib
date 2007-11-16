@@ -71,13 +71,13 @@ let h2l_code2attribute consts = function
 	 JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
 	 JClassLow.c_exc_tbl = code.c_exc_tbl;
 	 JClassLow.c_attributes = 
-	    (match code.stack_map with
+	    (match code.c_stack_map with
 	      | Some sm -> [AttributeStackMap sm]
 	      | None -> [])
-	    @ (match code.line_number_table with
+	    @ (match code.c_line_number_table with
 	      | Some lnt -> [AttributeLineNumberTable lnt]
 	      | None -> [])
-	    @ (match code.local_variable_table with
+	    @ (match code.c_local_variable_table with
 	      | Some lvt -> [AttributeLocalVariableTable lvt]
 	      | None -> [])
 	    @ h2l_other_attributes code.c_attributes;
@@ -167,35 +167,49 @@ let h2l_abstractclass consts c c' =
     j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.ac_fields [];
   }
 
-let h2l_interface consts c c' =
-  let clinit_signature = {ms_name="<clinit>";ms_parameters=[]} in
-  {c' with 
-    j_super = Some ["java";"lang";"Object"];
-    j_flags = AccInterface::AccAbstract::c'.j_flags;
-    j_methods = 
-      (match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts clinit_signature m])
-      @ MethodMap.fold (fun ms m l -> h2l_amethod consts ms m::l) c.i_methods [];
-    j_fields = FieldMap.fold (fun fs f l -> h2l_ifield consts fs f::l) c.i_fields [];
-  }
 
 let high2low_class c =
   let consts = DynArray.of_array c.c_consts in
   let c' = 
-    {j_name = c.name;
-     j_super = None; (*will be set later on*)
-     j_interfaces = c.interfaces;
+    {j_name = c.c_name;
+     j_super = Some java_lang_object;
+     j_interfaces = c.c_interfaces;
      j_consts = c.c_consts; (*will be updated later on*)
      j_flags = access2flags c.c_access; (*will be updated later on*)
      j_fields = []; (*will be set later on*)
      j_methods = []; (*will be set later on*)
      j_attributes =  (*will be updated later on*)
 	(deprecated_to_attribute c.c_deprecated)
-	@ (h2l_inner_classes c.inner_classes)
-	@ (match c.sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
+	@ (h2l_inner_classes c.c_inner_classes)
+	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.c_other_attributes);
     } in
-  let c'=match c.class_file_type with
+  let c'=match c.c_class_file_type with
     | ConcreteClass c -> h2l_concreteclass consts c c'
     | AbstractClass c -> h2l_abstractclass consts c c'
-    | Interface c -> h2l_interface consts c c'
   in {c' with j_consts = DynArray.to_array consts}
+
+let high2low_interface (c:interface_file) =
+  let consts = DynArray.of_array c.i_consts in
+  let c' = 
+    {j_name = c.i_name;
+     j_super = Some java_lang_object;
+     j_interfaces = c.i_interfaces;
+     j_consts = c.i_consts; (*will be updated later on*)
+     j_flags = AccInterface::AccAbstract::access2flags c.i_access; (*will be updated later on*)
+     j_fields = 
+	FieldMap.fold (fun fs f l -> h2l_ifield consts fs f::l) c.i_fields [];
+     j_methods =
+	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts clinit_signature m])
+	@ MethodMap.fold (fun ms m l -> h2l_amethod consts ms m::l) c.i_methods [];
+     j_attributes =
+	(deprecated_to_attribute c.i_deprecated)
+	@ (h2l_inner_classes c.i_inner_classes)
+	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
+	@ (h2l_other_attributes c.i_other_attributes);
+    } in
+    {c' with j_consts = DynArray.to_array consts}
+
+let high2low = function
+  | `Interface i -> high2low_interface i
+  | `Class c -> high2low_class c
