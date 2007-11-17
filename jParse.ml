@@ -275,7 +275,10 @@ let rec parse_code consts ch =
 		}
 	) in
 	let attrib_count = read_ui16 ch in
-	let attribs = List.init attrib_count (fun _ -> parse_attribute consts ch) in
+	let attribs =
+	  List.init
+	    attrib_count
+	    (fun _ -> parse_attribute [`LineNumberTable ; `LocalVariableTable ; `StackMap] consts ch) in
 	{
 		c_max_stack = max_stack;
 		c_max_locals = max_locals;
@@ -284,24 +287,31 @@ let rec parse_code consts ch =
 		c_code = code;
 	}
 
-and parse_attribute consts ch =
+(* Parse an attribute, if its name is in list. *)
+and parse_attribute list consts ch =
 	let aname = get_string consts ch in
 	let error() = error ("Malformed attribute " ^ aname) in
 	let alen = read_i32 ch in
+	let check name =
+	  if List.mem name list
+	  then ()
+	  else raise Exit
+	in
+	  try
 	match aname with
-	| "SourceFile" ->
+	| "SourceFile" -> check `SourceFile;
 		if alen <> 2 then error();
 		AttributeSourceFile (get_string consts ch)
-	| "ConstantValue" ->
+	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
 	    (match get_constant consts (read_ui16 ch) with
 	       | ConstValue c -> 
 		   AttributeConstant c
 	       | _ -> error())
-	| "Code" ->
+	| "Code" -> check `Code;
 		(* correct length not checked *)
 		AttributeCode (parse_code consts ch)
-	| "Exceptions" ->
+	| "Exceptions" -> check `Exceptions;
 	    let nentry = read_ui16 ch in
 	      if nentry * 2 + 2 <> alen then error();
 	      AttributeExceptions
@@ -309,7 +319,7 @@ and parse_attribute consts ch =
 		   nentry
 		   (function _ ->
 		      get_class consts (read_ui16 ch)))
-	| "InnerClasses" ->
+	| "InnerClasses" -> check `InnerClasses;
 	    let nentry = read_ui16 ch in
 	      if nentry * 8 + 2 <> alen then error();
 	      AttributeInnerClasses
@@ -330,14 +340,14 @@ and parse_attribute consts ch =
 			  | i -> Some (get_string' consts i) in
 		      let flags = parse_access_flags ch in
 			inner, outer, inner_name, flags)) 
-	| "Synthetic" ->
+	| "Synthetic" -> check `Synthetic;
 	    if alen <> 0 then error ();
 	    AttributeSynthetic
-	| "LineNumberTable" ->
+	| "LineNumberTable" -> check `LineNumberTable;
 		let nentry = read_ui16 ch in
 		if nentry * 4 + 2 <> alen then error();
 		AttributeLineNumberTable (List.init nentry (fun _ -> let pc = read_ui16 ch in let line = read_ui16 ch in pc , line)) 
-	| "LocalVariableTable" ->
+	| "LocalVariableTable" -> check `LocalVariableTable;
 	    let nentry = read_ui16 ch in
 	      if nentry * 10 + 2 <> alen then error();
 	      AttributeLocalVariableTable
@@ -350,24 +360,25 @@ and parse_attribute consts ch =
 		      let signature = parse_type (get_string consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
-	| "Deprecated" ->
+	| "Deprecated" -> check `Deprecated;
 	    if alen <> 0 then error ();
 	    AttributeDeprecated
-	| "StackMap" ->
+	| "StackMap" -> check `StackMap;
 		let nb_stackmap_frames = read_ui16 ch in
 		AttributeStackMap (List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ))
-	| _ ->
-(* Too verbose. Tifn
-		Printf.printf "Unknown attribute %s\n" aname;
-*)
-		AttributeUnknown (aname,IO.nread ch alen)
+	| _ -> raise Exit
+	  with
+	      Exit -> AttributeUnknown (aname,IO.nread ch alen)
 
 let parse_field consts ch =
 	let acc = parse_access_flags ch in
 	let name = get_string consts ch in
 	let sign = parse_type (get_string consts ch) in
 	let attrib_count = read_ui16 ch in
-	let attribs = List.init attrib_count (fun _ -> parse_attribute consts ch) in
+	let attribs =
+	  List.init
+	    attrib_count
+	    (fun _ -> parse_attribute [`ConstantValue ; `Synthetic ; `Deprecated] consts ch) in
 	{
 		f_name = name;
 		f_signature = sign;
@@ -382,7 +393,7 @@ let parse_method consts ch =
 	let attrib_count = read_ui16 ch in
 	let code = ref None in
 	let attribs = List.init attrib_count (fun _ -> 
-		match parse_attribute consts ch with
+		match parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch with
 		| AttributeCode c ->
 			if !code <> None then error "Duplicate code";
 			code := Some c;
@@ -468,7 +479,10 @@ let parse_class_low_level ch =
 	let method_count = read_ui16 ch in
 	let methods = List.init method_count (fun _ -> parse_method consts ch) in
 	let attrib_count = read_ui16 ch in
-	let attribs = List.init attrib_count (fun _ -> parse_attribute consts ch) in
+	let attribs =
+	  List.init
+	    attrib_count
+	    (fun _ -> parse_attribute [`SourceFile ; `Deprecated] consts ch) in
 	{
 		j_consts = consts;
 		j_flags = flags;

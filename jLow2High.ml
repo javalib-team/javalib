@@ -43,7 +43,10 @@ let rec flags2access = function
 
 (** convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
-  List.map (JUnparse.unparse_attribute_to_strings consts)
+  List.map
+    (function
+       | AttributeUnknown (name, contents) -> name, contents
+       | _ -> assert false)
 
 (** convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
