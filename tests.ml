@@ -81,6 +81,15 @@ let parse_code ch consts len =
     done;
     code
 
+(*
+let  _ =
+  let cp = JFile.class_path ["tmp" ; "tmp.jar"] in
+    ignore (JFile.lookup cp "p1.A");
+    ignore (JFile.lookup cp "p2.B");
+    JFile.close_class_path cp;
+    prerr_endline "individual class lookup is OK."
+*)
+
 (** {2 Tests of conversion between low and high level represetations of classes}*)
 
 open JDump

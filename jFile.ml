@@ -55,6 +55,88 @@ let rec mkdir d perms =
 
 exception No_class_found of string
 
+type class_path = [`dir of string | `jar of Zip.in_file] list
+
+let open_path s = 
+  try
+    if
+      (Unix.stat s).Unix.st_kind = Unix.S_DIR
+    then
+      Some (`dir s)
+    else if
+      Filename.check_suffix s ".jar"
+    then
+      let jar = Zip.open_in s in
+	Some (`jar jar)
+    else
+      None
+  with
+      Unix.Unix_error (Unix.ENOENT, _, _) -> None
+
+let directories dirs =
+  match ExtString.String.nsplit dirs ":" with
+    | [] -> [Filename.current_dir_name]
+    | cp -> cp
+
+let class_path cp =
+  List.filter_map open_path (directories cp)
+
+let close_class_path =
+  List.iter
+    (function
+       | `dir _ -> ()
+       | `jar jar -> Zip.close_in jar)
+
+(* Search for class c in a given directory or jar file *)
+let lookup c =
+  let c = replace_dot c ^ ".class" in
+    function path ->
+      try
+	let ch =
+	  match path with
+	    | `dir d ->
+		let ch = open_in_bin (Filename.concat d c) in
+		  IO.input_channel ch
+	    | `jar jar ->
+		let e = Zip.find_entry jar c in
+		  IO.input_string (Zip.read_entry jar e)
+	in
+	let c = JParse.parse_class_low_level ch in
+	  IO.close_in ch;
+	  c
+      with
+	| Unix.Unix_error (Unix.ENOENT, _, _)
+	| Not_found ->
+	    raise (No_class_found c)
+
+let rec fold_directories f file = function
+  | [] -> raise (No_class_found file)
+  | class_path :: q ->
+      try f class_path
+      with No_class_found _ ->
+	fold_directories f file q
+
+let get_class_low class_path c =
+  fold_directories
+    (fun path -> lookup c path)
+    c
+    class_path
+
+let get_class class_path c = JLow2High.low2high_class (get_class_low class_path c)
+
+let write_class_low output_dir classe =
+  let class_name = print_ident classe.j_name in
+  let c = replace_dot class_name ^ ".class" in
+    (mkdir
+       (Filename.concat output_dir (Filename.dirname c))
+       0o755);
+    let f = open_out_bin (Filename.concat output_dir c) in
+    let output = IO.output_channel f in
+      JUnparse.unparse_class_low_level output classe;
+      IO.close_out output
+
+let write_class output_dir classe = write_class_low output_dir (JHigh2Low.high2low classe)
+
 (* Try to open a string as a directory and recursively applies f to
    every .class file in it. Throws ENOTDIR or ENOENT otherwise. *)
 let rec apply_to_dir f s =
@@ -123,55 +205,6 @@ let apply_to_jar f other s =
   else
     raise (No_class_found s)
 
-type class_path = [`dir of string | `jar of Zip.in_file] list
-
-let open_path s = 
-  try
-    if
-      (Unix.stat s).Unix.st_kind = Unix.S_DIR
-    then
-      Some (`dir s)
-    else if
-      Filename.check_suffix s ".jar"
-    then
-      let jar = Zip.open_in s in
-	Some (`jar jar)
-    else
-      None
-  with
-      Unix.Unix_error (Unix.ENOENT, _, _) -> None
-
-let class_path =
-  List.filter_map open_path
-
-let close_class_path =
-  List.iter
-    (function
-       | `dir _ -> ()
-       | `jar jar -> Zip.close_in jar)
-
-(* Search for class c in a given directory or jar file *)
-let lookup c =
-  let c = replace_dot c ^ ".class" in
-    function path ->
-      try
-	let ch =
-	  match path with
-	    | `dir d ->
-		let ch = open_in_bin (Filename.concat d c) in
-		  IO.input_channel ch
-	    | `jar jar ->
-		let e = Zip.find_entry jar c in
-		  IO.input_string (Zip.read_entry jar e)
-	in
-	let c = JParse.parse_class_low_level ch in
-	  IO.close_in ch;
-	  c
-      with
-	| Unix.Unix_error (Unix.ENOENT, _, _)
-	| Not_found ->
-	    raise (No_class_found c)
-
 (* Try to read or transform a set of classes given by a string. The
    name is interpreted (in order of priority) as:
    - a directory name
@@ -198,15 +231,7 @@ let fold_string class_path f file =
 		     f classe
 		 | `transform (output_dir, f) ->
 		     let classe = f classe in
-		     let class_name = print_ident classe.j_name in
-		     let c = replace_dot class_name ^ ".class" in
-		       (mkdir
-			  (Filename.concat output_dir (Filename.dirname c))
-			  0o755);
-		       let f = open_out_bin (Filename.concat output_dir c) in
-		       let output = IO.output_channel f in
-			 JUnparse.unparse_class_low_level output classe;
-			 IO.close_out output)
+		       write_class_low output_dir classe)
 	  (Filename.concat class_path c)
       with
 	  No_class_found _ ->
@@ -244,28 +269,13 @@ let fold_string class_path f file =
 			   raise e);
 		    Zip.close_out jar'
 
-let rec fold_directories f file = function
-  | [] -> raise (No_class_found file)
-  | class_path :: q ->
-      try f class_path
-      with No_class_found _ ->
-	fold_directories f file q
-
-let lookup class_path c =
-  fold_directories
-    (fun path -> lookup c path)
-    c
-    class_path
-
 (* Applies f to a list of files, in a colon-separated list of directories. *)
 let fold class_path f files =
   try
     List.iter
       (function file ->
 	 fold_directories (fun class_path -> fold_string class_path f file) file
-	   (match ExtString.String.nsplit class_path ":" with
-	      | [] -> [Filename.current_dir_name]
-	      | cp -> cp))
+	   (directories class_path))
       files
   with No_class_found c ->
     failwith ("no class found for " ^ c)

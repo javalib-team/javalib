@@ -21,8 +21,35 @@
 
 (** Accessing classes in files, directories and jar files. *)
 
+(** {2 Loading a single class.} *)
+
+(** The type of "compiled" class paths (jar files are opened for efficiency). *)
+type class_path
+
+(** Create a class path from a list of directories and jar files separated by [:]. *)
+val class_path : string -> class_path
+
+(** Close a class path. *)
+val close_class_path : class_path -> unit
+
+(** Parse a single class. This function does not check that the name of the parsed
+    class is the same as the argument class name. *)
+val get_class : class_path -> string -> JClass.interface_or_class
+
+(** Same as {! get_class} with low level class files. *)
+val get_class_low : class_path -> string -> JClassLow.jclass
+
+(** [write_class outputdir c] writes the class [c] in the subdirectory of
+    [outputdir] that correspond to the package name of [c]. *)
+val write_class : string -> JClass.interface_or_class -> unit
+
+(** Same as {! write_class} with low level class files. *)
+val write_class_low : string -> JClassLow.jclass -> unit
+
+(** {2 Reading/transforming a set of classes.} *)
+
 (** The following functions search for class files in the following order :
-    - [classpath] is a list of directories separated by [:]. If a name can be
+    - [directories] is a list of directories separated by [:]. If a name can be
     found in some directory, subsequent directories are ignored.
     - If a name is the name of an existing directory, then every .class file
     inside this directory is read, and the search is over (even if the
@@ -35,35 +62,23 @@
     Dots in class and directory names are interpreted as / (but not for jar
     files). *)
 
-(** [read classpath f acc names] iterates [f] over all classes specified by
+(** [read directories f acc names] iterates [f] over all classes specified by
     [names]. [acc] is the initial accumulator value. *)
 val read :
   string -> ('a -> JClass.interface_or_class -> 'a) -> 'a -> string list -> 'a
 
-(** [read classpath f acc names] iterates [f] over all classes specified by
-    [names]. [acc] is the initial accumulator value. *)
-val read_low : string -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 'a
-
-(** [transform classpath outputdir f names] applies [f] to all classes specified
+(** [transform directories outputdir f names] applies [f] to all classes specified
     by [names], writing the resulting classes in [outputdir]. Jar files are
     mapped to jar files, and the non-class files are kept unchanged in the
-    resulting archive. Works on the low-level representation of classes. *)
-val transform_low :
-  string -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit
-
-(** [transform classpath outputdir f names] applies [f] to all classes specified
-    by [names], writing the resulting classes in [outputdir]. Jar files are
-    mapped to jar files, and the non-class files are kept unchanged in the
-    resulting archive. Works on the high-level representation of classes. *)
+    resulting archive. *)
 val transform : 
   string -> string -> 
   (JClass.interface_or_class -> JClass.interface_or_class) -> 
   string list -> unit
 
-type class_path
+(** Same as {! read} with low level class files. *)
+val read_low : string -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 'a
 
-val class_path : string list -> class_path
-
-val close_class_path : class_path -> unit
-
-val lookup : class_path -> string -> JClassLow.jclass
+(** Same as {! transform} with low level class files. *)
+val transform_low :
+  string -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit
