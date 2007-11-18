@@ -23,8 +23,6 @@ open JBasics
 open JClassLow
 open JClass
 
-exception Invalid_class of string
-
 let rec flags2access = function 
   | AccPublic::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccProtected) l

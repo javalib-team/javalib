@@ -142,6 +142,22 @@ type error_msg =
 
 exception Error of string
 
+exception Illegal_value of string * string
+
+exception Invalid_opcode of int
+
+exception No_class_found of string
+
+exception Invalid_class of string
+
+exception Parse_error of string
+
+exception Class_structure_error of string
+
+exception Bad_allignement_of_low_level_bytecode
+
+exception IncorrectConstantPool
+
 let error msg = raise (Error msg)
 
 let get_constant c n =
@@ -163,28 +179,28 @@ let get_object_type consts i =
 let get_class consts i =
   match get_object_type consts i with
     | TClass c -> c
-    | _ -> failwith "array type descriptor not allowed here"
+    | _ -> raise (Illegal_value ("array type descriptor", "class index"))
 
 let get_field consts i =
-	match get_constant consts i with
-	| ConstField (c, f, s) -> c, f, s
-	| _ -> error "Invalid field index"
-	
+  match get_constant consts i with
+    | ConstField (c, f, s) -> c, f, s
+    | _ -> raise (Illegal_value ("", "field index"))
+
 let get_method consts i =
 	match get_constant consts i with
 	| ConstMethod (c, m, s) -> c, m, s
-	| _ -> error "Invalid method index"
-	
+	| _ -> raise (Illegal_value ("", "method index"))
+
 let get_interface_method consts i =
-	match get_constant consts i with
-	| ConstInterfaceMethod (c, m, s) -> c, m, s
-	| _ -> error "Invalid interface method index"
-	
+  match get_constant consts i with
+    | ConstInterfaceMethod (c, m, s) -> c, m, s
+    | _ -> raise (Illegal_value ("", "interface method index"))
+
 let get_string' consts i =
-	match get_constant consts i with
-	| ConstStringUTF8 s -> s
-	| c ->
-	    error ("Invalid string at index " ^ string_of_int i)
+  match get_constant consts i with
+    | ConstStringUTF8 s -> s
+    | c -> raise (Illegal_value (string_of_int i, "string index"))
+
 let get_string consts ch = get_string' consts (read_ui16 ch)
 
 let constant_to_int cp c =
@@ -196,7 +212,8 @@ let constant_to_int cp c =
       Not_found ->
 	if DynArray.length cp = 0
 	then DynArray.add cp ConstUnusable;
-	assert (DynArray.get cp 0 = ConstUnusable);
+	if not (DynArray.get cp 0 = ConstUnusable)
+	then raise IncorrectConstantPool;
 	let i = DynArray.length cp in
 	  DynArray.add cp c;
 	  (match c with

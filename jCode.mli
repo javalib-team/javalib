@@ -31,8 +31,6 @@ val unparse_code :
 
 (**/**)
 
-exception Invalid_opcode of int
-
 (* For testing. *)
 
 val parse_full_opcode :

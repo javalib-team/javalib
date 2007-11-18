@@ -57,16 +57,13 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {2 API}
 
 {b {L Representation of classes}}
-{!modules: JBasics JClass JClassLow}
+{!modules: JBasics JClass JClassLow JDump}
 
 {b {L High level manipulations of programs}}
 {!modules: JFile JProgram JControlFlow}
 
-{b {L Parsing and Unparsing}}
-{!modules: JParse JUnparse JLow2High JHigh2Low}
-
 {b {L Other}}
-{!modules: JDump JCode JInstruction}
+{!modules: JCode JParse JUnparse JInstruction JLow2High JHigh2Low}
 
 {b {L Indexes}}
 

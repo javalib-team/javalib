@@ -41,49 +41,49 @@ type tmp_constant =
 	| ConstantUnusable
 
 let parse_constant max ch =
-	let cid = IO.read_byte ch in
-	let error() = error ("Invalid constant " ^ string_of_int cid) in
-	let index() =
-		let n = read_ui16 ch in
-		if n = 0 || n >= max then error();		
-		n
-	in
-	match cid with
-	| 7 ->
-		ConstantClass (index())
-	| 9 ->
-		let n1 = index() in
-		let n2 = index() in
-		ConstantField (n1,n2)
-	| 10 ->
-		let n1 = index() in
-		let n2 = index() in
-		ConstantMethod (n1,n2)
-	| 11 ->
-		let n1 = index() in
-		let n2 = index() in
-		ConstantInterfaceMethod (n1,n2)
-	| 8 ->
-		ConstantString (index())
-	| 3 ->		
-		ConstantInt (read_real_i32 ch)
-	| 4 ->
-		let f = Int32.float_of_bits (read_real_i32 ch) in		
-		ConstantFloat f
-	| 5 ->
-		ConstantLong (read_i64 ch)
-	| 6 ->
-		ConstantDouble (read_double ch)
-	| 12 ->
-		let n1 = index() in
-		let n2 = index() in
-		ConstantNameAndType (n1,n2)
-	| 1 ->
-		let len = read_ui16 ch in
-		let str = IO.nread ch len in
-		ConstantStringUTF8 str
-	| n -> 
-		error()
+  let cid = IO.read_byte ch in
+  let index() =
+    let n = read_ui16 ch in
+      if n = 0 || n >= max
+      then raise (Illegal_value (string_of_int n, "index in constant pool"));
+      n
+  in
+    match cid with
+      | 7 ->
+	  ConstantClass (index())
+      | 9 ->
+	  let n1 = index() in
+	  let n2 = index() in
+	    ConstantField (n1,n2)
+      | 10 ->
+	  let n1 = index() in
+	  let n2 = index() in
+	    ConstantMethod (n1,n2)
+      | 11 ->
+	  let n1 = index() in
+	  let n2 = index() in
+	    ConstantInterfaceMethod (n1,n2)
+      | 8 ->
+	  ConstantString (index())
+      | 3 ->		
+	  ConstantInt (read_real_i32 ch)
+      | 4 ->
+	  let f = Int32.float_of_bits (read_real_i32 ch) in		
+	    ConstantFloat f
+      | 5 ->
+	  ConstantLong (read_i64 ch)
+      | 6 ->
+	  ConstantDouble (read_double ch)
+      | 12 ->
+	  let n1 = index() in
+	  let n2 = index() in
+	    ConstantNameAndType (n1,n2)
+      | 1 ->
+	  let len = read_ui16 ch in
+	  let str = IO.nread ch len in
+	    ConstantStringUTF8 str
+      | n -> 
+	  raise (Illegal_value (string_of_int cid, "constant kind"))
 
 let parse_access_flags ch =
 	let all_flags = [
@@ -98,9 +98,6 @@ let parse_access_flags ch =
 		if fl land (1 lsl !fbit) <> 0 then flags := f :: !flags;
 		incr fbit
 	) all_flags;
-(* I don't know what it means, but this doesn't work when parsing runtime classes. Tifn
-	if fl land (0x10000 - (1 lsl (succ !fbit))) <> 0 then error ("Invalid access flags " ^ string_of_int fl);
-*)
 	!flags
 
 (* Validate an utf8 string and return a stream of characters. *)
@@ -200,59 +197,53 @@ let parse_objectType s =
   try
     parse_ot (read_utf8 s)
   with
-      Stream.Failure -> failwith ("invalid object type " ^ s)
+      Stream.Failure -> raise (Illegal_value (s, "object type"))
 
 let parse_type s =
   try
     parse_type (read_utf8 s)
   with
-      Stream.Failure -> failwith ("invalid type " ^ s)
+      Stream.Failure -> raise (Illegal_value (s, "type"))
 
 let parse_method_signature s =
   try
     parse_method_sig (read_utf8 s)
   with
-      Stream.Failure -> error ("Invalid method signature " ^ s)
+      Stream.Failure -> raise (Illegal_value (s, "method signature"))
 
 let parse_signature s =
   try
     parse_sig (read_utf8 s)
   with
-      Stream.Failure -> error ("Invalid signature " ^ s)
+      Stream.Failure -> raise (Illegal_value (s, "signature"))
 
 let parse_stackmap_frame consts ch =
-	let parse_type_info ch = match IO.read_byte ch with
-		| 0 -> VTop
-		| 1 -> VInteger
-		| 2 -> VFloat
-		| 3 -> VDouble
-		| 4 -> VLong
-		| 5 -> VNull
-		| 6 -> VUninitializedThis
-		| 7 -> VObject (get_object_type consts (read_ui16 ch))
-		| 8 -> VUninitialized (read_ui16 ch)
-		| n -> prerr_endline ("type = " ^ string_of_int n); raise Exit
-	in let parse_type_info_array ch nb_item =
-		try
-			List.init nb_item (fun _ ->parse_type_info ch)
-		with 
-			Exit -> error "Invalid type in StackMap"
-	in let offset = read_ui16 ch in
-	let number_of_locals = read_ui16 ch in
-	let locals = parse_type_info_array ch number_of_locals in
-	let number_of_stack_items = read_ui16 ch in
-	let stack = parse_type_info_array ch number_of_stack_items in
-	(offset,locals,stack)
+  let parse_type_info ch = match IO.read_byte ch with
+    | 0 -> VTop
+    | 1 -> VInteger
+    | 2 -> VFloat
+    | 3 -> VDouble
+    | 4 -> VLong
+    | 5 -> VNull
+    | 6 -> VUninitializedThis
+    | 7 -> VObject (get_object_type consts (read_ui16 ch))
+    | 8 -> VUninitialized (read_ui16 ch)
+    | n -> raise (Illegal_value (string_of_int n, "stackmap type"))
+  in let parse_type_info_array ch nb_item =
+      List.init nb_item (fun _ ->parse_type_info ch)
+  in let offset = read_ui16 ch in
+  let number_of_locals = read_ui16 ch in
+  let locals = parse_type_info_array ch number_of_locals in
+  let number_of_stack_items = read_ui16 ch in
+  let stack = parse_type_info_array ch number_of_stack_items in
+    (offset,locals,stack)
 
 let rec parse_code consts ch =
 	let max_stack = read_ui16 ch in
 	let max_locals = read_ui16 ch in
 	let clen = read_i32 ch in
 	let code = 
-	  try
 	    JCode.parse_code ch clen
-	  with
-	      JCode.Invalid_opcode n -> error ("Invalid opcode " ^ string_of_int n)
 	in
 	let exc_tbl_length = read_ui16 ch in
 	let exc_tbl = List.init exc_tbl_length (fun _ ->
@@ -265,7 +256,7 @@ let rec parse_code consts ch =
 		    | ct ->
 			match get_constant consts ct with
 			  | ConstValue (ConstClass (TClass c)) -> Some c
-			  | _ -> error "Invalid class index"
+			  | _ -> raise (Illegal_value ("", "class index"))
 		in
 		{
 			e_start = spc;
@@ -290,7 +281,7 @@ let rec parse_code consts ch =
 (* Parse an attribute, if its name is in list. *)
 and parse_attribute list consts ch =
 	let aname = get_string consts ch in
-	let error() = error ("Malformed attribute " ^ aname) in
+	let error() = raise (Parse_error ("Malformed attribute " ^ aname)) in
 	let alen = read_i32 ch in
 	let check name =
 	  if List.mem name list
@@ -307,10 +298,12 @@ and parse_attribute list consts ch =
 	    (match get_constant consts (read_ui16 ch) with
 	       | ConstValue c -> 
 		   AttributeConstant c
-	       | _ -> error())
+	       | _ -> raise (Illegal_value ("", "constant value")))
 	| "Code" -> check `Code;
-		(* correct length not checked *)
-		AttributeCode (parse_code consts ch)
+	    let ch, count = IO.pos_in ch in
+	    let code = parse_code consts ch in
+	      if count() <> alen then error();
+	      AttributeCode code
 	| "Exceptions" -> check `Exceptions;
 	    let nentry = read_ui16 ch in
 	      if nentry * 2 + 2 <> alen then error();
@@ -344,9 +337,15 @@ and parse_attribute list consts ch =
 	    if alen <> 0 then error ();
 	    AttributeSynthetic
 	| "LineNumberTable" -> check `LineNumberTable;
-		let nentry = read_ui16 ch in
-		if nentry * 4 + 2 <> alen then error();
-		AttributeLineNumberTable (List.init nentry (fun _ -> let pc = read_ui16 ch in let line = read_ui16 ch in pc , line)) 
+	    let nentry = read_ui16 ch in
+	      if nentry * 4 + 2 <> alen then error();
+	      AttributeLineNumberTable
+		(List.init
+		   nentry
+		   (fun _ ->
+		      let pc = read_ui16 ch in
+		      let line = read_ui16 ch in
+			pc , line)) 
 	| "LocalVariableTable" -> check `LocalVariableTable;
 	    let nentry = read_ui16 ch in
 	      if nentry * 10 + 2 <> alen then error();
@@ -364,8 +363,13 @@ and parse_attribute list consts ch =
 	    if alen <> 0 then error ();
 	    AttributeDeprecated
 	| "StackMap" -> check `StackMap;
-		let nb_stackmap_frames = read_ui16 ch in
-		AttributeStackMap (List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch ))
+	    let ch, count = IO.pos_in ch in
+	    let nb_stackmap_frames = read_ui16 ch in
+	    let stackmap =
+	      List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch )
+	    in
+	      if count() <> alen then error();
+	      AttributeStackMap stackmap
 	| _ -> raise Exit
 	  with
 	      Exit -> AttributeUnknown (aname,IO.nread ch alen)
@@ -395,7 +399,7 @@ let parse_method consts ch =
 	let attribs = List.init attrib_count (fun _ -> 
 		match parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch with
 		| AttributeCode c ->
-			if !code <> None then error "Duplicate code";
+			if !code <> None then raise (Class_structure_error "Duplicate code");
 			code := Some c;
 			AttributeCode c
 		| a ->
@@ -410,32 +414,37 @@ let parse_method consts ch =
 	}
 
 let rec expand_constant consts n =
-	let expand cl nt =
-		match expand_constant consts cl , expand_constant consts nt with
-		| ConstValue (ConstClass c) , ConstNameAndType (n,s) -> (c,n,s)
-		| _ , _ -> failwith "Malformed Class or NameAndType Constant"
-	in
+  let expand name cl nt =
+    match expand_constant consts cl  with
+      | ConstValue (ConstClass c) ->
+	  (match expand_constant consts nt with
+	     | ConstNameAndType (n,s) -> (c,n,s)
+	     | _ -> raise (Illegal_value ("", "NameAndType in " ^ name ^ " constant")))
+      | _ -> raise (Illegal_value ("", "Class in " ^ name ^ " constant"))
+  in
 	match consts.(n) with
 	| ConstantClass i -> 
 	    (match expand_constant consts i with
 	       | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
-	       | _ -> failwith "Malformed Class constant")
+	       | _ -> raise (Illegal_value ("", "string in Class constant")))
 	| ConstantField (cl,nt) ->
-	    (match expand cl nt with
+	    (match expand "Field" cl nt with
 	       | TClass c, n, SValue v -> ConstField (c, n, v)
-	       | _ -> failwith "Malformed Field Constant")
+	       | TClass c, n, _ -> raise (Illegal_value ("", "type in Field constant"))
+	       | _ -> raise (Illegal_value ("", "class in Field constant")))
 	| ConstantMethod (cl,nt) ->
-	    (match expand cl nt with
+	    (match expand "Method" cl nt with
 	       | c, n, SMethod v -> ConstMethod (c, n, v)
-	       | _, _, SValue _ -> failwith "Malformed Method Constant")
+	       | _, _, SValue _ -> raise (Illegal_value ("", "type in Method constant")))
 	| ConstantInterfaceMethod (cl,nt) ->
-	    (match expand cl nt with
+	    (match expand "InterfaceMethod" cl nt with
 	       | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
-	       | _, _, _ -> failwith "Malformed Interface Method Constant")
+	       | TClass c, n, _ -> raise (Illegal_value ("", "type in Interface Method constant"))
+	       | _, _, _ -> raise (Illegal_value ("", "class in Interface Method constant")))
 	| ConstantString i ->
 		(match expand_constant consts i with
 		| ConstStringUTF8 s -> ConstValue (ConstString s)
-		| _ -> failwith "Malformed String Constant")
+		| _ -> raise (Illegal_value ("", "String constant")))
 	| ConstantInt i -> ConstValue (ConstInt i)
 	| ConstantFloat f -> ConstValue (ConstFloat f)
 	| ConstantLong l -> ConstValue (ConstLong l)
@@ -443,13 +452,15 @@ let rec expand_constant consts n =
 	| ConstantNameAndType (n,t) ->
 		(match expand_constant consts n , expand_constant consts t with
 		| ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
-		| _ -> failwith "Malformed NameAndType Constant")
+		| ConstStringUTF8 n , _ ->
+		    raise (Illegal_value ("", "type in NameAndType constant"))
+		| _ -> raise (Illegal_value ("", "name in NameAndType constant")))
 	| ConstantStringUTF8 s -> ConstStringUTF8 s
 	| ConstantUnusable -> ConstUnusable
 
 let parse_class_low_level ch =
 	let magic = read_real_i32 ch in
-	if magic <> 0xCAFEBABEl then error "Invalid header";
+	if magic <> 0xCAFEBABEl then raise (Parse_error "invalid magic number");
 	let _version_minor = read_ui16 ch in
 	let _version_major = read_ui16 ch in
 	let constant_count = read_ui16 ch in
@@ -470,7 +481,7 @@ let parse_class_low_level ch =
 	let super = (if super_idx = 0 then None else
 		match get_constant_value consts super_idx with
 		| ConstClass (TClass name) -> Some name
-		| _ -> error "Invalid super index")
+		| _ -> raise (Illegal_value ("", "super class")))
 	in
 	let interface_count = read_ui16 ch in
 	let interfaces = List.init interface_count (fun _ -> get_class consts (read_ui16 ch)) in

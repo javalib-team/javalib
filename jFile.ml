@@ -20,8 +20,8 @@
  *)
 
 open ExtList
+open JBasics
 open JClassLow
-open JClass
 
 let list sep = function
   | t :: q ->
@@ -52,8 +52,6 @@ let rec mkdir d perms =
 
 (* We should catch only the exceptions Unix_error _ and End_of_file
    that we raised. *)
-
-exception No_class_found of string
 
 type class_path = [`dir of string | `jar of Zip.in_file] list
 

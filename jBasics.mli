@@ -144,7 +144,7 @@ type constant =
     This is usefull for adding a user-defined attribute that refers to the constant pool. *)
 val constant_to_int : constant DynArray.t -> constant -> int
 
-(**/**)
+(** {2 Errors}  *)
 
 type error_msg =
     Invalid_data
@@ -153,6 +153,30 @@ type error_msg =
   | Custom of string
 
 exception Error of string
+
+(** Indicates that some value is illegal at some place *)
+exception Illegal_value of string * string
+
+(* à remplacer par la Illegal_value : *)
+exception Invalid_opcode of int
+
+exception No_class_found of string
+
+exception Invalid_class of string
+
+(** Indicates a serious error in the basic structure of a class file. *)
+exception Parse_error of string
+
+exception Class_structure_error of string
+
+(** Indicates that the padding with OpInvalid does not match the
+    length of opcodes. *)
+exception Bad_allignement_of_low_level_bytecode
+
+(** Trying to unparse things with an incorrect constant pool. *)
+exception IncorrectConstantPool
+
+(**/**)
 
 val error : string -> 'a
 

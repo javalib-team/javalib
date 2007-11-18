@@ -26,22 +26,27 @@ open JBasics
 (* OpCodes Parsing *)
 (*******************)
 
-exception Invalid_opcode of int
-
-let jvm_basic_type = function
+let jvm_basic_type_of = function
 	| 0 -> `Int2Bool
 	| 1 -> `Long
 	| 2 -> `Float
 	| 3 -> `Double
-	| _ -> assert false
-	    
-let jvm_basic_type' = function
+	| n -> assert false
+
+let jvm_basic_type place = function
+	| 0 -> `Int2Bool
+	| 1 -> `Long
+	| 2 -> `Float
+	| 3 -> `Double
+	| n -> raise (Illegal_value (string_of_int n, "type of " ^ place))
+
+let jvm_basic_type' place = function
 	| 0 -> `Int
 	| 1 -> `Long
 	| 2 -> `Float
 	| 3 -> `Double
-	| _ -> assert false
-	    
+	| n -> raise (Illegal_value (string_of_int n, "type of " ^ place))
+
 let read_unsigned ch wide =
   if wide then read_ui16 ch else IO.read_byte ch
 
@@ -84,7 +89,7 @@ let parse_opcode op ch wide =
 	    OpCodeLdc2w (read_ui16 ch)
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
-		OpCodeLoad (jvm_basic_type (op - 21),read_unsigned ch wide)
+		OpCodeLoad (jvm_basic_type "load" (op - 21),read_unsigned ch wide)
 	| 25 ->
 		OpCodeALoad (read_unsigned ch wide)
 	| 26 | 27 | 28 | 29 ->
@@ -99,7 +104,7 @@ let parse_opcode op ch wide =
 		OpCodeALoad (op - 42)
 	(* ---- array load ---------------------------- *)
 	| 46 | 47 | 48 | 49 ->
-		OpCodeArrayLoad (jvm_basic_type' (op - 46))
+		OpCodeArrayLoad (jvm_basic_type' "arrayload" (op - 46))
 	| 50 ->
 		OpCodeAALoad
 	| 51 ->
@@ -110,7 +115,7 @@ let parse_opcode op ch wide =
 		OpCodeSALoad		
 	(* ---- store ----------------------------------- *)
 	| 54 | 55 | 56 | 57 ->
-		OpCodeStore (jvm_basic_type (op - 54),read_unsigned ch wide)
+		OpCodeStore (jvm_basic_type "store" (op - 54),read_unsigned ch wide)
 	| 58 ->
 		OpCodeAStore (read_unsigned ch wide)
 	| 59 | 60 | 61 | 62 ->
@@ -125,7 +130,7 @@ let parse_opcode op ch wide =
 		OpCodeAStore (op - 75)
 	(* ---- array store ---------------------------- *)
 	| 79 | 80 | 81 | 82 ->
-		OpCodeArrayStore (jvm_basic_type' (op - 79))
+		OpCodeArrayStore (jvm_basic_type' "arraystore" (op - 79))
 	| 83 ->
 		OpCodeAAStore
 	| 84 ->
@@ -155,17 +160,17 @@ let parse_opcode op ch wide =
 		OpCodeSwap
 	(* ---- arithmetics ---------------------------- *)
 	| 96 | 97 | 98 | 99 ->
-		OpCodeAdd (jvm_basic_type (op - 96))
+		OpCodeAdd (jvm_basic_type_of (op - 96))
 	| 100 | 101 | 102 | 103 ->
-		OpCodeSub (jvm_basic_type (op - 100))
+		OpCodeSub (jvm_basic_type_of (op - 100))
 	| 104 | 105 | 106 | 107 ->
-		OpCodeMult (jvm_basic_type (op - 104))
+		OpCodeMult (jvm_basic_type_of (op - 104))
 	| 108 | 109 | 110 | 111 ->
-		OpCodeDiv (jvm_basic_type (op - 108))
+		OpCodeDiv (jvm_basic_type_of (op - 108))
 	| 112 | 113 | 114 | 115 ->
-		OpCodeRem (jvm_basic_type (op - 112))
+		OpCodeRem (jvm_basic_type_of (op - 112))
 	| 116 | 117 | 118 | 119 ->
-		OpCodeNeg (jvm_basic_type (op - 116))
+		OpCodeNeg (jvm_basic_type_of (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
 		OpCodeIShl 
@@ -289,7 +294,7 @@ let parse_opcode op ch wide =
 		OpCodeLookupSwitch (def,tbl)
 	(* ---- returns --------------------------------- *)
 	| 172 | 173 | 174 | 175 ->
-		OpCodeReturn (jvm_basic_type (op - 172))
+		OpCodeReturn (jvm_basic_type "return" (op - 172))
 	| 176 ->
 		OpCodeAReturn
 	| 177 ->
@@ -327,7 +332,7 @@ let parse_opcode op ch wide =
 			| 9 -> `Short
 			| 10 -> `Int
 			| 11 -> `Long
-			| _ -> raise Exit)
+			| n -> raise (Illegal_value (string_of_int n, "type of newarray")))
 	| 189 ->
 		OpCodeANewArray (read_ui16 ch)
 	| 190 ->
@@ -360,7 +365,7 @@ let parse_opcode op ch wide =
 	| 209 ->
 		OpCodeRetW (read_ui16 ch)
 	| _ ->
-	    raise (Invalid_opcode op)
+	    raise (Illegal_value (string_of_int op, "opcode"))
 
 let parse_full_opcode ch pos =
   let p = pos() in
@@ -469,13 +474,15 @@ let simple_table =
       202, [|OpCodeBreakpoint|]
     ]
 
+exception Not_in_range
+
 (* Instruction without arguments *)
 let simple ch op =
   try
     write_ui8 ch
       (OpCodecodeMap.find op simple_table)
   with
-      Not_found -> invalid_arg "simple"
+      Not_found -> raise Not_in_range
 
 let int_of_jvm_basic_type = function
   | `Int2Bool -> 0
@@ -495,7 +502,7 @@ let jvm_basic_type ch inst =
     | OpCodeRem i -> i, 112
     | OpCodeNeg i -> i, 116
     | OpCodeReturn k -> k, 172
-    | _ -> invalid_arg "jvm_basic_type"
+    | _ -> raise Not_in_range
   in
     write_ui8 ch (opcode + int_of_jvm_basic_type jvm_basic_type)
 
@@ -517,7 +524,7 @@ let ilfda_loadstore ch instr =
     | OpCodeALoad value
     | OpCodeStore (_, value)
     | OpCodeAStore value -> value
-    | _ -> invalid_arg "ilfd_loadstore"
+    | _ -> raise Not_in_range
   in
     if value < 4
     then
@@ -561,7 +568,7 @@ let i16 ch inst =
     | OpCodeJsr i -> i, 168
     | OpCodeIfNull i -> i, 198
     | OpCodeIfNonNull i -> i, 199
-    | _ -> invalid_arg "i16"
+    | _ -> raise Not_in_range
   in
     write_ui8 ch opcode;
     write_i16 ch i
@@ -582,7 +589,7 @@ let ui16 ch inst =
     | OpCodeInvokeVirtual i -> i, 182
     | OpCodeInvokeNonVirtual i -> i, 183
     | OpCodeInvokeStatic i -> i, 184
-    | _ -> invalid_arg "ui16"
+    | _ -> raise Not_in_range
   in
     write_ui8 ch opcode;
     write_ui16 ch i
@@ -678,7 +685,7 @@ let other count ch = function
       write_ui8 ch 201;
       write_i32 ch i
   | OpCodeInvalid -> ()
-  | _ -> invalid_arg "other"
+  | _ -> raise Not_in_range
 
 let unparse_instruction ch count inst =
   try
@@ -688,7 +695,7 @@ let unparse_instruction ch count inst =
 	   unparse ch inst;
 	   raise Exit
 	 with
-	     Invalid_argument _ -> ())
+	     Not_in_range -> ())
       [
 	simple;
 	jvm_basic_type;
@@ -707,6 +714,8 @@ let unparse_code ch code =
       (fun i opcode ->
       (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
 	 if not (opcode = OpCodeInvalid || count () = i)
-	 then invalid_arg "Wrong bytecode sequence";
+	 then raise Bad_allignement_of_low_level_bytecode;
 	 unparse_instruction ch count opcode)
-      code
+      code;
+    if not (count () = Array.length code)
+    then raise Bad_allignement_of_low_level_bytecode
