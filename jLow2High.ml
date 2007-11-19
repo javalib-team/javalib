@@ -44,7 +44,11 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
   List.map
     (function
        | AttributeUnknown (name, contents) -> name, contents
-       | _ -> assert false)
+       | a -> 
+	   let (name,contents) = JUnparse.unparse_attribute_to_strings consts a
+	   in
+	     prerr_endline ("Warning: unexpected attribute found: "^name);
+	     name,contents)
 
 (** convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =

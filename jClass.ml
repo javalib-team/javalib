@@ -318,3 +318,8 @@ type interface_or_class = [
 let get_name = function
   | `Interface i -> i.i_name
   | `Class c -> c.c_name
+
+let get_consts = function
+  | `Interface i -> i.i_consts
+  | `Class c -> c.c_consts
+

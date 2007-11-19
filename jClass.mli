@@ -325,3 +325,4 @@ type interface_or_class = [
 ]
 
 val get_name : interface_or_class -> class_name
+val get_consts : interface_or_class -> constant array

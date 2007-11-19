@@ -379,10 +379,14 @@ let parse_field consts ch =
 	let name = get_string consts ch in
 	let sign = parse_type (get_string consts ch) in
 	let attrib_count = read_ui16 ch in
+	let attrib_to_parse =
+	  if List.exists ((=)AccStatic) acc
+	  then  [`ConstantValue ; `Synthetic ; `Deprecated]
+	  else  [`Synthetic ; `Deprecated] in
 	let attribs =
 	  List.init
 	    attrib_count
-	    (fun _ -> parse_attribute [`ConstantValue ; `Synthetic ; `Deprecated] consts ch) in
+	    (fun _ -> parse_attribute attrib_to_parse consts ch) in
 	{
 		f_name = name;
 		f_signature = sign;

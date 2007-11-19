@@ -87,6 +87,10 @@ let get_interfaces = function
   | `Interface i -> i.i_interfaces
   | `Class c -> c.c_interfaces
 
+let get_consts = function
+  | `Interface i -> i.i_consts
+  | `Class c -> c.c_consts
+
 
 type program = interface_or_class ClassMap.t
 type t = program
@@ -252,31 +256,76 @@ let add_file f program = match f with
 let parse_program class_path names =
   (* build a map of all the JClass.class_file that are going to be
      translated to build the new hierarchy.*)
+  let (jars,others) = List.partition (fun f -> Filename.check_suffix f ".jar") names in
   let class_map =
     JFile.read
       class_path
       (fun program c -> ClassMap.add (JClass.get_name c) c program)
       ClassMap.empty
-      names
+      jars in
+  let class_path = JFile.class_path class_path in
+  let class_map = ref
+    begin
+      List.fold_left
+	(fun clmap cn -> 
+	  let c= JFile.get_class class_path cn in
+	    assert (cn = JDump.class_name (JClass.get_name c));
+	    ClassMap.add (JClass.get_name c) c clmap)
+	class_map
+	others
+    end in
+  let get_class name =
+    try ClassMap.find name !class_map
+    with Not_found ->
+      try
+	let c = JFile.get_class class_path (JDump.class_name name)
+	in
+	  assert (JClass.get_name c = name);
+	  class_map := ClassMap.add name c !class_map;
+	  c;
+      with No_class_found _ -> raise (Class_not_found name)
+  in
+  let to_add = ref [] in
+  let add_class_referenced c program =
+    Array.iter
+      (function
+	| ConstMethod (TClass cn,_,_) -> 
+	    if not (ClassMap.mem cn program)
+	    then to_add := cn::!to_add
+	| _ -> ())
+      (JClass.get_consts c)
+  in
+    prerr_endline "building program";
+    let rec add_rec c (program:program) : program =
       (* add_rec translate a class from JClass.class_file to
 	 class_file and add it in the program structure, recursively
 	 adding super classes and implemented interfaces if needed. *)
-  in let rec add_rec c (program:program) : program =
-    try
-      add_file c program
-    with
-      | Class_not_found name ->
-	  let missing_class =
-	    try ClassMap.find name class_map
-	    with Not_found -> raise (Class_not_found name)
-	  in
-	  add_rec c (add_rec (missing_class) program)
-  in
-       ClassMap.fold
-	 (fun _ -> add_rec)
-	 class_map
-	 ClassMap.empty
-
+      try
+	add_class_referenced c !class_map;
+	add_file c program
+      with
+	| Class_not_found name ->
+	    let missing_class = get_class name in
+	      add_rec c (add_rec (missing_class) program)
+    in
+    let prog = ref
+      begin
+	ClassMap.fold
+	  (fun _ -> add_rec)
+	  !class_map
+	  ClassMap.empty
+      end in
+      begin
+	try
+	  while true do
+	    let c = get_class (List.hd !to_add)
+	    in 
+	      to_add := List.tl !to_add;
+	      prog := add_rec c !prog
+	  done
+	with Failure "hd" -> ()
+      end;
+      !prog
 
 let store_program filename program : unit =
   let ch = open_out_bin filename

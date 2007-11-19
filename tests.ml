@@ -306,7 +306,7 @@ open JProgram
 let test_jprogram class_path input_files =
   let p =
     try parse_program class_path input_files
-    with JProgram.Class_not_found cn -> raise (Failure ("class not found"^JDump.class_name cn))
+    with JProgram.Class_not_found cn -> raise (Failure ("class not found "^JDump.class_name cn))
   in
     prerr_endline "program build";
     prerr_string "saving program...  ";
@@ -315,7 +315,7 @@ let test_jprogram class_path input_files =
     prerr_endline "program saved";
     prerr_string "loading program...  ";
     Pervasives.flush stderr;
-    let p' = JProgram.load_program "library.bin"
+    let _p' = JProgram.load_program "library.bin"
     in
       prerr_endline "program loaded";
       Pervasives.flush stderr;
@@ -324,8 +324,11 @@ let test_jprogram class_path input_files =
 
 (** It should run the test suite. *)
 let _ =
-  let class_path = "./jre"
-  and input_files = ["java.lang.Object";"java.lang.Throwable";"java.io.Serializable"]
+  let class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
+  and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"]
+  in let class_path_jar = String.concat ":" (List.map (fun s -> class_path^s) jars)
+  in let class_path = "./:"^class_path^":"^class_path_jar
+  and input_files = ["ArcTest"]
   in
-    h2l_and_l2h_conversions class_path input_files;
+    (* h2l_and_l2h_conversions class_path input_files; *)
     test_jprogram class_path input_files
