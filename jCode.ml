@@ -714,8 +714,8 @@ let unparse_code ch code =
       (fun i opcode ->
       (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
 	 if not (opcode = OpCodeInvalid || count () = i)
-	 then raise Bad_allignement_of_low_level_bytecode;
+	 then raise (Class_structure_error "unparsing Badly alligned low level bytecode");
 	 unparse_instruction ch count opcode)
       code;
     if not (count () = Array.length code)
-    then raise Bad_allignement_of_low_level_bytecode
+    then raise (Class_structure_error "unparsing Badly alligned low level bytecode")

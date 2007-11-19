@@ -134,47 +134,31 @@ type verification_type =
 	| VObject of object_type
 	| VUninitialized of int (** creation point *)
 
-type error_msg =
-	| Invalid_data
-	| Invalid_constant of int
-	| Invalid_access_flags of int
-	| Custom of string
-
-exception Error of string
-
-exception Illegal_value of string * string
-
-exception Invalid_opcode of int
-
 exception No_class_found of string
 
 exception Invalid_class of string
 
 exception Parse_error of string
 
+exception Illegal_value of string * string
+
 exception Class_structure_error of string
 
-exception Bad_allignement_of_low_level_bytecode
-
-exception IncorrectConstantPool
-
-let error msg = raise (Error msg)
-
 let get_constant c n =
-	if n < 0 || n >= Array.length c then error ("Invalid constant index " ^ string_of_int n);
+	if n < 0 || n >= Array.length c then raise (Illegal_value (string_of_int n, "constant index"));
 	match c.(n) with
-	| ConstUnusable -> error ("Unusable constant index " ^ string_of_int n);
+	| ConstUnusable -> raise (Illegal_value ("unusable", "constant"))
 	| x -> x
 
 let get_constant_value c n =
   match get_constant c n with
     | ConstValue v -> v
-    | _ -> error "Invalie constant value index"
+    | _ -> raise (Illegal_value ("", "constant value index"))
 
 let get_object_type consts i =
 	match get_constant consts i with
 	  | ConstValue (ConstClass n) -> n
-	  | _ -> error "Invalid class index"
+	  | _ -> raise (Illegal_value ("", "class index"))
 
 let get_class consts i =
   match get_object_type consts i with
@@ -205,7 +189,7 @@ let get_string consts ch = get_string' consts (read_ui16 ch)
 
 let constant_to_int cp c =
   if c = ConstUnusable
-  then invalid_arg "constant_to_int";
+  then raise (Illegal_value ("unusable", "constant"));
   try
     DynArray.index_of (fun c' -> 0 = compare c c') cp (* [nan <> nan], where as [0 = compare nan nan] *)
   with
@@ -213,7 +197,7 @@ let constant_to_int cp c =
 	if DynArray.length cp = 0
 	then DynArray.add cp ConstUnusable;
 	if not (DynArray.get cp 0 = ConstUnusable)
-	then raise IncorrectConstantPool;
+	then raise (Class_structure_error "unparsing with an incorrect constant pool");
 	let i = DynArray.length cp in
 	  DynArray.add cp c;
 	  (match c with

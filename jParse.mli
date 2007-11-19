@@ -24,14 +24,3 @@ val parse_class_low_level : IO.input -> JClassLow.jclass
 
 (** Parse a Java class file and return the high level representation. *)
 val parse_class : IO.input -> JClass.interface_or_class
-
-(**/**)
-
-type error_msg =
-	| Invalid_data
-	| Invalid_constant of int
-	| Invalid_access_flags of int
-	| Custom of string
-
-exception Error of string
-

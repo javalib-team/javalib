@@ -182,8 +182,6 @@ type access_flag =
 
 type access_flags = access_flag list
 
-(* Flags and attributes should be related for fields, methods and classes. *)
-
 type jcode = {
 	c_max_stack : int;
 	c_max_locals : int;
@@ -199,11 +197,11 @@ and attribute =
 	| AttributeExceptions of class_name list
 	| AttributeInnerClasses of
 	    (class_name option * class_name option * string option * access_flags) list
-	    (* inner_class_info, outer_class_info, inner_name, inner_class_access_flags *)
+	    (** inner_class_info, outer_class_info, inner_name, inner_class_access_flags *)
 	| AttributeSynthetic
 	| AttributeLineNumberTable of (int * int) list
 	| AttributeLocalVariableTable of (int * int * string * value_type * int) list
-	    (* start_pc, length, name, type, index *)
+	    (** start_pc, length, name, type, index *)
 	| AttributeDeprecated
 	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
 	| AttributeUnknown of string * string
@@ -211,25 +209,25 @@ and attribute =
 type jfield = {
 	f_name : string;
 	f_signature : field_descriptor;
-	f_flags : access_flags (* Should be specialized *);
-	f_attributes : attribute list (* Should be specialized *);
+	f_flags : access_flags;
+	f_attributes : attribute list
 }
 
 type jmethod = {
 	m_name : string;
 	m_signature : method_descriptor;
-	m_flags : access_flags (* Should be specialized *);
+	m_flags : access_flags;
 	m_code : jcode option; (* Remove that *)
-	m_attributes : attribute list (* Should be specialized *);
+	m_attributes : attribute list
 }
 
 type jclass = {
 	j_name : class_name;
-	j_super : class_name option (* Remove the option *);
+	j_super : class_name option;
 	j_interfaces : class_name list;
 	j_consts : constant array;
-	j_flags : access_flags (* Should be specialized *);
+	j_flags : access_flags;
 	j_fields : jfield list;
 	j_methods : jmethod list;
-	j_attributes : attribute list (* Should be specialized *);
+	j_attributes : attribute list
 }

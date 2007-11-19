@@ -45,12 +45,12 @@ let opcode2instruction consts = function
 	    OpLdc
 	      (match get_constant_value consts n with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ as c -> c
-		 | ConstLong _ | ConstDouble _ -> failwith "invalid constant for Ldc1")
+		 | ConstLong _ | ConstDouble _ -> raise (Illegal_value ("long/double", "constant for Ldc1")))
 	| OpCodeLdc2w n ->
 	    OpLdc
 	      (match get_constant_value consts n with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-		     failwith "invalid constant for Ldc2"
+		     raise (Illegal_value ("int/float/string/class", "constant for Ldc2"))
 		 | ConstLong _ | ConstDouble _ as c -> c)
 
 	| OpCodeLoad (k, l) ->
@@ -173,15 +173,15 @@ let opcode2instruction consts = function
 	| OpCodeInvokeNonVirtual i ->
 	    (match get_method consts i with
 	       | TClass t, n, s -> OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s}, snd s)
-	       | _ -> failwith "invokespecial in an array class")
+	       | _ -> raise (Illegal_value ("array class", "invokespecial")))
 	| OpCodeInvokeStatic i ->
 	    (match get_method consts i with
 	       | TClass t, n, s -> OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s}, snd s)
-	       | _ -> failwith "invokestatic in an array class")
+	       | _ -> raise (Illegal_value ("array class", "invokestatic")))
 	| OpCodeInvokeInterface (i, c) ->
 	    let t, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c
-	      then failwith "wrong count in invokeinterface";
+	      then raise (Class_structure_error "wrong count in invokeinterface");
 	      OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s}, snd s)
 
 	| OpCodeNew i -> OpNew (get_class consts i)
@@ -413,7 +413,7 @@ let code2opcodes consts code =
 	   let opcode = instruction2opcode consts instr in
 	   let length = opcode_length consts i opcode in
 	     if opcodes.(i) = OpCodeInvalid || i + length > Array.length opcodes
-	     then failwith ("Instruction too long");
+	     then raise (Class_structure_error "Low level translation of instruction is too long for the allocated space in high level code");
 	     opcodes.(i) <- opcode;
 	     for j = i + 1 to i + length - 1 do
 	       opcodes.(j) <- OpCodeInvalid

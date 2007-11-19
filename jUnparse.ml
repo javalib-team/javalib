@@ -36,7 +36,7 @@ let encode_class_name = function
 	(fun s x -> s ^ "/" ^ x)
 	t
 	q
-  | [] -> invalid_arg "encode_class_name"
+  | [] -> raise (Illegal_value ("\"\"", "class file name"))
 
 let unparse_basic_type = function
   | `Byte -> "B"

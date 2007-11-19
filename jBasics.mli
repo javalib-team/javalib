@@ -146,39 +146,27 @@ val constant_to_int : constant DynArray.t -> constant -> int
 
 (** {2 Errors}  *)
 
-type error_msg =
-    Invalid_data
-  | Invalid_constant of int
-  | Invalid_access_flags of int
-  | Custom of string
+(** The following exceptions may be thrown, in addition to [Invalid_argument],
+    by the library. Any other exception(in particular, an [Assert_failure])
+    should be interpreted as a bug in [javalib]. *)
 
-exception Error of string
-
-(** Indicates that some value is illegal at some place *)
-exception Illegal_value of string * string
-
-(* à remplacer par la Illegal_value : *)
-exception Invalid_opcode of int
-
+(** Indicates that a class name could not be found in a given classpath. *)
 exception No_class_found of string
 
+(* Documenter ? ou fusionner avec Class_structure_error ? *)
 exception Invalid_class of string
 
 (** Indicates a serious error in the basic structure of a class file. *)
 exception Parse_error of string
 
+(** Indicates that some value is illegal at some place *)
+exception Illegal_value of string * string
+
+(** Indicates the argument of a parsing/unparsing function does not satisfy
+    some structural constraint. *)
 exception Class_structure_error of string
 
-(** Indicates that the padding with OpInvalid does not match the
-    length of opcodes. *)
-exception Bad_allignement_of_low_level_bytecode
-
-(** Trying to unparse things with an incorrect constant pool. *)
-exception IncorrectConstantPool
-
 (**/**)
-
-val error : string -> 'a
 
 val get_constant : constant array -> int -> constant
 

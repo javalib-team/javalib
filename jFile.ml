@@ -211,7 +211,7 @@ let apply_to_jar f other s =
 let fold_string class_path f file =
   if not (Filename.is_implicit file)
   then
-    failwith ("invalid class name " ^ file ^ ", must be implicit")
+    invalid_arg ("invalid class name " ^ file ^ ", must be implicit")
   else
     let c = 
       if Filename.check_suffix file ".jar" 
@@ -270,14 +270,11 @@ let fold_string class_path f file =
 
 (* Applies f to a list of files, in a colon-separated list of directories. *)
 let fold class_path f files =
-  try
-    List.iter
-      (function file ->
-	 fold_directories (fun class_path -> fold_string class_path f file) file
-	   (List.filter is_dir (directories class_path)))
-      files
-  with No_class_found c ->
-    failwith ("no class found for " ^ c)
+  List.iter
+    (function file ->
+       fold_directories (fun class_path -> fold_string class_path f file) file
+	 (List.filter is_dir (directories class_path)))
+    files
 
 let read_low class_path f accu files =
   let accu = ref accu in
