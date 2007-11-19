@@ -92,28 +92,6 @@ type signature =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(** Stackmap type. *)
-type verification_type =
-	| VTop
-	| VInteger
-	| VFloat
-	| VDouble
-	| VLong
-	| VNull
-	| VUninitializedThis
-	| VObject of object_type
-	| VUninitialized of int (** creation point *)
-
-(** {2 Exception handlers.} *)
-
-(** Exception handler. *)
-type jexception = {
-	e_start : int;
-	e_end : int;
-	e_handler : int;
-	e_catch_type : class_name option
-}
-
 (** {2 Constants.} *)
 
 (** You should not need this for normal usage, as the
@@ -137,6 +115,28 @@ type constant =
   | ConstNameAndType of string * signature
   | ConstStringUTF8 of string
   | ConstUnusable
+
+(** Stackmap type. *)
+type verification_type =
+	| VTop
+	| VInteger
+	| VFloat
+	| VDouble
+	| VLong
+	| VNull
+	| VUninitializedThis
+	| VObject of object_type
+	| VUninitialized of int (** creation point *)
+
+(** {2 Exception handlers.} *)
+
+(** Exception handler. *)
+type jexception = {
+	e_start : int;
+	e_end : int;
+	e_handler : int;
+	e_catch_type : class_name option
+}
 
 (** For unparsing purposes: *)
 

@@ -289,7 +289,7 @@ let low2high_concrete_class consts = function nc ->
 	FieldMap.add
 	  {fs_name=f.f_name;fs_type=f.f_signature}
 	  (try low2high_cfield consts f
-	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
+	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       nc.j_fields;
@@ -299,7 +299,7 @@ let low2high_concrete_class consts = function nc ->
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_cmethod consts meth
-	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	  map)
       MethodMap.empty
       nc.j_methods;
@@ -313,7 +313,7 @@ let low2high_abstract_class consts = function ac ->
 	FieldMap.add
 	  {fs_name=f.f_name;fs_type=f.f_signature}
 	  (try low2high_cfield consts f
-	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
+	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       ac.j_fields;
@@ -323,7 +323,7 @@ let low2high_abstract_class consts = function ac ->
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_acmethod consts meth
-	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	  map)
       MethodMap.empty
       ac.j_methods;
@@ -417,7 +417,7 @@ let low2high_class cl =
 		      FieldMap.add
 			{fs_name=f.f_name;fs_type=f.f_signature}
 			(try low2high_ifield consts f
-			  with Invalid_class msg -> raise (Invalid_class ("field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
+			  with Invalid_class msg -> raise (Invalid_class ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 			m)
 		    FieldMap.empty
 		    cl.j_fields;
@@ -427,7 +427,7 @@ let low2high_class cl =
 			{ms_name=meth.m_name;
 			 ms_parameters=fst meth.m_signature}
 			(try low2high_amethod consts meth
-			  with Invalid_class msg -> raise (Invalid_class ("method " ^JDump.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+			  with Invalid_class msg -> raise (Invalid_class ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 			map)
 		    MethodMap.empty
 		    methods;
@@ -445,7 +445,7 @@ let low2high_class cl =
 	    else
 	      ConcreteClass (low2high_concrete_class consts cl)
 	  with
-	    | Invalid_class msg -> raise (Invalid_class ("in class "^JDump.class_name my_name^": "^msg))
+	    | Invalid_class msg -> raise (Invalid_class ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	in
 	  `Class {
 	    c_name = my_name;

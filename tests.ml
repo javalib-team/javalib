@@ -20,6 +20,8 @@
  *)
 
 
+open JDumpBasics
+open JDumpLow
 open IO
 
 (** {2 Tests of parsing/unparsing functions}*)
@@ -77,7 +79,7 @@ let parse_code ch consts len =
 	    (JInstruction.instruction2opcode (DynArray.of_array consts) code.(p));
 	  if
 	    not (IO.close_out ch')
-	  then failwith ("bad unparsing for " ^ JDump.opcode (JInstruction.instruction2opcode (DynArray.of_array consts) code.(p)))
+	  then failwith ("bad unparsing for " ^ opcode (JInstruction.instruction2opcode (DynArray.of_array consts) code.(p)))
     done;
     code
 
@@ -92,7 +94,6 @@ let  _ =
 
 (** {2 Tests of conversion between low and high level represetations of classes}*)
 
-open JDump
 
 let filter_flags authorized fl =
   List.filter (fun f->List.exists ((=)f) authorized) fl
@@ -132,7 +133,7 @@ let eq_ccode cl c1 c2 =
 	    | OpCodeCheckCast c1, OpCodeCheckCast c2
 		when cl.j_consts.(c1) = cl.j_consts.(c2) -> ()
 	    | _,_ ->
-		failwith ("instructions differ: "^JDump.opcode c1.(!i)^" <> "^JDump.opcode c2.(!i))
+		failwith ("instructions differ: "^opcode c1.(!i)^" <> "^opcode c2.(!i))
 	end;
       incr i
     done;
@@ -241,36 +242,40 @@ let eq_fields cl f1 f2 =
 
 
 let eq_class c1 c2 =
-  if c1.j_name <> c2.j_name
-  then failwith ("class names differ ("^JDump.class_name c1.j_name^","^JDump.class_name c2.j_name^")");
-  if c1.j_super <> c2.j_super
-  then failwith ("super classes differ ("^(dump_to_string dump_super) c1.j_super ^","^(dump_to_string dump_super) c2.j_super^")");
-  if compare c1.j_consts c2.j_consts <> 0
-  then
-    begin
-      prerr_endline ((dump_to_string dump_constantpool) c1.j_consts);
-      prerr_endline ((dump_to_string dump_constantpool) c2.j_consts);
-      Pervasives.flush stderr;
-      failwith ("constant pools differ")
-    end;
-  if List.sort compare c1.j_interfaces <> List.sort compare c2.j_interfaces
-  then failwith ("interfaces differ ("^","^")");
-  if List.sort compare (filter_flags [AccPublic;AccFinal;AccSynchronized;AccInterface;AccAbstract] c1.j_flags)
-    <> List.sort compare c2.j_flags
-  then prerr_endline ("class flags differ ("^access_flags c1.j_flags^","^access_flags c2.j_flags^")");
+  let dump_super ch = function
+    | None -> ()
+    | Some c -> IO.printf ch "%s" (class_name c)
+  in
+    if c1.j_name <> c2.j_name
+    then failwith ("class names differ ("^class_name c1.j_name^","^class_name c2.j_name^")");
+    if c1.j_super <> c2.j_super
+    then failwith ("super classes differ ("^(dump_to_string dump_super) c1.j_super ^","^(dump_to_string dump_super) c2.j_super^")");
+    if compare c1.j_consts c2.j_consts <> 0
+    then
+      begin
+	prerr_endline ((dump_to_string dump_constantpool) c1.j_consts);
+	prerr_endline ((dump_to_string dump_constantpool) c2.j_consts);
+	Pervasives.flush stderr;
+	failwith ("constant pools differ")
+      end;
+    if List.sort compare c1.j_interfaces <> List.sort compare c2.j_interfaces
+    then failwith ("interfaces differ ("^","^")");
+    if List.sort compare (filter_flags [AccPublic;AccFinal;AccSynchronized;AccInterface;AccAbstract] c1.j_flags)
+      <> List.sort compare c2.j_flags
+    then prerr_endline ("class flags differ ("^access_flags c1.j_flags^","^access_flags c2.j_flags^")");
 
-  if not (eq_list (eq_fields c1) c1.j_fields c2.j_fields)
-  then failwith ("numbers fields of differ ("
-		  ^string_of_int (List.length c1.j_fields)^","
-		  ^string_of_int (List.length c1.j_fields)^")");
+    if not (eq_list (eq_fields c1) c1.j_fields c2.j_fields)
+    then failwith ("numbers fields of differ ("
+		    ^string_of_int (List.length c1.j_fields)^","
+		    ^string_of_int (List.length c1.j_fields)^")");
 
-  if not (eq_list (eq_method c1) c1.j_methods c2.j_methods)
-  then failwith ("numbers of methods differ ("
-		  ^string_of_int (List.length c1.j_methods)^","
-		  ^string_of_int (List.length c2.j_methods)^")");
-  try
-    eq_attribs c1 c1.j_attributes c2.j_attributes
-  with Failure msg -> failwith ("class attributes differ: "^msg)
+    if not (eq_list (eq_method c1) c1.j_methods c2.j_methods)
+    then failwith ("numbers of methods differ ("
+		    ^string_of_int (List.length c1.j_methods)^","
+		    ^string_of_int (List.length c2.j_methods)^")");
+    try
+      eq_attribs c1 c1.j_attributes c2.j_attributes
+    with Failure msg -> failwith ("class attributes differ: "^msg)
 
 let h2l_and_l2h_conversions class_path input_files =
   let res =
@@ -283,7 +288,7 @@ let h2l_and_l2h_conversions class_path input_files =
 	    try
 	      eq_class c c_low'
 	    with Failure msg ->
-	      failwith ("error on "^(JDump.class_name c.JClassLow.j_name)^": "^msg)
+	      failwith ("error on "^(class_name c.JClassLow.j_name)^": "^msg)
 	with Failure msg -> failwith msg)
       ()
       input_files
@@ -304,22 +309,24 @@ let h2l_conversions class_path input_files =
 open JProgram
 
 let test_jprogram class_path input_files =
+  prerr_string "loading program...  ";
   let p =
-    try parse_program class_path input_files
-    with JProgram.Class_not_found cn -> raise (Failure ("class not found "^JDump.class_name cn))
+    try JProgram.load_program "library.bin"
+    with _ ->
+      try parse_program class_path input_files
+      with JProgram.Class_not_found cn -> raise (Failure ("class not found "^class_name cn))
   in
-    prerr_endline "program build";
-    prerr_string "saving program...  ";
-    Pervasives.flush stderr;
-    JProgram.store_program "library.bin" p;
-    prerr_endline "program saved";
-    prerr_string "loading program...  ";
-    Pervasives.flush stderr;
-    let _p' = JProgram.load_program "library.bin"
-    in
-      prerr_endline "program loaded";
-      Pervasives.flush stderr;
-      () (* assert (p=p') impossible : the structure is recursive *)
+  let class_path = JFile.class_path class_path
+  in 
+    prerr_string "adding files... ";
+    List.fold_left
+      (fun p cn -> 
+	JProgram.add_file
+	  class_path
+	  (JFile.get_class class_path cn)
+	  p)
+      p
+      input_files
 
 
 (** It should run the test suite. *)
@@ -328,7 +335,7 @@ let _ =
   and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"]
   in let class_path_jar = String.concat ":" (List.map (fun s -> class_path^s) jars)
   in let class_path = "./:"^class_path^":"^class_path_jar
-  and input_files = ["ArcTest"]
+  and input_files = ["java.lang.Object"]
   in
     (* h2l_and_l2h_conversions class_path input_files; *)
     test_jprogram class_path input_files

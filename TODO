@@ -5,9 +5,6 @@ Here is some stuff that need to be done:
 - it seems that many things are not dump by jDump
 - adapt JDump to dump high level classes
 - adopt a more uniform naming convention between JClass and JClassLow
-- check : an interface can contains a class initializer
-  (ex:com/sun/imageio/plugins/bmp/BMPConstants) and it is not
-  documented
 - use a well-defined set of exceptions (remove failwith)
 - add lazy parsing (keeping the code attributes unparsed until really
   needed) (think of marshaling and compacity)

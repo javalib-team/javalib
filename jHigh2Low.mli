@@ -21,6 +21,20 @@
 
 (** Tranformation of high level classes to low level classes. *)
 
+val h2l_cfield :
+  'a -> JClass.field_signature -> JClass.class_field -> JClassLow.jfield
+val h2l_ifield :
+  'a -> JClass.field_signature -> JClass.interface_field -> JClassLow.jfield
+val h2l_cmethod :
+  JBasics.constant DynArray.t ->
+  JClass.method_signature -> JClass.concrete_method -> JClassLow.jmethod
+val h2l_amethod :
+  'a ->
+  JClass.method_signature -> JClass.abstract_method -> JClassLow.jmethod
+val h2l_acmethod :
+  JBasics.constant DynArray.t ->
+  JClass.method_signature ->
+  JClass.abstract_class_method -> JClassLow.jmethod
 
 (** Convert a high level class to a lower level class.*)
 val high2low : JClass.interface_or_class -> JClassLow.jclass

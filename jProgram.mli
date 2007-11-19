@@ -1,6 +1,6 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 UniversitÃ© de Rennes 1 / CNRS
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
  *  Tiphaine.Turpin@irisa.fr
  *  Laurent.Hubert@irisa.fr
  *
@@ -112,7 +112,8 @@ exception Class_not_found of class_name
     [.jar] files and [.class] files, looking for it in the classpath
     (a list of directories separated with ':') . *)
 val parse_program : string -> string list -> t
-val add_file : JClass.interface_or_class -> t -> t
+val add_file :
+  JFile.class_path -> JClass.interface_or_class -> program -> program
 
 val load_program : string -> t
 val store_program : string -> t -> unit

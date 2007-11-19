@@ -1,6 +1,9 @@
 
 #  This file is part of JavaLib
 #  Copyright (c)2004 Nicolas Cannasse
+#  Copyright (c)2007 Université de Rennes 1 / CNRS
+#  Tiphaine.Turpin@irisa.fr
+#  Laurent.Hubert@irisa.fr
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -27,10 +30,12 @@ OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
-MODULES= jBasics jClass jDump jCode jInstruction jHigh2Low jUnparse	\
-jLow2High jParse jFile jProgram jControlFlow
-MODULE_INTERFACES=jBasics jClassLow jClass jDump jCode jInstruction	\
-jUnparse jParse jLow2High jHigh2Low jFile jProgram jControlFlow
+MODULES= jBasics jClass jDumpBasics jDumpLow jDumpHigh jCode \
+jInstruction jHigh2Low jUnparse jLow2High jParse jFile jProgram	   \
+jControlFlow
+MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow		\
+jDumpHigh jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile	\
+jProgram jControlFlow
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 

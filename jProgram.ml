@@ -118,8 +118,8 @@ let add_classFile c (program:program) =
 	      | `Interface i -> i
 	      | `Class c' ->
 		  raise (Invalid_class
-			    (JDump.class_name c.JClass.c_name^" is declared to implements "
-			      ^JDump.class_name iname^", which is a class and not an interface."))
+			    (JDumpBasics.class_name c.JClass.c_name^" is declared to implements "
+			      ^JDumpBasics.class_name iname^", which is a class and not an interface."))
 	  with Not_found -> raise (Class_not_found iname)
 	in ClassMap.add iname i imap
       )
@@ -138,8 +138,8 @@ let add_classFile c (program:program) =
 			| `Class c -> Some c
 			| `Interface i ->
 			    raise (Invalid_class
-				      (JDump.class_name c.JClass.c_name^" is declared to extends "
-					^JDump.class_name super^", which is an interface and not a class."))
+				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
+					^JDumpBasics.class_name super^", which is an interface and not a class."))
 		    with Not_found -> raise (Class_not_found super)
 	    end
 	  in AbstractClass {
@@ -158,8 +158,8 @@ let add_classFile c (program:program) =
 			| `Class c -> Some c
 			| `Interface i ->
 			    raise (Invalid_class
-				      (JDump.class_name c.JClass.c_name^" is declared to extends "
-					^JDump.class_name super^", which is an interface and not a class."))
+				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
+					^JDumpBasics.class_name super^", which is an interface and not a class."))
 		    with Not_found -> raise (Class_not_found super)
 	    end
 	  in ConcreteClass {
@@ -206,8 +206,8 @@ let add_interfaceFile c (program:program) =
 	      | `Interface i -> i
 	      | `Class c' ->
 		  raise (Invalid_class
-			    ("Interface "^JDump.class_name c.JClass.i_name^" is declared to extends "
-			      ^JDump.class_name c'.c_name^", which is an interface and not a class."))
+			    ("Interface "^JDumpBasics.class_name c.JClass.i_name^" is declared to extends "
+			      ^JDumpBasics.class_name c'.c_name^", which is an interface and not a class."))
 	  with Not_found -> raise (Class_not_found iname)
 	in ClassMap.add iname i imap
       )
@@ -249,9 +249,57 @@ let add_interfaceFile c (program:program) =
       program
 
 
-let add_file f program = match f with
+let add_one_file f program = match f with
   | `Interface i -> add_interfaceFile i program
   | `Class c -> add_classFile c program
+
+let get_class class_path class_map name =
+  try ClassMap.find name !class_map
+  with Not_found ->
+    try
+      let c = JFile.get_class class_path (JDumpBasics.class_name name)
+      in
+	assert (JClass.get_name c = name);
+	class_map := ClassMap.add name c !class_map;
+	c;
+    with No_class_found _ -> raise (Class_not_found name)
+
+let add_class_referenced c program to_add =
+  Array.iter
+    (function
+      | ConstMethod (TClass cn,_,_) -> 
+	  if not (ClassMap.mem cn program)
+	  then to_add := cn::!to_add
+      | _ -> ())
+    (JClass.get_consts c)
+
+
+let rec add_file class_path c program =
+  let classmap = ref ClassMap.empty in
+  let to_add = ref [] in
+  let program =
+    try
+      add_class_referenced c !classmap to_add;
+      if not (ClassMap.mem (JClass.get_name c) program)
+      then add_one_file c program
+      else program
+    with Class_not_found cn ->
+      let missing_class = get_class class_path classmap cn in
+	add_file class_path c (add_file class_path missing_class program)
+  in begin
+    let program = ref program in
+    try while true do
+	let cn = List.hd !to_add in
+	  to_add := List.tl !to_add;
+	  if not (ClassMap.mem cn !program)
+	  then 
+	    let c = get_class class_path classmap cn
+	    in program := add_file class_path c !program
+      done;
+      !program
+    with Failure "hd" -> !program
+  end
+
 
 let parse_program class_path names =
   (* build a map of all the JClass.class_file that are going to be
@@ -269,63 +317,16 @@ let parse_program class_path names =
       List.fold_left
 	(fun clmap cn -> 
 	  let c= JFile.get_class class_path cn in
-	    assert (cn = JDump.class_name (JClass.get_name c));
+	    assert (cn = JDumpBasics.class_name (JClass.get_name c));
 	    ClassMap.add (JClass.get_name c) c clmap)
 	class_map
 	others
     end in
-  let get_class name =
-    try ClassMap.find name !class_map
-    with Not_found ->
-      try
-	let c = JFile.get_class class_path (JDump.class_name name)
-	in
-	  assert (JClass.get_name c = name);
-	  class_map := ClassMap.add name c !class_map;
-	  c;
-      with No_class_found _ -> raise (Class_not_found name)
-  in
-  let to_add = ref [] in
-  let add_class_referenced c program =
-    Array.iter
-      (function
-	| ConstMethod (TClass cn,_,_) -> 
-	    if not (ClassMap.mem cn program)
-	    then to_add := cn::!to_add
-	| _ -> ())
-      (JClass.get_consts c)
-  in
-    prerr_endline "building program";
-    let rec add_rec c (program:program) : program =
-      (* add_rec translate a class from JClass.class_file to
-	 class_file and add it in the program structure, recursively
-	 adding super classes and implemented interfaces if needed. *)
-      try
-	add_class_referenced c !class_map;
-	add_file c program
-      with
-	| Class_not_found name ->
-	    let missing_class = get_class name in
-	      add_rec c (add_rec (missing_class) program)
-    in
-    let prog = ref
-      begin
-	ClassMap.fold
-	  (fun _ -> add_rec)
-	  !class_map
-	  ClassMap.empty
-      end in
-      begin
-	try
-	  while true do
-	    let c = get_class (List.hd !to_add)
-	    in 
-	      to_add := List.tl !to_add;
-	      prog := add_rec c !prog
-	  done
-	with Failure "hd" -> ()
-      end;
-      !prog
+    ClassMap.fold
+      (fun _ -> add_file class_path)
+      !class_map
+      ClassMap.empty
+      
 
 let store_program filename program : unit =
   let ch = open_out_bin filename
