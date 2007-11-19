@@ -218,7 +218,7 @@ type jfield = {
 type jmethod = {
 	m_name : string;
 	m_signature : method_descriptor;
-	m_flags : access_flags (* Should be specialized *);	
+	m_flags : access_flags (* Should be specialized *);
 	m_code : jcode option; (* Remove that *)
 	m_attributes : attribute list (* Should be specialized *);
 }

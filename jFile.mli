@@ -71,9 +71,9 @@ val read :
     by [names], writing the resulting classes in [outputdir]. Jar files are
     mapped to jar files, and the non-class files are kept unchanged in the
     resulting archive. *)
-val transform : 
-  string -> string -> 
-  (JClass.interface_or_class -> JClass.interface_or_class) -> 
+val transform :
+  string -> string ->
+  (JClass.interface_or_class -> JClass.interface_or_class) ->
   string list -> unit
 
 (** Same as {! read} with low level class files. *)

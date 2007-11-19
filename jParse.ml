@@ -65,10 +65,10 @@ let parse_constant max ch =
 	    ConstantInterfaceMethod (n1,n2)
       | 8 ->
 	  ConstantString (index())
-      | 3 ->		
+      | 3 ->
 	  ConstantInt (read_real_i32 ch)
       | 4 ->
-	  let f = Int32.float_of_bits (read_real_i32 ch) in		
+	  let f = Int32.float_of_bits (read_real_i32 ch) in
 	    ConstantFloat f
       | 5 ->
 	  ConstantLong (read_i64 ch)
@@ -82,7 +82,7 @@ let parse_constant max ch =
 	  let len = read_ui16 ch in
 	  let str = IO.nread ch len in
 	    ConstantStringUTF8 str
-      | n -> 
+      | n ->
 	  raise (Illegal_value (string_of_int cid, "constant kind"))
 
 let parse_access_flags ch =
@@ -91,7 +91,7 @@ let parse_access_flags ch =
 	  AccFinal; AccSynchronized; AccVolatile; AccTransient;
 	  AccNative; AccInterface; AccAbstract; AccStrict;
 	  AccRFU 1; AccRFU 2; AccRFU 3; AccRFU 4 ] in
-	let fl = read_ui16 ch in	
+	let fl = read_ui16 ch in
 	let flags = ref [] in
 	let fbit = ref 0 in
 	List.iter (fun f ->
@@ -242,7 +242,7 @@ let rec parse_code consts ch =
 	let max_stack = read_ui16 ch in
 	let max_locals = read_ui16 ch in
 	let clen = read_i32 ch in
-	let code = 
+	let code =
 	    JCode.parse_code ch clen
 	in
 	let exc_tbl_length = read_ui16 ch in
@@ -296,7 +296,7 @@ and parse_attribute list consts ch =
 	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
 	    (match get_constant consts (read_ui16 ch) with
-	       | ConstValue c -> 
+	       | ConstValue c ->
 		   AttributeConstant c
 	       | _ -> raise (Illegal_value ("", "constant value")))
 	| "Code" -> check `Code;
@@ -332,7 +332,7 @@ and parse_attribute list consts ch =
 			  | 0 -> None
 			  | i -> Some (get_string' consts i) in
 		      let flags = parse_access_flags ch in
-			inner, outer, inner_name, flags)) 
+			inner, outer, inner_name, flags))
 	| "Synthetic" -> check `Synthetic;
 	    if alen <> 0 then error ();
 	    AttributeSynthetic
@@ -345,7 +345,7 @@ and parse_attribute list consts ch =
 		   (fun _ ->
 		      let pc = read_ui16 ch in
 		      let line = read_ui16 ch in
-			pc , line)) 
+			pc , line))
 	| "LocalVariableTable" -> check `LocalVariableTable;
 	    let nentry = read_ui16 ch in
 	      if nentry * 10 + 2 <> alen then error();
@@ -396,7 +396,7 @@ let parse_method consts ch =
 	let sign = parse_method_signature (get_string consts ch) in
 	let attrib_count = read_ui16 ch in
 	let code = ref None in
-	let attribs = List.init attrib_count (fun _ -> 
+	let attribs = List.init attrib_count (fun _ ->
 		match parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch with
 		| AttributeCode c ->
 			if !code <> None then raise (Class_structure_error "Duplicate code");
@@ -423,7 +423,7 @@ let rec expand_constant consts n =
       | _ -> raise (Illegal_value ("", "Class in " ^ name ^ " constant"))
   in
 	match consts.(n) with
-	| ConstantClass i -> 
+	| ConstantClass i ->
 	    (match expand_constant consts i with
 	       | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
 	       | _ -> raise (Illegal_value ("", "string in Class constant")))
@@ -465,7 +465,7 @@ let parse_class_low_level ch =
 	let _version_major = read_ui16 ch in
 	let constant_count = read_ui16 ch in
 	let const_big = ref true in
-	let consts = Array.init constant_count (fun _ -> 
+	let consts = Array.init constant_count (fun _ ->
 		if !const_big then begin
 			const_big := false;
 			ConstantUnusable

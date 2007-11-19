@@ -46,6 +46,7 @@ module PP :
 	@raise NoCode if the method [ms] has no associated code.*)
     val get_first_pp :
       JProgram.t -> JBasics.class_name * JClass.method_signature -> t
+    val get_first_pp_wp : class_file * method_signature -> t
     val goto_absolute : t -> int -> t
     val goto_relative : t -> int -> t
   end

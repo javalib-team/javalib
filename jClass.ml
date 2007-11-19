@@ -173,7 +173,7 @@ type attributes = {
   deprecated : bool;
   other : (string * string) list
 }
-    
+
 (** {2 Fields of classes and interfaces.} *)
 (*******************************)
 
@@ -315,6 +315,6 @@ type interface_or_class = [
 | `Class of class_file
 ]
 
-let get_name = function 
+let get_name = function
   | `Interface i -> i.i_name
   | `Class c -> c.c_name

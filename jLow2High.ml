@@ -23,7 +23,7 @@ open JBasics
 open JClassLow
 open JClass
 
-let rec flags2access = function 
+let rec flags2access = function
   | AccPublic::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccProtected) l
       then raise (Invalid_class "Access flags Public and Private or Protected cannot be set at the same time")
@@ -50,7 +50,7 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
   {synthetic = List.exists ((=)AttributeSynthetic) al;
    deprecated = List.exists ((=)AttributeDeprecated) al;
-   other = 
+   other =
       low2high_other_attributes consts
 	(List.filter (fun a -> a <> AttributeDeprecated && a <> AttributeSynthetic) al);
   }
@@ -66,17 +66,17 @@ let low2high_code consts = function c ->
       begin
 	let rec find_lineNumberTable = function
 	  | AttributeLineNumberTable l::l' ->
-	      if find_lineNumberTable l' <> None 
+	      if find_lineNumberTable l' <> None
 	      then raise (Invalid_class "Only one AttributeLineNumberTable can be attached to a method.");
 	      Some l
 	  | _::l -> find_lineNumberTable l
 	  | [] -> None
 	in find_lineNumberTable c.JClassLow.c_attributes
       end;
-    c_local_variable_table = 
+    c_local_variable_table =
       begin
 	let rec find_LocalVariableTable = function
-	  | AttributeLocalVariableTable l::l' -> 
+	  | AttributeLocalVariableTable l::l' ->
 	      if find_LocalVariableTable l' <> None
 	      then raise (Invalid_class "Only one AttributeLocalVariableTable can be attached to a method.");
 	      Some l
@@ -87,7 +87,7 @@ let low2high_code consts = function c ->
     c_stack_map =
       begin
 	let rec find_StackMap = function
-	  | AttributeStackMap l::l' -> 
+	  | AttributeStackMap l::l' ->
 	      if find_StackMap l' <> None
 	      then raise (Invalid_class "Only one StackMap attribute can be attached to a method.");
 	      Some l
@@ -96,9 +96,9 @@ let low2high_code consts = function c ->
 	in find_StackMap c.JClassLow.c_attributes
       end;
     c_attributes = low2high_other_attributes consts
-      (List.filter 
-	  (function 
-	    | AttributeStackMap _ | AttributeLocalVariableTable _ 
+      (List.filter
+	  (function
+	    | AttributeStackMap _ | AttributeLocalVariableTable _
 	    | AttributeLineNumberTable _ -> false
 	    | _ -> true)
 	  c.JClassLow.c_attributes);
@@ -106,9 +106,9 @@ let low2high_code consts = function c ->
 
 let low2high_cfield consts = function f ->
   let is_static = List.exists ((=) AccStatic) f.f_flags in
-  let (cst,other_att) = 
+  let (cst,other_att) =
     List.partition (function AttributeConstant _ -> true | _ -> false) f.f_attributes in
-  let (cst,other_att) = 
+  let (cst,other_att) =
     match cst with
       | [] -> None,other_att
       | AttributeConstant c::oc when not is_static ->  (* it seems quite common *)
@@ -124,31 +124,31 @@ let low2high_cfield consts = function f ->
     {
       cf_access = flags2access f.f_flags;
       cf_static = is_static;
-      cf_type = 
+      cf_type =
 	begin
 	  let rec find_field_type = function
 	    | AccFinal::_ -> Final
 	    | AccVolatile::_ -> Volatile
 	    | _::l -> find_field_type l
 	    | [] -> NotFinal
-	  in find_field_type f.f_flags 
+	  in find_field_type f.f_flags
 	end;
       cf_value = cst;
       cf_transient = List.exists ((=)AccTransient) f.f_flags;
-      cf_attributes = 
+      cf_attributes =
 	low2high_attributes consts other_att;
     }
 
-let low2high_ifield consts = function f -> 
-  if not 
-    (List.exists ((=)AccPublic) f.f_flags 
+let low2high_ifield consts = function f ->
+  if not
+    (List.exists ((=)AccPublic) f.f_flags
       && List.exists ((=)AccStatic) f.f_flags
       && List.exists ((=)AccFinal) f.f_flags) ||
     [] <> (List.filter (fun a -> a<>AccPublic && a<>AccStatic && a<>AccFinal) f.f_flags)
   then raise (Invalid_class "A field of an interface must have as only flag : Public, Static and Final.")
   else
     {
-      if_value = 
+      if_value =
 	begin
 	  let rec find_Constant = function
 	    | AttributeConstant c::_ -> Some c
@@ -157,9 +157,9 @@ let low2high_ifield consts = function f ->
 	  in find_Constant f.f_attributes
 	end;
       if_attributes =
-	low2high_attributes consts 
+	low2high_attributes consts
 	  (List.filter
-	      (function AttributeConstant _ -> false| _ -> true) 
+	      (function AttributeConstant _ -> false| _ -> true)
 	      f.f_attributes);
     }
 
@@ -169,8 +169,8 @@ let low2high_amethod consts = function m ->
       (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
       m.m_flags
     then
-      match 
-	List.hd 
+      match
+	List.hd
 	  (List.filter
 	      (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
 	      m.m_flags)
@@ -186,18 +186,18 @@ let low2high_amethod consts = function m ->
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
   end;
   {
-    am_access = 
-      begin 
+    am_access =
+      begin
 	match flags2access m.m_flags with
 	  | `Private -> raise (Invalid_class "Abstract method cannot be private")
 	  | `Default -> `Default
 	  | `Protected -> `Protected
 	  | `Public -> `Public
       end;
-    am_exceptions = 
+    am_exceptions =
       begin
 	let rec find_Exceptions = function
-	  | AttributeExceptions cl::l -> 
+	  | AttributeExceptions cl::l ->
 	      if find_Exceptions l <> []
 	      then raise (Invalid_class "Only one Exception attribute is allowed in a method.")
 	      else cl
@@ -206,21 +206,21 @@ let low2high_amethod consts = function m ->
 	in find_Exceptions m.m_attributes
       end;
     am_attributes =
-      low2high_attributes consts 
+      low2high_attributes consts
 	(List.filter
-	    (function AttributeExceptions _ -> false| _ -> true) 
+	    (function AttributeExceptions _ -> false| _ -> true)
 	    m.m_attributes);
     am_return_type = snd m.m_signature
   }
 
 let low2high_cmethod consts = function m ->
-  if m.m_name = "<init>" && 
+  if m.m_name = "<init>" &&
     List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
     m.m_flags
   then raise (Invalid_class ("A specific instance initialization method may have at most "
 			      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
 			      ^ "and may also have its ACC_STRICT flag set."))
-  else 
+  else
     if List.exists ((=)AccAbstract) m.m_flags
     then raise (Invalid_class "Non abstract class cannot have abstract methods.")
   else
@@ -230,10 +230,10 @@ let low2high_cmethod consts = function m ->
       cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
       cm_strict =  List.exists ((=) AccStrict) m.m_flags;
       cm_access = flags2access m.m_flags;
-      cm_exceptions = 
+      cm_exceptions =
 	begin
 	  let rec find_Exceptions = function
-	    | AttributeExceptions cl::l -> 
+	    | AttributeExceptions cl::l ->
 		if find_Exceptions l <> []
 		then raise (Invalid_class "Only one Exception attribute is allowed in a method.")
 		else cl
@@ -242,11 +242,11 @@ let low2high_cmethod consts = function m ->
 	  in find_Exceptions m.m_attributes
 	end;
       cm_attributes =
-	low2high_attributes consts 
+	low2high_attributes consts
 	  (List.filter
-	      (function |AttributeExceptions _ | AttributeCode _ -> false| _ -> true) 
+	      (function |AttributeExceptions _ | AttributeCode _ -> false| _ -> true)
 	      m.m_attributes);
-      implementation = 
+      implementation =
 	begin
 	  let rec find_Code = function
 	    | AttributeCode c::l ->
@@ -254,7 +254,7 @@ let low2high_cmethod consts = function m ->
 		then raise (Invalid_class "Only one Code attribute is allowed in a method.")
 		else
 		  if List.exists ((=) AccNative) m.m_flags
-		  then 
+		  then
 		    (prerr_endline "A method declared as Native with code has been found.";
 		     Native)
 		else Java (low2high_code consts c)
@@ -262,7 +262,7 @@ let low2high_cmethod consts = function m ->
 	    | [] ->
 		if List.exists ((=) AccNative) m.m_flags
 		then Native
-		else 
+		else
 		  (prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
 		   Native)
 	  in find_Code m.m_attributes
@@ -280,18 +280,18 @@ let low2high_concrete_class consts = function nc ->
   {
     cc_final = List.exists ((=)AccFinal) nc.j_flags;
     cc_super_class = nc.j_super;
-    cc_fields = List.fold_left 
-      (fun m f -> 
-	FieldMap.add 
-	  {fs_name=f.f_name;fs_type=f.f_signature} 
-	  (try low2high_cfield consts f	
+    cc_fields = List.fold_left
+      (fun m f ->
+	FieldMap.add
+	  {fs_name=f.f_name;fs_type=f.f_signature}
+	  (try low2high_cfield consts f
 	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       nc.j_fields;
-    cc_methods = List.fold_left 
-      (fun map meth -> 
-	MethodMap.add 
+    cc_methods = List.fold_left
+      (fun map meth ->
+	MethodMap.add
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_cmethod consts meth
@@ -304,18 +304,18 @@ let low2high_concrete_class consts = function nc ->
 let low2high_abstract_class consts = function ac ->
   {
     ac_super_class = ac.j_super;
-    ac_fields = List.fold_left 
-      (fun m f -> 
-	FieldMap.add 
-	  {fs_name=f.f_name;fs_type=f.f_signature} 
-	  (try low2high_cfield consts f	
+    ac_fields = List.fold_left
+      (fun m f ->
+	FieldMap.add
+	  {fs_name=f.f_name;fs_type=f.f_signature}
+	  (try low2high_cfield consts f
 	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       ac.j_fields;
-    ac_methods = List.fold_left 
-      (fun map meth -> 
-	MethodMap.add 
+    ac_methods = List.fold_left
+      (fun map meth ->
+	MethodMap.add
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_acmethod consts meth
@@ -326,7 +326,7 @@ let low2high_abstract_class consts = function ac ->
   }
 
 let low2high_innerclass = function
-    (inner_class_info,outer_class_info,inner_name,inner_class_access_flags) -> 
+    (inner_class_info,outer_class_info,inner_name,inner_class_access_flags) ->
       {
 	ic_class_name = inner_class_info;
 	ic_outer_class_name = outer_class_info;
@@ -334,7 +334,7 @@ let low2high_innerclass = function
 	ic_access = flags2access inner_class_access_flags;
 	ic_static = List.exists ((=)AccStatic) inner_class_access_flags;
 	ic_final = List.exists ((=)AccFinal) inner_class_access_flags;
-	ic_type = 
+	ic_type =
 	  if List.exists ((=)AccInterface) inner_class_access_flags
 	  then `Interface
 	  else if List.exists ((=)AccAbstract) inner_class_access_flags
@@ -345,25 +345,25 @@ let low2high_innerclass = function
 exception Not_a_class
 
 
-let low2high_class cl = 
+let low2high_class cl =
   if cl.j_super = None && cl.j_name <> java_lang_object
   then raise (Invalid_class "Only java.lang.Object is allowed not to have a super-class.")
   else
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
-    let my_access = 
-      if List.exists ((=)AccPublic) cl.j_flags 
-      then `Public 
+    let my_access =
+      if List.exists ((=)AccPublic) cl.j_flags
+      then `Public
       else `Default
     and my_interfaces = cl.j_interfaces
-    and my_sourcefile = 
+    and my_sourcefile =
       let rec find_SourceFile = function
 	| AttributeSourceFile s::_ -> Some s
 	| _::l -> find_SourceFile l
 	| [] -> None
       in find_SourceFile cl.j_attributes
     and my_deprecated = List.exists ((=)AttributeDeprecated) cl.j_attributes
-    and my_inner_classes = 
+    and my_inner_classes =
       let rec find_InnerClasses = function
 	| AttributeInnerClasses icl::_ -> List.rev_map low2high_innerclass icl
 	| _::l -> find_InnerClasses l
@@ -374,10 +374,10 @@ let low2high_class cl =
 	(List.filter
 	    (function
 	      | AttributeSourceFile _ | AttributeDeprecated | AttributeInnerClasses _ -> false
-	      | _ -> true) 
+	      | _ -> true)
 	    cl.j_attributes);
     in
-      if List.exists ((=)AccInterface) cl.j_flags 
+      if List.exists ((=)AccInterface) cl.j_flags
       then
 	begin
 	  if not (List.exists ((=)AccAbstract) cl.j_flags)
@@ -408,18 +408,18 @@ let low2high_class cl =
 		  i_other_attributes = my_other_attributes;
 		  i_super = java_lang_object;
 		  i_initializer = init;
-		  i_fields = List.fold_left 
-		    (fun m f -> 
-		      FieldMap.add 
-			{fs_name=f.f_name;fs_type=f.f_signature} 
-			(try low2high_ifield consts f	
+		  i_fields = List.fold_left
+		    (fun m f ->
+		      FieldMap.add
+			{fs_name=f.f_name;fs_type=f.f_signature}
+			(try low2high_ifield consts f
 			  with Invalid_class msg -> raise (Invalid_class ("field " ^JDump.signature f.f_name (SValue f.f_signature)^": "^msg)))
 			m)
 		    FieldMap.empty
 		    cl.j_fields;
-		  i_methods = List.fold_left 
-		    (fun map meth -> 
-		      MethodMap.add 
+		  i_methods = List.fold_left
+		    (fun map meth ->
+		      MethodMap.add
 			{ms_name=meth.m_name;
 			 ms_parameters=fst meth.m_signature}
 			(try low2high_amethod consts meth

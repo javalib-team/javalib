@@ -33,7 +33,8 @@ module PP : sig
   val to_softpp :
     t -> (JBasics.class_name * JClass.method_signature) * int
   val get_first_pp :
-    JProgram.t -> JBasics.class_name * JClass.method_signature -> t
+    program -> class_name * JClass.method_signature -> t
+  val get_first_pp_wp : class_file * method_signature -> t
   val goto_absolute : t -> int -> t
   val goto_relative : t -> int -> t
 end =
@@ -77,7 +78,7 @@ struct
 	    begin
 	      match m.implementation with
 		| Native -> raise (NoCode (cn,ms))
-		| Java m ->match c with 
+		| Java m -> match c with
 		    | `Class c -> (c,m,i)
 		    | `Interface _ -> raise (NoCode (cn,ms))
 	    end
@@ -90,12 +91,29 @@ struct
       {hardpp = soft2hard prog soft;
        softpp = soft;}
 
-  let goto_absolute pp i : t = 
+  let get_first_pp_wp (c,ms) : t =
+    let c = `Class c in
+    let hardpp'=
+      match get_method c ms with
+	| ConcreteMethod m ->
+	    begin
+	      match m.implementation with
+		| Native -> raise (NoCode (get_name c,ms))
+		| Java m -> match c with
+		    | `Class c -> (c,m,0)
+		    | `Interface _ -> raise (NoCode (get_name c,ms))
+	    end
+	| AbstractMethod _ -> raise (NoCode (get_name c,ms))
+    in {hardpp = hardpp';
+	softpp = ((get_name c,ms),0);}
+
+
+  let goto_absolute pp i : t =
     { hardpp = (let (c,m,_) = pp.hardpp in (c,m,i));
       softpp = (fst pp.softpp, i);}
 
   let goto_relative pp jmp : t =
-    let (c,m,i) = pp.hardpp in 
+    let (c,m,i) = pp.hardpp in
       { hardpp = (c,m,i+jmp);
 	softpp = (fst pp.softpp, i+jmp);}
 
@@ -106,14 +124,14 @@ type pp = PP.t
 
 let get_opcode (pp:pp) :opcode = let (_,m,i) = PP.to_hardpp pp in m.c_code.(i)
 
-let next_instruction pp = 
+let next_instruction pp =
   let (c,m,i) = PP.to_hardpp pp in
   let i = ref (succ i) in
     while m.c_code.(!i) = OpInvalid do
       incr i;
     done;
     goto_absolute pp !i
-      
+
 let normal_successors pp =
   match get_opcode pp with
     | OpIf (_,l)
@@ -128,7 +146,7 @@ let normal_successors pp =
 	  while !i < Array.length m.c_code do
 	    begin
 	      match m.c_code.(!i) with
-		| OpJsr _ -> 
+		| OpJsr _ ->
 		    l := next_instruction (goto_absolute pp !i)::!l
 		| _ -> ()
 	    end;
@@ -156,5 +174,5 @@ let handlers pp =
     List.filter (fun e -> e.e_start <= i && i < e.e_end) m.c_exc_tbl
 
 
-let exceptional_successors pp = 
+let exceptional_successors pp =
   List.map (fun e -> goto_absolute pp e.e_handler) (handlers pp)

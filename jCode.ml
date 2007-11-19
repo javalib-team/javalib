@@ -112,7 +112,7 @@ let parse_opcode op ch wide =
 	| 52 ->
 		OpCodeCALoad
 	| 53 ->
-		OpCodeSALoad		
+		OpCodeSALoad
 	(* ---- store ----------------------------------- *)
 	| 54 | 55 | 56 | 57 ->
 		OpCodeStore (jvm_basic_type "store" (op - 54),read_unsigned ch wide)
@@ -173,7 +173,7 @@ let parse_opcode op ch wide =
 		OpCodeNeg (jvm_basic_type_of (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
-		OpCodeIShl 
+		OpCodeIShl
 	| 121 ->
 		OpCodeLShl
 	| 122 ->
@@ -203,7 +203,7 @@ let parse_opcode op ch wide =
 		OpCodeIInc (idx,c)
 	(* ---- conversions ---------------------------- *)
 	| 133 ->
-		OpCodeI2L 
+		OpCodeI2L
 	| 134 ->
 		OpCodeI2F
 	| 135 ->
@@ -351,9 +351,9 @@ let parse_opcode op ch wide =
 	    let c = read_ui16 ch in
 	    let dims = IO.read_byte ch in
 	      OpCodeAMultiNewArray (c,dims)
-	| 198 -> 
+	| 198 ->
 	    OpCodeIfNull (read_i16 ch)
-	| 199 -> 
+	| 199 ->
 	    OpCodeIfNonNull (read_i16 ch)
 
 	| 200 ->

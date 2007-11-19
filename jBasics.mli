@@ -93,9 +93,9 @@ type signature =
   | SMethod of method_descriptor
 
 (** Stackmap type. *)
-type verification_type = 
-	| VTop 
-	| VInteger 
+type verification_type =
+	| VTop
+	| VInteger
 	| VFloat
 	| VDouble
 	| VLong

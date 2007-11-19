@@ -76,7 +76,7 @@ and interface_file = {
   i_deprecated : bool;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_super : class_file; 
+  i_super : class_file;
   (** must be java.lang.Object. But note that interfaces are not
       considered as children of java.lang.Object.*)
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
@@ -93,7 +93,7 @@ type interface_or_class = [
 ]
 
 val get_name : interface_or_class -> class_name
-
+val get_interfaces : interface_or_class -> interface_file ClassMap.t
 
 (** {2 The [program] structure} *)
 
@@ -167,7 +167,7 @@ val get_methods : interface_or_class -> method_signature list
     @raise Not_found if [c] does not contain a field with signature [fs].
 *)
 val get_field : interface_or_class -> field_signature -> any_field
-val get_fields : interface_or_class -> field_signature list 
+val get_fields : interface_or_class -> field_signature list
 
 (** [get_class p cn] returns the class named [cn] in program [p], if
     any.

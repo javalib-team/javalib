@@ -79,9 +79,13 @@ type interface_or_class = [
 ]
 
 
-let get_name = function 
+let get_name = function
   | `Interface i -> i.i_name
   | `Class c -> c.c_name
+
+let get_interfaces = function
+  | `Interface i -> i.i_interfaces
+  | `Class c -> c.c_interfaces
 
 
 type program = interface_or_class ClassMap.t
@@ -89,7 +93,7 @@ type t = program
 
 let super = function
   | `Interface i -> Some i.i_super
-  | `Class c -> 
+  | `Class c ->
       match c.c_class_file_type with
 	| AbstractClass ac -> ac.ac_super_class
 	| ConcreteClass nc -> nc.cc_super_class
@@ -103,12 +107,12 @@ exception Class_not_found of class_name
 let add_classFile c (program:program) =
   let imap =
     List.fold_left
-      (fun imap iname -> 
-	let i = 
-	  try 
+      (fun imap iname ->
+	let i =
+	  try
 	    match ClassMap.find iname program with
 	      | `Interface i -> i
-	      | `Class c' -> 
+	      | `Class c' ->
 		  raise (Invalid_class
 			    (JDump.class_name c.JClass.c_name^" is declared to implements "
 			      ^JDump.class_name iname^", which is a class and not an interface."))
@@ -120,7 +124,7 @@ let add_classFile c (program:program) =
   in let cft =
     match c.JClass.c_class_file_type with
       | JClass.AbstractClass ac ->
-	  let super = 
+	  let super =
 	    begin
 	      match ac.JClass.ac_super_class with
 		| None -> None
@@ -128,7 +132,7 @@ let add_classFile c (program:program) =
 		    try
 		      match ClassMap.find super program with
 			| `Class c -> Some c
-			| `Interface i -> 
+			| `Interface i ->
 			    raise (Invalid_class
 				      (JDump.class_name c.JClass.c_name^" is declared to extends "
 					^JDump.class_name super^", which is an interface and not a class."))
@@ -140,7 +144,7 @@ let add_classFile c (program:program) =
 	    ac_methods = ac.JClass.ac_methods;
 	  }
       | JClass.ConcreteClass cc ->
-	  let super = 
+	  let super =
 	    begin
 	      match cc.JClass.cc_super_class with
 		| None -> None
@@ -148,7 +152,7 @@ let add_classFile c (program:program) =
 		    try
 		      match ClassMap.find super program with
 			| `Class c -> Some c
-			| `Interface i -> 
+			| `Interface i ->
 			    raise (Invalid_class
 				      (JDump.class_name c.JClass.c_name^" is declared to extends "
 					^JDump.class_name super^", which is an interface and not a class."))
@@ -160,7 +164,7 @@ let add_classFile c (program:program) =
 	    cc_fields = cc.JClass.cc_fields;
 	    cc_methods = cc.JClass.cc_methods;
 	  }
-  in 
+  in
   let c' =
     {c_name = c.JClass.c_name;
      c_access = c.JClass.c_access;
@@ -180,10 +184,10 @@ let add_classFile c (program:program) =
 	c'.c_interfaces;
       match super (`Class c') with
 	| None -> ();
-	| Some parent -> 
-	    parent.c_children <- ClassMap.add c'.c_name c' parent.c_children 
+	| Some parent ->
+	    parent.c_children <- ClassMap.add c'.c_name c' parent.c_children
     end;
-    ClassMap.add 
+    ClassMap.add
       c'.c_name
       (`Class c')
       program
@@ -191,9 +195,9 @@ let add_classFile c (program:program) =
 let add_interfaceFile c (program:program) =
   let imap =
     List.fold_left
-      (fun imap iname -> 
-	let i = 
-	  try 
+      (fun imap iname ->
+	let i =
+	  try
 	    match ClassMap.find iname program with
 	      | `Interface i -> i
 	      | `Class c' ->
@@ -205,13 +209,13 @@ let add_interfaceFile c (program:program) =
       )
       ClassMap.empty
       c.JClass.i_interfaces
-  and super = 
+  and super =
     try match ClassMap.find java_lang_object program with
       | `Class c -> c
-      | `Interface i -> 
+      | `Interface i ->
 	  raise (Invalid_class"java.lang.Object is declared as an interface.")
     with Not_found -> raise (Class_not_found java_lang_object)
-  in 
+  in
   let c' =
     {i_name = c.JClass.i_name;
      i_access = c.JClass.i_access;
@@ -235,7 +239,7 @@ let add_interfaceFile c (program:program) =
 	  i.i_children_interface <- ClassMap.add c'.i_name c' i.i_children_interface)
 	c'.i_interfaces
     end;
-    ClassMap.add 
+    ClassMap.add
       c'.i_name
       (`Interface c')
       program
@@ -260,15 +264,15 @@ let parse_program class_path names =
   in let rec add_rec c (program:program) : program =
     try
       add_file c program
-    with 
-      | Class_not_found name -> 
-	  let missing_class = 
+    with
+      | Class_not_found name ->
+	  let missing_class =
 	    try ClassMap.find name class_map
 	    with Not_found -> raise (Class_not_found name)
-	  in 
+	  in
 	  add_rec c (add_rec (missing_class) program)
-  in 
-       ClassMap.fold 
+  in
+       ClassMap.fold
 	 (fun _ -> add_rec)
 	 class_map
 	 ClassMap.empty
@@ -276,7 +280,7 @@ let parse_program class_path names =
 
 let store_program filename program : unit =
   let ch = open_out_bin filename
-  in 
+  in
     Marshal.to_channel ch program [];
     close_out ch
 
@@ -316,16 +320,16 @@ exception AbstractMethodError
 exception Found_Class of interface_or_class
 
 
-let defines_method ms = function 
+let defines_method ms = function
   | `Interface i -> MethodMap.mem ms i.i_methods
   | `Class c -> match c.c_class_file_type with
-      | AbstractClass ac -> MethodMap.mem ms ac.ac_methods 
-      | ConcreteClass nc -> MethodMap.mem ms nc.cc_methods 
+      | AbstractClass ac -> MethodMap.mem ms ac.ac_methods
+      | ConcreteClass nc -> MethodMap.mem ms nc.cc_methods
 let defines_field fs = function
   | `Interface i -> FieldMap.mem fs i.i_fields
   | `Class c -> match c.c_class_file_type with
-      | AbstractClass ac -> FieldMap.mem fs ac.ac_fields 
-      | ConcreteClass nc -> FieldMap.mem fs nc.cc_fields 
+      | AbstractClass ac -> FieldMap.mem fs ac.ac_fields
+      | ConcreteClass nc -> FieldMap.mem fs nc.cc_fields
 
 
 
@@ -377,8 +381,8 @@ let rec resolve_field fs c : interface_or_class =
   then c
   else
     try
-      ClassMap.iter 
-	(fun _ i -> 
+      ClassMap.iter
+	(fun _ i ->
 	  let i = resolve_field fs (`Interface i)
 	  in raise (Found_Class i)
 	)
@@ -388,7 +392,7 @@ let rec resolve_field fs c : interface_or_class =
 	| None -> raise NoSuchFieldError
     with Found_Class resolved -> resolved
 
-(** [resolve_method' ms c] looks for the method [ms] in [c] and 
+(** [resolve_method' ms c] looks for the method [ms] in [c] and
     recursively in its super-classes.
     @raise NoSuchMethodError if [ms] has not been found. *)
 let rec resolve_method' ms (c:class_file) : class_file =
@@ -422,7 +426,7 @@ let resolve_method ms (c:class_file) : interface_or_class =
 	let rec resolve_abstract_method ms (c:class_file) : interface_or_class =
 	  try `Class (resolve_method' ms c)
 	  with NoSuchMethodError ->
-	    match 
+	    match
 	      ClassMap.fold
 		(fun _ i l -> resolve_interface_method'' ms i@l)
 		c.c_interfaces
@@ -446,7 +450,7 @@ let resolve_all_interface_methods ms (c:interface_file) : interface_file list =
     []
 
 let lookup_virtual_method ms (c:class_file) : class_file =
-  let c' = 
+  let c' =
     try resolve_method' ms c
     with NoSuchMethodError -> raise AbstractMethodError
   in match get_method (`Class c) ms with
@@ -502,23 +506,23 @@ let rec implements_ref (c1:class_file) (i2:interface_file) : bool =
 let super_class_ref c : class_file option = super c
 
 let rec super_interfaces_ref i =
-  ClassMap.fold 
-    (fun _iname i ilist -> 
+  ClassMap.fold
+    (fun _iname i ilist ->
       i::(List.rev_append (super_interfaces_ref i) ilist))
     i.i_interfaces
     []
 
-let rec implemented_interfaces' (c:class_file) : interface_file list = 
+let rec implemented_interfaces' (c:class_file) : interface_file list =
   let directly_implemented_interfaces =
-    ClassMap.fold 
-      (fun _iname i ilist -> 
+    ClassMap.fold
+      (fun _iname i ilist ->
 	i::(List.rev_append (super_interfaces_ref i) ilist))
       c.c_interfaces
       []
   in
     match super (`Class c) with
       | None -> directly_implemented_interfaces
-      | Some c' -> 
+      | Some c' ->
 	  List.rev_append directly_implemented_interfaces (implemented_interfaces' c')
 
 let implemented_interfaces_ref c =

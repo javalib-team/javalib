@@ -29,17 +29,17 @@ let sprintf = Printf.sprintf
 
 let access_flags = function
 	| [] -> ""
-	| flags -> 
+	| flags ->
 		String.concat " " (List.map (function
 			| AccPublic -> "public"
 			| AccPrivate -> "private"
 			| AccProtected -> "protected"
-			| AccStatic -> "static" 
+			| AccStatic -> "static"
 			| AccFinal -> "final"
 			| AccSynchronized -> "synchronized"
 			| AccVolatile -> "volatile"
 			| AccTransient -> "transient"
-			| AccNative -> "native" 
+			| AccNative -> "native"
 			| AccInterface -> "interface"
 			| AccAbstract -> "abstract"
 			| AccStrict -> "strict"
@@ -252,7 +252,7 @@ let opcode = function
 
   | OpCodeInvalid -> "invalid"
 
-    
+
 (* let opcode_high = function *)
 (* 	| OpNop -> "nop" *)
 (* 	| OpConst x -> *)
@@ -456,21 +456,21 @@ let rec dump_code ch cl code =
 (* 	List.iter (function (s,_) -> IO.printf ch "    ?%s\n" s) code.c_attributes *)
 
 and dump_attrib ch cl = function
-	| AttributeSourceFile s -> 
+	| AttributeSourceFile s ->
 	    IO.printf ch "    source = %s\n" s
 	| AttributeConstant c ->
 	    IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
-	| AttributeCode code -> 
+	| AttributeCode code ->
 	    dump_code ch cl code (* IO.printf ch "    unexpected code attribute" *)
-	| AttributeExceptions l -> 
+	| AttributeExceptions l ->
 	    IO.printf ch "    exceptions";
 	    List.iter (fun cn -> IO.nwrite ch (class_name cn^" ")) l;
 	    IO.printf ch "\n"
-	| AttributeInnerClasses _ -> 
+	| AttributeInnerClasses _ ->
 	    IO.printf ch "    inner-classes\n"
-	| AttributeSynthetic -> 
+	| AttributeSynthetic ->
 	    IO.printf ch "    synthetic\n"
-	| AttributeLineNumberTable lines -> 
+	| AttributeLineNumberTable lines ->
 	    IO.printf ch "    line-numbers\n"
 	| AttributeLocalVariableTable variables ->
 	    IO.printf ch "    local-variables\n";
@@ -482,11 +482,11 @@ and dump_attrib ch cl = function
 		   (value_signature name signature)
 		   index)
 	      variables
-	| AttributeDeprecated -> 
+	| AttributeDeprecated ->
 	    IO.printf ch "    deprecated\n"
-	| AttributeStackMap stackmap_frames -> 
+	| AttributeStackMap stackmap_frames ->
 	    IO.printf ch "    stackmap = ["; List.iter (dump_stackmap ch) stackmap_frames; IO.printf ch "]\n";
-	| AttributeUnknown (s,_) -> 
+	| AttributeUnknown (s,_) ->
 	    IO.printf ch "    ?%s\n" s
 
 let dump_field ch cl f =
@@ -498,7 +498,7 @@ let dump_method ch cl m =
 	List.iter (dump_attrib ch cl) m.m_attributes;
 	IO.write ch '\n'
 
-let dump_super ch = function 
+let dump_super ch = function
   | None -> ()
   | Some c -> IO.printf ch "  extends %s\n" (class_name c)
 
@@ -515,7 +515,7 @@ let dump ch cl =
 		IO.write ch '\n'
 	) cl.j_consts;
 *)
-	IO.printf ch "// ****************** */\n\n";	
+	IO.printf ch "// ****************** */\n\n";
 	List.iter (dump_field ch cl) cl.j_fields;
 	IO.printf ch "\n";
 	List.iter (dump_method ch cl) cl.j_methods;

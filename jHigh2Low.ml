@@ -26,14 +26,14 @@ let deprecated_to_attribute = function
   | false -> []
   | true -> [AttributeDeprecated]
 
-let synthetic_to_attribute = function 
+let synthetic_to_attribute = function
   | false -> []
   | true -> [AttributeSynthetic]
 
 let h2l_other_attributes l = List.map (fun (n,a) -> AttributeUnknown (n,a)) l
 
 let h2l_attributes a =
-  deprecated_to_attribute a.deprecated 
+  deprecated_to_attribute a.deprecated
   @ synthetic_to_attribute a.synthetic
   @ h2l_other_attributes a.other
 
@@ -70,7 +70,7 @@ let h2l_code2attribute consts = function
 	 JClassLow.c_max_locals = code.c_max_locals;
 	 JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
 	 JClassLow.c_exc_tbl = code.c_exc_tbl;
-	 JClassLow.c_attributes = 
+	 JClassLow.c_attributes =
 	    (match code.c_stack_map with
 	      | Some sm -> [AttributeStackMap sm]
 	      | None -> [])
@@ -87,15 +87,15 @@ let h2l_code2attribute consts = function
 let h2l_cfield consts fs f =
   {f_name = fs.fs_name;
    f_signature = fs.fs_type;
-   f_flags = 
+   f_flags =
       (if f.cf_transient then [AccTransient] else [])
-      @ (match f.cf_type with 
+      @ (match f.cf_type with
 	| Final -> [AccFinal]
 	| Volatile -> [AccVolatile]
 	| NotFinal -> [])
       @ (if f.cf_static then [AccStatic] else [])
       @ (access2flags f.cf_access);
-   f_attributes = 
+   f_attributes =
       (match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
       @ (h2l_attributes f.cf_attributes);
   }
@@ -104,14 +104,14 @@ let h2l_ifield consts fs f =
   {f_name = fs.fs_name;
    f_signature = fs.fs_type;
    f_flags = [AccPublic;AccStatic;AccFinal];
-   f_attributes = 
+   f_attributes =
       (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
       @ (h2l_attributes f.if_attributes);
   }
 
 let h2l_cmethod consts ms m =
-  let code = h2l_code2attribute consts m.implementation 
-  in 
+  let code = h2l_code2attribute consts m.implementation
+  in
     {m_name = ms.ms_name;
      m_signature = (ms.ms_parameters, m.cm_return_type);
      m_flags =
@@ -121,7 +121,7 @@ let h2l_cmethod consts ms m =
 	@ (if m.cm_strict then [AccStrict] else [])
 	@ (match m.implementation with Native -> [AccNative] |_ -> [])
 	@ (access2flags m.cm_access);
-     m_code = 
+     m_code =
 	begin
 	  match code with
 	    | [AttributeCode c] -> Some c
@@ -129,20 +129,20 @@ let h2l_cmethod consts ms m =
 	end;
      m_attributes =
 	(match m.cm_exceptions with
-	  | [] -> [] 
+	  | [] -> []
 	  | l -> [AttributeExceptions l])
 	@ code
 	@ h2l_attributes m.cm_attributes;
     }
 
-let h2l_amethod consts ms m = 
+let h2l_amethod consts ms m =
   {m_name = ms.ms_name;
    m_signature = (ms.ms_parameters, m.am_return_type);
    m_flags = AccAbstract::(access2flags m.am_access);
    m_code = None;
    m_attributes =
 	(match m.am_exceptions with
-	  | [] -> [] 
+	  | [] -> []
 	  | l -> [AttributeExceptions l])
       @ h2l_attributes m.am_attributes;
   }
@@ -152,7 +152,7 @@ let h2l_acmethod consts ms = function
   | ConcreteMethod m -> h2l_cmethod consts ms m
 
 let h2l_concreteclass consts c c' =
-  {c' with 
+  {c' with
     j_super = c.cc_super_class;
     j_flags = AccSynchronized::(if c.cc_final then AccFinal::c'.j_flags else c'.j_flags);
     j_methods = MethodMap.fold (fun fs f l -> h2l_cmethod consts fs f::l) c.cc_methods [];
@@ -160,7 +160,7 @@ let h2l_concreteclass consts c c' =
   }
 
 let h2l_abstractclass consts c c' =
-  {c' with 
+  {c' with
     j_super = c.ac_super_class;
     j_flags = AccSynchronized::AccAbstract::c'.j_flags;
     j_methods = MethodMap.fold (fun fs f l -> h2l_acmethod consts fs f::l) c.ac_methods [];
@@ -170,7 +170,7 @@ let h2l_abstractclass consts c c' =
 
 let high2low_class c =
   let consts = DynArray.of_array c.c_consts in
-  let c' = 
+  let c' =
     {j_name = c.c_name;
      j_super = Some java_lang_object;
      j_interfaces = c.c_interfaces;
@@ -191,13 +191,13 @@ let high2low_class c =
 
 let high2low_interface (c:interface_file) =
   let consts = DynArray.of_array c.i_consts in
-  let c' = 
+  let c' =
     {j_name = c.i_name;
      j_super = Some java_lang_object;
      j_interfaces = c.i_interfaces;
      j_consts = c.i_consts; (*will be updated later on*)
      j_flags = AccInterface::AccAbstract::access2flags c.i_access; (*will be updated later on*)
-     j_fields = 
+     j_fields =
 	FieldMap.fold (fun fs f l -> h2l_ifield consts fs f::l) c.i_fields [];
      j_methods =
 	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts clinit_signature m])

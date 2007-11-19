@@ -172,7 +172,7 @@ type attributes = {
   deprecated : bool;
   other : (string * string) list
 }
-    
+
 (** {2 Fields of classes and interfaces.} *)
 (*******************************)
 

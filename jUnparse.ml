@@ -239,12 +239,12 @@ let rec unparse_attribute_to_strings consts =
 	  ("LocalVariableTable",close_out ch)
       | AttributeDeprecated ->
 	  ("Deprecated",close_out ch)
-      | AttributeStackMap s -> 
+      | AttributeStackMap s ->
 	  ignore (close_out ch);
 	  unparse_stackmap_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
-      | AttributeCode code -> 
+      | AttributeCode code ->
 	  write_ui16 ch code.c_max_stack;
 	  write_ui16 ch code.c_max_locals;
 	  write_with_length write_i32 ch
@@ -266,7 +266,7 @@ let rec unparse_attribute_to_strings consts =
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr
-  in 
+  in
     write_constant ch consts (ConstStringUTF8 name);
     write_string_with_length write_i32 ch content
 

@@ -55,7 +55,7 @@ let rec mkdir d perms =
 
 type class_path = [`dir of string | `jar of Zip.in_file] list
 
-let open_path s = 
+let open_path s =
   try
     if
       (Unix.stat s).Unix.st_kind = Unix.S_DIR
@@ -283,10 +283,10 @@ let read_low class_path f accu files =
     fold class_path (`read (function classe -> accu := f ! accu classe)) files;
     ! accu
 
-let read class_path f accu files = 
+let read class_path f accu files =
   let accu = ref accu in
-    fold class_path 
-      (`read 
+    fold class_path
+      (`read
 	  (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
       files;
     ! accu
@@ -295,7 +295,7 @@ let transform_low class_path output_dir f files =
   fold class_path (`transform (output_dir, f)) files
 
 let transform class_path output_dir f files =
-  fold class_path 
+  fold class_path
     (`transform
 	(output_dir,fun c -> JHigh2Low.high2low (f (JLow2High.low2high_class c))))
     files

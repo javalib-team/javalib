@@ -123,9 +123,9 @@ type jexception = {
 }
 
 (** Stackmap type. *)
-type verification_type = 
-	| VTop 
-	| VInteger 
+type verification_type =
+	| VTop
+	| VInteger
 	| VFloat
 	| VDouble
 	| VLong

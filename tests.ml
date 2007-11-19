@@ -43,7 +43,7 @@ let input_copy ch =
   and ch'' =
     create_out
       ~write:(function c ->
-		eq := 
+		eq :=
 		  (try
 		     Queue.pop queue = c && ! eq
 		   with Queue.Empty -> false);
@@ -102,17 +102,17 @@ let dump_to_string f d =
 
 let attributes_to_string cl al =
   let ch = IO.output_string () in
-    ExtList.List.iteri (fun i a -> 
+    ExtList.List.iteri (fun i a ->
       IO.printf ch "att%d: " i;
       dump_attrib ch cl a) al;
     IO.close_out ch
 
-let eq_list eq l1 l2 = 
+let eq_list eq l1 l2 =
   try
-    List.fold_left2 
-      (fun b e1 e2 -> b && eq e1 e2) 
+    List.fold_left2
+      (fun b e1 e2 -> b && eq e1 e2)
       true
-      (List.sort compare l1) 
+      (List.sort compare l1)
       (List.sort compare l2)
   with Invalid_argument "List.fold_left2" -> false
 
@@ -155,7 +155,7 @@ let rec eq_code cl c1 c2 =
 	if not (eq_ccode cl c1.c_code c2.c_code)
 	then prerr_endline "instructions differ"; (* should have already been tested, it happens that wide instruction are replaced by standard instructions when arguments are small enough.*)
 	true
-  
+
 and eq_inner_classes cl icl1 icl2 =
   let eq_inner_class cl
       (inner_class_info1, outer_class_info1, inner_name1, inner_class_access_flags1)
@@ -178,25 +178,25 @@ and eq_inner_classes cl icl1 icl2 =
     true
 
 and eq_attrib cl a1 a2 =
-  match a1,a2 with 
+  match a1,a2 with
     | AttributeCode c1, AttributeCode c2 -> eq_code cl (Some c1) (Some c2)
     | AttributeInnerClasses icl1, AttributeInnerClasses icl2 ->
 	if eq_inner_classes cl icl1 icl2
 	then true
 	else failwith "innerclasses differ"
     | a1,a2 ->
-	if compare a1 a2 = 0 
+	if compare a1 a2 = 0
 	then true
 	else
 	  match a1,a2 with
-	    | AttributeUnknown _ , _ 
-	    | _ , AttributeUnknown _  when 
+	    | AttributeUnknown _ , _
+	    | _ , AttributeUnknown _  when
 		  compare
 		    (JUnparse.unparse_attribute_to_strings (DynArray.of_array cl.j_consts) a1)
 		    (JUnparse.unparse_attribute_to_strings (DynArray.of_array cl.j_consts) a2)
 		  = 0
 		-> true
-	    | _,_ -> 
+	    | _,_ ->
 		failwith ("attributes differ ("
 			   ^(dump_to_string (fun ch -> dump_attrib ch cl)) a1^","
 			   ^(dump_to_string (fun ch -> dump_attrib ch cl)) a2^")")
@@ -241,7 +241,7 @@ let eq_fields cl f1 f2 =
 
 
 let eq_class c1 c2 =
-  if c1.j_name <> c2.j_name 
+  if c1.j_name <> c2.j_name
   then failwith ("class names differ ("^JDump.class_name c1.j_name^","^JDump.class_name c2.j_name^")");
   if c1.j_super <> c2.j_super
   then failwith ("super classes differ ("^(dump_to_string dump_super) c1.j_super ^","^(dump_to_string dump_super) c2.j_super^")");
@@ -253,10 +253,10 @@ let eq_class c1 c2 =
       Pervasives.flush stderr;
       failwith ("constant pools differ")
     end;
-  if List.sort compare c1.j_interfaces <> List.sort compare c2.j_interfaces 
+  if List.sort compare c1.j_interfaces <> List.sort compare c2.j_interfaces
   then failwith ("interfaces differ ("^","^")");
   if List.sort compare (filter_flags [AccPublic;AccFinal;AccSynchronized;AccInterface;AccAbstract] c1.j_flags)
-    <> List.sort compare c2.j_flags 
+    <> List.sort compare c2.j_flags
   then prerr_endline ("class flags differ ("^access_flags c1.j_flags^","^access_flags c2.j_flags^")");
 
   if not (eq_list (eq_fields c1) c1.j_fields c2.j_fields)
@@ -273,16 +273,16 @@ let eq_class c1 c2 =
   with Failure msg -> failwith ("class attributes differ: "^msg)
 
 let h2l_and_l2h_conversions class_path input_files =
-  let res = 
+  let res =
     JFile.read_low
       class_path
-      (fun _ c -> 
-	try 
+      (fun _ c ->
+	try
 	  let c_high = JLow2High.low2high_class c in
 	  let c_low' = JHigh2Low.high2low c_high in
 	    try
 	      eq_class c c_low'
-	    with Failure msg -> 
+	    with Failure msg ->
 	      failwith ("error on "^(JDump.class_name c.JClassLow.j_name)^": "^msg)
 	with Failure msg -> failwith msg)
       ()
@@ -290,7 +290,7 @@ let h2l_and_l2h_conversions class_path input_files =
   in res;;
 
 let h2l_conversions class_path input_files =
-  let res = 
+  let res =
     JFile.read_low
       class_path
       (fun _ c -> ignore (JLow2High.low2high_class c))
@@ -304,7 +304,7 @@ let h2l_conversions class_path input_files =
 open JProgram
 
 let test_jprogram class_path input_files =
-  let p = 
+  let p =
     try parse_program class_path input_files
     with JProgram.Class_not_found cn -> raise (Failure ("class not found"^JDump.class_name cn))
   in
@@ -326,6 +326,6 @@ let test_jprogram class_path input_files =
 let _ =
   let class_path = "./jre"
   and input_files = ["java.lang.Object";"java.lang.Throwable";"java.io.Serializable"]
-  in 
+  in
     h2l_and_l2h_conversions class_path input_files;
     test_jprogram class_path input_files
