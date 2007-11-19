@@ -30,8 +30,8 @@ OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
 # ------ 
-MODULES= jBasics jClass jDumpBasics jDumpLow jDumpHigh jCode \
-jInstruction jHigh2Low jUnparse jLow2High jParse jFile jProgram	   \
+MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction	\
+jHigh2Low jDumpHigh jUnparse jLow2High jParse jFile jProgram	\
 jControlFlow
 MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow		\
 jDumpHigh jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile	\
