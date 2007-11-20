@@ -151,20 +151,15 @@ let h2l_acmethod consts ms = function
   | AbstractMethod m -> h2l_amethod consts ms m
   | ConcreteMethod m -> h2l_cmethod consts ms m
 
-let h2l_concreteclass consts c c' =
+let h2l_concretemethods consts c' mm =
   {c' with
-    j_super = c.cc_super_class;
-    j_flags = AccSynchronized::(if c.cc_final then AccFinal::c'.j_flags else c'.j_flags);
-    j_methods = MethodMap.fold (fun fs f l -> h2l_cmethod consts fs f::l) c.cc_methods [];
-    j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.cc_fields [];
+    j_methods = MethodMap.fold (fun fs f l -> h2l_cmethod consts fs f::l) mm [];
   }
 
-let h2l_abstractclass consts c c' =
+let h2l_methods consts c' mm =
   {c' with
-    j_super = c.ac_super_class;
-    j_flags = AccSynchronized::AccAbstract::c'.j_flags;
-    j_methods = MethodMap.fold (fun fs f l -> h2l_acmethod consts fs f::l) c.ac_methods [];
-    j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.ac_fields [];
+    j_flags = AccAbstract::c'.j_flags;
+    j_methods = MethodMap.fold (fun fs f l -> h2l_acmethod consts fs f::l) mm [];
   }
 
 
@@ -172,11 +167,14 @@ let high2low_class c =
   let consts = DynArray.of_array c.c_consts in
   let c' =
     {j_name = c.c_name;
-     j_super = Some java_lang_object;
+     j_super = c.c_super_class;
      j_interfaces = c.c_interfaces;
      j_consts = c.c_consts; (*will be updated later on*)
-     j_flags = access2flags c.c_access; (*will be updated later on*)
-     j_fields = []; (*will be set later on*)
+     j_flags = 
+	if c.c_final 
+	then AccFinal::AccSynchronized::access2flags c.c_access 
+	else AccSynchronized::access2flags c.c_access; (*will be updated later on*)
+     j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.c_fields [];
      j_methods = []; (*will be set later on*)
      j_attributes =  (*will be updated later on*)
 	(deprecated_to_attribute c.c_deprecated)
@@ -184,9 +182,9 @@ let high2low_class c =
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.c_other_attributes);
     } in
-  let c'=match c.c_class_file_type with
-    | ConcreteClass c -> h2l_concreteclass consts c c'
-    | AbstractClass c -> h2l_abstractclass consts c c'
+  let c'=match c.c_methods with
+    | ConcreteMethods mm -> h2l_concretemethods consts c' mm
+    | Methods mm -> h2l_methods consts c' mm
   in {c' with j_consts = DynArray.to_array consts}
 
 let high2low_interface (c:interface_file) =

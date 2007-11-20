@@ -33,26 +33,13 @@ open JClass
 
 module ClassMap : Map.S with type key = class_name
 
-type abstract_class = {
-  ac_super_class : class_file option;
-  ac_fields : class_field FieldMap.t;
-  ac_methods : abstract_class_method MethodMap.t
-}
 
-and concrete_class = {
-  cc_final : bool;
-  cc_super_class : class_file option;
-  cc_fields : class_field FieldMap.t;
-  cc_methods : concrete_method MethodMap.t
-}
-
-and class_file_type =
-    | ConcreteClass of concrete_class
-    | AbstractClass of abstract_class
-
-and class_file = {
+type class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
+  c_final : bool;
+  c_super_class : class_file option;
+  c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
   c_consts : constant array;
   (** needed at least for unparsed/unknown attributes that might refer
@@ -61,7 +48,7 @@ and class_file = {
   c_deprecated : bool;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  c_class_file_type : class_file_type;
+  c_methods : methods;
   mutable c_children : class_file ClassMap.t;
 }
 
@@ -79,7 +66,7 @@ and interface_file = {
   i_super : class_file;
   (** must be java.lang.Object. But note that interfaces are not
       considered as children of java.lang.Object.*)
-  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : concrete_method option; (** should be static/ signature is <clinit>()V; *)
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t;
   mutable i_children_interface : interface_file ClassMap.t;
@@ -115,6 +102,7 @@ val parse_program : string -> string list -> t
 val add_file :
   JFile.class_path -> JClass.interface_or_class -> program -> program
 
+(** @raise Sys_error if the file could not be opened. *)
 val load_program : string -> t
 val store_program : string -> t -> unit
 

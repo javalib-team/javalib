@@ -23,22 +23,7 @@ open JBasics
 open JClass
 open JProgram
 
-module PP : sig
-  type t
-  exception NoCode of (class_name * method_signature)
-  val to_className : t -> JBasics.class_name
-  val to_ConcreteClass : t -> JProgram.concrete_class
-  val to_class : t -> JProgram.class_file
-  val to_hardpp : t -> JProgram.class_file * JClass.code * int
-  val to_softpp :
-    t -> (JBasics.class_name * JClass.method_signature) * int
-  val get_first_pp :
-    program -> class_name * JClass.method_signature -> t
-  val get_first_pp_wp : class_file * method_signature -> t
-  val goto_absolute : t -> int -> t
-  val goto_relative : t -> int -> t
-end =
-struct
+module PP = struct
   type t = {hardpp : class_file * code * int;
        	    softpp : (class_name * method_signature) * int;}
 
@@ -46,28 +31,27 @@ struct
 
   let to_class (pp:t) : class_file = let (c,_,_) = pp.hardpp in c
 
-  let to_ConcreteClass (pp:t) : concrete_class =
-    let (c,_,_) = pp.hardpp in
-      match c.c_class_file_type with
-	| ConcreteClass nc -> nc
-	| _ -> raise (Invalid_argument "the program point is invalid (the class is not concrete)")
-
   let to_hardpp (pp:t) : class_file * code * int = pp.hardpp
   let to_softpp (pp:t) : (class_name * method_signature) * int = pp.softpp
 
   let hard2soft (c,m,i) =
     let res = ref None in
-      match c.c_class_file_type with
-    	| ConcreteClass cc ->
-    	    begin
+      begin
+	match c.c_methods with
+    	  | ConcreteMethods mm ->
     	      MethodMap.iter
 		(fun ms' m' -> if m==m' then res := Some ms')
-		cc.cc_methods;
-    	      match !res with
-    		| Some ms -> ((c.c_name,ms),i)
-    		| None -> raise (Invalid_argument "the program point is invalid (the method has not been found in the class)")
-    	    end
-    	| _ -> raise (Invalid_argument "the program point is invalid (the class is not concrete)")
+		mm
+    	  | Methods mm ->
+    	      MethodMap.iter
+		(fun ms' -> function
+		  | ConcreteMethod m' when m==m' -> res := Some ms'
+		  | _ -> ())
+		mm
+      end;
+      match !res with
+    	| Some ms -> ((c.c_name,ms),i)
+    	| None -> raise (Invalid_argument "the program point is invalid (the method has not been found in the class)")
 
 
   exception NoCode of (JBasics.class_name * JClass.method_signature)

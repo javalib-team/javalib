@@ -318,7 +318,7 @@ let test_jprogram class_path input_files =
   in
   let class_path = JFile.class_path class_path
   in 
-    prerr_string "adding files... ";
+    prerr_endline "adding files... ";
     List.fold_left
       (fun p cn -> 
 	JProgram.add_file

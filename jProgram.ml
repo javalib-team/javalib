@@ -25,33 +25,19 @@ open JClass
 module ClassMap = Map.Make(struct type t = class_name let compare = compare end)
 
 
-type abstract_class = {
-  ac_super_class : class_file option;
-  ac_fields : class_field FieldMap.t;
-  ac_methods : abstract_class_method MethodMap.t
-}
-
-and concrete_class = {
-  cc_final : bool;
-  cc_super_class : class_file option;
-  cc_fields : class_field FieldMap.t;
-  cc_methods : concrete_method MethodMap.t
-}
-
-and class_file_type =
-    | ConcreteClass of concrete_class
-    | AbstractClass of abstract_class
-
-and class_file = {
+type class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
+  c_final : bool;
+  c_super_class : class_file option;
+  c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  c_class_file_type : class_file_type;
+  c_methods : methods;
   mutable c_children : class_file ClassMap.t;
 }
 
@@ -97,11 +83,7 @@ type t = program
 
 let super = function
   | `Interface i -> Some i.i_super
-  | `Class c ->
-      match c.c_class_file_type with
-	| AbstractClass ac -> ac.ac_super_class
-	| ConcreteClass nc -> nc.cc_super_class
-
+  | `Class c -> c.c_super_class
 
 (** [Class_not_found c] is raised when trying to add a class when its
     super class or one of its implemented interfaces is not yet in the
@@ -125,60 +107,32 @@ let add_classFile c (program:program) =
       )
       ClassMap.empty
       c.JClass.c_interfaces
-  in let cft =
-    match c.JClass.c_class_file_type with
-      | JClass.AbstractClass ac ->
-	  let super =
-	    begin
-	      match ac.JClass.ac_super_class with
-		| None -> None
-		| Some super ->
-		    try
-		      match ClassMap.find super program with
-			| `Class c -> Some c
-			| `Interface i ->
-			    raise (Class_structure_error
-				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
-					^JDumpBasics.class_name super^", which is an interface and not a class."))
-		    with Not_found -> raise (Class_not_found super)
-	    end
-	  in AbstractClass {
-	    ac_super_class = super;
-	    ac_fields = ac.JClass.ac_fields;
-	    ac_methods = ac.JClass.ac_methods;
-	  }
-      | JClass.ConcreteClass cc ->
-	  let super =
-	    begin
-	      match cc.JClass.cc_super_class with
-		| None -> None
-		| Some super ->
-		    try
-		      match ClassMap.find super program with
-			| `Class c -> Some c
-			| `Interface i ->
-			    raise (Class_structure_error
-				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
-					^JDumpBasics.class_name super^", which is an interface and not a class."))
-		    with Not_found -> raise (Class_not_found super)
-	    end
-	  in ConcreteClass {
-	    cc_final = cc.JClass.cc_final;
-	    cc_super_class = super;
-	    cc_fields = cc.JClass.cc_fields;
-	    cc_methods = cc.JClass.cc_methods;
-	  }
+  in let c_super =
+    match c.JClass.c_super_class with
+      | None -> None
+      | Some super ->
+	  try
+	    match ClassMap.find super program with
+	      | `Class c -> Some c
+	      | `Interface i ->
+		  raise (Class_structure_error
+			    (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
+			      ^JDumpBasics.class_name super^", which is an interface and not a class."))
+	  with Not_found -> raise (Class_not_found super)
   in
   let c' =
     {c_name = c.JClass.c_name;
      c_access = c.JClass.c_access;
+     c_final = c.JClass.c_final;
+     c_super_class = c_super;
      c_consts = c.JClass.c_consts;
      c_interfaces = imap;
      c_sourcefile = c.JClass.c_sourcefile;
      c_deprecated = c.JClass.c_deprecated;
      c_inner_classes = c.JClass.c_inner_classes;
      c_other_attributes = c.JClass.c_other_attributes;
-     c_class_file_type = cft;
+     c_fields = c.JClass.c_fields;
+     c_methods = c.JClass.c_methods;
      c_children = ClassMap.empty;}
   in
     begin
@@ -372,14 +326,12 @@ exception Found_Class of interface_or_class
 
 let defines_method ms = function
   | `Interface i -> MethodMap.mem ms i.i_methods
-  | `Class c -> match c.c_class_file_type with
-      | AbstractClass ac -> MethodMap.mem ms ac.ac_methods
-      | ConcreteClass nc -> MethodMap.mem ms nc.cc_methods
+  | `Class c -> match c.c_methods with
+      | Methods mm -> MethodMap.mem ms mm
+      | ConcreteMethods mm -> MethodMap.mem ms mm
 let defines_field fs = function
-  | `Interface i -> FieldMap.mem fs i.i_fields
-  | `Class c -> match c.c_class_file_type with
-      | AbstractClass ac -> FieldMap.mem fs ac.ac_fields
-      | ConcreteClass nc -> FieldMap.mem fs nc.cc_fields
+  | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
+  | `Class {c_fields=fm;} -> FieldMap.mem fs fm
 
 
 
@@ -391,36 +343,28 @@ let resolve_class program cn =
 
 let get_method c ms = match c with
   | `Interface i -> AbstractMethod (MethodMap.find ms i.i_methods)
-  | `Class c -> match c.c_class_file_type with
-      | AbstractClass c ->
-	  MethodMap.find ms c.ac_methods
-      | ConcreteClass c ->
-	  ConcreteMethod (MethodMap.find ms c.cc_methods)
+  | `Class c -> match c.c_methods with
+      | Methods mm ->
+	  MethodMap.find ms mm
+      | ConcreteMethods mm ->
+	  ConcreteMethod (MethodMap.find ms mm)
 
 let get_methods = function
   | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
-  | `Class c -> match c.c_class_file_type with
-      | AbstractClass c ->
-	  MethodMap.fold (fun ms _ l -> ms::l) c.ac_methods []
-      | ConcreteClass c ->
-	  MethodMap.fold (fun ms _ l -> ms::l) c.cc_methods []
+  | `Class {c_methods = Methods mm;} -> 
+      MethodMap.fold (fun ms _ l -> ms::l) mm []
+  | `Class {c_methods = ConcreteMethods mm;} -> 
+      MethodMap.fold (fun ms _ l -> ms::l) mm []
 
 let get_field c fs = match c with
   | `Interface i -> InterfaceField (FieldMap.find fs i.i_fields)
-  | `Class c -> match c.c_class_file_type with
-      | AbstractClass c ->
-	  ClassField (FieldMap.find fs c.ac_fields)
-      | ConcreteClass c ->
-	  ClassField (FieldMap.find fs c.cc_fields)
+  | `Class c -> ClassField (FieldMap.find fs c.c_fields)
 
 let get_fields c =
   let to_list fs f l = fs::l in
     match c with
       | `Interface i -> FieldMap.fold to_list i.i_fields []
-      | `Class c -> match c.c_class_file_type with
-	  | AbstractClass c -> FieldMap.fold to_list c.ac_fields []
-	  | ConcreteClass c -> FieldMap.fold to_list c.cc_fields []
-
+      | `Class c -> FieldMap.fold to_list c.c_fields []
 
 let rec resolve_field fs c : interface_or_class =
   let get_interfaces = function
@@ -464,15 +408,15 @@ let rec resolve_interface_method'' ms (c:interface_file) : interface_file list =
     (if defines_method ms (`Interface c) then [c] else [])
 
 let resolve_method ms (c:class_file) : interface_or_class =
-  match c.c_class_file_type with
-    | ConcreteClass _ ->
+  match c.c_methods with
+    | ConcreteMethods _ ->
 	begin
 	  let c' = resolve_method' ms c
 	  in match get_method (`Class c') ms with
 	    | AbstractMethod _ -> raise AbstractMethodError
 	    | ConcreteMethod _ -> `Class c'
 	end
-    | AbstractClass _ ->
+    | Methods _ ->
 	let rec resolve_abstract_method ms (c:class_file) : interface_or_class =
 	  try `Class (resolve_method' ms c)
 	  with NoSuchMethodError ->

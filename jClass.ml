@@ -251,21 +251,6 @@ type abstract_class_method =
     | AbstractMethod of abstract_method
     | ConcreteMethod of concrete_method
 
-(** Abstract classes cannot be final and may contain abstract methods.*)
-type abstract_class = {
-  ac_super_class : class_name option; (* redundant if we use a map *)
-  ac_fields : class_field FieldMap.t;
-  ac_methods : abstract_class_method MethodMap.t
-}
-
-(** Concrete classes cannot contains abstract methods.*)
-type concrete_class = {
-  cc_final : bool;
-  cc_super_class : class_name option; (* redundant if we use a map *)
-  cc_fields : class_field FieldMap.t;
-  cc_methods : concrete_method MethodMap.t
-}
-
 type inner_class = {
   ic_class_name : class_name option;
   ic_outer_class_name : class_name option;
@@ -276,20 +261,23 @@ type inner_class = {
   ic_type : [`ConcreteClass|`Abstract|`Interface]
 }
 
-type class_file_type =
-    | ConcreteClass of concrete_class
-    | AbstractClass of abstract_class
+type methods =
+    | ConcreteMethods of concrete_method MethodMap.t
+    | Methods of abstract_class_method MethodMap.t
 
 type class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
+  c_final : bool;
+  c_super_class : class_name option; (* redundant if we use a map *)
+  c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  c_class_file_type : class_file_type;
+  c_methods : methods;
 }
 
 

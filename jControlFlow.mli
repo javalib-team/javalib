@@ -31,7 +31,6 @@ module PP :
     type t
     exception NoCode of (class_name * method_signature)
     val to_className : t -> JBasics.class_name
-    val to_ConcreteClass : t -> JProgram.concrete_class
     val to_class : t -> JProgram.class_file
     val to_hardpp : t -> JProgram.class_file * JClass.code * int
     val to_softpp :

@@ -280,54 +280,29 @@ let low2high_acmethod consts = function m ->
   else ConcreteMethod (low2high_cmethod consts m)
 
 
-let low2high_concrete_class consts = function nc ->
-  {
-    cc_final = List.exists ((=)AccFinal) nc.j_flags;
-    cc_super_class = nc.j_super;
-    cc_fields = List.fold_left
-      (fun m f ->
-	FieldMap.add
-	  {fs_name=f.f_name;fs_type=f.f_signature}
-	  (try low2high_cfield consts f
-	  with Class_structure_error msg -> raise (Class_structure_error ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
-	  m)
-      FieldMap.empty
-      nc.j_fields;
-    cc_methods = List.fold_left
-      (fun map meth ->
-	MethodMap.add
-	  {ms_name=meth.m_name;
-	   ms_parameters=fst meth.m_signature}
-	  (try low2high_cmethod consts meth
+let low2high_concrete_methods consts = function nc ->
+  List.fold_left
+    (fun map meth ->
+      MethodMap.add
+	{ms_name=meth.m_name;
+	 ms_parameters=fst meth.m_signature}
+	(try low2high_cmethod consts meth
 	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
-	  map)
-      MethodMap.empty
-      nc.j_methods;
-  }
+	map)
+    MethodMap.empty
+    nc.j_methods
 
-let low2high_abstract_class consts = function ac ->
-  {
-    ac_super_class = ac.j_super;
-    ac_fields = List.fold_left
-      (fun m f ->
-	FieldMap.add
-	  {fs_name=f.f_name;fs_type=f.f_signature}
-	  (try low2high_cfield consts f
-	  with Class_structure_error msg -> raise (Class_structure_error ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
-	  m)
-      FieldMap.empty
-      ac.j_fields;
-    ac_methods = List.fold_left
-      (fun map meth ->
-	MethodMap.add
-	  {ms_name=meth.m_name;
-	   ms_parameters=fst meth.m_signature}
-	  (try low2high_acmethod consts meth
+let low2high_methods consts = function ac ->
+  List.fold_left
+    (fun map meth ->
+      MethodMap.add
+	{ms_name=meth.m_name;
+	 ms_parameters=fst meth.m_signature}
+	(try low2high_acmethod consts meth
 	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
-	  map)
-      MethodMap.empty
-      ac.j_methods;
-  }
+	map)
+    MethodMap.empty
+    ac.j_methods
 
 let low2high_innerclass = function
     (inner_class_info,outer_class_info,inner_name,inner_class_access_flags) ->
@@ -433,20 +408,32 @@ let low2high_class cl =
 	    end
 	end
       else
-	let my_class_file_type =
+	let my_methods =
 	  try
 	    if List.exists ((=)AccAbstract) cl.j_flags
 	    then
 	      if List.exists ((=)AccFinal) cl.j_flags
 	      then raise (Class_structure_error "An abstract class cannot be final.")
-	      else AbstractClass (low2high_abstract_class consts cl)
+	      else Methods (low2high_methods consts cl)
 	    else
-	      ConcreteClass (low2high_concrete_class consts cl)
+	      ConcreteMethods (low2high_concrete_methods consts cl)
 	  with
 	    | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
+	and my_fields =
+	  List.fold_left
+	    (fun m f ->
+	      FieldMap.add
+		{fs_name=f.f_name;fs_type=f.f_signature}
+		(try low2high_cfield consts f
+		  with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+		m)
+	    FieldMap.empty
+	    cl.j_fields
 	in
 	  `Class {
 	    c_name = my_name;
+	    c_super_class = cl.j_super;
+	    c_final = List.exists ((=)AccFinal) cl.j_flags;
 	    c_access = my_access;
 	    c_interfaces = my_interfaces;
 	    c_consts = DynArray.to_array consts;
@@ -454,5 +441,6 @@ let low2high_class cl =
 	    c_deprecated = my_deprecated;
 	    c_inner_classes = my_inner_classes;
 	    c_other_attributes = my_other_attributes;
-	    c_class_file_type = my_class_file_type;
+	    c_fields = my_fields;
+	    c_methods = my_methods;
 	  }
