@@ -139,13 +139,42 @@ type verification_type =
 
 exception No_class_found of string
 
-exception Invalid_class of string
-
 exception Parse_error of string
 
 exception Illegal_value of string * string
 
 exception Class_structure_error of string
+
+(* Usefull functions *)
+(*********************)
+
+(* write_byte doesn't check anything *)
+let write_ui8 ch n =
+  if n < 0 || n > 0xFF then raise (Overflow "write_ui8");
+  write_byte ch n
+
+let write_i8 ch n =
+  if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
+  if n < 0 then
+    write_ui8 ch (0x100 + n)
+  else
+    write_ui8 ch n
+
+let write_string_with_length length ch s =
+  length ch (String.length s);
+  nwrite ch s
+
+let write_with_length length ch write =
+  let ch' = output_string () in
+    write ch';
+    write_string_with_length length ch (close_out ch')
+
+let write_with_size size ch write l =
+  size ch (List.length l);
+  List.iter write l
+
+(* Constant pool *)
+(*****************)
 
 let get_constant c n =
 	if n < 0 || n >= Array.length c then raise (Illegal_value (string_of_int n, "constant index"));
@@ -183,12 +212,13 @@ let get_interface_method consts i =
     | ConstInterfaceMethod (c, m, s) -> c, m, s
     | _ -> raise (Illegal_value ("", "interface method index"))
 
-let get_string' consts i =
+let get_string consts i =
   match get_constant consts i with
     | ConstStringUTF8 s -> s
     | c -> raise (Illegal_value (string_of_int i, "string index"))
 
-let get_string consts ch = get_string' consts (read_ui16 ch)
+let get_class_ui16 consts ch = get_class consts (read_ui16 ch)
+let get_string_ui16 consts ch = get_string consts (read_ui16 ch)
 
 let constant_to_int cp c =
   if c = ConstUnusable
@@ -209,33 +239,17 @@ let constant_to_int cp c =
 	     | _ -> ());
 	  i
 
-(* Usefull functions *)
-(*********************)
+let value_to_int cp v = constant_to_int cp (ConstValue v)
+let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
+let field_to_int cp v = constant_to_int cp (ConstField v)
+let method_to_int cp v = constant_to_int cp (ConstMethod v)
+let class_to_int cp v = object_type_to_int cp (TClass v)
+let string_to_int cp v = constant_to_int cp (ConstStringUTF8 v)
+let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s))
 
-(* write_byte doesn't check anything *)
-let write_ui8 ch n =
-  if n < 0 || n > 0xFF then raise (Overflow "write_ui8");
-  write_byte ch n
-
-let write_i8 ch n =
-  if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
-  if n < 0 then
-    write_ui8 ch (0x100 + n)
-  else
-    write_ui8 ch n
-
-let write_constant ch cp c =
-  write_ui16 ch (constant_to_int cp c)
-
-let write_string_with_length length ch s =
-  length ch (String.length s);
-  nwrite ch s
-
-let write_with_length length ch write =
-  let ch' = output_string () in
-    write ch';
-    write_string_with_length length ch (close_out ch')
-
-let write_with_size size ch write l =
-  size ch (List.length l);
-  List.iter write l
+let write_constant ch cp c = write_ui16 ch (constant_to_int cp c)
+let write_value ch cp c = write_ui16 ch (value_to_int cp c)
+let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
+let write_class ch cp c = write_ui16 ch (class_to_int cp c)
+let write_string ch cp c = write_ui16 ch (string_to_int cp c)
+let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)

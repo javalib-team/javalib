@@ -280,7 +280,7 @@ let rec parse_code consts ch =
 
 (* Parse an attribute, if its name is in list. *)
 and parse_attribute list consts ch =
-	let aname = get_string consts ch in
+	let aname = get_string_ui16 consts ch in
 	let error() = raise (Parse_error ("Malformed attribute " ^ aname)) in
 	let alen = read_i32 ch in
 	let check name =
@@ -292,13 +292,10 @@ and parse_attribute list consts ch =
 	match aname with
 	| "SourceFile" -> check `SourceFile;
 		if alen <> 2 then error();
-		AttributeSourceFile (get_string consts ch)
+		AttributeSourceFile (get_string_ui16 consts ch)
 	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
-	    (match get_constant consts (read_ui16 ch) with
-	       | ConstValue c ->
-		   AttributeConstant c
-	       | _ -> raise (Illegal_value ("", "constant value")))
+	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
 	    let ch, count = IO.pos_in ch in
 	    let code = parse_code consts ch in
@@ -311,7 +308,7 @@ and parse_attribute list consts ch =
 		(List.init
 		   nentry
 		   (function _ ->
-		      get_class consts (read_ui16 ch)))
+		      get_class_ui16 consts ch))
 	| "InnerClasses" -> check `InnerClasses;
 	    let nentry = read_ui16 ch in
 	      if nentry * 8 + 2 <> alen then error();
@@ -330,7 +327,7 @@ and parse_attribute list consts ch =
 		      let inner_name =
 			match (read_ui16 ch) with
 			  | 0 -> None
-			  | i -> Some (get_string' consts i) in
+			  | i -> Some (get_string consts i) in
 		      let flags = parse_access_flags ch in
 			inner, outer, inner_name, flags))
 	| "Synthetic" -> check `Synthetic;
@@ -355,8 +352,8 @@ and parse_attribute list consts ch =
 		   (function _ ->
 		      let start_pc = read_ui16 ch in
 		      let length = read_ui16 ch in
-		      let name = (get_string consts ch) in
-		      let signature = parse_type (get_string consts ch) in
+		      let name = (get_string_ui16 consts ch) in
+		      let signature = parse_type (get_string_ui16 consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
 	| "Deprecated" -> check `Deprecated;
@@ -376,8 +373,8 @@ and parse_attribute list consts ch =
 
 let parse_field consts ch =
 	let acc = parse_access_flags ch in
-	let name = get_string consts ch in
-	let sign = parse_type (get_string consts ch) in
+	let name = get_string_ui16 consts ch in
+	let sign = parse_type (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
 	let attrib_to_parse =
 	  if List.exists ((=)AccStatic) acc
@@ -396,8 +393,8 @@ let parse_field consts ch =
 
 let parse_method consts ch =
 	let acc = parse_access_flags ch in
-	let name = get_string consts ch in
-	let sign = parse_method_signature (get_string consts ch) in
+	let name = get_string_ui16 consts ch in
+	let sign = parse_method_signature (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
 	let code = ref None in
 	let attribs = List.init attrib_count (fun _ ->
@@ -480,15 +477,11 @@ let parse_class_low_level ch =
 	) in
 	let consts = Array.mapi (fun i _ -> expand_constant consts i) consts in
 	let flags = parse_access_flags ch in
-	let this = get_class consts (read_ui16 ch) in
+	let this = get_class_ui16 consts ch in
 	let super_idx = read_ui16 ch in
-	let super = (if super_idx = 0 then None else
-		match get_constant_value consts super_idx with
-		| ConstClass (TClass name) -> Some name
-		| _ -> raise (Illegal_value ("", "super class")))
-	in
+	let super = if super_idx = 0 then None else Some (get_class consts super_idx) in
 	let interface_count = read_ui16 ch in
-	let interfaces = List.init interface_count (fun _ -> get_class consts (read_ui16 ch)) in
+	let interfaces = List.init interface_count (fun _ -> get_class_ui16 consts ch) in
 	let field_count = read_ui16 ch in
 	let fields = List.init field_count (fun _ -> parse_field consts ch) in
 	let method_count = read_ui16 ch in

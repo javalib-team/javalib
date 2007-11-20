@@ -117,7 +117,7 @@ let add_classFile c (program:program) =
 	    match ClassMap.find iname program with
 	      | `Interface i -> i
 	      | `Class c' ->
-		  raise (Invalid_class
+		  raise (Class_structure_error
 			    (JDumpBasics.class_name c.JClass.c_name^" is declared to implements "
 			      ^JDumpBasics.class_name iname^", which is a class and not an interface."))
 	  with Not_found -> raise (Class_not_found iname)
@@ -137,7 +137,7 @@ let add_classFile c (program:program) =
 		      match ClassMap.find super program with
 			| `Class c -> Some c
 			| `Interface i ->
-			    raise (Invalid_class
+			    raise (Class_structure_error
 				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
 					^JDumpBasics.class_name super^", which is an interface and not a class."))
 		    with Not_found -> raise (Class_not_found super)
@@ -157,7 +157,7 @@ let add_classFile c (program:program) =
 		      match ClassMap.find super program with
 			| `Class c -> Some c
 			| `Interface i ->
-			    raise (Invalid_class
+			    raise (Class_structure_error
 				      (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
 					^JDumpBasics.class_name super^", which is an interface and not a class."))
 		    with Not_found -> raise (Class_not_found super)
@@ -205,7 +205,7 @@ let add_interfaceFile c (program:program) =
 	    match ClassMap.find iname program with
 	      | `Interface i -> i
 	      | `Class c' ->
-		  raise (Invalid_class
+		  raise (Class_structure_error
 			    ("Interface "^JDumpBasics.class_name c.JClass.i_name^" is declared to extends "
 			      ^JDumpBasics.class_name c'.c_name^", which is an interface and not a class."))
 	  with Not_found -> raise (Class_not_found iname)
@@ -217,7 +217,7 @@ let add_interfaceFile c (program:program) =
     try match ClassMap.find java_lang_object program with
       | `Class c -> c
       | `Interface i ->
-	  raise (Invalid_class"java.lang.Object is declared as an interface.")
+	  raise (Class_structure_error"java.lang.Object is declared as an interface.")
     with Not_found -> raise (Class_not_found java_lang_object)
   in
   let c' =

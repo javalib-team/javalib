@@ -219,7 +219,7 @@ let instruction2opcode consts = function
 	       | `B v -> OpCodeBIPush v
 	       | `S v -> OpCodeSIPush v)
 	| OpLdc v ->
-	    let index = (constant_to_int consts (ConstValue v)) in
+	    let index = (value_to_int consts v) in
 	      (match v with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
 		     if index <= 0xFF
@@ -351,44 +351,44 @@ let instruction2opcode consts = function
 	       | #jvm_basic_type as k -> OpCodeReturn k)
 
 	| OpGetStatic (c, s) ->
-	    OpCodeGetStatic (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	    OpCodeGetStatic (field_to_int consts (c, s.fs_name, s.fs_type))
 	| OpPutStatic (c, s) ->
-	    OpCodePutStatic (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	    OpCodePutStatic (field_to_int consts (c, s.fs_name, s.fs_type))
 	| OpGetField (c, s) ->
-	    OpCodeGetField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	    OpCodeGetField (field_to_int consts (c, s.fs_name, s.fs_type))
 	| OpPutField (c, s) ->
-	    OpCodePutField (constant_to_int consts (ConstField (c, s.fs_name, s.fs_type)))
+	    OpCodePutField (field_to_int consts (c, s.fs_name, s.fs_type))
 	| OpInvoke (x, s, r) ->
 	    (match x with
 	       | `Virtual t ->
 		   OpCodeInvokeVirtual
-		     (constant_to_int consts (ConstMethod (t, s.ms_name, (s.ms_parameters,r))))
+		     (method_to_int consts (t, s.ms_name, (s.ms_parameters,r)))
 	       | `Special t ->
 		   OpCodeInvokeNonVirtual
-		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,r))))
+		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,r)))
 	       | `Static t ->
 		   OpCodeInvokeStatic
-		     (constant_to_int consts (ConstMethod (TClass t, s.ms_name, (s.ms_parameters,r))))
+		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,r)))
 	       | `Interface t ->
 		   OpCodeInvokeInterface
 		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,r))), count s.ms_parameters))
 
 	| OpNew n ->
 	    OpCodeNew
-	      (constant_to_int consts (ConstValue (ConstClass (TClass n))))
+	      (class_to_int consts n)
 	| OpNewArray t ->
 	    (match t with
 	       | TBasic bt -> OpCodeNewArray bt
 	       | TObject ot ->
-		   OpCodeANewArray (constant_to_int consts (ConstValue (ConstClass ot))))
+		   OpCodeANewArray (object_type_to_int consts ot))
 	| OpArrayLength -> OpCodeArrayLength
 	| OpThrow -> OpCodeThrow
-	| OpCheckCast ot -> OpCodeCheckCast (constant_to_int consts (ConstValue (ConstClass ot)))
-	| OpInstanceOf ot -> OpCodeInstanceOf (constant_to_int consts (ConstValue (ConstClass ot)))
+	| OpCheckCast ot -> OpCodeCheckCast (object_type_to_int consts ot)
+	| OpInstanceOf ot -> OpCodeInstanceOf (object_type_to_int consts ot)
 	| OpMonitorEnter -> OpCodeMonitorEnter
 	| OpMonitorExit -> OpCodeMonitorExit
 	| OpAMultiNewArray (i, dims) ->
-	    OpCodeAMultiNewArray (constant_to_int consts (ConstValue (ConstClass i)), dims)
+	    OpCodeAMultiNewArray (object_type_to_int consts i, dims)
 	| OpBreakpoint -> OpCodeBreakpoint
 
 	| OpInvalid -> OpCodeInvalid

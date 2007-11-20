@@ -95,10 +95,21 @@ type signature =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(** {2 Constants.} *)
+(** {2 Exception handlers.} *)
 
-(** You should not need this for normal usage, as the
-    parsing/unparsing functions take care of the constant pool. *)
+(** Exception handler. *)
+type jexception = {
+	e_start : int;
+	e_end : int;
+	e_handler : int;
+	e_catch_type : class_name option
+}
+
+(** {2 Constant pool.} *)
+
+(** You should not need this for normal usage, as the parsing/unparsing functions
+    take care of the constant pool. This is typically usefull for user-defined
+    attributes that refer to the constant pool. *)
 
 (** Constant value. *)
 type constant_value =
@@ -119,45 +130,75 @@ type constant =
   | ConstStringUTF8 of string
   | ConstUnusable
 
+(** Getting a constant from the constant pool: *)
+
+val get_constant : constant array -> int -> constant
+val get_constant_value : constant array -> int -> constant_value
+val get_object_type : constant array -> int -> object_type
+val get_class : constant array -> int -> class_name
+val get_string : constant array -> int -> string
+val get_field : constant array -> int ->
+  class_name * string * field_descriptor
+val get_method : constant array -> int ->
+  object_type * string * method_descriptor
+val get_interface_method : constant array -> int ->
+  class_name * string * method_descriptor
+
+(** Same thing, reading the index in a channel: *)
+
+val get_class_ui16 : constant array -> IO.input -> class_name
+val get_string_ui16 : constant array -> IO.input -> string
+
+(** Getting an index for a constant: *)
+
+(** Return the index of a constant, adding it to the constant pool if necessary. *)
+val constant_to_int : constant DynArray.t -> constant -> int
+val value_to_int : constant DynArray.t -> constant_value -> int
+val object_type_to_int : constant DynArray.t -> object_type -> int
+val class_to_int : constant DynArray.t -> class_name -> int
+val field_to_int : constant DynArray.t ->
+  class_name * string * field_descriptor -> int
+val method_to_int : constant DynArray.t ->
+  object_type * string * method_descriptor -> int
+
+(** Same thing, bu writes the index to a channel. *)
+
+val write_constant :
+  'a IO.output -> constant DynArray.t -> constant -> unit
+val write_value :
+  'a IO.output -> constant DynArray.t -> constant_value -> unit
+val write_object_type :
+  'a IO.output -> constant DynArray.t -> object_type -> unit
+val write_class :
+  'a IO.output -> constant DynArray.t -> class_name -> unit
+val write_string :
+  'a IO.output -> constant DynArray.t -> string -> unit
+val write_name_and_type :
+  'a IO.output -> constant DynArray.t -> string * signature -> unit
+
+(** {2 Stackmaps}  *)
+
 (** Stackmap type. *)
 type verification_type =
-	| VTop
-	| VInteger
-	| VFloat
-	| VDouble
-	| VLong
-	| VNull
-	| VUninitializedThis
-	| VObject of object_type
-	| VUninitialized of int (** creation point *)
-
-(** {2 Exception handlers.} *)
-
-(** Exception handler. *)
-type jexception = {
-	e_start : int;
-	e_end : int;
-	e_handler : int;
-	e_catch_type : class_name option
-}
-
-(** For unparsing purposes: *)
-
-(** Return the index of a constant, adding it to the constant pool if necessary.
-    This is usefull for adding a user-defined attribute that refers to the constant pool. *)
-val constant_to_int : constant DynArray.t -> constant -> int
+  | VTop
+  | VInteger
+  | VFloat
+  | VDouble
+  | VLong
+  | VNull
+  | VUninitializedThis
+  | VObject of object_type
+  | VUninitialized of int (** creation point *)
 
 (** {2 Errors}  *)
 
-(** The following exceptions may be thrown, in addition to [Invalid_argument],
-    by the library. Any other exception(in particular, an [Assert_failure])
+(** The library may throw the following exceptions, in addition to [Invalid_argument],
+    and other exceptions defined in {! JProgram} and {! JControlFlow}.
+    Any other exception (in particular, an [Assert_failure])
     should be interpreted as a bug in [javalib]. *)
 
 (** Indicates that a class name could not be found in a given classpath. *)
 exception No_class_found of string
-
-(* Documenter ? ou fusionner avec Class_structure_error ? *)
-exception Invalid_class of string
 
 (** Indicates a serious error in the basic structure of a class file. *)
 exception Parse_error of string
@@ -171,31 +212,10 @@ exception Class_structure_error of string
 
 (**/**)
 
-val get_constant : constant array -> int -> constant
-
-val get_constant_value : constant array -> int -> constant_value
-
-val get_object_type : constant array -> int -> object_type
-val get_class : constant array -> int -> class_name
-
-val get_string : constant array -> IO.input -> string
-val get_string' : constant array -> int -> string
-
-val get_field : constant array -> int ->
-  class_name * string * field_descriptor
-
-val get_method : constant array -> int ->
-  object_type * string * method_descriptor
-
-val get_interface_method : constant array -> int ->
-  class_name * string * method_descriptor
-
-(* This should go somewhere else. *)
+(** {2 Usefull writing functions. } *)
 
 val write_ui8 : 'a IO.output -> int -> unit
 val write_i8 : 'a IO.output -> int -> unit
-val write_constant :
-  'a IO.output -> constant DynArray.t -> constant -> unit
 val write_string_with_length :
   ('a IO.output -> int -> 'b) -> 'a IO.output -> string -> unit
 val write_with_length :

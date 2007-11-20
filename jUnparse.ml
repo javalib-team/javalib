@@ -19,10 +19,10 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-open JClassLow
-open JBasics
 open IO
 open IO.BigEndian
+open JBasics
+open JClassLow
 open JCode
 
 (* Classfile version *)
@@ -78,8 +78,7 @@ let rec unparse_signature = function
 (* Unparse an type that must be an object.Therefore, there is no
    L ; around the classname (if this is a class). *)
 let unparse_objectType = function
-  | TClass c ->
-      encode_class_name c
+  | TClass c -> encode_class_name c
   | TArray _ as s -> unparse_object_type s
 
 (* Constant pool unparsing *)
@@ -88,7 +87,7 @@ let unparse_objectType = function
 let unparse_constant_value ch consts = function
   | ConstString s ->
       write_ui8 ch 8;
-      write_constant ch consts (ConstStringUTF8 s)
+      (write_string ch consts s)
   | ConstInt i ->
       write_ui8 ch 3;
       write_real_i32 ch i
@@ -103,32 +102,31 @@ let unparse_constant_value ch consts = function
       write_double ch d
   | ConstClass c ->
       write_ui8 ch 7;
-      write_constant ch consts (ConstStringUTF8 (unparse_objectType c))
+      write_string ch consts (unparse_objectType c)
 
 let unparse_constant ch consts =
-  let write_constant = write_constant ch consts in
-    function
-      | ConstValue v -> unparse_constant_value ch consts v
-      | ConstField (c, s, signature) ->
-	  write_ui8 ch 9;
-	  write_constant (ConstValue (ConstClass (TClass c)));
-	  write_constant (ConstNameAndType (s, SValue signature))
-      | ConstMethod (c, s, signature) ->
-	  write_ui8 ch 10;
-	  write_constant (ConstValue (ConstClass c));
-	  write_constant (ConstNameAndType (s, SMethod signature))
-      | ConstInterfaceMethod (c, s, signature) ->
-	  write_ui8 ch 11;
-	  write_constant (ConstValue (ConstClass (TClass c)));
-	  write_constant (ConstNameAndType (s, SMethod signature))
-      | ConstNameAndType (s, signature) ->
-	  write_ui8 ch 12;
-	  write_constant (ConstStringUTF8 s);
-	  write_constant (ConstStringUTF8 (unparse_signature signature))
-      | ConstStringUTF8 s ->
-	  write_ui8 ch 1;
-	  write_string_with_length write_ui16 ch s
-      | ConstUnusable -> ()
+  function
+    | ConstValue v -> unparse_constant_value ch consts v
+    | ConstField (c, s, signature) ->
+	write_ui8 ch 9;
+	write_class ch consts c;
+	write_name_and_type ch consts (s, SValue signature)
+    | ConstMethod (c, s, signature) ->
+	write_ui8 ch 10;
+	write_object_type ch consts c;
+	write_name_and_type ch consts (s, SMethod signature)
+    | ConstInterfaceMethod (c, s, signature) ->
+	write_ui8 ch 11;
+	write_class ch consts c;
+	write_name_and_type ch consts (s, SMethod signature)
+    | ConstNameAndType (s, signature) ->
+	write_ui8 ch 12;
+	write_string ch consts s;
+	write_string ch consts (unparse_signature signature)
+    | ConstStringUTF8 s ->
+	write_ui8 ch 1;
+	write_string_with_length write_ui16 ch s
+    | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =
   let ch'' = output_string ()
@@ -177,7 +175,7 @@ let unparse_stackmap_attribute consts stackmap =
 	      | VNull -> write_ui8 ch 5
 	      | VUninitializedThis -> write_ui8 ch 6
 	      | VObject o ->
-		  write_ui8 ch 7 ; write_constant ch consts(ConstValue (ConstClass o))
+		  write_ui8 ch 7 ; write_object_type ch consts o
 	      | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
 	in
 	  write_ui16 ch pc;
@@ -190,15 +188,14 @@ let rec unparse_attribute_to_strings consts =
   let ch = output_string () in
     function
       | AttributeSourceFile s ->
-	  write_constant ch consts (ConstStringUTF8 s);
+	  write_string ch consts s;
 	  ("SourceFile",close_out ch)
       | AttributeConstant c ->
-	  write_constant ch consts (ConstValue c);
+	  write_value ch consts c;
 	  ("ConstantValue",close_out ch)
       | AttributeExceptions l ->
 	  write_with_size write_ui16 ch
-	    (function c ->
-	      write_constant ch consts (ConstValue (ConstClass (TClass c))))
+	    (function c -> write_class ch consts c)
 	    l;
 	  ("Exceptions",close_out ch)
       | AttributeInnerClasses l ->
@@ -206,16 +203,14 @@ let rec unparse_attribute_to_strings consts =
 	    (function inner, outer, inner_name, flags ->
 	      (match inner with
 		| None -> write_ui16 ch 0
-		| Some inner ->
-		    write_constant ch consts (ConstValue (ConstClass (TClass inner))));
+		| Some inner -> write_class ch consts inner);
 	      (match outer with
 		| None -> write_ui16 ch 0
-		| Some outer ->
-		    write_constant ch consts (ConstValue (ConstClass (TClass outer))));
+		| Some outer -> write_class ch consts outer);
 	      (match inner_name with
 		| None -> write_ui16 ch 0
 		| Some inner_name ->
-		    write_constant ch consts (ConstStringUTF8 inner_name));
+		    write_string ch consts inner_name);
 	      write_ui16 ch (unparse_flags flags))
 	    l;
 	  ("InnerClasses",close_out ch)
@@ -233,9 +228,8 @@ let rec unparse_attribute_to_strings consts =
 	    (function start_pc, length, name, signature, index ->
 	      write_ui16 ch start_pc;
 	      write_ui16 ch length;
-	      write_constant ch consts (ConstStringUTF8 name);
-	      write_constant ch consts
-		(ConstStringUTF8 (unparse_value_signature signature));
+	      write_string ch consts name;
+	      write_string ch consts (unparse_value_signature signature);
 	      write_ui16 ch index)
 	    l;
 	  ("LocalVariableTable",close_out ch)
@@ -258,7 +252,7 @@ let rec unparse_attribute_to_strings consts =
 	      write_ui16 ch e.e_end;
 	      write_ui16 ch e.e_handler;
 	      match e.e_catch_type with
-		| Some cl -> write_constant ch consts (ConstValue (ConstClass (TClass cl)))
+		| Some cl -> write_class ch consts cl
 		| None -> write_ui16 ch 0)
 	    code.c_exc_tbl;
 	  write_with_size write_ui16 ch
@@ -269,7 +263,7 @@ let rec unparse_attribute_to_strings consts =
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr
   in
-    write_constant ch consts (ConstStringUTF8 name);
+    write_string ch consts name;
     write_string_with_length write_i32 ch content
 
 (* Fields, methods and classes *)
@@ -277,9 +271,8 @@ and unparse_attribute ch consts attr =
 
 let unparse_field ch consts field =
   write_ui16 ch (unparse_flags field.f_flags);
-  write_constant ch consts (ConstStringUTF8 field.f_name);
-  write_constant ch consts
-    (ConstStringUTF8 (unparse_value_signature field.f_signature));
+  write_string ch consts field.f_name;
+  write_string ch consts (unparse_value_signature field.f_signature);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     field.f_attributes
@@ -299,9 +292,8 @@ let unparse_method ch consts methode =
     raise
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");
   write_ui16 ch (unparse_flags methode.m_flags);
-  write_constant ch consts (ConstStringUTF8 methode.m_name);
-  write_constant ch consts
-    (ConstStringUTF8 (unparse_method_signature methode.m_signature));
+  write_string ch consts methode.m_name;
+  write_string ch consts (unparse_method_signature methode.m_signature);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     methode.m_attributes
@@ -313,15 +305,14 @@ let unparse_class_low_level ch c =
   let ch' = output_string ()
   and consts = DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags c.j_flags);
-    write_constant ch' consts (ConstValue (ConstClass (TClass c.j_name)));
+    write_class ch' consts c.j_name;
     write_ui16 ch'
       (match c.j_super with
 	 | Some super -> constant_to_int consts (ConstValue (ConstClass (TClass super)))
 	 | None -> 0);
     let unparse unparse = write_with_size write_ui16 ch' unparse in
       unparse
-	(function int ->
-	   write_constant ch' consts (ConstValue (ConstClass (TClass int))))
+	(function int -> write_class ch' consts int)
 	c.j_interfaces;
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;

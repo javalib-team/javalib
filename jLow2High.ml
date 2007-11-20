@@ -26,15 +26,15 @@ open JClass
 let rec flags2access = function
   | AccPublic::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccProtected) l
-      then raise (Invalid_class "Access flags Public and Private or Protected cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Public and Private or Protected cannot be set at the same time")
       else `Public
   | AccPrivate::l ->
       if List.exists (fun a -> a = AccPublic || a= AccProtected) l
-      then raise (Invalid_class "Access flags Private and Public or Protected cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Private and Public or Protected cannot be set at the same time")
       else `Private
   | AccProtected::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccPublic) l
-      then raise (Invalid_class "Access flags Protected and Private or Public cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Protected and Private or Public cannot be set at the same time")
       else `Protected
   | _::l -> flags2access l
   | [] -> `Default
@@ -71,7 +71,7 @@ let low2high_code consts = function c ->
 	let rec find_lineNumberTable = function
 	  | AttributeLineNumberTable l::l' ->
 	      if find_lineNumberTable l' <> None
-	      then raise (Invalid_class "Only one AttributeLineNumberTable can be attached to a method.");
+	      then raise (Class_structure_error "Only one AttributeLineNumberTable can be attached to a method.");
 	      Some l
 	  | _::l -> find_lineNumberTable l
 	  | [] -> None
@@ -82,7 +82,7 @@ let low2high_code consts = function c ->
 	let rec find_LocalVariableTable = function
 	  | AttributeLocalVariableTable l::l' ->
 	      if find_LocalVariableTable l' <> None
-	      then raise (Invalid_class "Only one AttributeLocalVariableTable can be attached to a method.");
+	      then raise (Class_structure_error "Only one AttributeLocalVariableTable can be attached to a method.");
 	      Some l
 	  | _::l -> find_LocalVariableTable l
 	  | [] -> None
@@ -93,7 +93,7 @@ let low2high_code consts = function c ->
 	let rec find_StackMap = function
 	  | AttributeStackMap l::l' ->
 	      if find_StackMap l' <> None
-	      then raise (Invalid_class "Only one StackMap attribute can be attached to a method.");
+	      then raise (Class_structure_error "Only one StackMap attribute can be attached to a method.");
 	      Some l
 	  | _::l -> find_StackMap l
 	  | [] -> None
@@ -149,7 +149,7 @@ let low2high_ifield consts = function f ->
       && List.exists ((=)AccStatic) f.f_flags
       && List.exists ((=)AccFinal) f.f_flags) ||
     [] <> (List.filter (fun a -> a<>AccPublic && a<>AccStatic && a<>AccFinal) f.f_flags)
-  then raise (Invalid_class "A field of an interface must have as only flag : Public, Static and Final.")
+  then raise (Class_structure_error "A field of an interface must have as only flag : Public, Static and Final.")
   else
     {
       if_value =
@@ -185,7 +185,7 @@ let low2high_amethod consts = function m ->
 	| AccStatic -> prerr_endline "A method should not have its AccAbstract and AccStatic flags both set."
 	| AccStrict -> prerr_endline "A method should not have its AccAbstract and AccStrict flags both set."
 	| AccSynchronized -> prerr_endline "A method should not have its AccAbstract and AccSynchronized flags both set."
-	| _ -> raise (Invalid_class ("If a method has its ACC_ABSTRACT flag set it may not have any"
+	| _ -> raise (Class_structure_error ("If a method has its ACC_ABSTRACT flag set it may not have any"
 				      ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
   end;
@@ -193,7 +193,7 @@ let low2high_amethod consts = function m ->
     am_access =
       begin
 	match flags2access m.m_flags with
-	  | `Private -> raise (Invalid_class "Abstract method cannot be private")
+	  | `Private -> raise (Class_structure_error "Abstract method cannot be private")
 	  | `Default -> `Default
 	  | `Protected -> `Protected
 	  | `Public -> `Public
@@ -203,7 +203,7 @@ let low2high_amethod consts = function m ->
 	let rec find_Exceptions = function
 	  | AttributeExceptions cl::l ->
 	      if find_Exceptions l <> []
-	      then raise (Invalid_class "Only one Exception attribute is allowed in a method.")
+	      then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
 	      else cl
 	  | _::l -> find_Exceptions l
 	  | [] -> []
@@ -221,12 +221,12 @@ let low2high_cmethod consts = function m ->
   if m.m_name = "<init>" &&
     List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
     m.m_flags
-  then raise (Invalid_class ("A specific instance initialization method may have at most "
+  then raise (Class_structure_error ("A specific instance initialization method may have at most "
 			      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
 			      ^ "and may also have its ACC_STRICT flag set."))
   else
     if List.exists ((=)AccAbstract) m.m_flags
-    then raise (Invalid_class "Non abstract class cannot have abstract methods.")
+    then raise (Class_structure_error "Non abstract class cannot have abstract methods.")
   else
     {
       cm_static = List.exists ((=) AccStatic) m.m_flags;
@@ -239,7 +239,7 @@ let low2high_cmethod consts = function m ->
 	  let rec find_Exceptions = function
 	    | AttributeExceptions cl::l ->
 		if find_Exceptions l <> []
-		then raise (Invalid_class "Only one Exception attribute is allowed in a method.")
+		then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
 		else cl
 	    | _::l -> find_Exceptions l
 	    | [] -> []
@@ -255,7 +255,7 @@ let low2high_cmethod consts = function m ->
 	  let rec find_Code = function
 	    | AttributeCode c::l ->
 		if List.exists (function AttributeCode _ -> true| _-> false) l
-		then raise (Invalid_class "Only one Code attribute is allowed in a method.")
+		then raise (Class_structure_error "Only one Code attribute is allowed in a method.")
 		else
 		  if List.exists ((=) AccNative) m.m_flags
 		  then
@@ -289,7 +289,7 @@ let low2high_concrete_class consts = function nc ->
 	FieldMap.add
 	  {fs_name=f.f_name;fs_type=f.f_signature}
 	  (try low2high_cfield consts f
-	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+	  with Class_structure_error msg -> raise (Class_structure_error ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       nc.j_fields;
@@ -299,7 +299,7 @@ let low2high_concrete_class consts = function nc ->
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_cmethod consts meth
-	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	  map)
       MethodMap.empty
       nc.j_methods;
@@ -313,7 +313,7 @@ let low2high_abstract_class consts = function ac ->
 	FieldMap.add
 	  {fs_name=f.f_name;fs_type=f.f_signature}
 	  (try low2high_cfield consts f
-	  with Invalid_class msg -> raise (Invalid_class ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+	  with Class_structure_error msg -> raise (Class_structure_error ("in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 	  m)
       FieldMap.empty
       ac.j_fields;
@@ -323,7 +323,7 @@ let low2high_abstract_class consts = function ac ->
 	  {ms_name=meth.m_name;
 	   ms_parameters=fst meth.m_signature}
 	  (try low2high_acmethod consts meth
-	  with Invalid_class msg -> raise (Invalid_class ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	  map)
       MethodMap.empty
       ac.j_methods;
@@ -346,12 +346,10 @@ let low2high_innerclass = function
 	  else `ConcreteClass
       }
 
-exception Not_a_class
-
 
 let low2high_class cl =
   if cl.j_super = None && cl.j_name <> java_lang_object
-  then raise (Invalid_class "Only java.lang.Object is allowed not to have a super-class.")
+  then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.")
   else
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
@@ -386,20 +384,20 @@ let low2high_class cl =
 	begin
 	  if not (List.exists ((=)AccAbstract) cl.j_flags)
 	  then
-	    raise (Invalid_class "Class file with their AccInterface flags set must also have their AccAbstract flags set.")
+	    raise (Class_structure_error "Class file with their AccInterface flags set must also have their AccAbstract flags set.")
 	  else
 	    begin
 	      if List.exists ((=)AccFinal) cl.j_flags
-	      then raise (Invalid_class "An interface cannot be final.")
+	      then raise (Class_structure_error "An interface cannot be final.")
 	      else
 		if cl.j_super <> Some java_lang_object
-		then raise (Invalid_class "The super-class of interfaces must be java.lang.Object.");
+		then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
 	      let (init,methods) =
 		match List.partition
 		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_signature = clinit_signature.ms_parameters) cl.j_methods with
 		    | [m],others -> Some (low2high_cmethod consts m),others
 		    | [],others -> None, others
-		    | _ -> raise (Invalid_class "has more than one class initializer <clinit>")
+		    | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
 	      in
 		`Interface {
 		  i_name = my_name;
@@ -417,7 +415,7 @@ let low2high_class cl =
 		      FieldMap.add
 			{fs_name=f.f_name;fs_type=f.f_signature}
 			(try low2high_ifield consts f
-			  with Invalid_class msg -> raise (Invalid_class ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+			  with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
 			m)
 		    FieldMap.empty
 		    cl.j_fields;
@@ -427,7 +425,7 @@ let low2high_class cl =
 			{ms_name=meth.m_name;
 			 ms_parameters=fst meth.m_signature}
 			(try low2high_amethod consts meth
-			  with Invalid_class msg -> raise (Invalid_class ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+			  with Class_structure_error msg -> raise (Class_structure_error ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 			map)
 		    MethodMap.empty
 		    methods;
@@ -440,12 +438,12 @@ let low2high_class cl =
 	    if List.exists ((=)AccAbstract) cl.j_flags
 	    then
 	      if List.exists ((=)AccFinal) cl.j_flags
-	      then raise (Invalid_class "An abstract class cannot be final.")
+	      then raise (Class_structure_error "An abstract class cannot be final.")
 	      else AbstractClass (low2high_abstract_class consts cl)
 	    else
 	      ConcreteClass (low2high_concrete_class consts cl)
 	  with
-	    | Invalid_class msg -> raise (Invalid_class ("in class "^JDumpBasics.class_name my_name^": "^msg))
+	    | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	in
 	  `Class {
 	    c_name = my_name;
