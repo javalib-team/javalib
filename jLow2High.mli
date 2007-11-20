@@ -1,6 +1,6 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 UniversitÃ© de Rennes 1 / CNRS
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
  *  Tiphaine.Turpin@irisa.fr
  *  Laurent.Hubert@irisa.fr
  *

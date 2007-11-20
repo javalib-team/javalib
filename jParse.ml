@@ -1,6 +1,9 @@
 (*
  *  This file is part of JavaLib
  *  Copyright (c)2004 Nicolas Cannasse
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine.Turpin@irisa.fr
+ *  Laurent.Hubert@irisa.fr
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,9 +20,6 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(* file modified by eandre@irisa.fr 2006/03/23 *)
-
-(* added by eandre@irisa.fr 23/03/2006 *)
 open JClassLow
 open IO.BigEndian
 open ExtList
