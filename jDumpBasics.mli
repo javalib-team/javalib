@@ -28,7 +28,7 @@ val object_value_signature : string -> JBasics.object_type -> string
 val value_signature : string -> JBasics.value_type -> string
 val method_signature :
   string -> JBasics.value_type list * JBasics.value_type option -> string
-val signature : string -> JBasics.signature -> string
+val signature : string -> JBasics.name_and_type -> string
 val jvm_basic_type : [< `Double | `Float | `Int | `Int2Bool | `Long ] -> char
 val java_basic_type :
   [< `Bool | `Byte | `Char | `Double | `Float | `Int | `Long | `Short ] ->
@@ -40,4 +40,4 @@ val dump_stackmap :
   'a IO.output ->
   int * JBasics.verification_type list * JBasics.verification_type list ->
   unit
-val dump_exc : 'a IO.output -> 'b -> JBasics.jexception -> unit
+val dump_exc : 'a IO.output -> 'b -> JBasics.exception_handler -> unit

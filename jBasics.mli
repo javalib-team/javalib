@@ -28,6 +28,8 @@
     For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
+val java_lang_object: class_name
+
 (** Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
@@ -91,14 +93,14 @@ type field_descriptor = value_type
 type method_descriptor = value_type list * value_type option
 
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
-type signature =
+type name_and_type =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
 (** {2 Exception handlers.} *)
 
 (** Exception handler. *)
-type jexception = {
+type exception_handler = {
 	e_start : int;
 	e_end : int;
 	e_handler : int;
@@ -126,7 +128,7 @@ type constant =
   | ConstField of (class_name * string * field_descriptor)
   | ConstMethod of (object_type * string * method_descriptor)
   | ConstInterfaceMethod of (class_name * string * method_descriptor)
-  | ConstNameAndType of string * signature
+  | ConstNameAndType of string * name_and_type
   | ConstStringUTF8 of string
   | ConstUnusable
 
@@ -174,7 +176,7 @@ val write_class :
 val write_string :
   'a IO.output -> constant DynArray.t -> string -> unit
 val write_name_and_type :
-  'a IO.output -> constant DynArray.t -> string * signature -> unit
+  'a IO.output -> constant DynArray.t -> string * name_and_type -> unit
 
 (** {2 Stackmaps}  *)
 

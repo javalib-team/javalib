@@ -31,6 +31,9 @@ open ExtString
     For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
+(** [java.lang.Object] *)
+let java_lang_object = ["java";"lang";"Object"]
+
 (** Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
@@ -87,14 +90,14 @@ and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
 
-(** Field signature. *)
+(** Field descriptor. *)
 type field_descriptor = value_type
 
-(** Method signature. *)
+(** Method descriptor. *)
 type method_descriptor = value_type list * value_type option
 
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
-type signature =
+type name_and_type =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
@@ -113,12 +116,12 @@ type constant =
   | ConstField of (class_name * string * field_descriptor)
   | ConstMethod of (object_type * string * method_descriptor)
   | ConstInterfaceMethod of (class_name * string * method_descriptor)
-  | ConstNameAndType of string * signature
+  | ConstNameAndType of string * name_and_type
   | ConstStringUTF8 of string
   | ConstUnusable
 
 (** Exception handler. *)
-type jexception = {
+type exception_handler = {
 	e_start : int;
 	e_end : int;
 	e_handler : int;

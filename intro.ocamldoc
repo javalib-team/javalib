@@ -57,7 +57,7 @@ Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
 {2 API}
 
 {b {L Representation of classes}}
-{!modules: JBasics JClass JClassLow JDump}
+{!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow}
 
 {b {L High level manipulations of programs}}
 {!modules: JFile JProgram JControlFlow}

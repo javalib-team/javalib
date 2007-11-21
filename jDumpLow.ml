@@ -27,141 +27,141 @@ open JDumpBasics
 let sprintf = Printf.sprintf
 
 let opcode = function
-  | OpCodeNop -> "nop"
-  | OpCodeAConstNull -> "aconstnull"
-  | OpCodeIConst i -> sprintf "iconst %ld" i
-  | OpCodeLConst i -> sprintf "lconst %Ld" i
-  | OpCodeFConst f -> sprintf "fconst %f" f
-  | OpCodeDConst f -> sprintf "dconst %f" f
-  | OpCodeBIPush i -> sprintf "biconst %d" i
-  | OpCodeSIPush i -> sprintf "siconst %d" i
-  | OpCodeLdc1 i -> sprintf "ldc1 %d" i
-  | OpCodeLdc1w i -> sprintf "ldc1w %d" i
-  | OpCodeLdc2w i -> sprintf "ldc2w %d" i
+  | OpNop -> "nop"
+  | OpAConstNull -> "aconstnull"
+  | OpIConst i -> sprintf "iconst %ld" i
+  | OpLConst i -> sprintf "lconst %Ld" i
+  | OpFConst f -> sprintf "fconst %f" f
+  | OpDConst f -> sprintf "dconst %f" f
+  | OpBIPush i -> sprintf "biconst %d" i
+  | OpSIPush i -> sprintf "siconst %d" i
+  | OpLdc1 i -> sprintf "ldc1 %d" i
+  | OpLdc1w i -> sprintf "ldc1w %d" i
+  | OpLdc2w i -> sprintf "ldc2w %d" i
 
-  | OpCodeLoad (t,i) -> sprintf "%cload %d" (jvm_basic_type t) i
-  | OpCodeALoad i -> sprintf "aload %d" i
+  | OpLoad (t,i) -> sprintf "%cload %d" (jvm_basic_type t) i
+  | OpALoad i -> sprintf "aload %d" i
 
-  | OpCodeArrayLoad t -> sprintf "%caload" (jvm_basic_type t)
-  | OpCodeAALoad -> "aaload"
-  | OpCodeBALoad -> "baload"
-  | OpCodeCALoad -> "caload"
-  | OpCodeSALoad -> "saload"
+  | OpArrayLoad t -> sprintf "%caload" (jvm_basic_type t)
+  | OpAALoad -> "aaload"
+  | OpBALoad -> "baload"
+  | OpCALoad -> "caload"
+  | OpSALoad -> "saload"
 
-  | OpCodeStore (t,i) -> sprintf "%cstore %d" (jvm_basic_type t) i
-  | OpCodeAStore i -> sprintf "astore %d" i
+  | OpStore (t,i) -> sprintf "%cstore %d" (jvm_basic_type t) i
+  | OpAStore i -> sprintf "astore %d" i
 
-  | OpCodeArrayStore t -> sprintf "%castore" (jvm_basic_type t)
-  | OpCodeAAStore -> "aastore"
-  | OpCodeBAStore -> "bastore"
-  | OpCodeCAStore -> "castore"
-  | OpCodeSAStore -> "sastore"
+  | OpArrayStore t -> sprintf "%castore" (jvm_basic_type t)
+  | OpAAStore -> "aastore"
+  | OpBAStore -> "bastore"
+  | OpCAStore -> "castore"
+  | OpSAStore -> "sastore"
 
-  | OpCodePop -> "pop"
-  | OpCodePop2 -> "pop2"
-  | OpCodeDup -> "dup"
-  | OpCodeDupX1 -> "dupX1"
-  | OpCodeDupX2 -> "dupX2"
-  | OpCodeDup2 -> "dup2"
-  | OpCodeDup2X1 -> "dup2X1"
-  | OpCodeDup2X2 -> "dup2X2"
-  | OpCodeSwap -> "swap"
+  | OpPop -> "pop"
+  | OpPop2 -> "pop2"
+  | OpDup -> "dup"
+  | OpDupX1 -> "dupX1"
+  | OpDupX2 -> "dupX2"
+  | OpDup2 -> "dup2"
+  | OpDup2X1 -> "dup2X1"
+  | OpDup2X2 -> "dup2X2"
+  | OpSwap -> "swap"
 
-  | OpCodeAdd k -> sprintf "%cadd" (jvm_basic_type k)
-  | OpCodeSub k -> sprintf "%csub" (jvm_basic_type k)
-  | OpCodeMult k -> sprintf "%cmult" (jvm_basic_type k)
-  | OpCodeDiv k -> sprintf "%cdiv" (jvm_basic_type k)
-  | OpCodeRem k -> sprintf "%crem" (jvm_basic_type k)
-  | OpCodeNeg k -> sprintf "%cneg" (jvm_basic_type k)
+  | OpAdd k -> sprintf "%cadd" (jvm_basic_type k)
+  | OpSub k -> sprintf "%csub" (jvm_basic_type k)
+  | OpMult k -> sprintf "%cmult" (jvm_basic_type k)
+  | OpDiv k -> sprintf "%cdiv" (jvm_basic_type k)
+  | OpRem k -> sprintf "%crem" (jvm_basic_type k)
+  | OpNeg k -> sprintf "%cneg" (jvm_basic_type k)
 
-  | OpCodeIShl -> "ishl"
-  | OpCodeLShl -> "lshl"
-  | OpCodeIShr -> "ishr"
-  | OpCodeLShr -> "lshr"
-  | OpCodeIUShr -> "iushr"
-  | OpCodeLUShr -> "lushr"
-  | OpCodeIAnd -> "iand"
-  | OpCodeLAnd -> "land"
-  | OpCodeIOr -> "ior"
-  | OpCodeLOr -> "lor"
-  | OpCodeIXor -> "ixor"
-  | OpCodeLXor -> "lxor"
+  | OpIShl -> "ishl"
+  | OpLShl -> "lshl"
+  | OpIShr -> "ishr"
+  | OpLShr -> "lshr"
+  | OpIUShr -> "iushr"
+  | OpLUShr -> "lushr"
+  | OpIAnd -> "iand"
+  | OpLAnd -> "land"
+  | OpIOr -> "ior"
+  | OpLOr -> "lor"
+  | OpIXor -> "ixor"
+  | OpLXor -> "lxor"
 
-  | OpCodeIInc (a,b) -> sprintf "iinc %d %d" a b
+  | OpIInc (a,b) -> sprintf "iinc %d %d" a b
 
-  | OpCodeI2L -> "i2l"
-  | OpCodeI2F -> "i2f"
-  | OpCodeI2D -> "i2d"
-  | OpCodeL2I -> "l2i"
-  | OpCodeL2F -> "l2f"
-  | OpCodeL2D -> "l2d"
-  | OpCodeF2I -> "f2i"
-  | OpCodeF2L -> "f2l"
-  | OpCodeF2D -> "f2d"
-  | OpCodeD2I -> "d2i"
-  | OpCodeD2L -> "d2l"
-  | OpCodeD2F -> "d2f"
-  | OpCodeI2B -> "i2b"
-  | OpCodeI2C -> "i2c"
-  | OpCodeI2S -> "i2s"
+  | OpI2L -> "i2l"
+  | OpI2F -> "i2f"
+  | OpI2D -> "i2d"
+  | OpL2I -> "l2i"
+  | OpL2F -> "l2f"
+  | OpL2D -> "l2d"
+  | OpF2I -> "f2i"
+  | OpF2L -> "f2l"
+  | OpF2D -> "f2d"
+  | OpD2I -> "d2i"
+  | OpD2L -> "d2l"
+  | OpD2F -> "d2f"
+  | OpI2B -> "i2b"
+  | OpI2C -> "i2c"
+  | OpI2S -> "i2s"
 
-  | OpCodeLCmp -> "lcmp"
-  | OpCodeFCmpL -> "fcmpl"
-  | OpCodeFCmpG -> "fcmpg"
-  | OpCodeDCmpL -> "dcmpl"
-  | OpCodeDCmpG -> "dcmpg"
-  | OpCodeIfEq i -> sprintf "ifEq %d" i
-  | OpCodeIfNe i -> sprintf "ifNe %d" i
-  | OpCodeIfLt i -> sprintf "ifLt %d" i
-  | OpCodeIfGe i -> sprintf "ifGe %d" i
-  | OpCodeIfGt i -> sprintf "ifGt %d" i
-  | OpCodeIfLe i -> sprintf "ifLe %d" i
-  | OpCodeICmpEq i -> sprintf "ifcmpeq %d" i
-  | OpCodeICmpNe i -> sprintf "ifcmpne %d" i
-  | OpCodeICmpLt i -> sprintf "ifcmplt %d" i
-  | OpCodeICmpGe i -> sprintf "ifcmpge %d" i
-  | OpCodeICmpGt i -> sprintf "ifcmpgt %d" i
-  | OpCodeICmpLe i -> sprintf "ifcmple %d" i
-  | OpCodeACmpEq i -> sprintf "ifacmpeq %d" i
-  | OpCodeACmpNe i -> sprintf "ifacmpne %d" i
-  | OpCodeGoto i -> sprintf "goto %d" i
-  | OpCodeJsr i -> sprintf "goto %d" i
-  | OpCodeRet i -> sprintf "goto %d" i
+  | OpLCmp -> "lcmp"
+  | OpFCmpL -> "fcmpl"
+  | OpFCmpG -> "fcmpg"
+  | OpDCmpL -> "dcmpl"
+  | OpDCmpG -> "dcmpg"
+  | OpIfEq i -> sprintf "ifEq %d" i
+  | OpIfNe i -> sprintf "ifNe %d" i
+  | OpIfLt i -> sprintf "ifLt %d" i
+  | OpIfGe i -> sprintf "ifGe %d" i
+  | OpIfGt i -> sprintf "ifGt %d" i
+  | OpIfLe i -> sprintf "ifLe %d" i
+  | OpICmpEq i -> sprintf "ifcmpeq %d" i
+  | OpICmpNe i -> sprintf "ifcmpne %d" i
+  | OpICmpLt i -> sprintf "ifcmplt %d" i
+  | OpICmpGe i -> sprintf "ifcmpge %d" i
+  | OpICmpGt i -> sprintf "ifcmpgt %d" i
+  | OpICmpLe i -> sprintf "ifcmple %d" i
+  | OpACmpEq i -> sprintf "ifacmpeq %d" i
+  | OpACmpNe i -> sprintf "ifacmpne %d" i
+  | OpGoto i -> sprintf "goto %d" i
+  | OpJsr i -> sprintf "goto %d" i
+  | OpRet i -> sprintf "goto %d" i
 
-  | OpCodeTableSwitch _ -> "tableswitch <...>"
-  | OpCodeLookupSwitch _ -> "lookupswitch <...>"
+  | OpTableSwitch _ -> "tableswitch <...>"
+  | OpLookupSwitch _ -> "lookupswitch <...>"
 
-  | OpCodeReturn k -> sprintf "%creturn" (jvm_basic_type k)
-  | OpCodeAReturn -> "areturn"
-  | OpCodeReturnVoid -> "return"
+  | OpReturn k -> sprintf "%creturn" (jvm_basic_type k)
+  | OpAReturn -> "areturn"
+  | OpReturnVoid -> "return"
 
-  | OpCodeGetStatic i -> sprintf "getstatic %d" i
-  | OpCodePutStatic i -> sprintf "putstatic %d" i
-  | OpCodeGetField i -> sprintf "getfield %d" i
-  | OpCodePutField i -> sprintf "putfield %d" i
-  | OpCodeInvokeVirtual i -> sprintf "invokevirtual %d" i
-  | OpCodeInvokeNonVirtual i -> sprintf "invokespecial %d" i
-  | OpCodeInvokeStatic i -> sprintf "invokestatic %d" i
-  | OpCodeInvokeInterface (i,n) -> sprintf "invokeinterface %d %d" i n
+  | OpGetStatic i -> sprintf "getstatic %d" i
+  | OpPutStatic i -> sprintf "putstatic %d" i
+  | OpGetField i -> sprintf "getfield %d" i
+  | OpPutField i -> sprintf "putfield %d" i
+  | OpInvokeVirtual i -> sprintf "invokevirtual %d" i
+  | OpInvokeNonVirtual i -> sprintf "invokespecial %d" i
+  | OpInvokeStatic i -> sprintf "invokestatic %d" i
+  | OpInvokeInterface (i,n) -> sprintf "invokeinterface %d %d" i n
 
-  | OpCodeNew i -> sprintf "new %d" i
-  | OpCodeNewArray k -> sprintf "%cnewarray" (java_basic_type k)
-  | OpCodeANewArray i -> sprintf "anewarray %d" i
-  | OpCodeArrayLength -> "arraylenth"
-  | OpCodeThrow -> "throw"
-  | OpCodeCheckCast i -> sprintf "checkcast %d" i
-  | OpCodeInstanceOf i -> sprintf "instanceof %d" i
-  | OpCodeMonitorEnter -> "monitorenter"
-  | OpCodeMonitorExit -> "monitorexit"
-  | OpCodeAMultiNewArray (c,n) -> sprintf "amultinewarray type:%d dims:%d" c n
-  | OpCodeIfNull i -> sprintf "ifnull %d" i
-  | OpCodeIfNonNull i -> sprintf "ifnonnull %d" i
-  | OpCodeGotoW i -> sprintf "gotow %d" i
-  | OpCodeJsrW i -> sprintf "jsrw %d" i
-  | OpCodeBreakpoint -> "breakpoint"
-  | OpCodeRetW i -> sprintf "retw %d" i
+  | OpNew i -> sprintf "new %d" i
+  | OpNewArray k -> sprintf "%cnewarray" (java_basic_type k)
+  | OpANewArray i -> sprintf "anewarray %d" i
+  | OpArrayLength -> "arraylenth"
+  | OpThrow -> "throw"
+  | OpCheckCast i -> sprintf "checkcast %d" i
+  | OpInstanceOf i -> sprintf "instanceof %d" i
+  | OpMonitorEnter -> "monitorenter"
+  | OpMonitorExit -> "monitorexit"
+  | OpAMultiNewArray (c,n) -> sprintf "amultinewarray type:%d dims:%d" c n
+  | OpIfNull i -> sprintf "ifnull %d" i
+  | OpIfNonNull i -> sprintf "ifnonnull %d" i
+  | OpGotoW i -> sprintf "gotow %d" i
+  | OpJsrW i -> sprintf "jsrw %d" i
+  | OpBreakpoint -> "breakpoint"
+  | OpRetW i -> sprintf "retw %d" i
 
-  | OpCodeInvalid -> "invalid"
+  | OpInvalid -> "invalid"
 
 
 
@@ -169,7 +169,7 @@ let rec dump_code ch cl code =
 	IO.printf ch "max_stack = %d , max_locals = %d\n" code.JClassLow.c_max_stack code.JClassLow.c_max_locals;
 	Array.iteri (fun i c ->
 		match c with
-		  | OpCodeInvalid -> (); (* IO.printf ch "__\n" *)
+		  | OpInvalid -> (); (* IO.printf ch "__\n" *)
 		  | _ -> IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
 	) code.JClassLow.c_code;
 	IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.JClassLow.c_exc_tbl;

@@ -123,14 +123,14 @@ let eq_ccode cl c1 c2 =
       if c1.(!i) <> c2.(!i) then
 	begin
 	  match c1.(!i), c2.(!i) with
-	    | OpCodeLdc1 index1, OpCodeLdc1w index2
-	    | OpCodeLdc1w index1, OpCodeLdc1 index2 when index1 = index2 ->
+	    | OpLdc1 index1, OpLdc1w index2
+	    | OpLdc1w index1, OpLdc1 index2 when index1 = index2 ->
 		i := !i +2
-	    | OpCodeInvokeVirtual c1, OpCodeInvokeVirtual c2
-	    | OpCodeInvokeNonVirtual c1, OpCodeInvokeNonVirtual c2
-	    | OpCodeInvokeStatic c1, OpCodeInvokeStatic c2
-	    | OpCodeInvokeInterface (c1,_), OpCodeInvokeInterface (c2,_)
-	    | OpCodeCheckCast c1, OpCodeCheckCast c2
+	    | OpInvokeVirtual c1, OpInvokeVirtual c2
+	    | OpInvokeNonVirtual c1, OpInvokeNonVirtual c2
+	    | OpInvokeStatic c1, OpInvokeStatic c2
+	    | OpInvokeInterface (c1,_), OpInvokeInterface (c2,_)
+	    | OpCheckCast c1, OpCheckCast c2
 		when cl.j_consts.(c1) = cl.j_consts.(c2) -> ()
 	    | _,_ ->
 		failwith ("instructions differ: "^opcode c1.(!i)^" <> "^opcode c2.(!i))

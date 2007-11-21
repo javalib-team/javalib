@@ -26,7 +26,7 @@ open ExtList
 open JClassLow
 open JBasics
 
-(* OpCodes Parsing *)
+(* Ops Parsing *)
 (*******************)
 
 let jvm_basic_type_of = function
@@ -59,233 +59,233 @@ let read_signed ch wide =
 let parse_opcode op ch wide =
   match op with
 	| 0 ->
-		OpCodeNop
+		OpNop
 	(* ---- push ----------------------------------- *)
 	| 1 ->
-		OpCodeAConstNull
+		OpAConstNull
 	| 2 ->
-		OpCodeIConst Int32.minus_one
+		OpIConst Int32.minus_one
 	| 3 | 4 | 5 | 6 | 7 | 8 ->
-		OpCodeIConst (Int32.of_int (op - 3))
+		OpIConst (Int32.of_int (op - 3))
 	| 9 ->
-		OpCodeLConst Int64.zero
+		OpLConst Int64.zero
 	| 10 ->
-		OpCodeLConst Int64.one
+		OpLConst Int64.one
 	| 11 | 12 | 13 ->
-		OpCodeFConst (float_of_int (op - 11))
+		OpFConst (float_of_int (op - 11))
 	| 14 ->
-		OpCodeDConst 0.
+		OpDConst 0.
 	| 15 ->
-		OpCodeDConst 1.
+		OpDConst 1.
 	| 16 ->
-		OpCodeBIPush (IO.read_byte ch)
+		OpBIPush (IO.read_byte ch)
 	| 17 ->
 (*		let b1 = IO.read_byte ch in
 		let b2 = IO.read_byte ch in
-		OpCodeSIPush (b1,b2) *)
-	    OpCodeSIPush (read_i16 ch)
+		OpSIPush (b1,b2) *)
+	    OpSIPush (read_i16 ch)
 	| 18 ->
-	    OpCodeLdc1 (IO.read_byte ch)
+	    OpLdc1 (IO.read_byte ch)
 	| 19 ->
-	    OpCodeLdc1w (read_ui16 ch)
+	    OpLdc1w (read_ui16 ch)
 	| 20 ->
-	    OpCodeLdc2w (read_ui16 ch)
+	    OpLdc2w (read_ui16 ch)
 	(* ---- load ----------------------------------- *)
 	| 21 | 22 | 23 | 24 ->
-		OpCodeLoad (jvm_basic_type "load" (op - 21),read_unsigned ch wide)
+		OpLoad (jvm_basic_type "load" (op - 21),read_unsigned ch wide)
 	| 25 ->
-		OpCodeALoad (read_unsigned ch wide)
+		OpALoad (read_unsigned ch wide)
 	| 26 | 27 | 28 | 29 ->
-		OpCodeLoad (`Int2Bool,op - 26)
+		OpLoad (`Int2Bool,op - 26)
 	| 30 | 31 | 32 | 33 ->
-		OpCodeLoad (`Long,op - 30)
+		OpLoad (`Long,op - 30)
 	| 34 | 35 | 36 | 37 ->
-		OpCodeLoad (`Float,op - 34)
+		OpLoad (`Float,op - 34)
 	| 38 | 39 | 40 | 41 ->
-		OpCodeLoad (`Double,op - 38)
+		OpLoad (`Double,op - 38)
 	| 42 | 43 | 44 | 45 ->
-		OpCodeALoad (op - 42)
+		OpALoad (op - 42)
 	(* ---- array load ---------------------------- *)
 	| 46 | 47 | 48 | 49 ->
-		OpCodeArrayLoad (jvm_basic_type' "arrayload" (op - 46))
+		OpArrayLoad (jvm_basic_type' "arrayload" (op - 46))
 	| 50 ->
-		OpCodeAALoad
+		OpAALoad
 	| 51 ->
-		OpCodeBALoad
+		OpBALoad
 	| 52 ->
-		OpCodeCALoad
+		OpCALoad
 	| 53 ->
-		OpCodeSALoad
+		OpSALoad
 	(* ---- store ----------------------------------- *)
 	| 54 | 55 | 56 | 57 ->
-		OpCodeStore (jvm_basic_type "store" (op - 54),read_unsigned ch wide)
+		OpStore (jvm_basic_type "store" (op - 54),read_unsigned ch wide)
 	| 58 ->
-		OpCodeAStore (read_unsigned ch wide)
+		OpAStore (read_unsigned ch wide)
 	| 59 | 60 | 61 | 62 ->
-		OpCodeStore (`Int2Bool , op - 59)
+		OpStore (`Int2Bool , op - 59)
 	| 63 | 64 | 65 | 66 ->
-		OpCodeStore (`Long , op - 63)
+		OpStore (`Long , op - 63)
 	| 67 | 68 | 69 | 70 ->
-		OpCodeStore (`Float , op - 67)
+		OpStore (`Float , op - 67)
 	| 71 | 72 | 73 | 74 ->
-		OpCodeStore (`Double , op - 71)
+		OpStore (`Double , op - 71)
 	| 75 | 76 | 77 | 78 ->
-		OpCodeAStore (op - 75)
+		OpAStore (op - 75)
 	(* ---- array store ---------------------------- *)
 	| 79 | 80 | 81 | 82 ->
-		OpCodeArrayStore (jvm_basic_type' "arraystore" (op - 79))
+		OpArrayStore (jvm_basic_type' "arraystore" (op - 79))
 	| 83 ->
-		OpCodeAAStore
+		OpAAStore
 	| 84 ->
-		OpCodeBAStore
+		OpBAStore
 	| 85 ->
-		OpCodeCAStore
+		OpCAStore
 	| 86 ->
-		OpCodeSAStore
+		OpSAStore
 	(* ---- stack ---------------------------------- *)
 	| 87 ->
-		OpCodePop
+		OpPop
 	| 88 ->
-		OpCodePop2
+		OpPop2
 	| 89 ->
-		OpCodeDup
+		OpDup
 	| 90 ->
-		OpCodeDupX1
+		OpDupX1
 	| 91 ->
-		OpCodeDupX2
+		OpDupX2
 	| 92 ->
-		OpCodeDup2
+		OpDup2
 	| 93 ->
-		OpCodeDup2X1
+		OpDup2X1
 	| 94 ->
-		OpCodeDup2X2
+		OpDup2X2
 	| 95 ->
-		OpCodeSwap
+		OpSwap
 	(* ---- arithmetics ---------------------------- *)
 	| 96 | 97 | 98 | 99 ->
-		OpCodeAdd (jvm_basic_type_of (op - 96))
+		OpAdd (jvm_basic_type_of (op - 96))
 	| 100 | 101 | 102 | 103 ->
-		OpCodeSub (jvm_basic_type_of (op - 100))
+		OpSub (jvm_basic_type_of (op - 100))
 	| 104 | 105 | 106 | 107 ->
-		OpCodeMult (jvm_basic_type_of (op - 104))
+		OpMult (jvm_basic_type_of (op - 104))
 	| 108 | 109 | 110 | 111 ->
-		OpCodeDiv (jvm_basic_type_of (op - 108))
+		OpDiv (jvm_basic_type_of (op - 108))
 	| 112 | 113 | 114 | 115 ->
-		OpCodeRem (jvm_basic_type_of (op - 112))
+		OpRem (jvm_basic_type_of (op - 112))
 	| 116 | 117 | 118 | 119 ->
-		OpCodeNeg (jvm_basic_type_of (op - 116))
+		OpNeg (jvm_basic_type_of (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
-		OpCodeIShl
+		OpIShl
 	| 121 ->
-		OpCodeLShl
+		OpLShl
 	| 122 ->
-		OpCodeIShr
+		OpIShr
 	| 123 ->
-		OpCodeLShr
+		OpLShr
 	| 124 ->
-		OpCodeIUShr
+		OpIUShr
 	| 125 ->
-		OpCodeLUShr
+		OpLUShr
 	| 126 ->
-		OpCodeIAnd
+		OpIAnd
 	| 127 ->
-		OpCodeLAnd
+		OpLAnd
 	| 128 ->
-		OpCodeIOr
+		OpIOr
 	| 129 ->
-		OpCodeLOr
+		OpLOr
 	| 130 ->
-		OpCodeIXor
+		OpIXor
 	| 131 ->
-		OpCodeLXor
+		OpLXor
 	(* ---- incr ----------------------------------- *)
 	| 132 ->
 		let idx = read_unsigned ch wide in
 		let c = read_signed ch wide in
-		OpCodeIInc (idx,c)
+		OpIInc (idx,c)
 	(* ---- conversions ---------------------------- *)
 	| 133 ->
-		OpCodeI2L
+		OpI2L
 	| 134 ->
-		OpCodeI2F
+		OpI2F
 	| 135 ->
-		OpCodeI2D
+		OpI2D
 	| 136 ->
-		OpCodeL2I
+		OpL2I
 	| 137 ->
-		OpCodeL2F
+		OpL2F
 	| 138 ->
-		OpCodeL2D
+		OpL2D
 	| 139 ->
-		OpCodeF2I
+		OpF2I
 	| 140 ->
-		OpCodeF2L
+		OpF2L
 	| 141 ->
-		OpCodeF2D
+		OpF2D
 	| 142 ->
-		OpCodeD2I
+		OpD2I
 	| 143 ->
-		OpCodeD2L
+		OpD2L
 	| 144 ->
-		OpCodeD2F
+		OpD2F
 	| 145 ->
-		OpCodeI2B
+		OpI2B
 	| 146 ->
-		OpCodeI2C
+		OpI2C
 	| 147 ->
-		OpCodeI2S
+		OpI2S
 	(* ---- jumps ---------------------------------- *)
 	| 148 ->
-		OpCodeLCmp
+		OpLCmp
 	| 149 ->
-		OpCodeFCmpL
+		OpFCmpL
 	| 150 ->
-		OpCodeFCmpG
+		OpFCmpG
 	| 151 ->
-		OpCodeDCmpL
+		OpDCmpL
 	| 152 ->
-		OpCodeDCmpG
+		OpDCmpG
 	| 153 ->
-		OpCodeIfEq (read_i16 ch)
+		OpIfEq (read_i16 ch)
 	| 154 ->
-		OpCodeIfNe (read_i16 ch)
+		OpIfNe (read_i16 ch)
 	| 155 ->
-		OpCodeIfLt (read_i16 ch)
+		OpIfLt (read_i16 ch)
 	| 156 ->
-		OpCodeIfGe (read_i16 ch)
+		OpIfGe (read_i16 ch)
 	| 157 ->
-		OpCodeIfGt (read_i16 ch)
+		OpIfGt (read_i16 ch)
 	| 158 ->
-		OpCodeIfLe (read_i16 ch)
+		OpIfLe (read_i16 ch)
 	| 159 ->
-		OpCodeICmpEq (read_i16 ch)
+		OpICmpEq (read_i16 ch)
 	| 160 ->
-		OpCodeICmpNe (read_i16 ch)
+		OpICmpNe (read_i16 ch)
 	| 161 ->
-		OpCodeICmpLt (read_i16 ch)
+		OpICmpLt (read_i16 ch)
 	| 162 ->
-		OpCodeICmpGe (read_i16 ch)
+		OpICmpGe (read_i16 ch)
 	| 163 ->
-		OpCodeICmpGt (read_i16 ch)
+		OpICmpGt (read_i16 ch)
 	| 164 ->
-		OpCodeICmpLe (read_i16 ch)
+		OpICmpLe (read_i16 ch)
 	| 165 ->
-		OpCodeACmpEq (read_i16 ch)
+		OpACmpEq (read_i16 ch)
 	| 166 ->
-		OpCodeACmpNe (read_i16 ch)
+		OpACmpNe (read_i16 ch)
 	| 167 ->
-		OpCodeGoto (read_i16 ch)
+		OpGoto (read_i16 ch)
 	| 168 ->
-		OpCodeJsr (read_i16 ch)
+		OpJsr (read_i16 ch)
 	| 169 ->
-		OpCodeRet (read_unsigned ch wide)
+		OpRet (read_unsigned ch wide)
 	| 170 ->
 		let def = read_i32 ch in
 		let low = read_real_i32 ch in
 		let high = read_real_i32 ch in
 		let tbl = Array.init (Int32.to_int (Int32.sub high low) + 1) (fun _ -> read_i32 ch) in
-		OpCodeTableSwitch (def,low,high,tbl)
+		OpTableSwitch (def,low,high,tbl)
 	| 171 ->
 		let def = read_i32 ch in
 		let npairs = read_i32 ch in
@@ -294,39 +294,39 @@ let parse_opcode op ch wide =
 			let j = read_i32 ch in
 			v , j
 		) in
-		OpCodeLookupSwitch (def,tbl)
+		OpLookupSwitch (def,tbl)
 	(* ---- returns --------------------------------- *)
 	| 172 | 173 | 174 | 175 ->
-		OpCodeReturn (jvm_basic_type "return" (op - 172))
+		OpReturn (jvm_basic_type "return" (op - 172))
 	| 176 ->
-		OpCodeAReturn
+		OpAReturn
 	| 177 ->
-		OpCodeReturnVoid
+		OpReturnVoid
 	(* ---- OO ------------------------------------- *)
 	| 178 ->
-	    OpCodeGetStatic (read_ui16 ch)
+	    OpGetStatic (read_ui16 ch)
 	| 179 ->
-	    OpCodePutStatic (read_ui16 ch)
+	    OpPutStatic (read_ui16 ch)
 	| 180 ->
-	    OpCodeGetField (read_ui16 ch)
+	    OpGetField (read_ui16 ch)
 	| 181 ->
-	    OpCodePutField (read_ui16 ch)
+	    OpPutField (read_ui16 ch)
 	| 182 ->
-	    OpCodeInvokeVirtual (read_ui16 ch)
+	    OpInvokeVirtual (read_ui16 ch)
 	| 183 ->
-	    OpCodeInvokeNonVirtual (read_ui16 ch)
+	    OpInvokeNonVirtual (read_ui16 ch)
 	| 184 ->
-	    OpCodeInvokeStatic (read_ui16 ch)
+	    OpInvokeStatic (read_ui16 ch)
 	| 185 ->
 	    let index = read_ui16 ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
-	      OpCodeInvokeInterface (index, nargs)
+	      OpInvokeInterface (index, nargs)
 	(* ---- others --------------------------------- *)
 	| 187 ->
-		OpCodeNew (read_ui16 ch)
+		OpNew (read_ui16 ch)
 	| 188 ->
-		OpCodeNewArray (match IO.read_byte ch with
+		OpNewArray (match IO.read_byte ch with
 			| 4 -> `Bool
 			| 5 -> `Char
 			| 6 -> `Float
@@ -337,36 +337,36 @@ let parse_opcode op ch wide =
 			| 11 -> `Long
 			| n -> raise (Illegal_value (string_of_int n, "type of newarray")))
 	| 189 ->
-		OpCodeANewArray (read_ui16 ch)
+		OpANewArray (read_ui16 ch)
 	| 190 ->
-		OpCodeArrayLength
+		OpArrayLength
 	| 191 ->
-		OpCodeThrow
+		OpThrow
 	| 192 ->
-		OpCodeCheckCast (read_ui16 ch)
+		OpCheckCast (read_ui16 ch)
 	| 193 ->
-		OpCodeInstanceOf (read_ui16 ch)
+		OpInstanceOf (read_ui16 ch)
 	| 194 ->
-		OpCodeMonitorEnter
+		OpMonitorEnter
 	| 195 ->
-		OpCodeMonitorExit
+		OpMonitorExit
 	| 197 ->
 	    let c = read_ui16 ch in
 	    let dims = IO.read_byte ch in
-	      OpCodeAMultiNewArray (c,dims)
+	      OpAMultiNewArray (c,dims)
 	| 198 ->
-	    OpCodeIfNull (read_i16 ch)
+	    OpIfNull (read_i16 ch)
 	| 199 ->
-	    OpCodeIfNonNull (read_i16 ch)
+	    OpIfNonNull (read_i16 ch)
 
 	| 200 ->
-		OpCodeGotoW (read_i32 ch)
+		OpGotoW (read_i32 ch)
 	| 201 ->
-		OpCodeJsrW (read_i32 ch)
+		OpJsrW (read_i32 ch)
 	| 202 ->
-		OpCodeBreakpoint
+		OpBreakpoint
 	| 209 ->
-		OpCodeRetW (read_ui16 ch)
+		OpRetW (read_ui16 ch)
 	| _ ->
 	    raise (Illegal_value (string_of_int op, "opcode"))
 
@@ -383,17 +383,17 @@ let parse_full_opcode ch pos =
 
 let parse_code ch len =
   let ch , pos = IO.pos_in ch in
-  let code = Array.create len OpCodeInvalid in
+  let code = Array.create len OpInvalid in
     while pos() < len do
       let p = pos() in
 	code.(p) <- parse_full_opcode ch pos
     done;
     code
 
-(* OpCodes unparsing *)
+(* Ops unparsing *)
 (**************************)
 
-module OpCodecodeMap =
+module OpcodeMap =
   Map.Make(struct type t = opcode let compare = compare end)
 
 let simple_table =
@@ -402,79 +402,79 @@ let simple_table =
        fst
 	 (Array.fold_left
 	    (fun (m, code) op ->
-	       OpCodecodeMap.add op code m, succ code)
+	       OpcodeMap.add op code m, succ code)
 	    (m, offset)
 	    opcodes))
-    OpCodecodeMap.empty
+    OpcodeMap.empty
     [
-      050, [|OpCodeAALoad;
-	     OpCodeBALoad;
-	     OpCodeCALoad;
-	     OpCodeSALoad
+      050, [|OpAALoad;
+	     OpBALoad;
+	     OpCALoad;
+	     OpSALoad
 	   |];
-      083, [|OpCodeAAStore;
-	     OpCodeBAStore;
-	     OpCodeCAStore;
-	     OpCodeSAStore
+      083, [|OpAAStore;
+	     OpBAStore;
+	     OpCAStore;
+	     OpSAStore
 	   |];
-      087, [|OpCodePop;
-	     OpCodePop2;
-	     OpCodeDup;
-	     OpCodeDupX1;
-	     OpCodeDupX2;
-	     OpCodeDup2;
-	     OpCodeDup2X1;
-	     OpCodeDup2X2;
-	     OpCodeSwap
+      087, [|OpPop;
+	     OpPop2;
+	     OpDup;
+	     OpDupX1;
+	     OpDupX2;
+	     OpDup2;
+	     OpDup2X1;
+	     OpDup2X2;
+	     OpSwap
 	   |];
-      120, [|OpCodeIShl;
-	     OpCodeLShl;
-	     OpCodeIShr;
-	     OpCodeLShr;
-	     OpCodeIUShr;
-	     OpCodeLUShr;
-	     OpCodeIAnd;
-	     OpCodeLAnd;
-	     OpCodeIOr;
-	     OpCodeLOr;
-	     OpCodeIXor;
-	     OpCodeLXor
+      120, [|OpIShl;
+	     OpLShl;
+	     OpIShr;
+	     OpLShr;
+	     OpIUShr;
+	     OpLUShr;
+	     OpIAnd;
+	     OpLAnd;
+	     OpIOr;
+	     OpLOr;
+	     OpIXor;
+	     OpLXor
 	   |];
-      133, [|OpCodeI2L;
-	     OpCodeI2F;
-	     OpCodeI2D;
-	     OpCodeL2I;
-	     OpCodeL2F;
-	     OpCodeL2D;
-	     OpCodeF2I;
-	     OpCodeF2L;
-	     OpCodeF2D;
-	     OpCodeD2I;
-	     OpCodeD2L;
-	     OpCodeD2F;
-	     OpCodeI2B;
-	     OpCodeI2C;
-	     OpCodeI2S
+      133, [|OpI2L;
+	     OpI2F;
+	     OpI2D;
+	     OpL2I;
+	     OpL2F;
+	     OpL2D;
+	     OpF2I;
+	     OpF2L;
+	     OpF2D;
+	     OpD2I;
+	     OpD2L;
+	     OpD2F;
+	     OpI2B;
+	     OpI2C;
+	     OpI2S
 	   |];
-      148, [|OpCodeLCmp;
-	     OpCodeFCmpL;
-	     OpCodeFCmpG;
-	     OpCodeDCmpL;
-	     OpCodeDCmpG
+      148, [|OpLCmp;
+	     OpFCmpL;
+	     OpFCmpG;
+	     OpDCmpL;
+	     OpDCmpG
 	   |];
-      000, [|OpCodeNop;
-	     OpCodeAConstNull
+      000, [|OpNop;
+	     OpAConstNull
 	   |];
-      176, [|OpCodeAReturn;
-	     OpCodeReturnVoid
+      176, [|OpAReturn;
+	     OpReturnVoid
 	   |];
-      190, [|OpCodeArrayLength;
-	     OpCodeThrow
+      190, [|OpArrayLength;
+	     OpThrow
 	   |];
-      194, [|OpCodeMonitorEnter;
-	     OpCodeMonitorExit
+      194, [|OpMonitorEnter;
+	     OpMonitorExit
 	   |];
-      202, [|OpCodeBreakpoint|]
+      202, [|OpBreakpoint|]
     ]
 
 exception Not_in_range
@@ -483,7 +483,7 @@ exception Not_in_range
 let simple ch op =
   try
     write_ui8 ch
-      (OpCodecodeMap.find op simple_table)
+      (OpcodeMap.find op simple_table)
   with
       Not_found -> raise Not_in_range
 
@@ -496,15 +496,15 @@ let int_of_jvm_basic_type = function
 (* Instructions with a jvm_basic_type argument added to the base opcode. *)
 let jvm_basic_type ch inst =
   let jvm_basic_type, opcode = match inst with
-    | OpCodeArrayLoad k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 46
-    | OpCodeArrayStore k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 79
-    | OpCodeAdd i -> i, 96
-    | OpCodeSub i -> i, 100
-    | OpCodeMult i -> i, 104
-    | OpCodeDiv i -> i, 108
-    | OpCodeRem i -> i, 112
-    | OpCodeNeg i -> i, 116
-    | OpCodeReturn k -> k, 172
+    | OpArrayLoad k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 46
+    | OpArrayStore k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 79
+    | OpAdd i -> i, 96
+    | OpSub i -> i, 100
+    | OpMult i -> i, 104
+    | OpDiv i -> i, 108
+    | OpRem i -> i, 112
+    | OpNeg i -> i, 116
+    | OpReturn k -> k, 172
     | _ -> raise Not_in_range
   in
     write_ui8 ch (opcode + int_of_jvm_basic_type jvm_basic_type)
@@ -523,10 +523,10 @@ let unparse_local_instruction ch opcode value =
 (* Instructions xload, xstore (but not xaload, xastore) *)
 let ilfda_loadstore ch instr =
   let value = match instr with
-    | OpCodeLoad (_, value)
-    | OpCodeALoad value
-    | OpCodeStore (_, value)
-    | OpCodeAStore value -> value
+    | OpLoad (_, value)
+    | OpALoad value
+    | OpStore (_, value)
+    | OpAStore value -> value
     | _ -> raise Not_in_range
   in
     if value < 4
@@ -534,43 +534,43 @@ let ilfda_loadstore ch instr =
       write_ui8 ch
 	(value +
 	   match instr with
-	     | OpCodeLoad (jvm_basic_type, _) -> 26 + 4 * int_of_jvm_basic_type jvm_basic_type
-	     | OpCodeALoad _ -> 42
-	     | OpCodeStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
-	     | OpCodeAStore _ -> 75
+	     | OpLoad (jvm_basic_type, _) -> 26 + 4 * int_of_jvm_basic_type jvm_basic_type
+	     | OpALoad _ -> 42
+	     | OpStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
+	     | OpAStore _ -> 75
 	     | _ -> assert false)
     else
       unparse_local_instruction ch
 	(match instr with
-	   | OpCodeLoad (jvm_basic_type, _) -> 21 +  int_of_jvm_basic_type jvm_basic_type
-	   | OpCodeALoad _ -> 25
-	   | OpCodeStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
-	   | OpCodeAStore _ -> 58
+	   | OpLoad (jvm_basic_type, _) -> 21 +  int_of_jvm_basic_type jvm_basic_type
+	   | OpALoad _ -> 25
+	   | OpStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
+	   | OpAStore _ -> 58
 	   | _ -> assert false)
 	value
 
 (* Instructions with one 16 bits signed argument *)
 let i16 ch inst =
   let i, opcode = match inst with
-    | OpCodeSIPush i -> i, 17
-    | OpCodeIfEq i -> i, 153
-    | OpCodeIfNe i -> i, 154
-    | OpCodeIfLt i -> i, 155
-    | OpCodeIfGe i -> i, 156
-    | OpCodeIfGt i -> i, 157
-    | OpCodeIfLe i -> i, 158
-    | OpCodeICmpEq i -> i, 159
-    | OpCodeICmpNe i -> i, 160
-    | OpCodeICmpLt i -> i, 161
-    | OpCodeICmpGe i -> i, 162
-    | OpCodeICmpGt i -> i, 163
-    | OpCodeICmpLe i -> i, 164
-    | OpCodeACmpEq i -> i, 165
-    | OpCodeACmpNe i -> i, 166
-    | OpCodeGoto i -> i, 167
-    | OpCodeJsr i -> i, 168
-    | OpCodeIfNull i -> i, 198
-    | OpCodeIfNonNull i -> i, 199
+    | OpSIPush i -> i, 17
+    | OpIfEq i -> i, 153
+    | OpIfNe i -> i, 154
+    | OpIfLt i -> i, 155
+    | OpIfGe i -> i, 156
+    | OpIfGt i -> i, 157
+    | OpIfLe i -> i, 158
+    | OpICmpEq i -> i, 159
+    | OpICmpNe i -> i, 160
+    | OpICmpLt i -> i, 161
+    | OpICmpGe i -> i, 162
+    | OpICmpGt i -> i, 163
+    | OpICmpLe i -> i, 164
+    | OpACmpEq i -> i, 165
+    | OpACmpNe i -> i, 166
+    | OpGoto i -> i, 167
+    | OpJsr i -> i, 168
+    | OpIfNull i -> i, 198
+    | OpIfNonNull i -> i, 199
     | _ -> raise Not_in_range
   in
     write_ui8 ch opcode;
@@ -579,19 +579,19 @@ let i16 ch inst =
 (* Instructions with one 16 bits unsigned argument *)
 let ui16 ch inst =
   let i, opcode = match inst with
-    | OpCodeLdc1w i -> i, 19
-    | OpCodeRetW i -> i, 209
-    | OpCodeNew i -> i, 187
-    | OpCodeANewArray i -> i, 189
-    | OpCodeCheckCast i -> i, 192
-    | OpCodeInstanceOf i -> i, 193
-    | OpCodeGetStatic i -> i, 178
-    | OpCodePutStatic i -> i, 179
-    | OpCodeGetField i -> i, 180
-    | OpCodePutField i -> i, 181
-    | OpCodeInvokeVirtual i -> i, 182
-    | OpCodeInvokeNonVirtual i -> i, 183
-    | OpCodeInvokeStatic i -> i, 184
+    | OpLdc1w i -> i, 19
+    | OpRetW i -> i, 209
+    | OpNew i -> i, 187
+    | OpANewArray i -> i, 189
+    | OpCheckCast i -> i, 192
+    | OpInstanceOf i -> i, 193
+    | OpGetStatic i -> i, 178
+    | OpPutStatic i -> i, 179
+    | OpGetField i -> i, 180
+    | OpPutField i -> i, 181
+    | OpInvokeVirtual i -> i, 182
+    | OpInvokeNonVirtual i -> i, 183
+    | OpInvokeStatic i -> i, 184
     | _ -> raise Not_in_range
   in
     write_ui8 ch opcode;
@@ -616,20 +616,20 @@ let padding ch count =
 
 (* Everything else *)
 let other count ch = function
-  | OpCodeIConst n -> write_ui8 ch (3 + Int32.to_int n)
-  | OpCodeLConst n -> write_ui8 ch (9 + Int64.to_int n)
-  | OpCodeFConst n -> write_ui8 ch (11 + int_of_float n)
-  | OpCodeDConst n -> write_ui8 ch (14 + int_of_float n)
-  | OpCodeBIPush n ->
+  | OpIConst n -> write_ui8 ch (3 + Int32.to_int n)
+  | OpLConst n -> write_ui8 ch (9 + Int64.to_int n)
+  | OpFConst n -> write_ui8 ch (11 + int_of_float n)
+  | OpDConst n -> write_ui8 ch (14 + int_of_float n)
+  | OpBIPush n ->
       write_ui8 ch 16;
       write_ui8 ch n
-  | OpCodeLdc1 index ->
+  | OpLdc1 index ->
       write_ui8 ch 18;
       write_ui8 ch index
-  | OpCodeLdc2w index ->
+  | OpLdc2w index ->
       write_ui8 ch 20;
       write_ui16 ch index
-  | OpCodeIInc (index, incr) ->
+  | OpIInc (index, incr) ->
       if
 	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
       then (
@@ -642,7 +642,7 @@ let other count ch = function
 	write_ui16 ch index;
 	write_i16 ch incr
       )
-  | OpCodeRet pc ->
+  | OpRet pc ->
       if
 	pc <= 0xFF
       then (
@@ -653,14 +653,14 @@ let other count ch = function
 	write_ui8 ch 169;
 	write_ui16 ch pc
       )
-  | OpCodeTableSwitch (def, low, high, tbl) ->
+  | OpTableSwitch (def, low, high, tbl) ->
       write_ui8 ch 170;
       padding ch count;
       write_i32 ch def;
       write_real_i32 ch low;
       write_real_i32 ch high;
       Array.iter (write_i32 ch) tbl
-  | OpCodeLookupSwitch (def, tbl) ->
+  | OpLookupSwitch (def, tbl) ->
       write_ui8 ch 171;
       padding ch count;
       write_i32 ch def;
@@ -669,25 +669,25 @@ let other count ch = function
 	   write_real_i32 ch v;
 	   write_i32 ch j)
 	tbl
-  | OpCodeInvokeInterface (index, nargs) ->
+  | OpInvokeInterface (index, nargs) ->
       write_ui8 ch 185;
       write_ui16 ch index;
       write_ui8 ch nargs;
       write_ui8 ch 0
-  | OpCodeNewArray at ->
+  | OpNewArray at ->
       write_ui8 ch 188;
       write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
-  | OpCodeAMultiNewArray (c, dims) ->
+  | OpAMultiNewArray (c, dims) ->
       write_ui8 ch 197;
       write_ui16 ch c;
       write_ui8 ch dims
-  | OpCodeGotoW i ->
+  | OpGotoW i ->
       write_ui8 ch 200;
       write_i32 ch i
-  | OpCodeJsrW i ->
+  | OpJsrW i ->
       write_ui8 ch 201;
       write_i32 ch i
-  | OpCodeInvalid -> ()
+  | OpInvalid -> ()
   | _ -> raise Not_in_range
 
 let unparse_instruction ch count inst =
@@ -716,7 +716,7 @@ let unparse_code ch code =
     Array.iteri
       (fun i opcode ->
       (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
-	 if not (opcode = OpCodeInvalid || count () = i)
+	 if not (opcode = OpInvalid || count () = i)
 	 then raise (Class_structure_error "unparsing Badly alligned low level bytecode");
 	 unparse_instruction ch count opcode)
       code;

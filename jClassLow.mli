@@ -28,141 +28,141 @@ open JBasics
 
 (** Instruction. *)
 type opcode =
-	| OpCodeNop
-	| OpCodeAConstNull
-	| OpCodeIConst of int32
-	| OpCodeLConst of int64
-	| OpCodeFConst of float
-	| OpCodeDConst of float
-	| OpCodeBIPush of int
-	| OpCodeSIPush of int
-	| OpCodeLdc1 of int
-	| OpCodeLdc1w of int
-	| OpCodeLdc2w of int
+	| OpNop
+	| OpAConstNull
+	| OpIConst of int32
+	| OpLConst of int64
+	| OpFConst of float
+	| OpDConst of float
+	| OpBIPush of int
+	| OpSIPush of int
+	| OpLdc1 of int
+	| OpLdc1w of int
+	| OpLdc2w of int
 
-	| OpCodeLoad of jvm_basic_type * int
-	| OpCodeALoad of int
+	| OpLoad of jvm_basic_type * int
+	| OpALoad of int
 
-	| OpCodeArrayLoad of [`Int | other_num]
-	| OpCodeAALoad
-	| OpCodeBALoad
-	| OpCodeCALoad
-	| OpCodeSALoad
+	| OpArrayLoad of [`Int | other_num]
+	| OpAALoad
+	| OpBALoad
+	| OpCALoad
+	| OpSALoad
 
-	| OpCodeStore of jvm_basic_type * int
-	| OpCodeAStore of int
+	| OpStore of jvm_basic_type * int
+	| OpAStore of int
 
-	| OpCodeArrayStore of [`Int | other_num]
-	| OpCodeAAStore
-	| OpCodeBAStore
-	| OpCodeCAStore
-	| OpCodeSAStore
+	| OpArrayStore of [`Int | other_num]
+	| OpAAStore
+	| OpBAStore
+	| OpCAStore
+	| OpSAStore
 
-	| OpCodePop
-	| OpCodePop2
-	| OpCodeDup
-	| OpCodeDupX1
-	| OpCodeDupX2
-	| OpCodeDup2
-	| OpCodeDup2X1
-	| OpCodeDup2X2
-	| OpCodeSwap
+	| OpPop
+	| OpPop2
+	| OpDup
+	| OpDupX1
+	| OpDupX2
+	| OpDup2
+	| OpDup2X1
+	| OpDup2X2
+	| OpSwap
 
-	| OpCodeAdd of jvm_basic_type
-	| OpCodeSub of jvm_basic_type
-	| OpCodeMult of jvm_basic_type
-	| OpCodeDiv of jvm_basic_type
-	| OpCodeRem of jvm_basic_type
-	| OpCodeNeg of jvm_basic_type
+	| OpAdd of jvm_basic_type
+	| OpSub of jvm_basic_type
+	| OpMult of jvm_basic_type
+	| OpDiv of jvm_basic_type
+	| OpRem of jvm_basic_type
+	| OpNeg of jvm_basic_type
 
-	| OpCodeIShl
-	| OpCodeLShl
-	| OpCodeIShr
-	| OpCodeLShr
-	| OpCodeIUShr
-	| OpCodeLUShr
-	| OpCodeIAnd
-	| OpCodeLAnd
-	| OpCodeIOr
-	| OpCodeLOr
-	| OpCodeIXor
-	| OpCodeLXor
+	| OpIShl
+	| OpLShl
+	| OpIShr
+	| OpLShr
+	| OpIUShr
+	| OpLUShr
+	| OpIAnd
+	| OpLAnd
+	| OpIOr
+	| OpLOr
+	| OpIXor
+	| OpLXor
 
-	| OpCodeIInc of int * int (** index, increment *)
+	| OpIInc of int * int (** index, increment *)
 
-	| OpCodeI2L
-	| OpCodeI2F
-	| OpCodeI2D
-	| OpCodeL2I
-	| OpCodeL2F
-	| OpCodeL2D
-	| OpCodeF2I
-	| OpCodeF2L
-	| OpCodeF2D
-	| OpCodeD2I
-	| OpCodeD2L
-	| OpCodeD2F
-	| OpCodeI2B
-	| OpCodeI2C
-	| OpCodeI2S
+	| OpI2L
+	| OpI2F
+	| OpI2D
+	| OpL2I
+	| OpL2F
+	| OpL2D
+	| OpF2I
+	| OpF2L
+	| OpF2D
+	| OpD2I
+	| OpD2L
+	| OpD2F
+	| OpI2B
+	| OpI2C
+	| OpI2S
 
-	| OpCodeLCmp
-	| OpCodeFCmpL
-	| OpCodeFCmpG
-	| OpCodeDCmpL
-	| OpCodeDCmpG
-	| OpCodeIfEq of int
-	| OpCodeIfNe of int
-	| OpCodeIfLt of int
-	| OpCodeIfGe of int
-	| OpCodeIfGt of int
-	| OpCodeIfLe of int
-	| OpCodeICmpEq of int
-	| OpCodeICmpNe of int
-	| OpCodeICmpLt of int
-	| OpCodeICmpGe of int
-	| OpCodeICmpGt of int
-	| OpCodeICmpLe of int
-	| OpCodeACmpEq of int
-	| OpCodeACmpNe of int
-	| OpCodeGoto of int
-	| OpCodeJsr of int
-	| OpCodeRet of int
+	| OpLCmp
+	| OpFCmpL
+	| OpFCmpG
+	| OpDCmpL
+	| OpDCmpG
+	| OpIfEq of int
+	| OpIfNe of int
+	| OpIfLt of int
+	| OpIfGe of int
+	| OpIfGt of int
+	| OpIfLe of int
+	| OpICmpEq of int
+	| OpICmpNe of int
+	| OpICmpLt of int
+	| OpICmpGe of int
+	| OpICmpGt of int
+	| OpICmpLe of int
+	| OpACmpEq of int
+	| OpACmpNe of int
+	| OpGoto of int
+	| OpJsr of int
+	| OpRet of int
 
-	| OpCodeTableSwitch of int * int32 * int32 * int array
-	| OpCodeLookupSwitch of int * (int32 * int) list
+	| OpTableSwitch of int * int32 * int32 * int array
+	| OpLookupSwitch of int * (int32 * int) list
 
-	| OpCodeReturn of jvm_basic_type
-	| OpCodeAReturn
-	| OpCodeReturnVoid
+	| OpReturn of jvm_basic_type
+	| OpAReturn
+	| OpReturnVoid
 
-	| OpCodeGetStatic of int
-	| OpCodePutStatic of int
-	| OpCodeGetField of int
-	| OpCodePutField of int
-	| OpCodeInvokeVirtual of int
-	| OpCodeInvokeNonVirtual of int
-	| OpCodeInvokeStatic of int
-	| OpCodeInvokeInterface of int * int (** count *)
+	| OpGetStatic of int
+	| OpPutStatic of int
+	| OpGetField of int
+	| OpPutField of int
+	| OpInvokeVirtual of int
+	| OpInvokeNonVirtual of int
+	| OpInvokeStatic of int
+	| OpInvokeInterface of int * int (** count *)
 
-	| OpCodeNew of int
-	| OpCodeNewArray of java_basic_type
-	| OpCodeANewArray of int
-	| OpCodeArrayLength
-	| OpCodeThrow
-	| OpCodeCheckCast of int
-	| OpCodeInstanceOf of int
-	| OpCodeMonitorEnter
-	| OpCodeMonitorExit
-	| OpCodeAMultiNewArray of int * int (** ClassInfo, dims *)
-	| OpCodeIfNull of int
-	| OpCodeIfNonNull of int
-	| OpCodeGotoW of int
-	| OpCodeJsrW of int
-	| OpCodeBreakpoint
-	| OpCodeRetW of int
+	| OpNew of int
+	| OpNewArray of java_basic_type
+	| OpANewArray of int
+	| OpArrayLength
+	| OpThrow
+	| OpCheckCast of int
+	| OpInstanceOf of int
+	| OpMonitorEnter
+	| OpMonitorExit
+	| OpAMultiNewArray of int * int (** ClassInfo, dims *)
+	| OpIfNull of int
+	| OpIfNonNull of int
+	| OpGotoW of int
+	| OpJsrW of int
+	| OpBreakpoint
+	| OpRetW of int
 
-	| OpCodeInvalid
+	| OpInvalid
 
 type opcodes = opcode array
 
@@ -185,18 +185,18 @@ type access_flag =
 
 type access_flags = access_flag list
 
-type jcode = {
+type code = {
 	c_max_stack : int;
 	c_max_locals : int;
 	c_code : opcodes;
-	c_exc_tbl : jexception list;
+	c_exc_tbl : exception_handler list;
 	c_attributes : attribute list;
 }
 
 and attribute =
 	| AttributeSourceFile of string
 	| AttributeConstant of constant_value
-	| AttributeCode of jcode
+	| AttributeCode of code
 	| AttributeExceptions of class_name list
 	| AttributeInnerClasses of
 	    (class_name option * class_name option * string option * access_flags) list
@@ -220,7 +220,7 @@ type jmethod = {
 	m_name : string;
 	m_signature : method_descriptor;
 	m_flags : access_flags;
-	m_code : jcode option; (* Remove that *)
+	m_code : code option; (* Remove that *)
 	m_attributes : attribute list
 }
 

@@ -34,7 +34,6 @@ type method_signature = {
 }
 
 val clinit_signature : method_signature
-val java_lang_object: class_name
 
 (** {2 Bytecode instructions.} *)
 (********************************)
@@ -176,7 +175,7 @@ type attributes = {
 (** {2 Fields of classes and interfaces.} *)
 (*******************************)
 
-type field_type =
+type field_kind =
   | NotFinal
   | Final
   | Volatile
@@ -184,7 +183,7 @@ type field_type =
 type class_field = {
   cf_access: access;
   cf_static : bool;
-  cf_type : field_type;
+  cf_kind : field_kind;
   cf_value : constant_value option; (** Only if the field is static final. *)
   cf_transient : bool;
   cf_attributes : attributes
@@ -204,7 +203,7 @@ type code = {
   c_max_stack : int;
   c_max_locals : int;
   c_code : opcodes;
-  c_exc_tbl : jexception list;
+  c_exc_tbl : exception_handler list;
   c_line_number_table : (int * int) list option;
   c_local_variable_table : (int * int * string * value_type * int) list option;
   c_stack_map : (int* verification_type list * verification_type list) list option;
@@ -216,8 +215,8 @@ type implementation =
   | Native
   | Java of code
 
-(* l'attribut final n'a pas vraiment de sens pour une mÃ©thode
-   statique, mais c'est autorisÃ© dans la spec JVM. *)
+(* l'attribut final n'a pas vraiment de sens pour une méthode
+   statique, mais c'est autorisé dans la spec JVM. *)
 type concrete_method = {
   cm_static : bool;
   cm_final : bool;
@@ -226,7 +225,7 @@ type concrete_method = {
   cm_access: access;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
-  implementation : implementation;
+  cm_implementation : implementation;
   cm_return_type : value_type option
 }
 
@@ -273,14 +272,14 @@ type inner_class = {
   ic_access : access;
   ic_static : bool;
   ic_final : bool;
-  ic_type : [`ConcreteClass|`Abstract|`Interface]
+  ic_type : [`ConcreteClass | `Abstract | `Interface]
 }
 
-type class_file = {
+type jclass = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
-  c_super_class : class_name option; (* redundant if we use a map *)
+  c_super_class : class_name option;
   c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
@@ -293,7 +292,7 @@ type class_file = {
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
-type interface_file = {
+type jinterface = {
   i_name : class_name;
   i_access : [`Public | `Default];
   i_interfaces : class_name list;
@@ -308,9 +307,11 @@ type interface_file = {
   i_methods : abstract_method MethodMap.t
 }
 
+(* Les polymorphic variants servent juste pour simplifier JProgram en évitant
+   les préfixe (faudrait enlever ça dans l'idéal). *)
 type interface_or_class = [
-| `Interface of interface_file
-| `Class of class_file
+  | `Interface of jinterface
+  | `Class of jclass
 ]
 
 val get_name : interface_or_class -> class_name

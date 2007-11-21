@@ -36,7 +36,6 @@ type method_signature = {
 }
 
 let clinit_signature = {ms_name="<clinit>";ms_parameters=[]}
-let java_lang_object = ["java";"lang";"Object"]
 
 
 (** Instruction. *)
@@ -177,7 +176,7 @@ type attributes = {
 (** {2 Fields of classes and interfaces.} *)
 (*******************************)
 
-type field_type =
+type field_kind =
   | NotFinal
   | Final
   | Volatile
@@ -187,7 +186,7 @@ type field_type =
 type class_field = {
   cf_access: access;
   cf_static : bool;
-  cf_type : field_type;
+  cf_kind : field_kind;
   cf_value : constant_value option; (* Valable seulement pour un champ static final. *)
   cf_transient : bool;
   cf_attributes : attributes
@@ -207,7 +206,7 @@ type code = {
   c_max_stack : int;
   c_max_locals : int;
   c_code : opcodes;
-  c_exc_tbl : jexception list;
+  c_exc_tbl : exception_handler list;
   c_line_number_table : (int * int) list option;
   c_local_variable_table : (int * int * string * value_type * int) list option;
   c_stack_map : (int* verification_type list * verification_type list) list option;
@@ -229,7 +228,7 @@ type concrete_method = {
   cm_access: access;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
-  implementation : implementation;
+  cm_implementation : implementation;
   cm_return_type : value_type option
 }
 
@@ -265,7 +264,7 @@ type methods =
     | ConcreteMethods of concrete_method MethodMap.t
     | Methods of abstract_class_method MethodMap.t
 
-type class_file = {
+type jclass = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
@@ -283,7 +282,7 @@ type class_file = {
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
-type interface_file = {
+type jinterface = {
   i_name : class_name;
   i_access : [`Public | `Default];
   i_interfaces : class_name list;
@@ -299,8 +298,8 @@ type interface_file = {
 }
 
 type interface_or_class = [
-| `Interface of interface_file
-| `Class of class_file
+  | `Interface of jinterface
+  | `Class of jclass
 ]
 
 let get_name = function

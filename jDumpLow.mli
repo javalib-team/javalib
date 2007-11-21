@@ -21,7 +21,7 @@
  *)
 
 val opcode : JClassLow.opcode -> string
-val dump_code : 'a IO.output -> 'b -> JClassLow.jcode -> unit
+val dump_code : 'a IO.output -> 'b -> JClassLow.code -> unit
 val dump_attrib : 'a IO.output -> 'b -> JClassLow.attribute -> unit
 val access_flags : JClassLow.access_flag list -> string
 val dump_field : 'a IO.output -> 'b -> JClassLow.jfield -> unit

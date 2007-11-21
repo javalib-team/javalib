@@ -89,7 +89,7 @@ let h2l_cfield consts fs f =
    f_signature = fs.fs_type;
    f_flags =
       (if f.cf_transient then [AccTransient] else [])
-      @ (match f.cf_type with
+      @ (match f.cf_kind with
 	| Final -> [AccFinal]
 	| Volatile -> [AccVolatile]
 	| NotFinal -> [])
@@ -110,7 +110,7 @@ let h2l_ifield consts fs f =
   }
 
 let h2l_cmethod consts ms m =
-  let code = h2l_code2attribute consts m.implementation
+  let code = h2l_code2attribute consts m.cm_implementation
   in
     {m_name = ms.ms_name;
      m_signature = (ms.ms_parameters, m.cm_return_type);
@@ -119,7 +119,7 @@ let h2l_cmethod consts ms m =
 	@ (if m.cm_final then [AccFinal] else [])
 	@ (if m.cm_synchronized then [AccSynchronized] else [])
 	@ (if m.cm_strict then [AccStrict] else [])
-	@ (match m.implementation with Native -> [AccNative] |_ -> [])
+	@ (match m.cm_implementation with Native -> [AccNative] |_ -> [])
 	@ (access2flags m.cm_access);
      m_code =
 	begin
@@ -187,11 +187,11 @@ let high2low_class c =
     | Methods mm -> h2l_methods consts c' mm
   in {c' with j_consts = DynArray.to_array consts}
 
-let high2low_interface (c:interface_file) =
+let high2low_interface (c:jinterface) =
   let consts = DynArray.of_array c.i_consts in
   let c' =
     {j_name = c.i_name;
-     j_super = Some java_lang_object;
+     j_super = Some JBasics.java_lang_object;
      j_interfaces = c.i_interfaces;
      j_consts = c.i_consts; (*will be updated later on*)
      j_flags = AccInterface::AccAbstract::access2flags c.i_access; (*will be updated later on*)

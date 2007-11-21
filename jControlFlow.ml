@@ -60,7 +60,7 @@ module PP = struct
       match get_method c ms with
 	| ConcreteMethod m ->
 	    begin
-	      match m.implementation with
+	      match m.cm_implementation with
 		| Native -> raise (NoCode (cn,ms))
 		| Java m -> match c with
 		    | `Class c -> (c,m,i)
@@ -81,7 +81,7 @@ module PP = struct
       match get_method c ms with
 	| ConcreteMethod m ->
 	    begin
-	      match m.implementation with
+	      match m.cm_implementation with
 		| Native -> raise (NoCode (get_name c,ms))
 		| Java m -> match c with
 		    | `Class c -> (c,m,0)

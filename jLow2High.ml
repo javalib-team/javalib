@@ -128,7 +128,7 @@ let low2high_cfield consts = function f ->
     {
       cf_access = flags2access f.f_flags;
       cf_static = is_static;
-      cf_type =
+      cf_kind =
 	begin
 	  let rec find_field_type = function
 	    | AccFinal::_ -> Final
@@ -250,7 +250,7 @@ let low2high_cmethod consts = function m ->
 	  (List.filter
 	      (function |AttributeExceptions _ | AttributeCode _ -> false| _ -> true)
 	      m.m_attributes);
-      implementation =
+      cm_implementation =
 	begin
 	  let rec find_Code = function
 	    | AttributeCode c::l ->
