@@ -490,7 +490,7 @@ let parse_class_low_level ch =
 	let attribs =
 	  List.init
 	    attrib_count
-	    (fun _ -> parse_attribute [`SourceFile ; `Deprecated] consts ch) in
+	    (fun _ -> parse_attribute [`SourceFile ; `Deprecated;`InnerClasses] consts ch) in
 	{
 		j_consts = consts;
 		j_flags = flags;

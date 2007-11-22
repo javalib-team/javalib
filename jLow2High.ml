@@ -108,7 +108,7 @@ let low2high_code consts = function c ->
 	  c.JClassLow.c_attributes);
   }
 
-let low2high_cfield consts = function f ->
+let low2high_cfield consts fs = function f ->
   let is_static = List.exists ((=) AccStatic) f.f_flags in
   let (cst,other_att) =
     List.partition (function AttributeConstant _ -> true | _ -> false) f.f_attributes in
@@ -126,6 +126,7 @@ let low2high_cfield consts = function f ->
       | _ -> assert false
   in
     {
+      cf_signature = fs;
       cf_access = flags2access f.f_flags;
       cf_static = is_static;
       cf_kind =
@@ -143,7 +144,7 @@ let low2high_cfield consts = function f ->
 	low2high_attributes consts other_att;
     }
 
-let low2high_ifield consts = function f ->
+let low2high_ifield consts fs = function f ->
   if not
     (List.exists ((=)AccPublic) f.f_flags
       && List.exists ((=)AccStatic) f.f_flags
@@ -152,6 +153,7 @@ let low2high_ifield consts = function f ->
   then raise (Class_structure_error "A field of an interface must have as only flag : Public, Static and Final.")
   else
     {
+      if_signature = fs;
       if_value =
 	begin
 	  let rec find_Constant = function
@@ -167,7 +169,7 @@ let low2high_ifield consts = function f ->
 	      f.f_attributes);
     }
 
-let low2high_amethod consts = function m ->
+let low2high_amethod consts ms = function m ->
   begin
     if List.exists
       (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
@@ -190,6 +192,7 @@ let low2high_amethod consts = function m ->
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
   end;
   {
+    am_signature = ms;
     am_access =
       begin
 	match flags2access m.m_flags with
@@ -217,7 +220,7 @@ let low2high_amethod consts = function m ->
     am_return_type = snd m.m_signature
   }
 
-let low2high_cmethod consts = function m ->
+let low2high_cmethod consts ms = function m ->
   if m.m_name = "<init>" &&
     List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
     m.m_flags
@@ -229,6 +232,7 @@ let low2high_cmethod consts = function m ->
     then raise (Class_structure_error "Non abstract class cannot have abstract methods.")
   else
     {
+      cm_signature = ms;
       cm_static = List.exists ((=) AccStatic) m.m_flags;
       cm_final = List.exists ((=) AccFinal) m.m_flags;
       cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
@@ -274,19 +278,22 @@ let low2high_cmethod consts = function m ->
       cm_return_type = snd m.m_signature
     }
 
-let low2high_acmethod consts = function m ->
+let low2high_acmethod consts ms = function m ->
   if List.exists ((=)AccAbstract) m.m_flags
-  then AbstractMethod (low2high_amethod consts m)
-  else ConcreteMethod (low2high_cmethod consts m)
+  then AbstractMethod (low2high_amethod consts ms m)
+  else ConcreteMethod (low2high_cmethod consts ms m)
 
 
 let low2high_concrete_methods consts = function nc ->
   List.fold_left
     (fun map meth ->
-      MethodMap.add
+      let ms =
 	{ms_name=meth.m_name;
 	 ms_parameters=fst meth.m_signature}
-	(try low2high_cmethod consts meth
+      in
+	MethodMap.add
+	  ms
+	(try low2high_cmethod consts ms meth
 	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	map)
     MethodMap.empty
@@ -295,11 +302,14 @@ let low2high_concrete_methods consts = function nc ->
 let low2high_methods consts = function ac ->
   List.fold_left
     (fun map meth ->
-      MethodMap.add
+      let ms =
 	{ms_name=meth.m_name;
 	 ms_parameters=fst meth.m_signature}
-	(try low2high_acmethod consts meth
-	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+      in
+	MethodMap.add
+	  ms
+	  (try low2high_acmethod consts ms meth
+	    with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 	map)
     MethodMap.empty
     ac.j_methods
@@ -370,7 +380,7 @@ let low2high_class cl =
 	      let (init,methods) =
 		match List.partition
 		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_signature = clinit_signature.ms_parameters) cl.j_methods with
-		    | [m],others -> Some (low2high_cmethod consts m),others
+		    | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
 		    | [],others -> None, others
 		    | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
 	      in
@@ -387,19 +397,22 @@ let low2high_class cl =
 		  i_initializer = init;
 		  i_fields = List.fold_left
 		    (fun m f ->
-		      FieldMap.add
-			{fs_name=f.f_name;fs_type=f.f_signature}
-			(try low2high_ifield consts f
-			  with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
-			m)
+		      let fs = {fs_name=f.f_name;fs_type=f.f_signature} in
+			FieldMap.add
+			  fs
+			  (try low2high_ifield consts fs f
+			    with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+			  m)
 		    FieldMap.empty
 		    cl.j_fields;
 		  i_methods = List.fold_left
 		    (fun map meth ->
-		      MethodMap.add
+		      let ms =
 			{ms_name=meth.m_name;
 			 ms_parameters=fst meth.m_signature}
-			(try low2high_amethod consts meth
+		      in MethodMap.add
+			ms
+			(try low2high_amethod consts ms meth
 			  with Class_structure_error msg -> raise (Class_structure_error ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
 			map)
 		    MethodMap.empty
@@ -422,11 +435,12 @@ let low2high_class cl =
 	and my_fields =
 	  List.fold_left
 	    (fun m f ->
-	      FieldMap.add
-		{fs_name=f.f_name;fs_type=f.f_signature}
-		(try low2high_cfield consts f
-		  with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
-		m)
+	      let fs = {fs_name=f.f_name;fs_type=f.f_signature} in
+		FieldMap.add
+		  fs
+		  (try low2high_cfield consts fs f
+		    with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+		  m)
 	    FieldMap.empty
 	    cl.j_fields
 	in

@@ -181,6 +181,7 @@ type field_kind =
   | Volatile
 
 type class_field = {
+  cf_signature : field_signature;
   cf_access: access;
   cf_static : bool;
   cf_kind : field_kind;
@@ -192,6 +193,7 @@ type class_field = {
 (** Fields of interfaces are implicitly [public], [static] and
     [final].*)
 type interface_field = {
+  if_signature : field_signature;
   if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
   if_attributes : attributes
 }
@@ -218,6 +220,7 @@ type implementation =
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
 type concrete_method = {
+  cm_signature : method_signature;
   cm_static : bool;
   cm_final : bool;
   cm_synchronized : bool;
@@ -230,6 +233,7 @@ type concrete_method = {
 }
 
 type abstract_method = {
+  am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
   am_exceptions : class_name list;
   am_attributes : attributes;

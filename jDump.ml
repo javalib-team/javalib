@@ -192,21 +192,21 @@ let dump_code ch cl code =
   IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.c_exc_tbl;
   List.iter (function (s,_) -> IO.printf ch "    ?%s\n" s) code.c_attributes
 
-let dump_cfield ch c fs f =
-  JDumpLow.dump_field ch () (h2l_cfield () fs f)
+let dump_cfield ch c f =
+  JDumpLow.dump_field ch () (h2l_cfield () f)
 
-let dump_ifield ch c fs f =
-  JDumpLow.dump_field ch () (h2l_ifield () fs f)
+let dump_ifield ch c f =
+  JDumpLow.dump_field ch () (h2l_ifield () f)
 
-let dump_cmethod ch consts ms m =
-  JDumpLow.dump_method ch () (h2l_cmethod consts ms m)
+let dump_cmethod ch consts m =
+  JDumpLow.dump_method ch () (h2l_cmethod consts m)
 
-let dump_amethod ch consts ms m =
-  JDumpLow.dump_method ch () (h2l_amethod consts ms m)
+let dump_amethod ch consts m =
+  JDumpLow.dump_method ch () (h2l_amethod consts m)
 
-let dump_acmethod ch consts ms = function
-  | AbstractMethod m -> dump_amethod ch consts ms m
-  | ConcreteMethod m -> dump_cmethod ch consts ms m
+let dump_acmethod ch consts = function
+  | AbstractMethod m -> dump_amethod ch consts m
+  | ConcreteMethod m -> dump_cmethod ch consts m
 
 let dump_super ch = function
   | None -> ()

@@ -1,4 +1,5 @@
 Here is some stuff that need to be done:
+- merge instructions OpLdc and OpConst
 - add fields "other_flags" to field/method/class/inner_class records
 - jDump : we should dump the constant pool, the tableswitch and
   lookupswith instructions
@@ -21,3 +22,5 @@ Here is some stuff that need to be done:
   be able to do some more serious tests
 - remove constant pool indexes from low level opcodes ; it was stupid to
   re-add them.
+- should not we rename m_signature and f_signature with m_descriptor
+  and f_descriptor?

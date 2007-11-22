@@ -84,9 +84,9 @@ let h2l_code2attribute consts = function
 	}
       in [AttributeCode code]
 
-let h2l_cfield consts fs f =
-  {f_name = fs.fs_name;
-   f_signature = fs.fs_type;
+let h2l_cfield consts f =
+  {f_name = f.cf_signature.fs_name;
+   f_signature = f.cf_signature.fs_type;
    f_flags =
       (if f.cf_transient then [AccTransient] else [])
       @ (match f.cf_kind with
@@ -100,20 +100,21 @@ let h2l_cfield consts fs f =
       @ (h2l_attributes f.cf_attributes);
   }
 
-let h2l_ifield consts fs f =
-  {f_name = fs.fs_name;
-   f_signature = fs.fs_type;
+let h2l_ifield consts f =
+  {f_name = f.if_signature.fs_name;
+   f_signature = f.if_signature.fs_type;
    f_flags = [AccPublic;AccStatic;AccFinal];
    f_attributes =
       (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
       @ (h2l_attributes f.if_attributes);
   }
 
-let h2l_cmethod consts ms m =
+let h2l_cmethod consts m =
   let code = h2l_code2attribute consts m.cm_implementation
   in
-    {m_name = ms.ms_name;
-     m_signature = (ms.ms_parameters, m.cm_return_type);
+    {m_name = m.cm_signature.ms_name;
+     m_signature =
+	(m.cm_signature.ms_parameters, m.cm_return_type);
      m_flags =
 	(if m.cm_static then [AccStatic] else [])
 	@ (if m.cm_final then [AccFinal] else [])
@@ -135,9 +136,9 @@ let h2l_cmethod consts ms m =
 	@ h2l_attributes m.cm_attributes;
     }
 
-let h2l_amethod consts ms m =
-  {m_name = ms.ms_name;
-   m_signature = (ms.ms_parameters, m.am_return_type);
+let h2l_amethod consts m =
+  {m_name = m.am_signature.ms_name;
+   m_signature = (m.am_signature.ms_parameters, m.am_return_type);
    m_flags = AccAbstract::(access2flags m.am_access);
    m_code = None;
    m_attributes =
@@ -147,19 +148,19 @@ let h2l_amethod consts ms m =
       @ h2l_attributes m.am_attributes;
   }
 
-let h2l_acmethod consts ms = function
-  | AbstractMethod m -> h2l_amethod consts ms m
-  | ConcreteMethod m -> h2l_cmethod consts ms m
+let h2l_acmethod consts = function
+  | AbstractMethod m -> h2l_amethod consts m
+  | ConcreteMethod m -> h2l_cmethod consts m
 
 let h2l_concretemethods consts c' mm =
   {c' with
-    j_methods = MethodMap.fold (fun fs f l -> h2l_cmethod consts fs f::l) mm [];
+    j_methods = MethodMap.fold (fun _fs f l -> h2l_cmethod consts f::l) mm [];
   }
 
 let h2l_methods consts c' mm =
   {c' with
     j_flags = AccAbstract::c'.j_flags;
-    j_methods = MethodMap.fold (fun fs f l -> h2l_acmethod consts fs f::l) mm [];
+    j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts f::l) mm [];
   }
 
 
@@ -174,7 +175,7 @@ let high2low_class c =
 	if c.c_final 
 	then AccFinal::AccSynchronized::access2flags c.c_access 
 	else AccSynchronized::access2flags c.c_access; (*will be updated later on*)
-     j_fields = FieldMap.fold (fun fs f l -> h2l_cfield consts fs f::l) c.c_fields [];
+     j_fields = FieldMap.fold (fun _fs f l -> h2l_cfield consts f::l) c.c_fields [];
      j_methods = []; (*will be set later on*)
      j_attributes =  (*will be updated later on*)
 	(deprecated_to_attribute c.c_deprecated)
@@ -196,10 +197,10 @@ let high2low_interface (c:jinterface) =
      j_consts = c.i_consts; (*will be updated later on*)
      j_flags = AccInterface::AccAbstract::access2flags c.i_access; (*will be updated later on*)
      j_fields =
-	FieldMap.fold (fun fs f l -> h2l_ifield consts fs f::l) c.i_fields [];
+	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
      j_methods =
-	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts clinit_signature m])
-	@ MethodMap.fold (fun ms m l -> h2l_amethod consts ms m::l) c.i_methods [];
+	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts m])
+	@ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
      j_attributes =
 	(deprecated_to_attribute c.i_deprecated)
 	@ (h2l_inner_classes c.i_inner_classes)
