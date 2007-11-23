@@ -126,7 +126,7 @@ let low2high_cfield consts fs = function f ->
       | _ -> assert false
   in
     {
-      cf_descriptor = fs;
+      cf_signature = fs;
       cf_access = flags2access f.f_flags;
       cf_static = is_static;
       cf_kind =
@@ -153,7 +153,7 @@ let low2high_ifield consts fs = function f ->
   then raise (Class_structure_error "A field of an interface must have as only flag : Public, Static and Final.")
   else
     {
-      if_descriptor = fs;
+      if_signature = fs;
       if_value =
 	begin
 	  let rec find_Constant = function
@@ -192,7 +192,7 @@ let low2high_amethod consts ms = function m ->
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
   end;
   {
-    am_descriptor = ms;
+    am_signature = ms;
     am_access =
       begin
 	match flags2access m.m_flags with
@@ -232,7 +232,7 @@ let low2high_cmethod consts ms = function m ->
     then raise (Class_structure_error "Non abstract class cannot have abstract methods.")
   else
     {
-      cm_descriptor = ms;
+      cm_signature = ms;
       cm_static = List.exists ((=) AccStatic) m.m_flags;
       cm_final = List.exists ((=) AccFinal) m.m_flags;
       cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;

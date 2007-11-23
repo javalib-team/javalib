@@ -85,8 +85,8 @@ let h2l_code2attribute consts = function
       in [AttributeCode code]
 
 let h2l_cfield consts f =
-  {f_name = f.cf_descriptor.fs_name;
-   f_descriptor = f.cf_descriptor.fs_type;
+  {f_name = f.cf_signature.fs_name;
+   f_descriptor = f.cf_signature.fs_type;
    f_flags =
       (if f.cf_transient then [AccTransient] else [])
       @ (match f.cf_kind with
@@ -101,8 +101,8 @@ let h2l_cfield consts f =
   }
 
 let h2l_ifield consts f =
-  {f_name = f.if_descriptor.fs_name;
-   f_descriptor = f.if_descriptor.fs_type;
+  {f_name = f.if_signature.fs_name;
+   f_descriptor = f.if_signature.fs_type;
    f_flags = [AccPublic;AccStatic;AccFinal];
    f_attributes =
       (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
@@ -112,9 +112,9 @@ let h2l_ifield consts f =
 let h2l_cmethod consts m =
   let code = h2l_code2attribute consts m.cm_implementation
   in
-    {m_name = m.cm_descriptor.ms_name;
+    {m_name = m.cm_signature.ms_name;
      m_descriptor =
-	(m.cm_descriptor.ms_parameters, m.cm_return_type);
+	(m.cm_signature.ms_parameters, m.cm_return_type);
      m_flags =
 	(if m.cm_static then [AccStatic] else [])
 	@ (if m.cm_final then [AccFinal] else [])
@@ -137,8 +137,8 @@ let h2l_cmethod consts m =
     }
 
 let h2l_amethod consts m =
-  {m_name = m.am_descriptor.ms_name;
-   m_descriptor = (m.am_descriptor.ms_parameters, m.am_return_type);
+  {m_name = m.am_signature.ms_name;
+   m_descriptor = (m.am_signature.ms_parameters, m.am_return_type);
    m_flags = AccAbstract::(access2flags m.am_access);
    m_code = None;
    m_attributes =
