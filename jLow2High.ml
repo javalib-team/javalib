@@ -126,7 +126,7 @@ let low2high_cfield consts fs = function f ->
       | _ -> assert false
   in
     {
-      cf_signature = fs;
+      cf_descriptor = fs;
       cf_access = flags2access f.f_flags;
       cf_static = is_static;
       cf_kind =
@@ -153,7 +153,7 @@ let low2high_ifield consts fs = function f ->
   then raise (Class_structure_error "A field of an interface must have as only flag : Public, Static and Final.")
   else
     {
-      if_signature = fs;
+      if_descriptor = fs;
       if_value =
 	begin
 	  let rec find_Constant = function
@@ -192,7 +192,7 @@ let low2high_amethod consts ms = function m ->
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
   end;
   {
-    am_signature = ms;
+    am_descriptor = ms;
     am_access =
       begin
 	match flags2access m.m_flags with
@@ -217,7 +217,7 @@ let low2high_amethod consts ms = function m ->
 	(List.filter
 	    (function AttributeExceptions _ -> false| _ -> true)
 	    m.m_attributes);
-    am_return_type = snd m.m_signature
+    am_return_type = snd m.m_descriptor
   }
 
 let low2high_cmethod consts ms = function m ->
@@ -232,7 +232,7 @@ let low2high_cmethod consts ms = function m ->
     then raise (Class_structure_error "Non abstract class cannot have abstract methods.")
   else
     {
-      cm_signature = ms;
+      cm_descriptor = ms;
       cm_static = List.exists ((=) AccStatic) m.m_flags;
       cm_final = List.exists ((=) AccFinal) m.m_flags;
       cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
@@ -275,7 +275,7 @@ let low2high_cmethod consts ms = function m ->
 		   Native)
 	  in find_Code m.m_attributes
 	end;
-      cm_return_type = snd m.m_signature
+      cm_return_type = snd m.m_descriptor
     }
 
 let low2high_acmethod consts ms = function m ->
@@ -289,12 +289,12 @@ let low2high_concrete_methods consts = function nc ->
     (fun map meth ->
       let ms =
 	{ms_name=meth.m_name;
-	 ms_parameters=fst meth.m_signature}
+	 ms_parameters=fst meth.m_descriptor}
       in
 	MethodMap.add
 	  ms
 	(try low2high_cmethod consts ms meth
-	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
 	map)
     MethodMap.empty
     nc.j_methods
@@ -304,12 +304,12 @@ let low2high_methods consts = function ac ->
     (fun map meth ->
       let ms =
 	{ms_name=meth.m_name;
-	 ms_parameters=fst meth.m_signature}
+	 ms_parameters=fst meth.m_descriptor}
       in
 	MethodMap.add
 	  ms
 	  (try low2high_acmethod consts ms meth
-	    with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+	    with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
 	map)
     MethodMap.empty
     ac.j_methods
@@ -379,7 +379,7 @@ let low2high_class cl =
 		then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
 	      let (init,methods) =
 		match List.partition
-		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_signature = clinit_signature.ms_parameters) cl.j_methods with
+		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_descriptor = clinit_signature.ms_parameters) cl.j_methods with
 		    | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
 		    | [],others -> None, others
 		    | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
@@ -397,11 +397,11 @@ let low2high_class cl =
 		  i_initializer = init;
 		  i_fields = List.fold_left
 		    (fun m f ->
-		      let fs = {fs_name=f.f_name;fs_type=f.f_signature} in
+		      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
 			FieldMap.add
 			  fs
 			  (try low2high_ifield consts fs f
-			    with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+			    with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
 			  m)
 		    FieldMap.empty
 		    cl.j_fields;
@@ -409,11 +409,11 @@ let low2high_class cl =
 		    (fun map meth ->
 		      let ms =
 			{ms_name=meth.m_name;
-			 ms_parameters=fst meth.m_signature}
+			 ms_parameters=fst meth.m_descriptor}
 		      in MethodMap.add
 			ms
 			(try low2high_amethod consts ms meth
-			  with Class_structure_error msg -> raise (Class_structure_error ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_signature)^": "^msg)))
+			  with Class_structure_error msg -> raise (Class_structure_error ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
 			map)
 		    MethodMap.empty
 		    methods;
@@ -423,23 +423,19 @@ let low2high_class cl =
       else
 	let my_methods =
 	  try
-	    if List.exists ((=)AccAbstract) cl.j_flags
-	    then
-	      if List.exists ((=)AccFinal) cl.j_flags
-	      then raise (Class_structure_error "An abstract class cannot be final.")
-	      else Methods (low2high_methods consts cl)
-	    else
-	      ConcreteMethods (low2high_concrete_methods consts cl)
+	    if List.exists ((=)AccFinal) cl.j_flags
+	    then raise (Class_structure_error "An abstract class cannot be final.")
+	    else low2high_methods consts cl
 	  with
 	    | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	and my_fields =
 	  List.fold_left
 	    (fun m f ->
-	      let fs = {fs_name=f.f_name;fs_type=f.f_signature} in
+	      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
 		FieldMap.add
 		  fs
 		  (try low2high_cfield consts fs f
-		    with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_signature)^": "^msg)))
+		    with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
 		  m)
 	    FieldMap.empty
 	    cl.j_fields
@@ -448,6 +444,7 @@ let low2high_class cl =
 	    c_name = my_name;
 	    c_super_class = cl.j_super;
 	    c_final = List.exists ((=)AccFinal) cl.j_flags;
+	    c_abstract = List.exists ((=)AccAbstract) cl.j_flags;
 	    c_access = my_access;
 	    c_interfaces = my_interfaces;
 	    c_consts = DynArray.to_array consts;

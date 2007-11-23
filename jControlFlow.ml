@@ -37,17 +37,11 @@ module PP = struct
   let hard2soft (c,m,i) =
     let res = ref None in
       begin
-	match c.c_methods with
-    	  | ConcreteMethods mm ->
-    	      MethodMap.iter
-		(fun ms' m' -> if m==m' then res := Some ms')
-		mm
-    	  | Methods mm ->
     	      MethodMap.iter
 		(fun ms' -> function
 		  | ConcreteMethod m' when m==m' -> res := Some ms'
 		  | _ -> ())
-		mm
+		c.c_methods
       end;
       match !res with
     	| Some ms -> ((c.c_name,ms),i)

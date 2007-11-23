@@ -211,14 +211,14 @@ and attribute =
 
 type jfield = {
 	f_name : string;
-	f_signature : field_descriptor;
+	f_descriptor : field_descriptor;
 	f_flags : access_flags;
 	f_attributes : attribute list
 }
 
 type jmethod = {
 	m_name : string;
-	m_signature : method_descriptor;
+	m_descriptor : method_descriptor;
 	m_flags : access_flags;
 	m_code : code option; (* Remove that *)
 	m_attributes : attribute list

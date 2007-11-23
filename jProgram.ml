@@ -29,6 +29,7 @@ type class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
+  c_abstract : bool;
   c_super_class : class_file option;
   c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
@@ -37,7 +38,7 @@ type class_file = {
   c_deprecated : bool;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  c_methods : methods;
+  c_methods : jmethod MethodMap.t;
   mutable c_children : class_file ClassMap.t;
 }
 
@@ -124,6 +125,7 @@ let add_classFile c (program:program) =
     {c_name = c.JClass.c_name;
      c_access = c.JClass.c_access;
      c_final = c.JClass.c_final;
+     c_abstract = c.JClass.c_abstract;
      c_super_class = c_super;
      c_consts = c.JClass.c_consts;
      c_interfaces = imap;
@@ -298,7 +300,7 @@ let load_program filename : program =
 let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
 let iter f p = ClassMap.iter (fun _ c -> f c) p
 
-type any_method = abstract_class_method
+type any_method = jmethod
 type any_field =
     | InterfaceField of interface_field
     | ClassField of class_field
@@ -326,9 +328,8 @@ exception Found_Class of interface_or_class
 
 let defines_method ms = function
   | `Interface i -> MethodMap.mem ms i.i_methods
-  | `Class c -> match c.c_methods with
-      | Methods mm -> MethodMap.mem ms mm
-      | ConcreteMethods mm -> MethodMap.mem ms mm
+  | `Class c -> MethodMap.mem ms c.c_methods
+
 let defines_field fs = function
   | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
   | `Class {c_fields=fm;} -> FieldMap.mem fs fm
@@ -343,17 +344,11 @@ let resolve_class program cn =
 
 let get_method c ms = match c with
   | `Interface i -> AbstractMethod (MethodMap.find ms i.i_methods)
-  | `Class c -> match c.c_methods with
-      | Methods mm ->
-	  MethodMap.find ms mm
-      | ConcreteMethods mm ->
-	  ConcreteMethod (MethodMap.find ms mm)
+  | `Class c -> MethodMap.find ms c.c_methods
 
 let get_methods = function
   | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
-  | `Class {c_methods = Methods mm;} -> 
-      MethodMap.fold (fun ms _ l -> ms::l) mm []
-  | `Class {c_methods = ConcreteMethods mm;} -> 
+  | `Class {c_methods = mm;} -> 
       MethodMap.fold (fun ms _ l -> ms::l) mm []
 
 let get_field c fs = match c with
@@ -408,15 +403,6 @@ let rec resolve_interface_method'' ms (c:interface_file) : interface_file list =
     (if defines_method ms (`Interface c) then [c] else [])
 
 let resolve_method ms (c:class_file) : interface_or_class =
-  match c.c_methods with
-    | ConcreteMethods _ ->
-	begin
-	  let c' = resolve_method' ms c
-	  in match get_method (`Class c') ms with
-	    | AbstractMethod _ -> raise AbstractMethodError
-	    | ConcreteMethod _ -> `Class c'
-	end
-    | Methods _ ->
 	let rec resolve_abstract_method ms (c:class_file) : interface_or_class =
 	  try `Class (resolve_method' ms c)
 	  with NoSuchMethodError ->

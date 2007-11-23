@@ -386,7 +386,7 @@ let parse_field consts ch =
 	    (fun _ -> parse_attribute attrib_to_parse consts ch) in
 	{
 		f_name = name;
-		f_signature = sign;
+		f_descriptor = sign;
 		f_attributes = attribs;
 		f_flags = acc;
 	}
@@ -408,7 +408,7 @@ let parse_method consts ch =
 	) in
 	{
 		m_name = name;
-		m_signature = sign;
+		m_descriptor = sign;
 		m_attributes = attribs;
 		m_code = !code;
 		m_flags = acc;

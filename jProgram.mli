@@ -38,6 +38,7 @@ type class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
+  c_abstract : bool;
   c_super_class : class_file option;
   c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
@@ -48,7 +49,7 @@ type class_file = {
   c_deprecated : bool;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
-  c_methods : methods;
+  c_methods : jmethod MethodMap.t;
   mutable c_children : class_file ClassMap.t;
 }
 
@@ -114,7 +115,7 @@ val fold : ('b -> interface_or_class -> 'b) -> 'b -> program -> 'b
 
 (** {2 Access functions to fields and methods}*)
 
-type any_method = abstract_class_method
+type any_method = jmethod
 type any_field = | InterfaceField of interface_field | ClassField of class_field
 
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)

@@ -229,11 +229,11 @@ let access_flags = function
 		) flags) ^ " "
 
 let dump_field ch cl f =
-	IO.printf ch "  %s%s\n" (access_flags f.f_flags) (value_signature f.f_name f.f_signature);
+	IO.printf ch "  %s%s\n" (access_flags f.f_flags) (value_signature f.f_name f.f_descriptor);
 	List.iter (dump_attrib ch cl) f.f_attributes
 
 let dump_method ch cl m =
-	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_signature);
+	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
 	List.iter (dump_attrib ch cl) m.m_attributes;
 	IO.write ch '\n'
 

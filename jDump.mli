@@ -29,5 +29,5 @@ val dump_cmethod :
 val dump_amethod : 'a IO.output -> 'b -> JClass.abstract_method -> unit
 val dump_acmethod :
   'a IO.output -> JBasics.constant DynArray.t -> 
-  JClass.abstract_class_method -> unit
+  JClass.jmethod -> unit
 val dump : 'a IO.output -> JClass.interface_or_class -> unit

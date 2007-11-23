@@ -272,7 +272,7 @@ and unparse_attribute ch consts attr =
 let unparse_field ch consts field =
   write_ui16 ch (unparse_flags field.f_flags);
   write_string ch consts field.f_name;
-  write_string ch consts (unparse_value_signature field.f_signature);
+  write_string ch consts (unparse_value_signature field.f_descriptor);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     field.f_attributes
@@ -293,7 +293,7 @@ let unparse_method ch consts methode =
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");
   write_ui16 ch (unparse_flags methode.m_flags);
   write_string ch consts methode.m_name;
-  write_string ch consts (unparse_method_signature methode.m_signature);
+  write_string ch consts (unparse_method_signature methode.m_descriptor);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     methode.m_attributes

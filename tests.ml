@@ -215,24 +215,24 @@ and eq_attribs cl al1 al2 =
     end
 
 let eq_method cl m1 m2 =
-  if m1.m_name <> m2.m_name || m1.m_signature <> m2.m_signature
+  if m1.m_name <> m2.m_name || m1.m_descriptor <> m2.m_descriptor
   then failwith ("method signatures differ ("
-		  ^ signature m1.m_name (SMethod m1.m_signature)^","
-		  ^ signature m2.m_name (SMethod m2.m_signature)^")");
+		  ^ signature m1.m_name (SMethod m1.m_descriptor)^","
+		  ^ signature m2.m_name (SMethod m2.m_descriptor)^")");
   if List.sort compare (filter_flags [AccPublic;AccPrivate;AccProtected;AccStatic;AccFinal;AccSynchronized;AccNative;AccAbstract;AccStrict] m1.m_flags)
     <> List.sort compare m2.m_flags
   then prerr_endline ("method flags differ ("^access_flags m1.m_flags^","^access_flags m2.m_flags^")");
   (try eq_attribs cl m1.m_attributes m2.m_attributes
-    with Failure msg -> failwith ("in method "^access_flags m1.m_flags^" "^signature m1.m_name (SMethod m1.m_signature)^" attributes differ: "^msg));
+    with Failure msg -> failwith ("in method "^access_flags m1.m_flags^" "^signature m1.m_name (SMethod m1.m_descriptor)^" attributes differ: "^msg));
   if not (eq_code cl m1.m_code m2.m_code)
   then failwith ("method code differ ("^","^")");
   true
 
 let eq_fields cl f1 f2 =
-  if f1.f_name <> f2.f_name || f1.f_signature <> f2.f_signature
+  if f1.f_name <> f2.f_name || f1.f_descriptor <> f2.f_descriptor
   then failwith ("field signatures differ("
-		  ^signature f1.f_name (SValue f1.f_signature)^"<>"
-		  ^signature f2.f_name (SValue f2.f_signature)^")");
+		  ^signature f1.f_name (SValue f1.f_descriptor)^"<>"
+		  ^signature f2.f_name (SValue f2.f_descriptor)^")");
   if List.sort compare (filter_flags [AccPublic;AccPrivate;AccProtected;AccStatic;AccFinal;AccVolatile;AccTransient] f1.f_flags)
     <> List.sort compare f2.f_flags
   then prerr_endline ("field flags differ ("^access_flags f1.f_flags^","^access_flags f2.f_flags^")");

@@ -27,7 +27,7 @@ val h2l_cmethod :
   JBasics.constant DynArray.t -> JClass.concrete_method -> JClassLow.jmethod
 val h2l_amethod : 'a -> JClass.abstract_method -> JClassLow.jmethod
 val h2l_acmethod :
-  JBasics.constant DynArray.t -> JClass.abstract_class_method -> JClassLow.jmethod
+  JBasics.constant DynArray.t -> JClass.jmethod -> JClassLow.jmethod
 
 (** Convert a high level class to a lower level class.*)
 val high2low : JClass.interface_or_class -> JClassLow.jclass
