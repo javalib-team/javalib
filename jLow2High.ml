@@ -336,6 +336,9 @@ let low2high_class cl =
   if cl.j_super = None && cl.j_name <> java_lang_object
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.")
   else
+    if List.exists ((=)AccFinal) cl.j_flags && List.exists ((=)AccAbstract) cl.j_flags
+    then raise (Class_structure_error "An abstract class cannot be final.")
+  else
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
     let my_access =
@@ -372,9 +375,6 @@ let low2high_class cl =
 	    raise (Class_structure_error "Class file with their AccInterface flags set must also have their AccAbstract flags set.")
 	  else
 	    begin
-	      if List.exists ((=)AccFinal) cl.j_flags
-	      then raise (Class_structure_error "An interface cannot be final.")
-	      else
 		if cl.j_super <> Some java_lang_object
 		then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
 	      let (init,methods) =
@@ -422,10 +422,7 @@ let low2high_class cl =
 	end
       else
 	let my_methods =
-	  try
-	    if List.exists ((=)AccFinal) cl.j_flags
-	    then raise (Class_structure_error "An abstract class cannot be final.")
-	    else low2high_methods consts cl
+	  try low2high_methods consts cl
 	  with
 	    | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	and my_fields =

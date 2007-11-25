@@ -209,6 +209,45 @@ let add_one_file f program = match f with
   | `Interface i -> add_interfaceFile i program
   | `Class c -> add_classFile c program
 
+
+let to_class = function
+  | `Interface c -> `Interface
+      {JClass.i_name = c.i_name;
+       JClass.i_access = c.i_access;
+       JClass.i_consts = c.i_consts;
+       JClass.i_interfaces =
+	  ClassMap.fold (fun cn _ l -> cn::l) c.i_interfaces [];
+       JClass.i_sourcefile = c.i_sourcefile;
+       JClass.i_deprecated = c.i_deprecated;
+       JClass.i_inner_classes = c.i_inner_classes;
+       JClass.i_other_attributes = c.i_other_attributes;
+       JClass.i_super = java_lang_object;
+       JClass.i_initializer = c.i_initializer;
+       JClass.i_fields = c.i_fields;
+       JClass.i_methods = c.i_methods;
+      }
+  | `Class c -> `Class
+      {JClass.c_name = c.c_name;
+       JClass.c_access = c.c_access;
+       JClass.c_final = c.c_final;
+       JClass.c_abstract = c.c_abstract;
+       JClass.c_super_class = 
+	  (match c.c_super_class with
+	    | Some cn -> Some cn.c_name
+	    | None -> None);
+       JClass.c_consts = c.c_consts;
+       JClass.c_interfaces = 
+	  ClassMap.fold (fun cn _ l -> cn::l) c.c_interfaces [];
+       JClass.c_sourcefile = c.c_sourcefile;
+       JClass.c_deprecated = c.c_deprecated;
+       JClass.c_inner_classes = c.c_inner_classes;
+       JClass.c_other_attributes = c.c_other_attributes;
+       JClass.c_fields = c.c_fields;
+       JClass.c_methods = c.c_methods;}
+
+
+
+
 let get_class class_path class_map name =
   try ClassMap.find name !class_map
   with Not_found ->
@@ -433,9 +472,12 @@ let lookup_virtual_method ms (c:class_file) : class_file =
   let c' =
     try resolve_method' ms c
     with NoSuchMethodError -> raise AbstractMethodError
-  in match get_method (`Class c) ms with
-      | AbstractMethod m -> raise AbstractMethodError
-      | ConcreteMethod m -> c'
+  in 
+    try 
+      match get_method (`Class c) ms with
+	| AbstractMethod m -> raise AbstractMethodError
+	| ConcreteMethod m -> c'
+    with Not_found -> raise AbstractMethodError
 
 let lookup_interface_method = lookup_virtual_method
 

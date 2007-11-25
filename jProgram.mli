@@ -83,6 +83,10 @@ type interface_or_class = [
 val get_name : interface_or_class -> class_name
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
 
+(** [to_class c] return the same class but in the representation of
+    JClass, i.e. without pointers for classes.*)
+val to_class : interface_or_class -> JClass.interface_or_class
+
 (** {2 The [program] structure} *)
 
 (** A program is a set of class files identified by their name and
