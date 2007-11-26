@@ -94,6 +94,7 @@ let  _ =
 
 (** {2 Tests of conversion between low and high level represetations of classes}*)
 
+let debug = ref 2
 
 let filter_flags authorized fl =
   List.filter (fun f->List.exists ((=)f) authorized) fl
@@ -124,7 +125,17 @@ let eq_ccode cl c1 c2 =
 	begin
 	  match c1.(!i), c2.(!i) with
 	    | OpLdc1 index1, OpLdc1w index2
-	    | OpLdc1w index1, OpLdc1 index2 when index1 = index2 ->
+	    | OpLdc1w index1, OpLdc1 index2
+		when (index1 = index2 && index1 <= 0xFF) ->
+		i := !i +2
+	    | OpLdc1 index, OpIConst v when
+		  cl.j_consts.(index) = ConstValue (ConstInt v) ->
+		i := !i +1
+	    | OpLdc1 index, OpFConst v when
+		  cl.j_consts.(index) = ConstValue (ConstFloat v) ->
+		i := !i +1
+	    | OpLdc2w index, OpDConst v when
+		  cl.j_consts.(index) = ConstValue (ConstDouble v) ->
 		i := !i +2
 	    | OpInvokeVirtual c1, OpInvokeVirtual c2
 	    | OpInvokeNonVirtual c1, OpInvokeNonVirtual c2
@@ -169,7 +180,7 @@ and eq_inner_classes cl icl1 icl2 =
     then failwith "innerclasses inner_name differ";
     if List.sort compare (filter_flags [AccPublic;AccPrivate;AccProtected;AccStatic;AccFinal;AccInterface;AccAbstract] inner_class_access_flags1)
       <> List.sort compare inner_class_access_flags2
-    then prerr_endline ("innerclasses flags differ ("
+    then failwith ("innerclasses flags differ ("
 			 ^access_flags inner_class_access_flags1^","
 			 ^access_flags inner_class_access_flags2^")");
     true
@@ -288,7 +299,7 @@ let h2l_and_l2h_conversions class_path input_files =
 	    try
 	      eq_class c c_low'
 	    with Failure msg ->
-	      failwith ("error on "^(class_name c.JClassLow.j_name)^": "^msg)
+	      prerr_endline ("error on "^(class_name c.JClassLow.j_name)^": "^msg)
 	with Failure msg -> failwith msg)
       ()
       input_files
@@ -331,11 +342,11 @@ let test_jprogram class_path input_files =
 
 (** It should run the test suite. *)
 let _ =
-  let class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
+  let dir_class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
   and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"]
-  in let class_path_jar = String.concat ":" (List.map (fun s -> class_path^s) jars)
-  in let class_path = "./:"^class_path^":"^class_path_jar
+  in let class_path_jar = String.concat ":" (List.map (fun s -> dir_class_path^s) jars)
+  in let class_path = "./:"^dir_class_path^":"^class_path_jar
   and input_files = ["java.lang.Object"]
   in
-    (* h2l_and_l2h_conversions class_path input_files; *)
+    h2l_and_l2h_conversions class_path jars;
     test_jprogram class_path input_files

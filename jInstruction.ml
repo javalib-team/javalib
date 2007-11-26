@@ -34,24 +34,28 @@ let count =
 let opcode2instruction consts = function
 	| OpNop -> JClass.OpNop
 	| OpAConstNull -> JClass.OpConst `ANull
-	| OpIConst v -> JClass.OpConst (`I v)
-	| OpLConst v -> JClass.OpConst (`L v)
-	| OpFConst v -> JClass.OpConst (`F v)
-	| OpDConst v -> JClass.OpConst (`D v)
-	| OpBIPush v -> JClass.OpConst (`B v)
-	| OpSIPush v -> JClass.OpConst (`S v)
+	| OpIConst v -> JClass.OpConst (`Int v)
+	| OpLConst v -> JClass.OpConst (`Long v)
+	| OpFConst v -> JClass.OpConst (`Float v)
+	| OpDConst v -> JClass.OpConst (`Double v)
+	| OpBIPush v -> JClass.OpConst (`Byte v)
+	| OpSIPush v -> JClass.OpConst (`Short v)
 	| OpLdc1 n
 	| OpLdc1w n ->
-	    JClass.OpLdc
+	    JClass.OpConst
 	      (match get_constant_value consts n with
-		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ as c -> c
+		 | ConstInt c -> `Int c
+		 | ConstFloat c -> `Float c
+		 | ConstString c -> `String c
+		 | ConstClass c -> `Class c
 		 | ConstLong _ | ConstDouble _ -> raise (Illegal_value ("long/double", "constant for Ldc1")))
 	| OpLdc2w n ->
-	    JClass.OpLdc
+	    JClass.OpConst
 	      (match get_constant_value consts n with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
 		     raise (Illegal_value ("int/float/string/class", "constant for Ldc2"))
-		 | ConstLong _ | ConstDouble _ as c -> c)
+		 | ConstLong c -> `Long c
+		 | ConstDouble c -> `Double c)
 
 	| OpLoad (k, l) ->
 	    JClass.OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
@@ -210,22 +214,31 @@ let opcodes2code consts opcodes =
 let instruction2opcode consts = function
 	| JClass.OpNop -> OpNop
 	| JClass.OpConst x ->
-	    (match x with
+	    let opldc_w c = 
+	      let index = (value_to_int consts c)
+	      in if index <= 0xFF then OpLdc1 index else OpLdc1w index
+	    in
+	      (match x with
 	       | `ANull -> OpAConstNull
-	       | `I v -> OpIConst v
-	       | `L v -> OpLConst v
-	       | `F v -> OpFConst v
-	       | `D v -> OpDConst v
-	       | `B v -> OpBIPush v
-	       | `S v -> OpSIPush v)
-	| JClass.OpLdc v ->
-	    let index = (value_to_int consts v) in
-	      (match v with
-		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-		     if index <= 0xFF
-		     then OpLdc1 index
-		     else OpLdc1w index
-		 | ConstLong _ | ConstDouble _ -> OpLdc2w index)
+	       | `Int v -> 
+		   if -1l <= v && v <= 5l
+		   then OpIConst v
+		   else opldc_w (ConstInt v)
+	       | `Long v ->
+		   if v=0L || v=1L
+		   then OpLConst v
+		   else OpLdc2w (value_to_int consts (ConstLong v))
+	       | `Float v -> 
+		   if v=0. || v=1. || v=2.
+		   then OpFConst v
+		   else opldc_w (ConstFloat v)
+	       | `Double v -> 
+		   if v=0. || v=1. then OpDConst v
+		   else OpLdc2w (value_to_int consts (ConstDouble v))
+	       | `Byte v -> OpBIPush v
+	       | `Short v -> OpSIPush v
+	       | `String v -> opldc_w (ConstString v)
+	       | `Class v -> opldc_w (ConstClass v))
 
 	| JClass.OpLoad (k, l) ->
 	    (match k with

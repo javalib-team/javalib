@@ -159,7 +159,6 @@ let h2l_concretemethods consts c' mm =
 
 let h2l_methods consts c' mm =
   {c' with
-    j_flags = AccAbstract::c'.j_flags;
     j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts f::l) mm [];
   }
 

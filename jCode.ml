@@ -616,10 +616,10 @@ let padding ch count =
 
 (* Everything else *)
 let other count ch = function
-  | OpIConst n -> write_ui8 ch (3 + Int32.to_int n)
-  | OpLConst n -> write_ui8 ch (9 + Int64.to_int n)
-  | OpFConst n -> write_ui8 ch (11 + int_of_float n)
-  | OpDConst n -> write_ui8 ch (14 + int_of_float n)
+  | OpIConst n -> assert (-1l <= n && n <= 5l);write_ui8 ch (3 + Int32.to_int n)
+  | OpLConst n -> assert (0L=n || n=1L);write_ui8 ch (9 + Int64.to_int n)
+  | OpFConst n -> assert (0.=n || n=1. || n=2.);write_ui8 ch (11 + int_of_float n)
+  | OpDConst n -> assert (0.=n || n=1.);write_ui8 ch (14 + int_of_float n)
   | OpBIPush n ->
       write_ui8 ch 16;
       write_ui8 ch n

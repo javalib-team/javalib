@@ -30,14 +30,14 @@ let opcode = function
   | OpConst x ->
       (match x with
 	| `ANull -> "aconstnull"
-	| `I i -> sprintf "iconst %ld" i
-	| `L i -> sprintf "lconst %Ld" i
-	| `F f -> sprintf "fconst %f" f
-	| `D f -> sprintf "dconst %f" f
-	| `B n -> sprintf "bipush %d" n
-	| `S a -> sprintf "sipush %d " a)
-	(* modified by eandre@irisa.fr 2006/05/02 *)
-  | OpLdc n -> sprintf "ldc %s" (let s = IO.output_string () in dump_constant_value s n ; IO.close_out s)
+	| `Int i -> sprintf "iconst %ld" i
+	| `Long i -> sprintf "lconst %Ld" i
+	| `Float f -> sprintf "fconst %f" f
+	| `Double f -> sprintf "dconst %f" f
+	| `Byte n -> sprintf "bipush %d" n
+	| `Short a -> sprintf "sipush %d " a
+	| `Class c -> sprintf "ldc class %s" (object_value_signature "" c)
+	| `String s -> sprintf "ldc string '%s'" s)
 
   | OpLoad (k,n) ->
       (match k with

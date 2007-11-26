@@ -57,17 +57,18 @@ type opcode =
   | OpDup2X2
   | OpSwap
 
-  (* Constant loading *)
+  (* Constant loading / it corresponds to instructions *const* and ldc* *)
   | OpConst of [
-      `ANull (** AConstNull  *)
-    | `I of int32
-    | `L of int64
-    | `F of float
-    | `D of float
-    | `B of int (** BIPush *)
-    | `S of int
+    | `ANull (** AConstNull  *)
+    | `Int of int32
+    | `Long of int64
+    | `Float of float
+    | `Double of float
+    | `Byte of int (** BIPush *)
+    | `Short of int
+    | `String of string
+    | `Class of object_type
     ]
-  | OpLdc of constant_value
 
   (* Arithmetic *)
   | OpAdd of jvm_basic_type

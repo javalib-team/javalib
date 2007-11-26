@@ -23,6 +23,8 @@ open JBasics
 open JClassLow
 open JClass
 
+let debug = ref 1
+
 let rec flags2access = function
   | AccPublic::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccProtected) l
@@ -47,7 +49,7 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
        | a -> 
 	   let (name,contents) = JUnparse.unparse_attribute_to_strings consts a
 	   in
-	     prerr_endline ("Warning: unexpected attribute found: "^name);
+	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
 	     name,contents)
 
 (** convert a list of  attributes to an [attributes] structure. *)
@@ -116,12 +118,12 @@ let low2high_cfield consts fs = function f ->
     match cst with
       | [] -> None,other_att
       | AttributeConstant c::oc when not is_static ->  (* it seems quite common *)
-	  (* prerr_endline "A non-static field has been found with a constant value associated."; *)
+	  if !debug > 1 then prerr_endline "A non-static field has been found with a constant value associated.";
 	  None, (AttributeConstant c::(oc@other_att))
       | AttributeConstant c::[] ->
 	  Some c, other_att
       | AttributeConstant c::oc ->
-	  prerr_endline "A field contains more than one constant value associated.";
+	  if !debug > 0 then prerr_endline "A field contains more than one constant value associated.";
 	  Some c, (oc@other_att)
       | _ -> assert false
   in
@@ -181,12 +183,12 @@ let low2high_amethod consts ms = function m ->
 	      (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
 	      m.m_flags)
       with
-	| AccFinal -> prerr_endline "A method should not have its AccAbstract and AccFinal flags both set."
-	| AccNative -> prerr_endline "A method should not have its AccAbstract and AccNative flags both set."
-	| AccPrivate -> prerr_endline "A method should not have its AccAbstract and AccPrivate flags both set."
-	| AccStatic -> prerr_endline "A method should not have its AccAbstract and AccStatic flags both set."
-	| AccStrict -> prerr_endline "A method should not have its AccAbstract and AccStrict flags both set."
-	| AccSynchronized -> prerr_endline "A method should not have its AccAbstract and AccSynchronized flags both set."
+	| AccFinal -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccFinal flags both set."
+	| AccNative -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccNative flags both set."
+	| AccPrivate -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccPrivate flags both set."
+	| AccStatic -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccStatic flags both set."
+	| AccStrict -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccStrict flags both set."
+	| AccSynchronized -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccSynchronized flags both set."
 	| _ -> raise (Class_structure_error ("If a method has its ACC_ABSTRACT flag set it may not have any"
 				      ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
 				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
@@ -263,7 +265,7 @@ let low2high_cmethod consts ms = function m ->
 		else
 		  if List.exists ((=) AccNative) m.m_flags
 		  then
-		    (prerr_endline "A method declared as Native with code has been found.";
+		    (if !debug > 0 then prerr_endline "A method declared as Native with code has been found.";
 		     Native)
 		else Java (low2high_code consts c)
 	    | _::l -> find_Code l
@@ -271,7 +273,7 @@ let low2high_cmethod consts ms = function m ->
 		if List.exists ((=) AccNative) m.m_flags
 		then Native
 		else
-		  (prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
+		  (if !debug > 0 then prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
 		   Native)
 	  in find_Code m.m_attributes
 	end;
@@ -283,22 +285,6 @@ let low2high_acmethod consts ms = function m ->
   then AbstractMethod (low2high_amethod consts ms m)
   else ConcreteMethod (low2high_cmethod consts ms m)
 
-
-let low2high_concrete_methods consts = function nc ->
-  List.fold_left
-    (fun map meth ->
-      let ms =
-	{ms_name=meth.m_name;
-	 ms_parameters=fst meth.m_descriptor}
-      in
-	MethodMap.add
-	  ms
-	(try low2high_cmethod consts ms meth
-	  with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
-	map)
-    MethodMap.empty
-    nc.j_methods
-
 let low2high_methods consts = function ac ->
   List.fold_left
     (fun map meth ->
@@ -306,6 +292,11 @@ let low2high_methods consts = function ac ->
 	{ms_name=meth.m_name;
 	 ms_parameters=fst meth.m_descriptor}
       in
+	if !debug > 0 && MethodMap.mem ms map 
+	then
+	  prerr_endline 
+	    ("2 methods have been found with the same signature ("^ms.ms_name 
+	      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
 	MethodMap.add
 	  ms
 	  (try low2high_acmethod consts ms meth
@@ -375,8 +366,8 @@ let low2high_class cl =
 	    raise (Class_structure_error "Class file with their AccInterface flags set must also have their AccAbstract flags set.")
 	  else
 	    begin
-		if cl.j_super <> Some java_lang_object
-		then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
+	      if cl.j_super <> Some java_lang_object
+	      then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
 	      let (init,methods) =
 		match List.partition
 		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_descriptor = clinit_signature.ms_parameters) cl.j_methods with
@@ -398,6 +389,11 @@ let low2high_class cl =
 		  i_fields = List.fold_left
 		    (fun m f ->
 		      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+			if !debug > 0 && FieldMap.mem fs m
+			then
+			  prerr_endline
+			    ("Warning: 2 fields have been found with the same signature ("
+			      ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
 			FieldMap.add
 			  fs
 			  (try low2high_ifield consts fs f
@@ -410,11 +406,19 @@ let low2high_class cl =
 		      let ms =
 			{ms_name=meth.m_name;
 			 ms_parameters=fst meth.m_descriptor}
-		      in MethodMap.add
-			ms
-			(try low2high_amethod consts ms meth
-			  with Class_structure_error msg -> raise (Class_structure_error ("method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
-			map)
+		      in 
+			if !debug > 0 && MethodMap.mem ms map 
+			then
+			  prerr_endline 
+			    ("2 methods have been found with the same signature ("^ms.ms_name 
+			      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
+			MethodMap.add
+			  ms
+			  (try low2high_amethod consts ms meth
+			    with Class_structure_error msg ->
+			      let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
+			      in raise (Class_structure_error ("method " ^sign^": "^msg)))
+			  map)
 		    MethodMap.empty
 		    methods;
 		}
@@ -429,6 +433,11 @@ let low2high_class cl =
 	  List.fold_left
 	    (fun m f ->
 	      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		if !debug > 0 && FieldMap.mem fs m
+		then
+		  prerr_endline
+		    ("Warning: 2 fields have been found with the same signature ("
+		      ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
 		FieldMap.add
 		  fs
 		  (try low2high_cfield consts fs f
