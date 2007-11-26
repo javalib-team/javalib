@@ -34,7 +34,7 @@ let jvm_basic_type_of = function
 	| 1 -> `Long
 	| 2 -> `Float
 	| 3 -> `Double
-	| n -> assert false
+	| _ -> assert false
 
 let jvm_basic_type place = function
 	| 0 -> `Int2Bool

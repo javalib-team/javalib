@@ -146,8 +146,8 @@ let opcode = function
   | OpJsr n -> sprintf "jsr %d" n
   | OpRet n -> sprintf "ret %d" n
 
-  | OpTableSwitch (def,min,max,tbl) -> "tableswitch <...>"
-  | OpLookupSwitch (def,pairs) -> "lookupswitch <...>"
+  | OpTableSwitch (_def,_min,_max,_tbl) -> "tableswitch <...>"
+  | OpLookupSwitch (_def,_pairs) -> "lookupswitch <...>"
 
   | OpReturn k ->
       (match k with
@@ -192,10 +192,10 @@ let dump_code ch cl code =
   IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.c_exc_tbl;
   List.iter (function (s,_) -> IO.printf ch "    ?%s\n" s) code.c_attributes
 
-let dump_cfield ch c f =
+let dump_cfield ch _c f =
   JDumpLow.dump_field ch () (h2l_cfield () f)
 
-let dump_ifield ch c f =
+let dump_ifield ch _c f =
   JDumpLow.dump_field ch () (h2l_ifield () f)
 
 let dump_cmethod ch consts m =

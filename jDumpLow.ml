@@ -190,7 +190,7 @@ and dump_attrib ch cl = function
 	    IO.printf ch "    inner-classes\n"
 	| AttributeSynthetic ->
 	    IO.printf ch "    synthetic\n"
-	| AttributeLineNumberTable lines ->
+	| AttributeLineNumberTable _lines ->
 	    IO.printf ch "    line-numbers\n"
 	| AttributeLocalVariableTable variables ->
 	    IO.printf ch "    local-variables\n";

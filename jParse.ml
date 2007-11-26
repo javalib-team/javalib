@@ -82,7 +82,7 @@ let parse_constant max ch =
 	  let len = read_ui16 ch in
 	  let str = IO.nread ch len in
 	    ConstantStringUTF8 str
-      | n ->
+      | cid ->
 	  raise (Illegal_value (string_of_int cid, "constant kind"))
 
 let parse_access_flags ch =
@@ -431,7 +431,7 @@ let rec expand_constant consts n =
 	| ConstantField (cl,nt) ->
 	    (match expand "Field" cl nt with
 	       | TClass c, n, SValue v -> ConstField (c, n, v)
-	       | TClass c, n, _ -> raise (Illegal_value ("", "type in Field constant"))
+	       | TClass _, _, _ -> raise (Illegal_value ("", "type in Field constant"))
 	       | _ -> raise (Illegal_value ("", "class in Field constant")))
 	| ConstantMethod (cl,nt) ->
 	    (match expand "Method" cl nt with
@@ -440,7 +440,7 @@ let rec expand_constant consts n =
 	| ConstantInterfaceMethod (cl,nt) ->
 	    (match expand "InterfaceMethod" cl nt with
 	       | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
-	       | TClass c, n, _ -> raise (Illegal_value ("", "type in Interface Method constant"))
+	       | TClass _, _, _ -> raise (Illegal_value ("", "type in Interface Method constant"))
 	       | _, _, _ -> raise (Illegal_value ("", "class in Interface Method constant")))
 	| ConstantString i ->
 		(match expand_constant consts i with
@@ -453,7 +453,7 @@ let rec expand_constant consts n =
 	| ConstantNameAndType (n,t) ->
 		(match expand_constant consts n , expand_constant consts t with
 		| ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
-		| ConstStringUTF8 n , _ ->
+		| ConstStringUTF8 _ , _ ->
 		    raise (Illegal_value ("", "type in NameAndType constant"))
 		| _ -> raise (Illegal_value ("", "name in NameAndType constant")))
 	| ConstantStringUTF8 s -> ConstStringUTF8 s

@@ -169,7 +169,7 @@ let rec eq_code cl c1 c2 =
 	true
 
 and eq_inner_classes cl icl1 icl2 =
-  let eq_inner_class cl
+  let eq_inner_class _cl
       (inner_class_info1, outer_class_info1, inner_name1, inner_class_access_flags1)
        (inner_class_info2, outer_class_info2, inner_name2, inner_class_access_flags2) =
     if inner_class_info1 <> inner_class_info2

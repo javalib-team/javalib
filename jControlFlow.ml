@@ -24,88 +24,72 @@ open JClass
 open JProgram
 
 module PP = struct
-  type t = {hardpp : class_file * code * int;
-       	    softpp : (class_name * method_signature) * int;}
+  type t = {cl:interface_or_class;
+	    meth:concrete_method;
+	    pc:int;}
 
-  let to_className (pp:t) : class_name = fst (fst pp.softpp)
+  exception NoCode of (class_name * method_signature)
 
-  let to_class (pp:t) : class_file = let (c,_,_) = pp.hardpp in c
+  let to_string (pp:t) : string =
+    let s = pp.meth.cm_signature in
+    JDumpBasics.class_name (get_name pp.cl)
+      ^ "."^ s.ms_name ^"("
+      ^ (String.concat ", " 
+	    (List.map (JDumpBasics.value_signature "") s.ms_parameters))
+      ^ "): " ^ string_of_int pp.pc
 
-  let to_hardpp (pp:t) : class_file * code * int = pp.hardpp
-  let to_softpp (pp:t) : (class_name * method_signature) * int = pp.softpp
+  let get_class (pp:t) : interface_or_class = 
+    pp.cl
+      
+  let get_meth (pp:t) : concrete_method =
+    pp.meth
 
-  let hard2soft (c,m,i) =
-    let res = ref None in
-      begin
-    	      MethodMap.iter
-		(fun ms' -> function
-		  | ConcreteMethod m' when m==m' -> res := Some ms'
-		  | _ -> ())
-		c.c_methods
-      end;
-      match !res with
-    	| Some ms -> ((c.c_name,ms),i)
-    	| None -> raise (Invalid_argument "the program point is invalid (the method has not been found in the class)")
+  let get_pc (pp:t) : int = pp.pc
 
-
-  exception NoCode of (JBasics.class_name * JClass.method_signature)
-  let soft2hard prog ((cn,ms),i) =
-    let c = get_interface_or_class prog cn in
-      match get_method c ms with
-	| ConcreteMethod m ->
-	    begin
-	      match m.cm_implementation with
-		| Native -> raise (NoCode (cn,ms))
-		| Java m -> match c with
-		    | `Class c -> (c,m,i)
-		    | `Interface _ -> raise (NoCode (cn,ms))
-	    end
-	| AbstractMethod _ -> raise (NoCode (cn,ms))
-
+  let get_pp cl' meth' pc' : t = {cl=cl';meth=meth';pc=pc';}
 
   (** @raise NoCode if the method is abstract or not found. *)
-  let get_first_pp prog cms : t =
-    let soft = (cms,0) in
-      {hardpp = soft2hard prog soft;
-       softpp = soft;}
+  let get_first_pp prog cn ms : t =
+    match get_interface_or_class prog cn with
+      | `Interface {i_initializer = Some m} as c when m.cm_signature = ms ->
+	  {cl=c;meth=m;pc=0;}
+      | `Class c as cl' when MethodMap.mem ms c.c_methods ->
+	  begin
+	    match MethodMap.find ms c.c_methods with
+	      | ConcreteMethod m->
+		  {cl=cl';
+		   meth=m;
+		   pc=0;}
+	      | _ -> raise (NoCode (cn,ms))
+	  end
+      | _ -> raise (NoCode (cn,ms))
 
-  let get_first_pp_wp (c,ms) : t =
-    let c = `Class c in
-    let hardpp'=
-      match get_method c ms with
-	| ConcreteMethod m ->
-	    begin
-	      match m.cm_implementation with
-		| Native -> raise (NoCode (get_name c,ms))
-		| Java m -> match c with
-		    | `Class c -> (c,m,0)
-		    | `Interface _ -> raise (NoCode (get_name c,ms))
-	    end
-	| AbstractMethod _ -> raise (NoCode (get_name c,ms))
-    in {hardpp = hardpp';
-	softpp = ((get_name c,ms),0);}
+  let get_first_pp_wp c ms : t =
+    match get_method c ms with
+      | ConcreteMethod m -> {cl=c;meth=m;pc=0;}
+      | AbstractMethod _ -> raise (NoCode (get_name c,ms))
 
+  let goto_absolute pp i : t = {pp with pc=i;}
 
-  let goto_absolute pp i : t =
-    { hardpp = (let (c,m,_) = pp.hardpp in (c,m,i));
-      softpp = (fst pp.softpp, i);}
-
-  let goto_relative pp jmp : t =
-    let (c,m,i) = pp.hardpp in
-      { hardpp = (c,m,i+jmp);
-	softpp = (fst pp.softpp, i+jmp);}
+  let goto_relative pp jmp : t ={pp with pc=pp.pc+jmp;}
 
 end
 
 open PP
 type pp = PP.t
 
-let get_opcode (pp:pp) :opcode = let (_,m,i) = PP.to_hardpp pp in m.c_code.(i)
+let get_code (pp:pp): opcodes =
+  match pp.meth.cm_implementation with
+    | Java c -> c.c_code
+    | Native -> raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
+
+let get_opcode (pp:pp) :opcode = (get_code pp).(pp.pc)
 
 let next_instruction pp =
-  let (c,m,i) = PP.to_hardpp pp in
-  let i = ref (succ i) in
-    while m.c_code.(!i) = OpInvalid do
+  let opcodes = get_code pp
+  and i = ref (succ pp.pc)
+  in
+    while opcodes.(!i) = OpInvalid do
       incr i;
     done;
     goto_absolute pp !i
@@ -118,12 +102,12 @@ let normal_successors pp =
     | OpJsr l
     | OpGoto l -> [goto_relative pp l]
     | OpRet _ -> (* all instruction following a jsr are returned. *)
-	let (c,m,i) = PP.to_hardpp pp in
+	let code = get_code pp in
 	let i = ref 0 in
 	let l = ref [] in
-	  while !i < Array.length m.c_code do
+	  while !i < Array.length code do
 	    begin
-	      match m.c_code.(!i) with
+	      match code.(!i) with
 		| OpJsr _ ->
 		    l := next_instruction (goto_absolute pp !i)::!l
 		| _ -> ()
@@ -147,10 +131,66 @@ let normal_successors pp =
     | OpBreakpoint -> assert false
     | _ -> [next_instruction pp]
 
-let handlers pp =
-  let (_,m,i) = PP.to_hardpp pp in
-    List.filter (fun e -> e.e_start <= i && i < e.e_end) m.c_exc_tbl
+let static_lookup_static prog cn ms =
+  let c =
+    match resolve_class prog cn with
+      | `Class c -> resolve_method ms c
+      | `Interface c -> resolve_interface_method ms c
+  in
+    match c with
+      | `Class c' -> c'::overridden_by_methods ms c
+      | `Interface _ -> overridden_by_methods ms c
 
+let static_lookup_interface prog cn ms =
+  let c = 
+    match resolve_class prog cn with
+      | `Interface i -> resolve_interface_method ms i
+      | `Class _ -> raise IncompatibleClassChangeError
+  in
+    match c with 
+      | `Class c' -> c'::overridden_by_methods ms c
+      | `Interface _ -> overridden_by_methods ms c
+
+let static_lookup_special prog pp cn ms =
+  try 
+    match resolve_class prog cn with
+      | `Interface _ -> raise IncompatibleClassChangeError
+      | `Class c ->
+	  let c' = resolve_method ms c in
+	    match pp.cl,c' with
+	      | `Class c1, `Class c2 when 
+		    (ms.ms_name = "<init>" 
+			|| not (extends_class c1 c2)) ->
+		  [c2]
+	      | _ ->
+		  match super_class (`Class c) with
+		    | None -> raise AbstractMethodError
+		    | Some c -> [lookup_virtual_method ms c]
+  with 
+    | NoClassDefFoundError | NoSuchMethodError
+    | AbstractMethodError -> []
+
+let static_lookup_virtual prog obj ms =
+  match obj with
+    | TArray _ ->
+	raise (Failure ("invokevirutal on arrays are not supported yet."))
+    | TClass cn ->
+	let c = 
+	  match resolve_class prog cn with
+	    | `Class c -> resolve_method ms c
+	    | `Interface _ -> raise IncompatibleClassChangeError
+	in
+	  match c with
+	    | `Class c' -> c'::overridden_by_methods ms c
+	    | `Interface _ -> overridden_by_methods ms c
+	
+	
+let handlers pp =
+  match pp.meth.cm_implementation with
+    | Java code ->
+	List.filter (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end) code.c_exc_tbl
+    | Native ->
+	raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
 
 let exceptional_successors pp =
   List.map (fun e -> goto_absolute pp e.e_handler) (handlers pp)

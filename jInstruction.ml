@@ -406,7 +406,7 @@ let instruction2opcode consts = function
 
 	| JClass.OpInvalid -> OpInvalid
 
-let opcode_length consts offset opcode =
+let opcode_length _consts offset opcode =
   let ch = output_string () in
   let ch, count = pos_out ch in
     for i = 1 to offset mod 4 do (* Pour les instructions alignÃ©es *)

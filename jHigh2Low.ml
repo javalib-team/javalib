@@ -84,7 +84,7 @@ let h2l_code2attribute consts = function
 	}
       in [AttributeCode code]
 
-let h2l_cfield consts f =
+let h2l_cfield _consts f =
   {f_name = f.cf_signature.fs_name;
    f_descriptor = f.cf_signature.fs_type;
    f_flags =
@@ -100,7 +100,7 @@ let h2l_cfield consts f =
       @ (h2l_attributes f.cf_attributes);
   }
 
-let h2l_ifield consts f =
+let h2l_ifield _consts f =
   {f_name = f.if_signature.fs_name;
    f_descriptor = f.if_signature.fs_type;
    f_flags = [AccPublic;AccStatic;AccFinal];
@@ -136,7 +136,7 @@ let h2l_cmethod consts m =
 	@ h2l_attributes m.cm_attributes;
     }
 
-let h2l_amethod consts m =
+let h2l_amethod _consts m =
   {m_name = m.am_signature.ms_name;
    m_descriptor = (m.am_signature.ms_parameters, m.am_return_type);
    m_flags = AccAbstract::(access2flags m.am_access);

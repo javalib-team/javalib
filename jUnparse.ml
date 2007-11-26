@@ -287,7 +287,7 @@ let unparse_method ch consts methode =
      with
        | Some c, [AttributeCode c'] -> c == c' (* = is false because of nan. *)
        | None, [] -> true
-       | _, l -> false)
+       | _, _ -> false)
   then
     raise
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");

@@ -99,7 +99,7 @@ let add_classFile c (program:program) =
 	  try
 	    match ClassMap.find iname program with
 	      | `Interface i -> i
-	      | `Class c' ->
+	      | `Class _ ->
 		  raise (Class_structure_error
 			    (JDumpBasics.class_name c.JClass.c_name^" is declared to implements "
 			      ^JDumpBasics.class_name iname^", which is a class and not an interface."))
@@ -115,7 +115,7 @@ let add_classFile c (program:program) =
 	  try
 	    match ClassMap.find super program with
 	      | `Class c -> Some c
-	      | `Interface i ->
+	      | `Interface _ ->
 		  raise (Class_structure_error
 			    (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
 			      ^JDumpBasics.class_name super^", which is an interface and not a class."))
@@ -172,7 +172,7 @@ let add_interfaceFile c (program:program) =
   and super =
     try match ClassMap.find java_lang_object program with
       | `Class c -> c
-      | `Interface i ->
+      | `Interface _ ->
 	  raise (Class_structure_error"java.lang.Object is declared as an interface.")
     with Not_found -> raise (Class_not_found java_lang_object)
   in
@@ -339,7 +339,6 @@ let load_program filename : program =
 let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
 let iter f p = ClassMap.iter (fun _ c -> f c) p
 
-type any_method = jmethod
 type any_field =
     | InterfaceField of interface_field
     | ClassField of class_field
@@ -382,7 +381,14 @@ let resolve_class program cn =
 
 
 let get_method c ms = match c with
-  | `Interface i -> AbstractMethod (MethodMap.find ms i.i_methods)
+  | `Interface i -> 
+      if ms = clinit_signature
+      then 
+	match i.i_initializer with
+	  | Some m -> ConcreteMethod m
+	  | None -> raise Not_found
+      else
+	AbstractMethod (MethodMap.find ms i.i_methods)
   | `Class c -> MethodMap.find ms c.c_methods
 
 let get_methods = function
@@ -395,7 +401,7 @@ let get_field c fs = match c with
   | `Class c -> ClassField (FieldMap.find fs c.c_fields)
 
 let get_fields c =
-  let to_list fs f l = fs::l in
+  let to_list fs _f l = fs::l in
     match c with
       | `Interface i -> FieldMap.fold to_list i.i_fields []
       | `Class c -> FieldMap.fold to_list c.c_fields []
@@ -475,12 +481,63 @@ let lookup_virtual_method ms (c:class_file) : class_file =
   in 
     try 
       match get_method (`Class c) ms with
-	| AbstractMethod m -> raise AbstractMethodError
-	| ConcreteMethod m -> c'
+	| ConcreteMethod _ -> c'
+	| AbstractMethod _ -> raise AbstractMethodError
     with Not_found -> raise AbstractMethodError
 
 let lookup_interface_method = lookup_virtual_method
 
+
+let overrides_methods ms c =
+  let result = ref [] in
+    match c.c_super_class with
+      | None -> []
+      | Some c -> 
+	  let sc = ref c in
+	    try
+	      while true do
+		let c = resolve_method' ms c
+		in
+		  result := c::!result;
+		  sc := 
+		    (match c.c_super_class with
+		      | Some c -> c
+		      | None -> raise NoSuchMethodError);
+	      done;
+	      assert false
+	    with NoSuchMethodError ->
+	      !result
+
+let overridden_by_methods ms c =
+  let result = ref [] in
+  let implements ms c =
+    try 
+      match MethodMap.find ms c.c_methods with
+	| ConcreteMethod _ -> true
+	| AbstractMethod _ -> false
+    with Not_found -> false
+  in let rec c_overriding_methods' c = 
+    if implements ms c
+    then result := c::!result;
+    ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
+  and i_overriding_methods' i =
+    ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
+    ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
+  in
+    match c with
+      | `Class c ->
+	  ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children;
+	  !result
+      | `Interface i ->
+	  ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
+	  ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
+	  !result
+
+let implements_methods ms c = 
+  ClassMap.fold
+    (fun _ i l -> resolve_all_interface_methods ms i @ l)
+    c.c_interfaces
+    []
 
 (* {2 Access to the hierarchy} *)
 
@@ -497,7 +554,7 @@ let rec extends_class' c1 c2 : bool =
       | None -> false;
       | Some c3 -> extends_class' c3 c2
 
-let extends_class_ref c1 c2 : bool = extends_class' c1 c2
+let extends_class c1 c2 : bool = extends_class' c1 c2
 
 let rec extends_interface' i1 in2 : bool =
   ClassMap.fold
@@ -505,32 +562,32 @@ let rec extends_interface' i1 in2 : bool =
     i1.i_interfaces
     false
 
-let rec extends_interface_ref (i1:interface_file) (i2:interface_file) : bool =
+let rec extends_interface (i1:interface_file) (i2:interface_file) : bool =
   i1 == i2 ||
     (ClassMap.fold
-	(fun _in3 i3 b -> b || extends_interface_ref i3 i2)
+	(fun _in3 i3 b -> b || extends_interface i3 i2)
 	i1.i_interfaces
 	false
     )
 
-let rec implements_ref (c1:class_file) (i2:interface_file) : bool =
+let rec implements (c1:class_file) (i2:interface_file) : bool =
   if
     (ClassMap.fold
-	(fun _in3 i3 b -> b || extends_interface_ref i3 i2)
+	(fun _in3 i3 b -> b || extends_interface i3 i2)
 	c1.c_interfaces
 	false
     )
   then true
   else match super (`Class c1) with
     | None -> false
-    | Some c3 -> implements_ref c3 i2
+    | Some c3 -> implements c3 i2
 
-let super_class_ref c : class_file option = super c
+let super_class c : class_file option = super c
 
-let rec super_interfaces_ref i =
+let rec super_interfaces i =
   ClassMap.fold
     (fun _iname i ilist ->
-      i::(List.rev_append (super_interfaces_ref i) ilist))
+      i::(List.rev_append (super_interfaces i) ilist))
     i.i_interfaces
     []
 
@@ -538,7 +595,7 @@ let rec implemented_interfaces' (c:class_file) : interface_file list =
   let directly_implemented_interfaces =
     ClassMap.fold
       (fun _iname i ilist ->
-	i::(List.rev_append (super_interfaces_ref i) ilist))
+	i::(List.rev_append (super_interfaces i) ilist))
       c.c_interfaces
       []
   in
@@ -547,15 +604,15 @@ let rec implemented_interfaces' (c:class_file) : interface_file list =
       | Some c' ->
 	  List.rev_append directly_implemented_interfaces (implemented_interfaces' c')
 
-let implemented_interfaces_ref c =
+let implemented_interfaces c =
   let rec rem_dbl = function
     | e::l -> e:: (List.filter ((!=)e) (rem_dbl l))
     | [] -> []
   in (rem_dbl (implemented_interfaces' c))
 
-let rec firstCommonSuperClass_ref (c1:class_file) (c2:class_file) : class_file =
+let rec firstCommonSuperClass (c1:class_file) (c2:class_file) : class_file =
   if extends_class' c1 c2
   then c2
-  else match super_class_ref (`Class c2) with
-    | Some c3 -> firstCommonSuperClass_ref c1 c3
-    | None -> raise (Failure "firstCommonSuperClass_ref: c1 and c2 has been found such that c1 does not extends c2 and c2 has no super class.")
+  else match super_class (`Class c2) with
+    | Some c3 -> firstCommonSuperClass c1 c3
+    | None -> raise (Failure "firstCommonSuperClass: c1 and c2 has been found such that c1 does not extends c2 and c2 has no super class.")

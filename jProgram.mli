@@ -119,7 +119,6 @@ val fold : ('b -> interface_or_class -> 'b) -> 'b -> program -> 'b
 
 (** {2 Access functions to fields and methods}*)
 
-type any_method = jmethod
 type any_field = | InterfaceField of interface_field | ClassField of class_field
 
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
@@ -153,7 +152,7 @@ val get_interface_or_class : t -> class_name -> interface_or_class
     [c], if any.
     @raise Not_found if [c] does not contain a method with signature [ms].
 *)
-val get_method : interface_or_class -> method_signature -> any_method
+val get_method : interface_or_class -> method_signature -> jmethod
 val get_methods : interface_or_class -> method_signature list
 
 (** [get_field c fs] returns the field with signature [fs] in class
@@ -225,35 +224,61 @@ val lookup_virtual_method : method_signature -> class_file -> class_file
 val lookup_interface_method : method_signature -> class_file -> class_file
 
 
+(** [overriding_methods ms c] looks for the methods that overrides and
+    implements [ms] in the children of [c].
+
+    @raise Not_found if [ms] cannot be found in [c]
+*)
+val overridden_by_methods : method_signature -> interface_or_class -> class_file list
+
+
+(** [overridden_methods ms c] looks for the classes that define
+    methods that are overridden by [(c,ms)] (in the parents of
+    [c]). The result list is ordered such that [c1] is before [c2] iff
+    [c1] extends [c2].
+
+    @raise Not_found if [ms] cannot be found in [c]
+*)
+val overrides_methods : method_signature -> class_file -> class_file list
+
+(** [implements_methods ms c] looks for the interfaces that defines
+    methods [ms] in the direct interfaces of [c] and recursively in
+    their super-interfaces. If [i1] and [i2] defines [ms] and [i1]
+    extends [i2], then [i1] is before [i2] in the result list.
+
+    @raise Not_found if [ms] cannot be found in [c]
+*)
+val implements_methods : method_signature -> class_file -> interface_file list
+
 (** {2 Access to the hierarchy} *)
 
 (** [extends_class p cn1 cn2] returns [true] if [cn2] is a super-class
     of [cn1]. An class extends itself.
     @raise Not_found if [cn1] or [cn2] cannot be found in [p]. *)
-val extends_class_ref : class_file -> class_file -> bool
+val extends_class : class_file -> class_file -> bool
 
 (** [extends_interface p in1 in2] returns true if [in2] is a
     super-interface of [in1]. An interface extends itself.
     @raise Not_found if [in1] cannot be found in [p]. *)
-val extends_interface_ref : interface_file -> interface_file -> bool
+val extends_interface : interface_file -> interface_file -> bool
 
 (** [implements p cn1 in2] returns true if [in2] is a
     super-interface of [cn1].
     @raise Not_found if [cn1] cannot be found in [p]. *)
-val implements_ref : class_file -> interface_file -> bool
+val implements : class_file -> interface_file -> bool
 
 (** [super_class p cn] returns the super class of cn.
     @raise Not_found if [cn] is not in [p] or if [cn] has no super
     class. *)
-val super_class_ref : interface_or_class -> class_file option
+val super_class : interface_or_class -> class_file option
 
 (** [implemented_interfaces p cn] returns the interfaces implemented
     by [cn], super-classes of [cn], or extended by those
     super-interfaces. *)
-val implemented_interfaces_ref : class_file -> interface_file list
+val implemented_interfaces : class_file -> interface_file list
 
 (** [super_interfaces p iname] returns the explicit and implicit
     super-interfaces of [iname].*)
-val super_interfaces_ref : interface_file -> interface_file list
+val super_interfaces : interface_file -> interface_file list
 
-val firstCommonSuperClass_ref : class_file -> class_file -> class_file
+val firstCommonSuperClass : class_file -> class_file -> class_file

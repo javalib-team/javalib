@@ -26,35 +26,42 @@ open JProgram
 (** {2 Access to instructions}*)
 
 (** manipulation of program pointers *)
-module PP :
-  sig
-    type t
-    exception NoCode of (class_name * method_signature)
-    val to_className : t -> JBasics.class_name
-    val to_class : t -> JProgram.class_file
-    val to_hardpp : t -> JProgram.class_file * JClass.code * int
-    val to_softpp :
-      t -> (JBasics.class_name * JClass.method_signature) * int
+module PP : sig
+  type t
+  exception NoCode of (class_name * method_signature)
+  val get_class : t -> interface_or_class
+  val get_meth : t -> concrete_method
+  val get_pc : t -> int
 
-    (** [get_first_pp p cn ms] gets a pointer to the first instruction of
-	the method [ms] of the class [cn].
+  val get_pp : interface_or_class -> concrete_method -> int -> t
 
-	@raise Not_found if [cn] is not a class of [p], or [ms] is not a
-	method of [cn].
+  (** [get_first_pp p cn ms] gets a pointer to the first instruction of
+      the method [ms] of the class [cn].
 
-	@raise NoCode if the method [ms] has no associated code.*)
-    val get_first_pp :
-      JProgram.t -> JBasics.class_name * JClass.method_signature -> t
-    val get_first_pp_wp : class_file * method_signature -> t
-    val goto_absolute : t -> int -> t
-    val goto_relative : t -> int -> t
-  end
+      @raise Not_found if [cn] is not a class of [p], or [ms] is not a
+      method of [cn].
+
+      @raise NoCode if the method [ms] has no associated code.*)
+  val get_first_pp : program -> class_name -> method_signature -> t
+  val get_first_pp_wp : interface_or_class -> method_signature -> t
+  val goto_absolute : t -> int -> t
+  val goto_relative : t -> int -> t
+end
 
 (** The type of program point identifier. *)
 type pp = PP.t
 
 val get_opcode : pp -> JClass.opcode
-val next_instruction : PP.t -> PP.t
-val normal_successors : pp -> PP.t list
-val handlers : PP.t -> JBasics.exception_handler list
-val exceptional_successors : PP.t -> PP.t list
+val next_instruction : pp -> pp
+val normal_successors : pp -> pp list
+val handlers : pp -> JBasics.exception_handler list
+val exceptional_successors : pp -> pp list
+
+val static_lookup_static : 
+  program -> class_name -> method_signature -> class_file list
+val static_lookup_interface :
+  program -> class_name -> method_signature -> class_file list
+val static_lookup_special :
+  program -> PP.t -> class_name -> method_signature -> class_file list
+val static_lookup_virtual :
+  program -> object_type -> method_signature -> class_file list

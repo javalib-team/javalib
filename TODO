@@ -1,18 +1,21 @@
 Here is some stuff that need to be done:
-- merge instructions OpLdc and OpConst
+* Correctness
 - add fields "other_flags" to field/method/class/inner_class records
-- jDump : we should dump the constant pool, the tableswitch and
-  lookupswith instructions
-- it seems that many things are not dump by jDump
-- adapt JDump to dump high level classes
+- take in account visibility in JProgram (lookups and resolves of fields
+  and methods)
+- test lookups and resolves by comparing with jvm traces
+
+* Performance
 - add lazy parsing (keeping the code attributes unparsed until really
   needed) (think of marshaling and compacity)
 - add "lazy loading": automatically load from a class-path classes
   that are needed by the 'main' classes (it's to avoid loading the
   full run-time, but just the part used by the current program)
-- take in account visibility in JProgram (lookups and resolves of fields
-  and methods)
-- test lookups and resolves by comparing with jvm traces
+
+* Extra functionalities
+- jDump : we should dump the constant pool, the tableswitch and
+  lookupswith instructions (it seems that many things are not dump by
+  jDumpLow)
 - JControlFlow : improve precession of exceptional_successors by
   pruning edges to handles of subclasses of java.lang.Exception and
   not subclasses of java.lang.RuntimeException for instruction that
@@ -22,5 +25,3 @@ Here is some stuff that need to be done:
   be able to do some more serious tests
 - remove constant pool indexes from low level opcodes ; it was stupid to
   re-add them.
-- should not we rename m_signature and f_signature with m_descriptor
-  and f_descriptor?

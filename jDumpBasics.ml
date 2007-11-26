@@ -113,7 +113,7 @@ let dump_stackmap ch (offset,locals,stack) =
 	IO.printf ch "],\n      stack=[";
 	List.iter (fun t -> IO.printf ch "\n        %s" (dump_verif_info t)) stack
 
-let dump_exc ch cl exc =
+let dump_exc ch _cl exc =
   IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;
   (match exc.e_catch_type with
      | None -> IO.printf ch "<finally>"

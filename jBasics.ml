@@ -218,7 +218,7 @@ let get_interface_method consts i =
 let get_string consts i =
   match get_constant consts i with
     | ConstStringUTF8 s -> s
-    | c -> raise (Illegal_value (string_of_int i, "string index"))
+    | _ -> raise (Illegal_value (string_of_int i, "string index"))
 
 let get_class_ui16 consts ch = get_class consts (read_ui16 ch)
 let get_string_ui16 consts ch = get_string consts (read_ui16 ch)
