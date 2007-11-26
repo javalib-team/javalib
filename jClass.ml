@@ -1,8 +1,8 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 Universit� de Rennes 1 / CNRS
- *  Tiphaine.Turpin@irisa.fr
- *  Laurent.Hubert@irisa.fr
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine Turpin <first.last@irisa.fr>
+ *  Laurent Hubert <first.last@irisa.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -221,8 +221,8 @@ type implementation =
   | Native
   | Java of code
 
-(* l'attribut final n'a pas vraiment de sens pour une méthode
-   statique, mais c'est autorisé dans la spec JVM. *)
+(* l'attribut final n'a pas vraiment de sens pour une mÃ©thode
+   statique, mais c'est autorisÃ© dans la spec JVM. *)
 type concrete_method = {
   cm_signature : method_signature;
   cm_static : bool;

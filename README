@@ -52,7 +52,7 @@ For documentation you can :
 - browse the mli files
 - read http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html
   for more informations about the class file format
-- send an email to Tiphaine.Turpin@irisa.fr
+- send an email to Laurent Hubert or Tiphaine Turpin <first.last@irisa.fr>
 
 
 AUTHORS
@@ -70,7 +70,7 @@ in the Lande team, between March and July 2006.
 These modifications mainly concerned an error about the "wide"
 instruction, which was definitely not properly coded.
 
-Tiphaine Turpin <Tiphaine.Turpin@irisa.fr> added the unparsing feature.
+Tiphaine Turpin <Tiphaine Turpin <first.last@irisa.fr>> added the unparsing feature.
 
 
 LICENCE

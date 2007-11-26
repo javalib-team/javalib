@@ -1,6 +1,6 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 Universit� de Rennes 1
+ *  Copyright (c)2007 Université de Rennes 1
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -409,7 +409,7 @@ let instruction2opcode consts = function
 let opcode_length consts offset opcode =
   let ch = output_string () in
   let ch, count = pos_out ch in
-    for i = 1 to offset mod 4 do (* Pour les instructions alignées *)
+    for i = 1 to offset mod 4 do (* Pour les instructions alignÃ©es *)
       write_byte ch 0
     done;
     JCode.unparse_instruction ch count opcode;

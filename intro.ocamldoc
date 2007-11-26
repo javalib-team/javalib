@@ -26,7 +26,7 @@ For documentation you can :
 - browse the api below
 - read http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html
   for more informations about the class file format
-- send an email to Tiphaine.Turpin.no\@spam.irisa.fr.
+- send an email to Laurent Hubert or Tiphaine Turpin <first.last\@irisa.fr>.
 
 {b {L About this version}}
 
@@ -42,17 +42,17 @@ simple version.
 
 JavaLib was initially developped by Nicolas Cannasse.
 
-Frédéric Besson made some corrections.
+FrÃ©dÃ©ric Besson made some corrections.
 
 Laurent Hubert then modified it during an internship at IRISA (Rennes, France)
 in the Lande team, during the summer 2005.
 
-Étienne André then modified it during an internship at IRISA
+Ã‰tienne AndrÃ© then modified it during an internship at IRISA
 in the Lande team, between March and July 2006.
 These modifications mainly concerned an error about the "wide"
 instruction, which was definitely not properly coded.
 
-Tiphaine Turpin <Tiphaine.Turpin.no\@spam.irisa.fr> added the unparsing feature.
+Tiphaine Turpin <first.last\@.irisa.fr> added the unparsing feature.
 
 {2 API}
 

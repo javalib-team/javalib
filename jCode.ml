@@ -1,9 +1,9 @@
 (*
  *  This file is part of JavaLib
  *  Copyright (c)2004 Nicolas Cannasse
- *  Copyright (c)2007 Universit� de Rennes 1 / CNRS
- *  Tiphaine.Turpin@irisa.fr
- *  Laurent.Hubert@irisa.fr
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine Turpin <first.last@irisa.fr>
+ *  Laurent Hubert <first.last@irisa.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -715,7 +715,7 @@ let unparse_code ch code =
   let ch, count = pos_out ch in
     Array.iteri
       (fun i opcode ->
-      (* On suppose que unparse_instruction n'écrit rien pour OpInvalid *)
+      (* On suppose que unparse_instruction n'Ã©crit rien pour OpInvalid *)
 	 if not (opcode = OpInvalid || count () = i)
 	 then raise (Class_structure_error "unparsing Badly alligned low level bytecode");
 	 unparse_instruction ch count opcode)

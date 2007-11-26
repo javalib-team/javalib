@@ -1,8 +1,8 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 Universit� de Rennes 1 / CNRS
- *  Tiphaine.Turpin@irisa.fr
- *  Laurent.Hubert@irisa.fr
+ *  Copyright (c)2007 Université de Rennes 1 / CNRS
+ *  Tiphaine Turpin <first.last@irisa.fr>
+ *  Laurent Hubert <first.last@irisa.fr>
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -218,8 +218,8 @@ type implementation =
   | Native
   | Java of code
 
-(* l'attribut final n'a pas vraiment de sens pour une m�thode
-   statique, mais c'est autoris� dans la spec JVM. *)
+(* l'attribut final n'a pas vraiment de sens pour une méthode
+   statique, mais c'est autorisé dans la spec JVM. *)
 type concrete_method = {
   cm_signature : method_signature;
   cm_static : bool;
@@ -241,17 +241,17 @@ type abstract_method = {
   am_return_type : value_type option
 }
 
-(* Contrainte supplémentaire : une méthode d'initialisation (d'instance)
-   est forcément concrète, et ne peut pas être statique, finale ou
-   synchronisée :
+(* Contrainte supplÃ©mentaire : une mÃ©thode d'initialisation (d'instance)
+   est forcÃ©ment concrÃ¨te, et ne peut pas Ãªtre statique, finale ou
+   synchronisÃ©e :
 
-   "A specific instance initialization method (§3.9) may have at most one
+   "A specific instance initialization method (Â§3.9) may have at most one
    of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set and may also
    have its ACC_STRICT flag set, but may not have any of the other flags
    in Table 4.5 set."
 
-   L: => on peut typer differement les méthodes d'initialisation (class
-   et instance), mais ça risque d'allourdir les choses.
+   L: => on peut typer differement les mÃ©thodes d'initialisation (class
+   et instance), mais Ã§a risque d'allourdir les choses.
 *)
 
 
@@ -308,8 +308,8 @@ type jinterface = {
   i_methods : abstract_method MethodMap.t
 }
 
-(* Les polymorphic variants servent juste pour simplifier JProgram en �vitant
-   les pr�fixe (faudrait enlever �a dans l'id�al). *)
+(* Les polymorphic variants servent juste pour simplifier JProgram en évitant
+   les préfixe (faudrait enlever ça dans l'idéal). *)
 type interface_or_class = [
   | `Interface of jinterface
   | `Class of jclass
