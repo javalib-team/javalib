@@ -32,10 +32,11 @@ type field_signature = {
 
 type method_signature = {
   ms_name:string;
-  ms_parameters:value_type list
+  ms_parameters:value_type list;
+  ms_return_type : value_type option;
 }
 
-let clinit_signature = {ms_name="<clinit>";ms_parameters=[]}
+let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;}
 
 
 (** Instruction. *)
@@ -144,7 +145,7 @@ type opcode =
       | `Static of class_name
       | `Interface of class_name
       ]
-	* method_signature * value_type option
+	* method_signature
   | OpReturn of jvm_return_type
 
   (* Exceptions and threads *)
@@ -188,9 +189,12 @@ type class_field = {
   cf_signature : field_signature;
   cf_access: access;
   cf_static : bool;
+  cf_synthetic : bool;
+  cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option; (* Valable seulement pour un champ static final. *)
+  cf_value : constant_value option; (** Only if the field is static final. *)
   cf_transient : bool;
+  cf_other_flags : int list;
   cf_attributes : attributes
 }
 
@@ -198,7 +202,9 @@ type class_field = {
     [final].*)
 type interface_field = {
   if_signature : field_signature;
-  if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_synthetic : bool;
+  if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_other_flags : int list;
   if_attributes : attributes
 }
 
@@ -221,8 +227,9 @@ type implementation =
   | Native
   | Java of code
 
-(* l'attribut final n'a pas vraiment de sens pour une mÃ©thode
-   statique, mais c'est autorisÃ© dans la spec JVM. *)
+
+(* l'attribut final n'a pas vraiment de sens pour une méthode
+   statique, mais c'est autorisé dans la spec JVM. *)
 type concrete_method = {
   cm_signature : method_signature;
   cm_static : bool;
@@ -230,18 +237,24 @@ type concrete_method = {
   cm_synchronized : bool;
   cm_strict : bool;
   cm_access: access;
+  cm_bridge: bool;
+  cm_varargs : bool;
+  cm_synthetic : bool;
+  cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
   cm_implementation : implementation;
-  cm_return_type : value_type option
 }
 
 type abstract_method = {
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
+  am_bridge: bool;
+  am_varargs: bool;
+  am_synthetic: bool;
+  am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  am_return_type : value_type option
 }
 
 
@@ -262,7 +275,11 @@ type inner_class = {
   ic_access : access;
   ic_static : bool;
   ic_final : bool;
-  ic_type : [`ConcreteClass|`Abstract|`Interface]
+  ic_synthetic: bool;
+  ic_annotation: bool;
+  ic_enum: bool;
+  ic_other_flags : int list;
+  ic_type : [`ConcreteClass | `Abstract | `Interface]
 }
 
 type jclass = {
@@ -270,17 +287,19 @@ type jclass = {
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
-  c_super_class : class_name option; (* redundant if we use a map *)
+  c_super_class : class_name option;
   c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_inner_classes : inner_class list;
+  c_synthetic: bool;
+  c_enum: bool;
+  c_other_flags : int list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
 }
-
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
@@ -295,6 +314,8 @@ type jinterface = {
   i_other_attributes : (string * string) list;
   i_super : class_name; (** must be java.lang.Object. *)
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_annotation: bool;
+  i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
 }

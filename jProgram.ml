@@ -30,6 +30,9 @@ type class_file = {
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
+  c_synthetic: bool;
+  c_enum: bool;
+  c_other_flags : int list;
   c_super_class : class_file option;
   c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
@@ -45,6 +48,8 @@ type class_file = {
 and interface_file = {
   i_name : class_name;
   i_access : [`Public | `Default];
+  i_annotation: bool;
+  i_other_flags : int list;
   i_interfaces : interface_file ClassMap.t;
   i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
@@ -126,6 +131,9 @@ let add_classFile c (program:program) =
      c_access = c.JClass.c_access;
      c_final = c.JClass.c_final;
      c_abstract = c.JClass.c_abstract;
+     c_synthetic = c.JClass.c_synthetic;
+     c_enum = c.JClass.c_enum;
+     c_other_flags = c.JClass.c_other_flags;
      c_super_class = c_super;
      c_consts = c.JClass.c_consts;
      c_interfaces = imap;
@@ -180,6 +188,8 @@ let add_interfaceFile c (program:program) =
     {i_name = c.JClass.i_name;
      i_access = c.JClass.i_access;
      i_consts = c.JClass.i_consts;
+     i_annotation = c.JClass.i_annotation;
+     i_other_flags = c.JClass.i_other_flags;
      i_interfaces = imap;
      i_sourcefile = c.JClass.i_sourcefile;
      i_deprecated = c.JClass.i_deprecated;
@@ -215,6 +225,8 @@ let to_class = function
       {JClass.i_name = c.i_name;
        JClass.i_access = c.i_access;
        JClass.i_consts = c.i_consts;
+       JClass.i_annotation = c.i_annotation;
+       JClass.i_other_flags = c.i_other_flags;
        JClass.i_interfaces =
 	  ClassMap.fold (fun cn _ l -> cn::l) c.i_interfaces [];
        JClass.i_sourcefile = c.i_sourcefile;
@@ -231,12 +243,15 @@ let to_class = function
        JClass.c_access = c.c_access;
        JClass.c_final = c.c_final;
        JClass.c_abstract = c.c_abstract;
-       JClass.c_super_class = 
+       JClass.c_enum = c.c_enum ;
+       JClass.c_synthetic = c.c_synthetic ;
+       JClass.c_other_flags = c.c_other_flags ;
+       JClass.c_super_class =
 	  (match c.c_super_class with
 	    | Some cn -> Some cn.c_name
 	    | None -> None);
        JClass.c_consts = c.c_consts;
-       JClass.c_interfaces = 
+       JClass.c_interfaces =
 	  ClassMap.fold (fun cn _ l -> cn::l) c.c_interfaces [];
        JClass.c_sourcefile = c.c_sourcefile;
        JClass.c_deprecated = c.c_deprecated;
@@ -262,7 +277,7 @@ let get_class class_path class_map name =
 let add_class_referenced c program to_add =
   Array.iter
     (function
-      | ConstMethod (TClass cn,_,_) -> 
+      | ConstMethod (TClass cn,_,_) ->
 	  if not (ClassMap.mem cn program)
 	  then to_add := cn::!to_add
       | _ -> ())
@@ -287,7 +302,7 @@ let rec add_file class_path c program =
 	let cn = List.hd !to_add in
 	  to_add := List.tl !to_add;
 	  if not (ClassMap.mem cn !program)
-	  then 
+	  then
 	    let c = get_class class_path classmap cn
 	    in program := add_file class_path c !program
       done;
@@ -310,7 +325,7 @@ let parse_program class_path names =
   let class_map = ref
     begin
       List.fold_left
-	(fun clmap cn -> 
+	(fun clmap cn ->
 	  let c= JFile.get_class class_path cn in
 	    assert (cn = JDumpBasics.class_name (JClass.get_name c));
 	    ClassMap.add (JClass.get_name c) c clmap)
@@ -321,7 +336,7 @@ let parse_program class_path names =
       (fun _ -> add_file class_path)
       !class_map
       ClassMap.empty
-      
+    
 
 let store_program filename program : unit =
   let ch = open_out_bin filename
@@ -381,9 +396,9 @@ let resolve_class program cn =
 
 
 let get_method c ms = match c with
-  | `Interface i -> 
+  | `Interface i ->
       if ms = clinit_signature
-      then 
+      then
 	match i.i_initializer with
 	  | Some m -> ConcreteMethod m
 	  | None -> raise Not_found
@@ -393,7 +408,7 @@ let get_method c ms = match c with
 
 let get_methods = function
   | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
-  | `Class {c_methods = mm;} -> 
+  | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
 
 let get_field c fs = match c with
@@ -478,8 +493,8 @@ let lookup_virtual_method ms (c:class_file) : class_file =
   let c' =
     try resolve_method' ms c
     with NoSuchMethodError -> raise AbstractMethodError
-  in 
-    try 
+  in
+    try
       match get_method (`Class c) ms with
 	| ConcreteMethod _ -> c'
 	| AbstractMethod _ -> raise AbstractMethodError
@@ -492,14 +507,14 @@ let overrides_methods ms c =
   let result = ref [] in
     match c.c_super_class with
       | None -> []
-      | Some c -> 
+      | Some c ->
 	  let sc = ref c in
 	    try
 	      while true do
 		let c = resolve_method' ms c
 		in
 		  result := c::!result;
-		  sc := 
+		  sc :=
 		    (match c.c_super_class with
 		      | Some c -> c
 		      | None -> raise NoSuchMethodError);
@@ -511,12 +526,12 @@ let overrides_methods ms c =
 let overridden_by_methods ms c =
   let result = ref [] in
   let implements ms c =
-    try 
+    try
       match MethodMap.find ms c.c_methods with
 	| ConcreteMethod _ -> true
 	| AbstractMethod _ -> false
     with Not_found -> false
-  in let rec c_overriding_methods' c = 
+  in let rec c_overriding_methods' c =
     if implements ms c
     then result := c::!result;
     ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
@@ -533,7 +548,7 @@ let overridden_by_methods ms c =
 	  ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
 	  !result
 
-let implements_methods ms c = 
+let implements_methods ms c =
   ClassMap.fold
     (fun _ i l -> resolve_all_interface_methods ms i @ l)
     c.c_interfaces

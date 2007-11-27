@@ -54,6 +54,10 @@ let h2l_inner_classes = function
 	  (access2flags ic.ic_access)
 	  @ (if ic.ic_static then [AccStatic] else [])
 	  @ (if ic.ic_final then [AccFinal] else [])
+	  @ (if ic.ic_synthetic then [AccSynthetic] else [])
+	  @ (if ic.ic_annotation then [AccAnnotation] else [])
+	  @ (if ic.ic_enum then [AccEnum] else [])
+	  @ (List.map (fun i -> AccRFU i) ic.ic_other_flags)
 	  @ (match ic.ic_type with
 	    | `Interface -> [AccAbstract;AccInterface]
 	    | `Abstract -> [AccAbstract]
@@ -94,6 +98,9 @@ let h2l_cfield _consts f =
 	| Volatile -> [AccVolatile]
 	| NotFinal -> [])
       @ (if f.cf_static then [AccStatic] else [])
+      @ (if f.cf_synthetic then [AccSynthetic] else [])
+      @ (if f.cf_enum then [AccEnum] else [])
+      @ (List.map (fun i -> AccRFU i) f.cf_other_flags)
       @ (access2flags f.cf_access);
    f_attributes =
       (match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
@@ -103,7 +110,10 @@ let h2l_cfield _consts f =
 let h2l_ifield _consts f =
   {f_name = f.if_signature.fs_name;
    f_descriptor = f.if_signature.fs_type;
-   f_flags = [AccPublic;AccStatic;AccFinal];
+   f_flags = 
+      (if f.if_synthetic then [AccSynthetic] else [])
+      @ (List.map (fun i -> AccRFU i) f.if_other_flags)
+      @ [AccPublic;AccStatic;AccFinal];
    f_attributes =
       (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
       @ (h2l_attributes f.if_attributes);
@@ -114,13 +124,17 @@ let h2l_cmethod consts m =
   in
     {m_name = m.cm_signature.ms_name;
      m_descriptor =
-	(m.cm_signature.ms_parameters, m.cm_return_type);
+	(m.cm_signature.ms_parameters, m.cm_signature.ms_return_type);
      m_flags =
 	(if m.cm_static then [AccStatic] else [])
 	@ (if m.cm_final then [AccFinal] else [])
 	@ (if m.cm_synchronized then [AccSynchronized] else [])
 	@ (if m.cm_strict then [AccStrict] else [])
 	@ (match m.cm_implementation with Native -> [AccNative] |_ -> [])
+	@ (if m.cm_bridge then [AccBridge] else [])
+	@ (if m.cm_varargs then [AccVarArgs] else [])
+	@ (if m.cm_synthetic then [AccSynthetic] else [])
+	@ (List.map (fun i -> AccRFU i) m.cm_other_flags)
 	@ (access2flags m.cm_access);
      m_code =
 	begin
@@ -138,13 +152,18 @@ let h2l_cmethod consts m =
 
 let h2l_amethod _consts m =
   {m_name = m.am_signature.ms_name;
-   m_descriptor = (m.am_signature.ms_parameters, m.am_return_type);
-   m_flags = AccAbstract::(access2flags m.am_access);
+   m_descriptor = (m.am_signature.ms_parameters, m.am_signature.ms_return_type);
+   m_flags =
+      (if m.am_bridge then [AccBridge] else [])
+      @ (if m.am_varargs then [AccVarArgs] else [])
+      @ (if m.am_synthetic then [AccSynthetic] else [])
+      @ (List.map (fun i -> AccRFU i) m.am_other_flags)
+      @ (AccAbstract::access2flags m.am_access);
    m_code = None;
    m_attributes =
-	(match m.am_exceptions with
-	  | [] -> []
-	  | l -> [AttributeExceptions l])
+      (match m.am_exceptions with
+	| [] -> []
+	| l -> [AttributeExceptions l])
       @ h2l_attributes m.am_attributes;
   }
 
@@ -170,14 +189,16 @@ let high2low_class c =
      j_super = c.c_super_class;
      j_interfaces = c.c_interfaces;
      j_consts = c.c_consts; (*will be updated later on*)
-     j_flags = 
+     j_flags =
 	(if c.c_abstract then [AccAbstract] else [])
-	@ (if c.c_final 
-	   then AccFinal::AccSynchronized::access2flags c.c_access 
-	   else AccSynchronized::access2flags c.c_access); (*will be updated later on*)
+	@ (if c.c_synthetic then [AccSynthetic] else [])
+	@ (if c.c_enum then [AccEnum] else [])
+	@ (if c.c_final then [AccFinal] else [])
+	@ (List.map (fun i -> AccRFU i) c.c_other_flags)
+	@ (AccSuper::access2flags c.c_access);
      j_fields = FieldMap.fold (fun _fs f l -> h2l_cfield consts f::l) c.c_fields [];
      j_methods = []; (*will be set later on*)
-     j_attributes =  (*will be updated later on*)
+     j_attributes =
 	(deprecated_to_attribute c.c_deprecated)
 	@ (h2l_inner_classes c.c_inner_classes)
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
@@ -193,7 +214,10 @@ let high2low_interface (c:jinterface) =
      j_super = Some JBasics.java_lang_object;
      j_interfaces = c.i_interfaces;
      j_consts = c.i_consts; (*will be updated later on*)
-     j_flags = AccInterface::AccAbstract::access2flags c.i_access; (*will be updated later on*)
+     j_flags =
+	(if c.i_annotation then [AccAnnotation] else [])
+	@ (List.map (fun i -> AccRFU i) c.i_other_flags)
+	@ AccInterface::AccAbstract::access2flags c.i_access;
      j_fields =
 	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
      j_methods =

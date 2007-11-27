@@ -29,24 +29,29 @@ let rec flags2access = function
   | AccPublic::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccProtected) l
       then raise (Class_structure_error "Access flags Public and Private or Protected cannot be set at the same time")
-      else `Public
+      else (`Public,l)
   | AccPrivate::l ->
       if List.exists (fun a -> a = AccPublic || a= AccProtected) l
       then raise (Class_structure_error "Access flags Private and Public or Protected cannot be set at the same time")
-      else `Private
+      else (`Private,l)
   | AccProtected::l ->
       if List.exists (fun a -> a = AccPrivate || a= AccPublic) l
       then raise (Class_structure_error "Access flags Protected and Private or Public cannot be set at the same time")
-      else `Protected
-  | _::l -> flags2access l
-  | [] -> `Default
+      else (`Protected,l)
+  | f::l -> let (p,fl) = flags2access l in (p,f::fl)
+  | [] -> (`Default,[])
+
+let rec get_flag flag = function
+  | [] -> (false,[])
+  | f::fl when f=flag -> (true,List.filter ((<>)f) fl)
+  | f::fl -> let (b,fl) = get_flag flag fl in (b,f::fl)
 
 (** convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
   List.map
     (function
        | AttributeUnknown (name, contents) -> name, contents
-       | a -> 
+       | a ->
 	   let (name,contents) = JUnparse.unparse_attribute_to_strings consts a
 	   in
 	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
@@ -111,7 +116,29 @@ let low2high_code consts = function c ->
   }
 
 let low2high_cfield consts fs = function f ->
-  let is_static = List.exists ((=) AccStatic) f.f_flags in
+  let flags = f.f_flags in
+  let (is_static,flags) = get_flag AccStatic flags in
+  let (access,flags) = flags2access flags in
+  let (is_final,flags) = get_flag AccFinal flags in
+  let (is_volatile,flags) = get_flag AccVolatile flags in
+  let (is_transient,flags) = get_flag AccTransient flags in
+  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+  let (is_enum,flags) = get_flag AccEnum flags in
+  let flags =
+    List.map (function
+      | AccRFU i -> i
+      | _ -> failwith "unexcepted flag in JLow2High.low2high_cfield: bug in JavaLib")
+      flags
+  in
+  let kind =
+    if is_final
+    then
+      if is_volatile
+      then raise (Class_structure_error "A field cannot be final and volatile.")
+      else Final
+    else
+      if is_volatile then Volatile else NotFinal
+  in
   let (cst,other_att) =
     List.partition (function AttributeConstant _ -> true | _ -> false) f.f_attributes in
   let (cst,other_att) =
@@ -129,31 +156,32 @@ let low2high_cfield consts fs = function f ->
   in
     {
       cf_signature = fs;
-      cf_access = flags2access f.f_flags;
+      cf_access = access;
       cf_static = is_static;
-      cf_kind =
-	begin
-	  let rec find_field_type = function
-	    | AccFinal::_ -> Final
-	    | AccVolatile::_ -> Volatile
-	    | _::l -> find_field_type l
-	    | [] -> NotFinal
-	  in find_field_type f.f_flags
-	end;
+      cf_kind = kind;
       cf_value = cst;
-      cf_transient = List.exists ((=)AccTransient) f.f_flags;
+      cf_transient = is_transient;
+      cf_synthetic = is_synthetic;
+      cf_enum = is_enum;
+      cf_other_flags = flags;
       cf_attributes =
 	low2high_attributes consts other_att;
     }
 
 let low2high_ifield consts fs = function f ->
-  if not
-    (List.exists ((=)AccPublic) f.f_flags
-      && List.exists ((=)AccStatic) f.f_flags
-      && List.exists ((=)AccFinal) f.f_flags) ||
-    [] <> (List.filter (fun a -> a<>AccPublic && a<>AccStatic && a<>AccFinal) f.f_flags)
-  then raise (Class_structure_error "A field of an interface must have as only flag : Public, Static and Final.")
-  else
+  let flags = f.f_flags in
+  let (is_public,flags) = get_flag AccPublic flags in
+  let (is_static,flags) = get_flag AccStatic flags in
+  let (is_final,flags) = get_flag AccFinal flags in
+  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+    if not(is_public && is_static && is_final)
+    then raise (Class_structure_error "A field of an interface must be : Public, Static and Final.");
+    let flags = List.map
+      (function
+	| AccRFU i -> i
+	| _ -> raise (Class_structure_error "A field of an interface may only have it AccSynthetic flag set in addition of AccPublic, AccStatic and AccFinal."))
+      flags
+    in
     {
       if_signature = fs;
       if_value =
@@ -164,6 +192,8 @@ let low2high_ifield consts fs = function f ->
 	    | [] -> None
 	  in find_Constant f.f_attributes
 	end;
+      if_synthetic = is_synthetic;
+      if_other_flags = flags;
       if_attributes =
 	low2high_attributes consts
 	  (List.filter
@@ -172,74 +202,90 @@ let low2high_ifield consts fs = function f ->
     }
 
 let low2high_amethod consts ms = function m ->
-  begin
-    if List.exists
-      (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
-      m.m_flags
-    then
-      match
-	List.hd
+  let flags = m.m_flags in
+  let (access,flags) = flags2access flags in
+  let (is_abstract,flags) = get_flag AccAbstract flags in
+  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+  let (is_bridge,flags) = get_flag AccBridge flags in
+  let (is_varargs,flags) = get_flag AccVarArgs flags in
+  let access =
+    match access with
+      | `Private -> raise (Class_structure_error "Abstract method cannot be private")
+      | `Default -> `Default
+      | `Protected -> `Protected
+      | `Public -> `Public
+  in
+  let flags =
+    List.map
+      (function
+	| AccRFU i -> i
+	| _ -> raise (Class_structure_error (
+	    "If a method has its ACC_ABSTRACT flag set it may not have any"
+	    ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
+	    ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set.")))
+      flags
+  in
+    assert(is_abstract);
+    {
+      am_signature = ms;
+      am_access = access;
+      am_synthetic = is_synthetic;
+      am_bridge = is_bridge;
+      am_varargs = is_varargs;
+      am_other_flags = flags;
+      am_exceptions =
+	begin
+	  let rec find_Exceptions = function
+	    | AttributeExceptions cl::l ->
+		if find_Exceptions l <> []
+		then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
+		else cl
+	    | _::l -> find_Exceptions l
+	    | [] -> []
+	  in find_Exceptions m.m_attributes
+	end;
+      am_attributes =
+	low2high_attributes consts
 	  (List.filter
-	      (fun a -> a=AccFinal || a=AccNative || a=AccPrivate || a=AccStatic || a=AccStrict || a=AccSynchronized)
-	      m.m_flags)
-      with
-	| AccFinal -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccFinal flags both set."
-	| AccNative -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccNative flags both set."
-	| AccPrivate -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccPrivate flags both set."
-	| AccStatic -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccStatic flags both set."
-	| AccStrict -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccStrict flags both set."
-	| AccSynchronized -> if !debug > 0 then prerr_endline "A method should not have its AccAbstract and AccSynchronized flags both set."
-	| _ -> raise (Class_structure_error ("If a method has its ACC_ABSTRACT flag set it may not have any"
-				      ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
-				      ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set."))
-  end;
-  {
-    am_signature = ms;
-    am_access =
-      begin
-	match flags2access m.m_flags with
-	  | `Private -> raise (Class_structure_error "Abstract method cannot be private")
-	  | `Default -> `Default
-	  | `Protected -> `Protected
-	  | `Public -> `Public
-      end;
-    am_exceptions =
-      begin
-	let rec find_Exceptions = function
-	  | AttributeExceptions cl::l ->
-	      if find_Exceptions l <> []
-	      then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
-	      else cl
-	  | _::l -> find_Exceptions l
-	  | [] -> []
-	in find_Exceptions m.m_attributes
-      end;
-    am_attributes =
-      low2high_attributes consts
-	(List.filter
-	    (function AttributeExceptions _ -> false| _ -> true)
-	    m.m_attributes);
-    am_return_type = snd m.m_descriptor
-  }
+	      (function AttributeExceptions _ -> false| _ -> true)
+	      m.m_attributes);
+    }
 
 let low2high_cmethod consts ms = function m ->
   if m.m_name = "<init>" &&
     List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
     m.m_flags
   then raise (Class_structure_error ("A specific instance initialization method may have at most "
-			      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
-			      ^ "and may also have its ACC_STRICT flag set."))
-  else
-    if List.exists ((=)AccAbstract) m.m_flags
-    then raise (Class_structure_error "Non abstract class cannot have abstract methods.")
-  else
+				      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
+				      ^ "and may also have its ACC_STRICT flag set."));
+  let flags = m.m_flags in
+  let (access,flags) = flags2access flags in
+  let (is_static,flags) = get_flag AccStatic flags in
+  let (is_final,flags) = get_flag AccFinal flags in
+  let (is_synchronized,flags) = get_flag AccSynchronized flags in
+  let (is_strict,flags) = get_flag AccStrict flags in
+  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+  let (is_bridge,flags) = get_flag AccBridge flags in
+  let (is_varargs,flags) = get_flag AccVarArgs flags in
+  let (is_native,flags) = get_flag AccNative flags in
+  let flags = List.map
+    (function
+      | AccRFU i -> i
+      | AccAbstract -> raise (Class_structure_error "Non abstract class cannot have abstract methods.")
+      | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
+    flags
+  in
     {
       cm_signature = ms;
-      cm_static = List.exists ((=) AccStatic) m.m_flags;
-      cm_final = List.exists ((=) AccFinal) m.m_flags;
-      cm_synchronized = List.exists  ((=) AccSynchronized) m.m_flags;
-      cm_strict =  List.exists ((=) AccStrict) m.m_flags;
-      cm_access = flags2access m.m_flags;
+      cm_static = is_static;
+      cm_final = is_final;
+      cm_synchronized = is_synchronized;
+      cm_strict = is_strict;
+      cm_access = access;
+      cm_bridge = is_bridge;
+      cm_varargs = is_varargs;
+      cm_synthetic = is_synthetic;
+      cm_other_flags = flags;
       cm_exceptions =
 	begin
 	  let rec find_Exceptions = function
@@ -261,23 +307,23 @@ let low2high_cmethod consts ms = function m ->
 	  let rec find_Code = function
 	    | AttributeCode c::l ->
 		if List.exists (function AttributeCode _ -> true| _-> false) l
-		then raise (Class_structure_error "Only one Code attribute is allowed in a method.")
-		else
-		  if List.exists ((=) AccNative) m.m_flags
-		  then
-		    (if !debug > 0 then prerr_endline "A method declared as Native with code has been found.";
-		     Native)
-		else Java (low2high_code consts c)
+		then raise (Class_structure_error "Only one Code attribute is allowed in a method.");
+		if not is_native
+		then Java (low2high_code consts c)
+		else begin
+		  if !debug > 0 then prerr_endline "A method declared as Native with code has been found.";
+		  Native
+		end
 	    | _::l -> find_Code l
 	    | [] ->
-		if List.exists ((=) AccNative) m.m_flags
+		if is_native
 		then Native
-		else
-		  (if !debug > 0 then prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
-		   Native)
+		else begin
+		  if !debug > 0 then prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
+		  Native
+		end
 	  in find_Code m.m_attributes
 	end;
-      cm_return_type = snd m.m_descriptor
     }
 
 let low2high_acmethod consts ms = function m ->
@@ -289,13 +335,14 @@ let low2high_methods consts = function ac ->
   List.fold_left
     (fun map meth ->
       let ms =
-	{ms_name=meth.m_name;
-	 ms_parameters=fst meth.m_descriptor}
+	{ms_name = meth.m_name;
+	 ms_parameters = fst meth.m_descriptor;
+	 ms_return_type = snd meth.m_descriptor;}
       in
-	if !debug > 0 && MethodMap.mem ms map 
+	if !debug > 0 && MethodMap.mem ms map
 	then
-	  prerr_endline 
-	    ("2 methods have been found with the same signature ("^ms.ms_name 
+	  prerr_endline
+	    ("2 methods have been found with the same signature ("^ms.ms_name
 	      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
 	MethodMap.add
 	  ms
@@ -306,36 +353,72 @@ let low2high_methods consts = function ac ->
     ac.j_methods
 
 let low2high_innerclass = function
-    (inner_class_info,outer_class_info,inner_name,inner_class_access_flags) ->
-      {
-	ic_class_name = inner_class_info;
-	ic_outer_class_name = outer_class_info;
-	ic_source_name = inner_name;
-	ic_access = flags2access inner_class_access_flags;
-	ic_static = List.exists ((=)AccStatic) inner_class_access_flags;
-	ic_final = List.exists ((=)AccFinal) inner_class_access_flags;
-	ic_type =
-	  if List.exists ((=)AccInterface) inner_class_access_flags
-	  then `Interface
-	  else if List.exists ((=)AccAbstract) inner_class_access_flags
-	  then `Abstract
-	  else `ConcreteClass
-      }
+    (inner_class_info,outer_class_info,inner_name,flags) ->
+      let (access,flags) = flags2access flags in
+      let (is_final,flags) = get_flag AccFinal flags in
+      let (is_static,flags) = get_flag AccStatic flags in
+      let (is_interface,flags) = get_flag AccInterface flags in
+      let (is_abstract,flags) = get_flag AccAbstract flags in
+      let (is_synthetic,flags) = get_flag AccSynthetic flags in
+      let (is_annotation,flags) = get_flag AccAnnotation flags in
+      let (is_enum,flags) = get_flag AccEnum flags in
+      let flags = List.map
+	(function
+	  | AccRFU i -> i
+	  | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
+	flags
+      in
+	{
+	  ic_class_name = inner_class_info;
+	  ic_outer_class_name = outer_class_info;
+	  ic_source_name = inner_name;
+	  ic_access = access;
+	  ic_static = is_static;
+	  ic_final = is_final;
+	  ic_synthetic = is_synthetic;
+	  ic_annotation = is_annotation;
+	  ic_enum = is_enum;
+	  ic_other_flags = flags;
+	  ic_type =
+	    if is_interface
+	    then `Interface
+	    else
+	      if is_abstract
+	      then `Abstract
+	    else `ConcreteClass
+	}
 
 
 let low2high_class cl =
   if cl.j_super = None && cl.j_name <> java_lang_object
-  then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.")
-  else
-    if List.exists ((=)AccFinal) cl.j_flags && List.exists ((=)AccAbstract) cl.j_flags
-    then raise (Class_structure_error "An abstract class cannot be final.")
-  else
+  then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
+  let flags = cl.j_flags in
+  let (access,flags) = flags2access flags in
+  let (accsuper,flags) = get_flag AccSuper flags in
+  let (is_final,flags) = get_flag AccFinal flags in
+  let (is_interface,flags) = get_flag AccInterface flags in
+  let (is_abstract,flags) = get_flag AccAbstract flags in
+  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+  let (is_annotation,flags) = get_flag AccAnnotation flags in
+  let (is_enum,flags) = get_flag AccEnum flags in
+  let flags =
+    List.map
+      (function
+	| AccRFU i -> i
+	| _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
+      flags
+  in
+    if not (accsuper || is_interface)
+    then raise (Class_structure_error "ACC_SUPER must be set for all classes");
+    if is_final && is_abstract
+    then raise (Class_structure_error "An abstract class cannot be final.");
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
     let my_access =
-      if List.exists ((=)AccPublic) cl.j_flags
-      then `Public
-      else `Default
+      match access with
+	| `Public -> `Public
+	| `Default -> `Default
+	| _ -> raise (Class_structure_error "Invalid visibility for a class.")
     and my_interfaces = cl.j_interfaces
     and my_sourcefile =
       let rec find_SourceFile = function
@@ -358,73 +441,85 @@ let low2high_class cl =
 	      | _ -> true)
 	    cl.j_attributes);
     in
-      if List.exists ((=)AccInterface) cl.j_flags
+      if is_interface
       then
 	begin
-	  if not (List.exists ((=)AccAbstract) cl.j_flags)
-	  then
-	    raise (Class_structure_error "Class file with their AccInterface flags set must also have their AccAbstract flags set.")
-	  else
-	    begin
-	      if cl.j_super <> Some java_lang_object
-	      then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
-	      let (init,methods) =
-		match List.partition
-		  (fun m -> m.m_name = clinit_signature.ms_name && fst m.m_descriptor = clinit_signature.ms_parameters) cl.j_methods with
-		    | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
-		    | [],others -> None, others
-		    | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
-	      in
-		`Interface {
-		  i_name = my_name;
-		  i_access = my_access;
-		  i_interfaces = my_interfaces;
-		  i_consts = DynArray.to_array consts;
-		  i_sourcefile = my_sourcefile;
-		  i_deprecated = my_deprecated;
-		  i_inner_classes = my_inner_classes;
-		  i_other_attributes = my_other_attributes;
-		  i_super = java_lang_object;
-		  i_initializer = init;
-		  i_fields = List.fold_left
-		    (fun m f ->
-		      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
-			if !debug > 0 && FieldMap.mem fs m
-			then
-			  prerr_endline
-			    ("Warning: 2 fields have been found with the same signature ("
-			      ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
-			FieldMap.add
-			  fs
-			  (try low2high_ifield consts fs f
-			    with Class_structure_error msg -> raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
-			  m)
-		    FieldMap.empty
-		    cl.j_fields;
-		  i_methods = List.fold_left
-		    (fun map meth ->
-		      let ms =
-			{ms_name=meth.m_name;
-			 ms_parameters=fst meth.m_descriptor}
-		      in 
-			if !debug > 0 && MethodMap.mem ms map 
-			then
-			  prerr_endline 
-			    ("2 methods have been found with the same signature ("^ms.ms_name 
-			      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
-			MethodMap.add
-			  ms
-			  (try low2high_amethod consts ms meth
-			    with Class_structure_error msg ->
-			      let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
-			      in raise (Class_structure_error ("method " ^sign^": "^msg)))
-			  map)
-		    MethodMap.empty
-		    methods;
-		}
-	    end
+	  if not is_abstract
+	  then raise (Class_structure_error "Class file with their AccInterface flag set must also have their AccAbstract flag set.");
+	  if cl.j_super <> Some java_lang_object
+	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
+	  if accsuper
+	  then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";
+	  if is_enum || is_synthetic
+	  then raise (Class_structure_error "Class file with their AccInterface flag set must not have their AccEnum or AccSynthetic flags set.");
+	  let (init,methods) =
+	    match
+	      List.partition
+		(fun m ->
+		  m.m_name = clinit_signature.ms_name
+		    && fst m.m_descriptor = clinit_signature.ms_parameters)
+		cl.j_methods
+	    with
+	      | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
+	      | [],others -> None, others
+	      | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
+	  in
+	    `Interface {
+	      i_name = my_name;
+	      i_access = my_access;
+	      i_interfaces = my_interfaces;
+	      i_consts = DynArray.to_array consts;
+	      i_sourcefile = my_sourcefile;
+	      i_deprecated = my_deprecated;
+	      i_inner_classes = my_inner_classes;
+	      i_other_attributes = my_other_attributes;
+	      i_super = java_lang_object;
+	      i_initializer = init;
+	      i_annotation = is_annotation;
+	      i_other_flags = flags;
+	      i_fields = List.fold_left
+		(fun m f ->
+		  let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		    if !debug > 0 && FieldMap.mem fs m
+		    then
+		      prerr_endline
+			("Warning: 2 fields have been found with the same signature ("
+			  ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
+		    FieldMap.add
+		      fs
+		      (try low2high_ifield consts fs f
+			with Class_structure_error msg ->
+			  raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
+		      m)
+		FieldMap.empty
+		cl.j_fields;
+	      i_methods = List.fold_left
+		(fun map meth ->
+		  let ms =
+		    {ms_name=meth.m_name;
+		     ms_parameters = fst meth.m_descriptor;
+		     ms_return_type = snd meth.m_descriptor;}
+		  in
+		    if !debug > 0 && MethodMap.mem ms map
+		    then
+		      prerr_endline
+			("2 methods have been found with the same signature ("^ms.ms_name
+			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
+		    MethodMap.add
+		      ms
+		      (try low2high_amethod consts ms meth
+			with Class_structure_error msg ->
+			  let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
+			  in raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": method " ^sign^": "^msg)))
+		      map)
+		MethodMap.empty
+		methods;
+	    }
 	end
       else
+	begin
+	  if is_annotation
+	  then raise (Class_structure_error "Class file with their AccAnnotation flag set must also have their AccInterface flag set.");
 	let my_methods =
 	  try low2high_methods consts cl
 	  with
@@ -449,9 +544,12 @@ let low2high_class cl =
 	  `Class {
 	    c_name = my_name;
 	    c_super_class = cl.j_super;
-	    c_final = List.exists ((=)AccFinal) cl.j_flags;
-	    c_abstract = List.exists ((=)AccAbstract) cl.j_flags;
+	    c_final = is_final;
+	    c_abstract = is_abstract;
 	    c_access = my_access;
+	    c_synthetic = is_synthetic;
+	    c_enum = is_enum;
+	    c_other_flags = flags;
 	    c_interfaces = my_interfaces;
 	    c_consts = DynArray.to_array consts;
 	    c_sourcefile = my_sourcefile;
@@ -461,3 +559,4 @@ let low2high_class cl =
 	    c_fields = my_fields;
 	    c_methods = my_methods;
 	  }
+	end

@@ -39,6 +39,9 @@ type class_file = {
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
+  c_synthetic: bool;
+  c_enum: bool;
+  c_other_flags : int list;
   c_super_class : class_file option;
   c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
@@ -56,6 +59,8 @@ type class_file = {
 and interface_file = {
   i_name : class_name;
   i_access : [`Public | `Default];
+  i_annotation: bool;
+  i_other_flags : int list;
   i_interfaces : interface_file ClassMap.t;
   i_consts : constant array;
   (** needed at least for unparsed/unknown attributes that might refer

@@ -173,20 +173,20 @@ let opcode2instruction consts = function
 	      JClass.OpPutField (c, {fs_name = n; fs_type = s})
 	| OpInvokeVirtual i ->
 	    let t, n, s = get_method consts i in
-	      JClass.OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s}, snd s)
+	      JClass.OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
 	| OpInvokeNonVirtual i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> JClass.OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s}, snd s)
+	       | TClass t, n, s -> JClass.OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
 	       | _ -> raise (Illegal_value ("array class", "invokespecial")))
 	| OpInvokeStatic i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> JClass.OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s}, snd s)
+	       | TClass t, n, s -> JClass.OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
 	       | _ -> raise (Illegal_value ("array class", "invokestatic")))
 	| OpInvokeInterface (i, c) ->
 	    let t, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c
 	      then raise (Class_structure_error "wrong count in invokeinterface");
-	      JClass.OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s}, snd s)
+	      JClass.OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
 
 	| OpNew i -> JClass.OpNew (get_class consts i)
 	| OpNewArray bt -> JClass.OpNewArray (TBasic bt)
@@ -214,13 +214,13 @@ let opcodes2code consts opcodes =
 let instruction2opcode consts = function
 	| JClass.OpNop -> OpNop
 	| JClass.OpConst x ->
-	    let opldc_w c = 
+	    let opldc_w c =
 	      let index = (value_to_int consts c)
 	      in if index <= 0xFF then OpLdc1 index else OpLdc1w index
 	    in
 	      (match x with
 	       | `ANull -> OpAConstNull
-	       | `Int v -> 
+	       | `Int v ->
 		   if -1l <= v && v <= 5l
 		   then OpIConst v
 		   else opldc_w (ConstInt v)
@@ -228,11 +228,11 @@ let instruction2opcode consts = function
 		   if v=0L || v=1L
 		   then OpLConst v
 		   else OpLdc2w (value_to_int consts (ConstLong v))
-	       | `Float v -> 
+	       | `Float v ->
 		   if v=0. || v=1. || v=2.
 		   then OpFConst v
 		   else opldc_w (ConstFloat v)
-	       | `Double v -> 
+	       | `Double v ->
 		   if v=0. || v=1. then OpDConst v
 		   else OpLdc2w (value_to_int consts (ConstDouble v))
 	       | `Byte v -> OpBIPush v
@@ -371,20 +371,20 @@ let instruction2opcode consts = function
 	    OpGetField (field_to_int consts (c, s.fs_name, s.fs_type))
 	| JClass.OpPutField (c, s) ->
 	    OpPutField (field_to_int consts (c, s.fs_name, s.fs_type))
-	| JClass.OpInvoke (x, s, r) ->
+	| JClass.OpInvoke (x, s) ->
 	    (match x with
 	       | `Virtual t ->
 		   OpInvokeVirtual
-		     (method_to_int consts (t, s.ms_name, (s.ms_parameters,r)))
+		     (method_to_int consts (t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
 	       | `Special t ->
 		   OpInvokeNonVirtual
-		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,r)))
+		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
 	       | `Static t ->
 		   OpInvokeStatic
-		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,r)))
+		     (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
 	       | `Interface t ->
 		   OpInvokeInterface
-		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,r))), count s.ms_parameters))
+		     (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_type))), count s.ms_parameters))
 
 	| JClass.OpNew n ->
 	    OpNew

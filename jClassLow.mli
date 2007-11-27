@@ -182,6 +182,12 @@ type access_flag =
 	| AccAbstract
 	| AccStrict
 	| AccRFU of int (** Four bits (RFU 1 .. RFU 4) reserved for future use *)
+	| AccSuper
+	| AccBridge
+	| AccVarArgs
+	| AccAnnotation
+	| AccEnum
+	| AccSynthetic
 
 type access_flags = access_flag list
 

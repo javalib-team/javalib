@@ -225,7 +225,13 @@ let access_flags = function
 			| AccInterface -> "interface"
 			| AccAbstract -> "abstract"
 			| AccStrict -> "strict"
-			| AccRFU i -> "rfu" ^ string_of_int i
+			| AccEnum -> "enum"
+			| AccAnnotation -> "annotation"
+			| AccVarArgs -> "VarArgs"
+			| AccBridge -> "bridge"
+			| AccSuper -> "AccSuper"
+			| AccSynthetic -> "synthetic"
+			| AccRFU i -> Printf.sprintf "rfu 0x%X" i
 		) flags) ^ " "
 
 let dump_field ch cl f =

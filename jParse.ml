@@ -85,12 +85,28 @@ let parse_constant max ch =
       | cid ->
 	  raise (Illegal_value (string_of_int cid, "constant kind"))
 
-let parse_access_flags ch =
-	let all_flags = [
-	  AccPublic; AccPrivate; AccProtected; AccStatic;
-	  AccFinal; AccSynchronized; AccVolatile; AccTransient;
-	  AccNative; AccInterface; AccAbstract; AccStrict;
-	  AccRFU 1; AccRFU 2; AccRFU 3; AccRFU 4 ] in
+let class_flags =
+  [AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
+   AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
+   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
+   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+let innerclass_flags =
+  [AccPublic; AccPrivate; AccProtected; AccStatic;
+   AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80;
+   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
+   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+let field_flags =
+  [AccPublic; AccPrivate; AccProtected; AccStatic;
+   AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
+   AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
+   AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000]
+let method_flags =
+  [AccPublic; AccPrivate; AccProtected; AccStatic;
+   AccFinal; AccSynchronized; AccBridge; AccVarArgs;
+   AccNative; AccRFU 0x200; AccAbstract; AccStrict;
+   AccSynthetic; AccRFU 0x2000; AccRFU 0x4000; AccRFU 0x8000]
+
+let parse_access_flags all_flags ch =
 	let fl = read_ui16 ch in
 	let flags = ref [] in
 	let fbit = ref 0 in
@@ -328,7 +344,7 @@ and parse_attribute list consts ch =
 			match (read_ui16 ch) with
 			  | 0 -> None
 			  | i -> Some (get_string consts i) in
-		      let flags = parse_access_flags ch in
+		      let flags = parse_access_flags innerclass_flags ch in
 			inner, outer, inner_name, flags))
 	| "Synthetic" -> check `Synthetic;
 	    if alen <> 0 then error ();
@@ -372,7 +388,7 @@ and parse_attribute list consts ch =
 	      Exit -> AttributeUnknown (aname,IO.nread ch alen)
 
 let parse_field consts ch =
-	let acc = parse_access_flags ch in
+	let acc = parse_access_flags field_flags ch in
 	let name = get_string_ui16 consts ch in
 	let sign = parse_type (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
@@ -392,7 +408,7 @@ let parse_field consts ch =
 	}
 
 let parse_method consts ch =
-	let acc = parse_access_flags ch in
+	let acc = parse_access_flags method_flags ch in
 	let name = get_string_ui16 consts ch in
 	let sign = parse_method_signature (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
@@ -476,7 +492,7 @@ let parse_class_low_level ch =
 			c
 	) in
 	let consts = Array.mapi (fun i _ -> expand_constant consts i) consts in
-	let flags = parse_access_flags ch in
+	let flags = parse_access_flags class_flags ch in
 	let this = get_class_ui16 consts ch in
 	let super_idx = read_ui16 ch in
 	let super = if super_idx = 0 then None else Some (get_class consts super_idx) in

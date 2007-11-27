@@ -159,12 +159,12 @@ let opcode = function
   | OpPutStatic (c, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
   | OpPutField (c, sign) -> sprintf "putfield %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
   | OpGetField (c, sign) -> sprintf "getfield %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
-  | OpInvoke (x, sign, ret) ->
+  | OpInvoke (x, sign) ->
       (match x with
-	| `Virtual c -> sprintf "invokevirtual %s.%s:%s" (object_value_signature "" c) sign.ms_name (method_signature "" (sign.ms_parameters,ret))
-	| `Special c -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,ret))
-	| `Static c -> sprintf "invokestatic %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,ret))
-	| `Interface c -> sprintf "invokeinterface %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,ret)))
+	| `Virtual c -> sprintf "invokevirtual %s.%s:%s" (object_value_signature "" c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
+	| `Special c -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
+	| `Static c -> sprintf "invokestatic %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
+	| `Interface c -> sprintf "invokeinterface %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type)))
   | OpNew c -> sprintf "new %s" (class_name c)
   | OpNewArray t ->
       (match t with

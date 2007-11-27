@@ -96,8 +96,8 @@ let  _ =
 
 let debug = ref 2
 
-let filter_flags authorized fl =
-  List.filter (fun f->List.exists ((=)f) authorized) fl
+let filter_flags _authorized fl = fl
+  (* List.filter (fun f->List.exists ((=)f) authorized) fl *)
 
 let dump_to_string f d =
   let ch = IO.output_string () in (f ch d; IO.close_out ch)
@@ -328,10 +328,10 @@ let test_jprogram class_path input_files =
       with JProgram.Class_not_found cn -> raise (Failure ("class not found "^class_name cn))
   in
   let class_path = JFile.class_path class_path
-  in 
+  in
     prerr_endline "adding files... ";
     List.fold_left
-      (fun p cn -> 
+      (fun p cn ->
 	JProgram.add_file
 	  class_path
 	  (JFile.get_class class_path cn)
@@ -343,10 +343,10 @@ let test_jprogram class_path input_files =
 (** It should run the test suite. *)
 let _ =
   let dir_class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
-  and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"]
-  in let class_path_jar = String.concat ":" (List.map (fun s -> dir_class_path^s) jars)
-  in let class_path = "./:"^dir_class_path^":"^class_path_jar
+  and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"] in
+  let class_path_jar = String.concat ":" (List.map (fun s -> dir_class_path^s) jars) in
+  let class_path = "./:"^dir_class_path^":"^class_path_jar
   and input_files = ["java.lang.Object"]
   in
-    h2l_and_l2h_conversions class_path jars;
+    h2l_and_l2h_conversions "./" ["rt.jar"];
     test_jprogram class_path input_files

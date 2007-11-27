@@ -140,13 +140,29 @@ let unparse_constant_pool ch consts =
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
+let class_flags =
+  [AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
+   AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
+   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
+   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+let innerclass_flags =
+  [AccPublic; AccPrivate; AccProtected; AccStatic;
+   AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80; 
+   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
+   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+let field_flags =
+  [AccPublic; AccPrivate; AccProtected; AccStatic; 
+   AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
+   AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
+   AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000]
+let method_flags = 
+  [AccPublic; AccPrivate; AccProtected; AccStatic;
+   AccFinal; AccSynchronized; AccBridge; AccVarArgs;
+   AccNative; AccRFU 0x200; AccAbstract; AccStrict;
+   AccSynthetic; AccRFU 0x2000; AccRFU 0x4000; AccRFU 0x8000]
 
-let unparse_flags flags =
-  let all_flags = [
-    AccPublic; AccPrivate; AccProtected; AccStatic; AccFinal; AccSynchronized;
-    AccVolatile; AccTransient; AccNative; AccInterface; AccAbstract; AccStrict;
-    AccRFU 1; AccRFU 2; AccRFU 3; AccRFU 4 ]
-  and fl = ref 0
+let unparse_flags all_flags flags =
+  let fl = ref 0
   and fbit = ref 0 in
     List.iter
       (fun f ->
@@ -211,7 +227,7 @@ let rec unparse_attribute_to_strings consts =
 		| None -> write_ui16 ch 0
 		| Some inner_name ->
 		    write_string ch consts inner_name);
-	      write_ui16 ch (unparse_flags flags))
+	      write_ui16 ch (unparse_flags innerclass_flags flags))
 	    l;
 	  ("InnerClasses",close_out ch)
       | AttributeSynthetic ->
@@ -270,7 +286,7 @@ and unparse_attribute ch consts attr =
 (*******************************)
 
 let unparse_field ch consts field =
-  write_ui16 ch (unparse_flags field.f_flags);
+  write_ui16 ch (unparse_flags field_flags field.f_flags);
   write_string ch consts field.f_name;
   write_string ch consts (unparse_value_signature field.f_descriptor);
   write_with_size write_ui16 ch
@@ -291,7 +307,7 @@ let unparse_method ch consts methode =
   then
     raise
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");
-  write_ui16 ch (unparse_flags methode.m_flags);
+  write_ui16 ch (unparse_flags method_flags methode.m_flags);
   write_string ch consts methode.m_name;
   write_string ch consts (unparse_method_signature methode.m_descriptor);
   write_with_size write_ui16 ch
@@ -304,7 +320,7 @@ let unparse_class_low_level ch c =
   write_ui16 ch version_major;
   let ch' = output_string ()
   and consts = DynArray.of_array c.j_consts in
-    write_ui16 ch' (unparse_flags c.j_flags);
+    write_ui16 ch' (unparse_flags class_flags c.j_flags);
     write_class ch' consts c.j_name;
     write_ui16 ch'
       (match c.j_super with

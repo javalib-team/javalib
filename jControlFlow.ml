@@ -34,13 +34,13 @@ module PP = struct
     let s = pp.meth.cm_signature in
     JDumpBasics.class_name (get_name pp.cl)
       ^ "."^ s.ms_name ^"("
-      ^ (String.concat ", " 
+      ^ (String.concat ", "
 	    (List.map (JDumpBasics.value_signature "") s.ms_parameters))
       ^ "): " ^ string_of_int pp.pc
 
-  let get_class (pp:t) : interface_or_class = 
+  let get_class (pp:t) : interface_or_class =
     pp.cl
-      
+    
   let get_meth (pp:t) : concrete_method =
     pp.meth
 
@@ -142,31 +142,31 @@ let static_lookup_static prog cn ms =
       | `Interface _ -> overridden_by_methods ms c
 
 let static_lookup_interface prog cn ms =
-  let c = 
+  let c =
     match resolve_class prog cn with
       | `Interface i -> resolve_interface_method ms i
       | `Class _ -> raise IncompatibleClassChangeError
   in
-    match c with 
+    match c with
       | `Class c' -> c'::overridden_by_methods ms c
       | `Interface _ -> overridden_by_methods ms c
 
 let static_lookup_special prog pp cn ms =
-  try 
+  try
     match resolve_class prog cn with
       | `Interface _ -> raise IncompatibleClassChangeError
       | `Class c ->
 	  let c' = resolve_method ms c in
 	    match pp.cl,c' with
-	      | `Class c1, `Class c2 when 
-		    (ms.ms_name = "<init>" 
+	      | `Class c1, `Class c2 when
+		    (ms.ms_name = "<init>"
 			|| not (extends_class c1 c2)) ->
 		  [c2]
 	      | _ ->
 		  match super_class (`Class c) with
 		    | None -> raise AbstractMethodError
 		    | Some c -> [lookup_virtual_method ms c]
-  with 
+  with
     | NoClassDefFoundError | NoSuchMethodError
     | AbstractMethodError -> []
 
@@ -175,7 +175,7 @@ let static_lookup_virtual prog obj ms =
     | TArray _ ->
 	raise (Failure ("invokevirutal on arrays are not supported yet."))
     | TClass cn ->
-	let c = 
+	let c =
 	  match resolve_class prog cn with
 	    | `Class c -> resolve_method ms c
 	    | `Interface _ -> raise IncompatibleClassChangeError
@@ -183,8 +183,8 @@ let static_lookup_virtual prog obj ms =
 	  match c with
 	    | `Class c' -> c'::overridden_by_methods ms c
 	    | `Interface _ -> overridden_by_methods ms c
-	
-	
+
+
 let handlers pp =
   match pp.meth.cm_implementation with
     | Java code ->

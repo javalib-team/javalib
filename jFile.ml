@@ -60,7 +60,7 @@ let is_file f =
     (Unix.stat f).Unix.st_kind = Unix.S_REG
   with Unix.Unix_error (Unix.ENOENT, _,_) -> false
 
-  
+
 (* We should catch only the exceptions Unix_error _ and End_of_file
    that we raised. *)
 
@@ -96,7 +96,7 @@ let lookup c =
 	let ch =
 	  match path with
 	    | `dir d ->
-		if is_file (Filename.concat d c) 
+		if is_file (Filename.concat d c)
 		then
 		  let ch = open_in_bin (Filename.concat d c) in
 		    IO.input_channel ch
@@ -213,8 +213,8 @@ let fold_string class_path f file =
   then
     invalid_arg ("invalid class name " ^ file ^ ", must be implicit")
   else
-    let c = 
-      if Filename.check_suffix file ".jar" 
+    let c =
+      if Filename.check_suffix file ".jar"
       then file
       else replace_dot file
     in
