@@ -36,22 +36,21 @@ let basic_type = function
   | `Int -> "int"
   | `Long -> "long"
 
-let rec object_value_signature name = function
-	| TClass cl -> class_name cl ^ " " ^ name
-	| TArray s ->
-		value_signature name s ^ "[]"
+let rec object_value_signature = function
+	| TClass cl -> class_name cl
+	| TArray s -> value_signature s
 
-and value_signature name = function
-  | TBasic b -> basic_type b ^ name
-  | TObject o -> object_value_signature name o
+and value_signature = function
+  | TBasic b -> basic_type b
+  | TObject o -> object_value_signature o
 
 let method_signature name (sl,sr) =
 		(match sr with
-		| None -> "void " ^ name
-		| Some s -> value_signature name s) ^ "(" ^ String.concat "," (List.map (value_signature "") sl) ^ ")"
+		| None -> "void"
+		| Some s -> value_signature s) ^ " " ^name^ "(" ^ String.concat "," (List.map value_signature sl) ^ ")"
 
 let signature name = function
-  | SValue v -> value_signature name v
+  | SValue v -> value_signature v ^ " " ^name
   | SMethod m -> method_signature name m
 
 let jvm_basic_type = function
@@ -77,12 +76,12 @@ let dump_constant_value ch = function
   | ConstFloat f -> IO.printf ch "float %f" f
   | ConstLong i -> IO.printf ch "long %Ld" i
   | ConstDouble f -> IO.printf ch "double %f" f
-  | ConstClass cl -> IO.printf ch "class %s" (object_value_signature "" cl)
+  | ConstClass cl -> IO.printf ch "class %s" (object_value_signature cl)
 
 let dump_constant ch = function
   | ConstValue v -> dump_constant_value ch v
-  | ConstField (cl,f,sign) -> IO.printf ch "field : %s"(value_signature (class_name cl ^ "::" ^ f) sign)
-  | ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (object_value_signature "" cl ^ "::" ^ f) sign)
+  | ConstField (cl,f,sign) -> IO.printf ch "field : %s %s::%s" (value_signature sign) (class_name cl) f
+  | ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (object_value_signature cl ^ "::" ^ f) sign)
   | ConstInterfaceMethod (cl,f,sign) -> IO.printf ch "interface-method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
   | ConstNameAndType (s,sign) -> IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> IO.printf ch "utf8 %s" s
@@ -105,7 +104,7 @@ let dump_stackmap ch (offset,locals,stack) =
 		| VLong -> "Long"
 		| VNull -> "Null"
 		| VUninitializedThis -> "UninitializedThis"
-		| VObject c -> sprintf "Object %s" (object_value_signature "" c)
+		| VObject c -> sprintf "Object %s" (object_value_signature c)
 		| VUninitialized off -> sprintf "Uninitialized %d" off
 	in
 	IO.printf ch "\n      offset=%d,\n      locals=[" offset;

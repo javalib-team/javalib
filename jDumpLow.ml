@@ -196,10 +196,11 @@ and dump_attrib ch cl = function
 	    IO.printf ch "    local-variables\n";
 	    List.iter
 	      (function start_pc, length, name, signature, index ->
-		 IO.printf ch "      from %d to %d, %s at %d\n"
+		 IO.printf ch "      from %d to %d, %s %s at %d\n"
 		   start_pc
 		   (start_pc + length)
-		   (value_signature name signature)
+		   (value_signature signature)
+		   name
 		   index)
 	      variables
 	| AttributeDeprecated ->
@@ -235,7 +236,7 @@ let access_flags = function
 		) flags) ^ " "
 
 let dump_field ch cl f =
-	IO.printf ch "  %s%s\n" (access_flags f.f_flags) (value_signature f.f_name f.f_descriptor);
+	IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
 	List.iter (dump_attrib ch cl) f.f_attributes
 
 let dump_method ch cl m =

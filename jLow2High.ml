@@ -343,7 +343,7 @@ let low2high_methods consts = function ac ->
 	then
 	  prerr_endline
 	    ("2 methods have been found with the same signature ("^ms.ms_name
-	      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
+	      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
 	MethodMap.add
 	  ms
 	  (try low2high_acmethod consts ms meth
@@ -483,7 +483,7 @@ let low2high_class cl =
 		    then
 		      prerr_endline
 			("Warning: 2 fields have been found with the same signature ("
-			  ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
+			  ^JDumpBasics.value_signature fs.fs_type^" "^ fs.fs_name^")");
 		    FieldMap.add
 		      fs
 		      (try low2high_ifield consts fs f
@@ -503,7 +503,7 @@ let low2high_class cl =
 		    then
 		      prerr_endline
 			("2 methods have been found with the same signature ("^ms.ms_name
-			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature "") ms.ms_parameters) ^"))");
+			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
 		    MethodMap.add
 		      ms
 		      (try low2high_amethod consts ms meth
@@ -531,7 +531,7 @@ let low2high_class cl =
 		then
 		  prerr_endline
 		    ("Warning: 2 fields have been found with the same signature ("
-		      ^JDumpBasics.value_signature fs.fs_name fs.fs_type^")");
+		      ^JDumpBasics.value_signature fs.fs_type^" "^fs.fs_name ^")");
 		FieldMap.add
 		  fs
 		  (try low2high_cfield consts fs f

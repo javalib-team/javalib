@@ -46,6 +46,9 @@ module PP : sig
   val get_first_pp_wp : interface_or_class -> method_signature -> t
   val goto_absolute : t -> int -> t
   val goto_relative : t -> int -> t
+
+  val to_string : t -> string
+  val pprint : Format.formatter -> t -> unit
 end
 
 (** The type of program point identifier. *)

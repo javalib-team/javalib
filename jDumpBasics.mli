@@ -24,8 +24,8 @@ val class_name : JBasics.class_name -> string
 val basic_type :
   [< `Bool | `Byte | `Char | `Double | `Float | `Int | `Long | `Short ] ->
   string
-val object_value_signature : string -> JBasics.object_type -> string
-val value_signature : string -> JBasics.value_type -> string
+val object_value_signature : JBasics.object_type -> string
+val value_signature : JBasics.value_type -> string
 val method_signature :
   string -> JBasics.value_type list * JBasics.value_type option -> string
 val signature : string -> JBasics.name_and_type -> string

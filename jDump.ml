@@ -36,7 +36,7 @@ let opcode = function
 	| `Double f -> sprintf "dconst %f" f
 	| `Byte n -> sprintf "bipush %d" n
 	| `Short a -> sprintf "sipush %d " a
-	| `Class c -> sprintf "ldc class %s" (object_value_signature "" c)
+	| `Class c -> sprintf "ldc class %s" (object_value_signature c)
 	| `String s -> sprintf "ldc string '%s'" s)
 
   | OpLoad (k,n) ->
@@ -155,29 +155,29 @@ let opcode = function
 	| `Void -> "return"
 	| `Int2Bool | `Long | `Float | `Double as k -> sprintf "%creturn" (jvm_basic_type k))
 
-  | OpGetStatic (c, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
-  | OpPutStatic (c, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
-  | OpPutField (c, sign) -> sprintf "putfield %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
-  | OpGetField (c, sign) -> sprintf "getfield %s.%s:%s" (class_name c) sign.fs_name (value_signature "" sign.fs_type)
+  | OpGetStatic (c, sign) -> sprintf "getstatic %s.%s:%s" (class_name c) sign.fs_name (value_signature sign.fs_type)
+  | OpPutStatic (c, sign) -> sprintf "putstatic %s.%s:%s" (class_name c) sign.fs_name (value_signature sign.fs_type)
+  | OpPutField (c, sign) -> sprintf "putfield %s.%s:%s" (class_name c) sign.fs_name (value_signature sign.fs_type)
+  | OpGetField (c, sign) -> sprintf "getfield %s.%s:%s" (class_name c) sign.fs_name (value_signature sign.fs_type)
   | OpInvoke (x, sign) ->
       (match x with
-	| `Virtual c -> sprintf "invokevirtual %s.%s:%s" (object_value_signature "" c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
-	| `Special c -> sprintf "invokenonvirtual %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
+	| `Virtual c -> sprintf "invokevirtual %s.%s:%s" (object_value_signature c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
+	| `Special c -> sprintf "invokespecial %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
 	| `Static c -> sprintf "invokestatic %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type))
 	| `Interface c -> sprintf "invokeinterface %s.%s:%s" (class_name c) sign.ms_name (method_signature "" (sign.ms_parameters,sign.ms_return_type)))
   | OpNew c -> sprintf "new %s" (class_name c)
   | OpNewArray t ->
       (match t with
 	| TBasic t -> sprintf "newarray %s" (basic_type t)
-	| TObject c -> sprintf "anewarray %s" (object_value_signature "" c))
+	| TObject c -> sprintf "anewarray %s" (object_value_signature c))
   | OpArrayLength -> "arraylength"
       (* Modified by eandre@irisa.fr 2006/06/08 *)
   | OpThrow -> "athrow"
-  | OpCheckCast c -> sprintf "checkcast %s" (object_value_signature "" c)
-  | OpInstanceOf c -> sprintf "instanceof %s" (object_value_signature "" c)
+  | OpCheckCast c -> sprintf "checkcast %s" (object_value_signature c)
+  | OpInstanceOf c -> sprintf "instanceof %s" (object_value_signature c)
   | OpMonitorEnter -> "monitorenter"
   | OpMonitorExit -> "monitorexit"
-  | OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (object_value_signature "" a) b
+  | OpAMultiNewArray (a,b) -> sprintf "amultinewarray %s %d" (object_value_signature a) b
   | OpBreakpoint -> "breakpoint"
 
   | OpInvalid -> "invalid"

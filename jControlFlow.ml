@@ -35,8 +35,11 @@ module PP = struct
     JDumpBasics.class_name (get_name pp.cl)
       ^ "."^ s.ms_name ^"("
       ^ (String.concat ", "
-	    (List.map (JDumpBasics.value_signature "") s.ms_parameters))
+	    (List.map JDumpBasics.value_signature s.ms_parameters))
       ^ "): " ^ string_of_int pp.pc
+
+  let pprint fmt pp : unit =
+    Format.pp_print_string fmt (to_string pp)
 
   let get_class (pp:t) : interface_or_class =
     pp.cl
