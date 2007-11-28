@@ -233,7 +233,6 @@ let to_class = function
        JClass.i_deprecated = c.i_deprecated;
        JClass.i_inner_classes = c.i_inner_classes;
        JClass.i_other_attributes = c.i_other_attributes;
-       JClass.i_super = java_lang_object;
        JClass.i_initializer = c.i_initializer;
        JClass.i_fields = c.i_fields;
        JClass.i_methods = c.i_methods;

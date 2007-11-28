@@ -307,7 +307,6 @@ type jinterface = {
   i_deprecated : bool;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_super : class_name; (** must be java.lang.Object. *)
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
   i_other_flags : int list;
@@ -322,5 +321,22 @@ type interface_or_class = [
   | `Class of jclass
 ]
 
+(** {2 Access functions.} *)
+
 val get_name : interface_or_class -> class_name
 val get_consts : interface_or_class -> constant array
+val get_access : interface_or_class -> [`Default | `Public]
+val get_sourcefile : interface_or_class -> string option
+val is_deprecated : interface_or_class -> bool
+val get_inner_classes : interface_or_class -> inner_class list
+val get_other_attributes : interface_or_class -> (string * string) list
+val get_initializer : interface_or_class -> concrete_method option
+val get_other_flags : interface_or_class -> int list
+
+(** The following functions iterate over all methods of a class or interface
+    (including the static initializer, if any). *)
+
+val iter_methods : (method_signature -> jmethod -> unit) -> interface_or_class -> unit
+val iter_concrete_methods : (method_signature -> concrete_method -> unit) -> interface_or_class -> unit
+
+val iter_fields : (field_signature -> [`ClassField of class_field | `InterfaceField of interface_field] -> unit) -> interface_or_class -> unit

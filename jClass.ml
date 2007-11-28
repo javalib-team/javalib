@@ -312,7 +312,6 @@ type jinterface = {
   i_deprecated : bool;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_super : class_name; (** must be java.lang.Object. *)
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
   i_other_flags : int list;
@@ -333,3 +332,67 @@ let get_consts = function
   | `Interface i -> i.i_consts
   | `Class c -> c.c_consts
 
+let get_access = function
+  | `Interface i -> i.i_access
+  | `Class c -> c.c_access
+
+let get_sourcefile = function
+  | `Interface i -> i.i_sourcefile
+  | `Class c -> c.c_sourcefile
+
+let is_deprecated = function
+  | `Interface i -> i.i_deprecated
+  | `Class c -> c.c_deprecated
+
+let get_inner_classes = function
+  | `Interface i -> i.i_inner_classes
+  | `Class c -> c.c_inner_classes
+
+let get_other_attributes = function
+  | `Interface i -> i.i_other_attributes
+  | `Class c -> c.c_other_attributes
+
+let get_initializer = function
+  | `Interface i -> i.i_initializer
+  | `Class c ->
+      try
+	match
+	  MethodMap.find
+	    {ms_name = "<clinit>" ; ms_parameters = [] ; ms_return_type = None}
+	    c.c_methods
+	with
+	  | ConcreteMethod m -> Some m
+	  | AbstractMethod _ -> raise (Class_structure_error "A class initializer cannot be abstract")
+      with
+	| Not_found -> None
+
+let get_other_flags = function
+  | `Interface i -> i.i_other_flags
+  | `Class c -> c.c_other_flags
+
+let iter_methods f = function
+  | `Interface i ->
+      (match i.i_initializer with
+	 | Some i -> f i.cm_signature (ConcreteMethod i)
+	 | None -> ())
+  | `Class c -> MethodMap.iter f c.c_methods
+
+let iter_concrete_methods f = function
+  | `Interface i ->
+      (match i.i_initializer with
+	 | Some i -> f i.cm_signature i
+	 | None -> ())
+  | `Class c ->
+      MethodMap.iter
+	(fun s m -> match m with ConcreteMethod m -> f s m | AbstractMethod _ -> ())
+	c.c_methods
+
+let iter_fields f = function
+  | `Interface i ->
+      FieldMap.iter
+	(fun s fi -> f s (`InterfaceField fi ))
+	i.i_fields
+  | `Class c ->
+      FieldMap.iter
+	(fun s fi -> f s (`ClassField fi ))
+	c.c_fields

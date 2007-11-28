@@ -473,7 +473,6 @@ let low2high_class cl =
 	      i_deprecated = my_deprecated;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
-	      i_super = java_lang_object;
 	      i_initializer = init;
 	      i_annotation = is_annotation;
 	      i_other_flags = flags;
