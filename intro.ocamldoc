@@ -52,12 +52,19 @@ in the Lande team, between March and July 2006.
 These modifications mainly concerned an error about the "wide"
 instruction, which was definitely not properly coded.
 
-Tiphaine Turpin <first.last\@.irisa.fr> added the unparsing feature.
+Tiphaine Turpin <first.last\@.irisa.fr> added the unparsing feature
+and greatly improved the loading features ({!JFile}).
+
+Tiphaine Turpin and Laurent Hubert then added the high level
+representation of classes.
+
+Laurent Hubert added the representation of programs, the control flow
+module, and the pretty-printer for classes and programs.
 
 {2 API}
 
 {b {L Representation of classes}}
-{!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow}
+{!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow JPrint}
 
 {b {L High level manipulations of programs}}
 {!modules: JFile JProgram JControlFlow}

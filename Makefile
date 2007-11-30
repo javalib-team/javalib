@@ -32,10 +32,10 @@ INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction	\
 jHigh2Low jDump jUnparse jLow2High jParse jFile jProgram	\
-jControlFlow
+jControlFlow jPrint
 MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow		\
 jDump jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile	\
-jProgram jControlFlow
+jProgram jControlFlow jPrint
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 
@@ -66,7 +66,7 @@ javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
 
-doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml)
+doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
 	mkdir -p doc
 	$(OCAMLDOC) $(INCLUDE) -keep-code -d doc -html -stars -colorize-code \
 		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)

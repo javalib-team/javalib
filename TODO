@@ -1,6 +1,5 @@
 Here is some stuff that need to be done:
 * Correctness
-- add fields "other_flags" to field/method/class/inner_class records
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
 - test lookups and resolves by comparing with jvm traces
@@ -13,6 +12,9 @@ Here is some stuff that need to be done:
   full run-time, but just the part used by the current program)
 
 * Extra functionalities
+- JFile : the classpath should not contain the [.jar] files but only
+  directories and the jar files should be looked for in the given
+  directories.
 - jDump : we should dump the constant pool, the tableswitch and
   lookupswith instructions (it seems that many things are not dump by
   jDumpLow)

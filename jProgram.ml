@@ -359,18 +359,11 @@ type any_field =
 
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception IncompatibleClassChangeError
-
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception NoSuchMethodError
-
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception NoSuchFieldError
-
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception NoClassDefFoundError
-
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception AbstractMethodError
+exception IllegalAccessError
 
 
 (** this exception is raised to avoid a full unfolding of the

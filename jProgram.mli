@@ -105,9 +105,9 @@ type t = program
     program structure.*)
 exception Class_not_found of class_name
 
-(** [parse_program classpath names] parses a list of directories,
-    [.jar] files and [.class] files, looking for it in the classpath
-    (a list of directories separated with ':') . *)
+(** [parse_program classpath names] parses a list of [.jar] and
+    [.class] files, looking for them in the classpath (a list of
+    directories and [.jar] files separated with ':') . *)
 val parse_program : string -> string list -> t
 val add_file :
   JFile.class_path -> JClass.interface_or_class -> program -> program
@@ -140,6 +140,9 @@ exception NoClassDefFoundError
 
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception AbstractMethodError
+
+(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
+exception IllegalAccessError
 
 
 (** {b Warning : lookup and resolve functions do not take in account
