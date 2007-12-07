@@ -183,12 +183,20 @@ let pp_exceptions fmt = function
       fprintf fmt "@]@ "
 
 let pp_code cn ms info fmt code =
-  let pp_inst = info.p_pp cn ms
+  let hasinfo i = 
+    Buffer.reset stdbuf;
+    assert(Buffer.contents stdbuf = "");
+    info.p_pp cn ms i str_formatter;
+    String.length (flush_str_formatter ()) <> 0
+  and pp_inst = info.p_pp cn ms
   in
     Array.iteri
       (fun i -> function
 	| OpInvalid -> ()
-	| op -> fprintf fmt "@[<4>%3d: %s%t@]@," i (JDump.opcode op) (pp_inst i))
+	| op ->
+	    if hasinfo i then fprintf fmt "    @[%t@]@," (pp_inst i);
+	    fprintf fmt "@[<4>%3d: %s@]@,"  i (JDump.opcode op)
+      )
       code
 
 let pp_line_number_table fmt = function
@@ -475,7 +483,7 @@ let pprint_program info fmt prog =
 
 let to_html oc =
   let fmt = formatter_of_out_channel oc in
-  let opening_tag s = "<span class="^s^"><span onclick=\"hbrothers(this);\">-</span><span class=\"hideable\">"
+  let opening_tag s = "<span class=\""^s^"\"><span onclick=\"hbrothers(this);\">-</span><span class=\"hideable\">"
   and closing_tag s = "</span></span><!-- "^s^" -->"
   in
   let (old_out,flush,_,_) = pp_get_all_formatter_output_functions fmt () in

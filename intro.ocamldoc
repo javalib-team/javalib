@@ -8,8 +8,8 @@ The command "sample Main.class" will parse and dump the class file.
 
 {b {L Prerequisites}}
 
-- [Extlib]
-- [CamlZip]
+- {{:http://ocaml-lib.sourceforge.net/}ExtLib}
+- {{:http://cristal.inria.fr/~xleroy/software.html#camlzip}CamlZip}
 
 {b {L Installing}}
 

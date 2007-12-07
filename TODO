@@ -12,6 +12,8 @@ Here is some stuff that need to be done:
   full run-time, but just the part used by the current program)
 
 * Extra functionalities
+- JControlFlow/JProgram : redistribute the functions to have more
+  consistent modules
 - JFile : the classpath should not contain the [.jar] files but only
   directories and the jar files should be looked for in the given
   directories.
