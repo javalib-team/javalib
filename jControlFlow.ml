@@ -163,7 +163,7 @@ let static_lookup_special prog pp cn ms =
 	    match pp.cl,c' with
 	      | `Class c1, `Class c2 when
 		    (ms.ms_name = "<init>"
-			|| not (extends_class c1 c2)) ->
+			|| not (c1 != c2 && extends_class c1 c2)) ->
 		  [c2]
 	      | _ ->
 		  match super_class (`Class c) with
