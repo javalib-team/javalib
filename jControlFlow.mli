@@ -23,7 +23,7 @@ open JBasics
 open JClass
 open JProgram
 
-(** {2 Access to instructions}*)
+(** {2 `Access to instructions}*)
 
 (** manipulation of program pointers *)
 module PP : sig

@@ -26,9 +26,7 @@
     returns an array of instructions. *)
 val parse_code : IO.input -> int -> JClassLow.opcode array
 
-(** Unparse a sequence of instructions. Provided constants are kept unchanged.
-    Missing constant are added at the end of the constant pool if
-    needed. *)
+(** Unparse a sequence of instructions. *)
 val unparse_code :
   'a IO.output -> JClassLow.opcode array -> unit
 

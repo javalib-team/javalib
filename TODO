@@ -27,5 +27,3 @@ Here is some stuff that need to be done:
   except method calls).
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
-- remove constant pool indexes from low level opcodes ; it was stupid to
-  re-add them.

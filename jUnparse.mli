@@ -21,6 +21,9 @@
 
 (** Unparsing. *)
 
+(** Provided constants are kept unchanged. Missing constant are added at
+   the end of the constant pool if needed. *)
+
 (** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
     information *)
 val unparse_class_low_level : 'a IO.output -> JClassLow.jclass -> unit

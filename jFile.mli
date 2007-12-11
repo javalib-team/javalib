@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** Accessing classes in files, directories and jar files. *)
+(** `Accessing classes in files, directories and jar files. *)
 
 (** {2 Loading a single class.} *)
 

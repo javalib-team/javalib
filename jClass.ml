@@ -42,7 +42,7 @@ let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;
 (** Instruction. *)
 type opcode =
 
-  (* Access to a local variable *)
+  (* `Access to a local variable *)
   | OpLoad of jvm_type * int
   | OpStore of jvm_type * int
   | OpIInc of int * int (** index, increment *)

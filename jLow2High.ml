@@ -26,17 +26,17 @@ open JClass
 let debug = ref 1
 
 let rec flags2access = function
-  | AccPublic::l ->
-      if List.exists (fun a -> a = AccPrivate || a= AccProtected) l
-      then raise (Class_structure_error "Access flags Public and Private or Protected cannot be set at the same time")
+  | `AccPublic::l ->
+      if List.exists (fun a -> a = `AccPrivate || a= `AccProtected) l
+      then raise (Class_structure_error "`Access flags Public and Private or Protected cannot be set at the same time")
       else (`Public,l)
-  | AccPrivate::l ->
-      if List.exists (fun a -> a = AccPublic || a= AccProtected) l
-      then raise (Class_structure_error "Access flags Private and Public or Protected cannot be set at the same time")
+  | `AccPrivate::l ->
+      if List.exists (fun a -> a = `AccPublic || a= `AccProtected) l
+      then raise (Class_structure_error "`Access flags Private and Public or Protected cannot be set at the same time")
       else (`Private,l)
-  | AccProtected::l ->
-      if List.exists (fun a -> a = AccPrivate || a= AccPublic) l
-      then raise (Class_structure_error "Access flags Protected and Private or Public cannot be set at the same time")
+  | `AccProtected::l ->
+      if List.exists (fun a -> a = `AccPrivate || a= `AccPublic) l
+      then raise (Class_structure_error "`Access flags Protected and Private or Public cannot be set at the same time")
       else (`Protected,l)
   | f::l -> let (p,fl) = flags2access l in (p,f::fl)
   | [] -> (`Default,[])
@@ -117,17 +117,19 @@ let low2high_code consts = function c ->
 
 let low2high_cfield consts fs = function f ->
   let flags = f.f_flags in
-  let (is_static,flags) = get_flag AccStatic flags in
+  let (is_static,flags) = get_flag `AccStatic flags in
   let (access,flags) = flags2access flags in
-  let (is_final,flags) = get_flag AccFinal flags in
-  let (is_volatile,flags) = get_flag AccVolatile flags in
-  let (is_transient,flags) = get_flag AccTransient flags in
-  let (is_synthetic,flags) = get_flag AccSynthetic flags in
-  let (is_enum,flags) = get_flag AccEnum flags in
+  let (is_final,flags) = get_flag `AccFinal flags in
+  let (is_volatile,flags) = get_flag `AccVolatile flags in
+  let (is_transient,flags) = get_flag `AccTransient flags in
+  let (is_synthetic,flags) = get_flag `AccSynthetic flags in
+  let (is_enum,flags) = get_flag `AccEnum flags in
   let flags =
     List.map (function
-      | AccRFU i -> i
-      | _ -> failwith "unexcepted flag in JLow2High.low2high_cfield: bug in JavaLib")
+      | `AccRFU i -> i
+      | _ ->
+	  prerr_endline "unexcepted flag in JLow2High.low2high_cfield: bug in JavaLib";
+	  assert false)
       flags
   in
   let kind =
@@ -170,16 +172,16 @@ let low2high_cfield consts fs = function f ->
 
 let low2high_ifield consts fs = function f ->
   let flags = f.f_flags in
-  let (is_public,flags) = get_flag AccPublic flags in
-  let (is_static,flags) = get_flag AccStatic flags in
-  let (is_final,flags) = get_flag AccFinal flags in
-  let (is_synthetic,flags) = get_flag AccSynthetic flags in
+  let (is_public,flags) = get_flag `AccPublic flags in
+  let (is_static,flags) = get_flag `AccStatic flags in
+  let (is_final,flags) = get_flag `AccFinal flags in
+  let (is_synthetic,flags) = get_flag `AccSynthetic flags in
     if not(is_public && is_static && is_final)
     then raise (Class_structure_error "A field of an interface must be : Public, Static and Final.");
     let flags = List.map
       (function
-	| AccRFU i -> i
-	| _ -> raise (Class_structure_error "A field of an interface may only have it AccSynthetic flag set in addition of AccPublic, AccStatic and AccFinal."))
+	| `AccRFU i -> i
+	| _ -> raise (Class_structure_error "A field of an interface may only have it `AccSynthetic flag set in addition of `AccPublic, `AccStatic and `AccFinal."))
       flags
     in
     {
@@ -204,10 +206,10 @@ let low2high_ifield consts fs = function f ->
 let low2high_amethod consts ms = function m ->
   let flags = m.m_flags in
   let (access,flags) = flags2access flags in
-  let (is_abstract,flags) = get_flag AccAbstract flags in
-  let (is_synthetic,flags) = get_flag AccSynthetic flags in
-  let (is_bridge,flags) = get_flag AccBridge flags in
-  let (is_varargs,flags) = get_flag AccVarArgs flags in
+  let (is_abstract,flags) = get_flag `AccAbstract flags in
+  let (is_synthetic,flags) = get_flag `AccSynthetic flags in
+  let (is_bridge,flags) = get_flag `AccBridge flags in
+  let (is_varargs,flags) = get_flag `AccVarArgs flags in
   let access =
     match access with
       | `Private -> raise (Class_structure_error "Abstract method cannot be private")
@@ -218,7 +220,7 @@ let low2high_amethod consts ms = function m ->
   let flags =
     List.map
       (function
-	| AccRFU i -> i
+	| `AccRFU i -> i
 	| _ -> raise (Class_structure_error (
 	    "If a method has its ACC_ABSTRACT flag set it may not have any"
 	    ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
@@ -253,25 +255,25 @@ let low2high_amethod consts ms = function m ->
 
 let low2high_cmethod consts ms = function m ->
   if m.m_name = "<init>" &&
-    List.exists (fun a -> a=AccStatic || a=AccFinal || a=AccSynchronized || a=AccNative || a=AccAbstract)
+    List.exists (fun a -> a=`AccStatic || a=`AccFinal || a=`AccSynchronized || a=`AccNative || a=`AccAbstract)
     m.m_flags
   then raise (Class_structure_error ("A specific instance initialization method may have at most "
 				      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
 				      ^ "and may also have its ACC_STRICT flag set."));
   let flags = m.m_flags in
   let (access,flags) = flags2access flags in
-  let (is_static,flags) = get_flag AccStatic flags in
-  let (is_final,flags) = get_flag AccFinal flags in
-  let (is_synchronized,flags) = get_flag AccSynchronized flags in
-  let (is_strict,flags) = get_flag AccStrict flags in
-  let (is_synthetic,flags) = get_flag AccSynthetic flags in
-  let (is_bridge,flags) = get_flag AccBridge flags in
-  let (is_varargs,flags) = get_flag AccVarArgs flags in
-  let (is_native,flags) = get_flag AccNative flags in
+  let (is_static,flags) = get_flag `AccStatic flags in
+  let (is_final,flags) = get_flag `AccFinal flags in
+  let (is_synchronized,flags) = get_flag `AccSynchronized flags in
+  let (is_strict,flags) = get_flag `AccStrict flags in
+  let (is_synthetic,flags) = get_flag `AccSynthetic flags in
+  let (is_bridge,flags) = get_flag `AccBridge flags in
+  let (is_varargs,flags) = get_flag `AccVarArgs flags in
+  let (is_native,flags) = get_flag `AccNative flags in
   let flags = List.map
     (function
-      | AccRFU i -> i
-      | AccAbstract -> raise (Class_structure_error "Non abstract class cannot have abstract methods.")
+      | `AccRFU i -> i
+      | `AccAbstract -> raise (Class_structure_error "Non abstract class cannot have abstract methods.")
       | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
     flags
   in
@@ -327,7 +329,7 @@ let low2high_cmethod consts ms = function m ->
     }
 
 let low2high_acmethod consts ms = function m ->
-  if List.exists ((=)AccAbstract) m.m_flags
+  if List.exists ((=)`AccAbstract) m.m_flags
   then AbstractMethod (low2high_amethod consts ms m)
   else ConcreteMethod (low2high_cmethod consts ms m)
 
@@ -355,16 +357,16 @@ let low2high_methods consts = function ac ->
 let low2high_innerclass = function
     (inner_class_info,outer_class_info,inner_name,flags) ->
       let (access,flags) = flags2access flags in
-      let (is_final,flags) = get_flag AccFinal flags in
-      let (is_static,flags) = get_flag AccStatic flags in
-      let (is_interface,flags) = get_flag AccInterface flags in
-      let (is_abstract,flags) = get_flag AccAbstract flags in
-      let (is_synthetic,flags) = get_flag AccSynthetic flags in
-      let (is_annotation,flags) = get_flag AccAnnotation flags in
-      let (is_enum,flags) = get_flag AccEnum flags in
+      let (is_final,flags) = get_flag `AccFinal flags in
+      let (is_static,flags) = get_flag `AccStatic flags in
+      let (is_interface,flags) = get_flag `AccInterface flags in
+      let (is_abstract,flags) = get_flag `AccAbstract flags in
+      let (is_synthetic,flags) = get_flag `AccSynthetic flags in
+      let (is_annotation,flags) = get_flag `AccAnnotation flags in
+      let (is_enum,flags) = get_flag `AccEnum flags in
       let flags = List.map
 	(function
-	  | AccRFU i -> i
+	  | `AccRFU i -> i
 	  | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
 	flags
       in
@@ -393,18 +395,18 @@ let low2high_class cl =
   if cl.j_super = None && cl.j_name <> java_lang_object
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
   let flags = cl.j_flags in
-  let (access,flags) = flags2access flags in
-  let (accsuper,flags) = get_flag AccSuper flags in
-  let (is_final,flags) = get_flag AccFinal flags in
-  let (is_interface,flags) = get_flag AccInterface flags in
-  let (is_abstract,flags) = get_flag AccAbstract flags in
-  let (is_synthetic,flags) = get_flag AccSynthetic flags in
-  let (is_annotation,flags) = get_flag AccAnnotation flags in
-  let (is_enum,flags) = get_flag AccEnum flags in
+  let (access,flags) = flags2access (flags :> access_flag list) in
+  let (accsuper,flags) = get_flag `AccSuper flags in
+  let (is_final,flags) = get_flag `AccFinal flags in
+  let (is_interface,flags) = get_flag `AccInterface flags in
+  let (is_abstract,flags) = get_flag `AccAbstract flags in
+  let (is_synthetic,flags) = get_flag `AccSynthetic flags in
+  let (is_annotation,flags) = get_flag `AccAnnotation flags in
+  let (is_enum,flags) = get_flag `AccEnum flags in
   let flags =
     List.map
       (function
-	| AccRFU i -> i
+	| `AccRFU i -> i
 	| _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
@@ -445,13 +447,13 @@ let low2high_class cl =
       then
 	begin
 	  if not is_abstract
-	  then raise (Class_structure_error "Class file with their AccInterface flag set must also have their AccAbstract flag set.");
+	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
 	  if cl.j_super <> Some java_lang_object
 	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
 	  if accsuper
 	  then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";
 	  if is_enum || is_synthetic
-	  then raise (Class_structure_error "Class file with their AccInterface flag set must not have their AccEnum or AccSynthetic flags set.");
+	  then raise (Class_structure_error "Class file with their `AccInterface flag set must not have their `AccEnum or `AccSynthetic flags set.");
 	  let (init,methods) =
 	    match
 	      List.partition
@@ -518,7 +520,7 @@ let low2high_class cl =
       else
 	begin
 	  if is_annotation
-	  then raise (Class_structure_error "Class file with their AccAnnotation flag set must also have their AccInterface flag set.");
+	  then raise (Class_structure_error "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
 	let my_methods =
 	  try low2high_methods consts cl
 	  with

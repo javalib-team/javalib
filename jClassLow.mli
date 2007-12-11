@@ -168,28 +168,74 @@ type opcodes = opcode array
 
 (** {2 Flags, attributes and low-level structure of class files.} *)
 
-type access_flag =
-	| AccPublic
-	| AccPrivate
-	| AccProtected
-	| AccStatic
-	| AccFinal
-	| AccSynchronized (** Also used as "ACC_SUPER" *)
-	| AccVolatile
-	| AccTransient
-	| AccNative
-	| AccInterface
-	| AccAbstract
-	| AccStrict
-	| AccRFU of int (** Four bits (RFU 1 .. RFU 4) reserved for future use *)
-	| AccSuper
-	| AccBridge
-	| AccVarArgs
-	| AccAnnotation
-	| AccEnum
-	| AccSynthetic
+type common_flag = [
+| `AccPublic
+| `AccSynthetic
+| `AccRFU of int (** The int is a mask. *)
+| `AccFinal
+]
 
-type access_flags = access_flag list
+type inner_flag = [
+| common_flag
+| `AccPrivate
+| `AccProtected
+| `AccStatic
+| `AccInterface
+| `AccAbstract
+| `AccAnnotation
+| `AccEnum
+]
+
+type field_flag = [
+| common_flag
+| `AccPrivate
+| `AccProtected
+| `AccStatic
+| `AccVolatile
+| `AccTransient
+| `AccEnum
+]
+
+type method_flag = [
+| common_flag
+| `AccPrivate
+| `AccProtected
+| `AccStatic
+| `AccSynchronized
+| `AccBridge
+| `AccVarArgs
+| `AccNative
+| `AccAbstract
+| `AccStrict
+]
+
+type class_flag = [
+| common_flag
+| `AccAbstract
+| `AccAnnotation
+| `AccEnum
+| `AccInterface
+| `AccSuper
+]
+
+type access_flag = [
+| common_flag
+| `AccPrivate
+| `AccProtected
+| `AccStatic
+| `AccSynchronized
+| `AccVolatile
+| `AccTransient
+| `AccNative
+| `AccInterface
+| `AccAbstract
+| `AccStrict
+| `AccSuper
+| `AccBridge
+| `AccVarArgs
+| `AccAnnotation
+| `AccEnum
+]
 
 type code = {
 	c_max_stack : int;
@@ -205,7 +251,7 @@ and attribute =
 	| AttributeCode of code
 	| AttributeExceptions of class_name list
 	| AttributeInnerClasses of
-	    (class_name option * class_name option * string option * access_flags) list
+	    (class_name option * class_name option * string option * inner_flag list) list
 	    (** inner_class_info, outer_class_info, inner_name, inner_class_access_flags *)
 	| AttributeSynthetic
 	| AttributeLineNumberTable of (int * int) list
@@ -218,15 +264,14 @@ and attribute =
 type jfield = {
 	f_name : string;
 	f_descriptor : field_descriptor;
-	f_flags : access_flags;
+	f_flags : field_flag list;
 	f_attributes : attribute list
 }
 
 type jmethod = {
 	m_name : string;
 	m_descriptor : method_descriptor;
-	m_flags : access_flags;
-	m_code : code option; (* Remove that *)
+	m_flags : method_flag list;
 	m_attributes : attribute list
 }
 
@@ -235,7 +280,7 @@ type jclass = {
 	j_super : class_name option;
 	j_interfaces : class_name list;
 	j_consts : constant array;
-	j_flags : access_flags;
+	j_flags : class_flag list;
 	j_fields : jfield list;
 	j_methods : jmethod list;
 	j_attributes : attribute list

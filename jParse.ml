@@ -86,34 +86,32 @@ let parse_constant max ch =
 	  raise (Illegal_value (string_of_int cid, "constant kind"))
 
 let class_flags =
-  [AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
-   AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
-   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
-   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+  [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+   `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
+   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
 let innerclass_flags =
-  [AccPublic; AccPrivate; AccProtected; AccStatic;
-   AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80;
-   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
-   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+  [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
+   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
 let field_flags =
-  [AccPublic; AccPrivate; AccProtected; AccStatic;
-   AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
-   AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
-   AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000]
+  [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
+   `AccFinal; `AccRFU 0x20; `AccVolatile; `AccTransient;
+   `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+   `AccSynthetic; `AccRFU 0x2000; `AccEnum; `AccRFU 0x8000|]
 let method_flags =
-  [AccPublic; AccPrivate; AccProtected; AccStatic;
-   AccFinal; AccSynchronized; AccBridge; AccVarArgs;
-   AccNative; AccRFU 0x200; AccAbstract; AccStrict;
-   AccSynthetic; AccRFU 0x2000; AccRFU 0x4000; AccRFU 0x8000]
+  [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
+   `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
+   `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
+   `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
 
 let parse_access_flags all_flags ch =
 	let fl = read_ui16 ch in
 	let flags = ref [] in
-	let fbit = ref 0 in
-	List.iter (fun f ->
-		if fl land (1 lsl !fbit) <> 0 then flags := f :: !flags;
-		incr fbit
-	) all_flags;
+	  Array.iteri
+	    (fun i f -> if fl land (1 lsl i) <> 0 then flags := f :: !flags)
+	    all_flags;
 	!flags
 
 (* Validate an utf8 string and return a stream of characters. *)
@@ -393,7 +391,7 @@ let parse_field consts ch =
 	let sign = parse_type (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
 	let attrib_to_parse =
-	  if List.exists ((=)AccStatic) acc
+	  if List.exists ((=)`AccStatic) acc
 	  then  [`ConstantValue ; `Synthetic ; `Deprecated]
 	  else  [`Synthetic ; `Deprecated] in
 	let attribs =
@@ -412,21 +410,14 @@ let parse_method consts ch =
 	let name = get_string_ui16 consts ch in
 	let sign = parse_method_signature (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
-	let code = ref None in
-	let attribs = List.init attrib_count (fun _ ->
-		match parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch with
-		| AttributeCode c ->
-			if !code <> None then raise (Class_structure_error "Duplicate code");
-			code := Some c;
-			AttributeCode c
-		| a ->
-			a
-	) in
+	let attribs = List.init attrib_count
+	  (fun _ ->
+	     parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch)
+	in
 	{
 		m_name = name;
 		m_descriptor = sign;
 		m_attributes = attribs;
-		m_code = !code;
 		m_flags = acc;
 	}
 

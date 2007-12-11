@@ -141,25 +141,25 @@ let unparse_constant_pool ch consts =
 (* Acess (and other) flags unparsing *)
 (*************************************)
 let class_flags =
-  [AccPublic; AccRFU 0x2; AccRFU 0x4; AccRFU 0x8;
-   AccFinal; AccSuper; AccRFU 0x40; AccRFU 0x80;
-   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
-   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+  [`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+   `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
+   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000]
 let innerclass_flags =
-  [AccPublic; AccPrivate; AccProtected; AccStatic;
-   AccFinal; AccRFU 0x20; AccRFU 0x40; AccRFU 0x80; 
-   AccRFU 0x100; AccInterface; AccAbstract; AccRFU 0x800;
-   AccSynthetic; AccAnnotation; AccEnum; AccRFU 0x8000]
+  [`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
+   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80; 
+   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000]
 let field_flags =
-  [AccPublic; AccPrivate; AccProtected; AccStatic; 
-   AccFinal; AccRFU 0x20; AccVolatile; AccTransient;
-   AccRFU 0x100; AccRFU 0x200; AccRFU 0x400; AccRFU 0x800;
-   AccSynthetic; AccRFU 0x2000; AccEnum; AccRFU 0x8000]
+  [`AccPublic; `AccPrivate; `AccProtected; `AccStatic; 
+   `AccFinal; `AccRFU 0x20; `AccVolatile; `AccTransient;
+   `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+   `AccSynthetic; `AccRFU 0x2000; `AccEnum; `AccRFU 0x8000]
 let method_flags = 
-  [AccPublic; AccPrivate; AccProtected; AccStatic;
-   AccFinal; AccSynchronized; AccBridge; AccVarArgs;
-   AccNative; AccRFU 0x200; AccAbstract; AccStrict;
-   AccSynthetic; AccRFU 0x2000; AccRFU 0x4000; AccRFU 0x8000]
+  [`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
+   `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
+   `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
+   `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000]
 
 let unparse_flags all_flags flags =
   let fl = ref 0
@@ -294,16 +294,12 @@ let unparse_field ch consts field =
     field.f_attributes
 
 let unparse_method ch consts methode =
-  if not
-    (match
-       methode.m_code,
-       List.filter
+  if
+    List.length
+      (List.filter
 	 (function AttributeCode _ -> true | _ -> false)
-	 methode.m_attributes
-     with
-       | Some c, [AttributeCode c'] -> c == c' (* = is false because of nan. *)
-       | None, [] -> true
-       | _, _ -> false)
+	 methode.m_attributes)
+    > 1
   then
     raise
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");
