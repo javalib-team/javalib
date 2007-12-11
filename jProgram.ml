@@ -546,7 +546,7 @@ let implements_methods ms c =
     c.c_interfaces
     []
 
-(* {2 `Access to the hierarchy} *)
+(* {2 Access to the hierarchy} *)
 
 (** The name of a real class, i.e., not an interface or an implicit array class name. *)
 type className = class_name
