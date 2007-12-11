@@ -28,15 +28,15 @@ let debug = ref 1
 let rec flags2access = function
   | `AccPublic::l ->
       if List.exists (fun a -> a = `AccPrivate || a= `AccProtected) l
-      then raise (Class_structure_error "`Access flags Public and Private or Protected cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Public and Private or Protected cannot be set at the same time")
       else (`Public,l)
   | `AccPrivate::l ->
       if List.exists (fun a -> a = `AccPublic || a= `AccProtected) l
-      then raise (Class_structure_error "`Access flags Private and Public or Protected cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Private and Public or Protected cannot be set at the same time")
       else (`Private,l)
   | `AccProtected::l ->
       if List.exists (fun a -> a = `AccPrivate || a= `AccPublic) l
-      then raise (Class_structure_error "`Access flags Protected and Private or Public cannot be set at the same time")
+      then raise (Class_structure_error "Access flags Protected and Private or Public cannot be set at the same time")
       else (`Protected,l)
   | f::l -> let (p,fl) = flags2access l in (p,f::fl)
   | [] -> (`Default,[])

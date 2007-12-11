@@ -41,7 +41,7 @@ val clinit_signature : method_signature
 
 type opcode =
 
-  (* `Access to a local variable *)
+  (* Access to a local variable *)
   | OpLoad of jvm_type * int
   | OpStore of jvm_type * int
   | OpIInc of int * int (** index, increment *)
@@ -321,7 +321,7 @@ type interface_or_class = [
   | `Class of jclass
 ]
 
-(** {2 `Access functions.} *)
+(** {2 Access functions.} *)
 
 val get_name : interface_or_class -> class_name
 val get_consts : interface_or_class -> constant array

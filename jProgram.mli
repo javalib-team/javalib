@@ -122,7 +122,7 @@ val iter : (interface_or_class -> unit) -> program -> unit
 val fold : ('b -> interface_or_class -> 'b) -> 'b -> program -> 'b
 
 
-(** {2 `Access functions to fields and methods}*)
+(** {2 Access functions to fields and methods}*)
 
 type any_field = | InterfaceField of interface_field | ClassField of class_field
 
@@ -258,7 +258,7 @@ val overrides_methods : method_signature -> class_file -> class_file list
 *)
 val implements_methods : method_signature -> class_file -> interface_file list
 
-(** {2 `Access to the hierarchy} *)
+(** {2 Access to the hierarchy} *)
 
 (** [extends_class p cn1 cn2] returns [true] if [cn2] is a super-class
     of [cn1]. An class extends itself.

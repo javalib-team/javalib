@@ -23,7 +23,7 @@
 include Makefile.config
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt
+OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
 OCAMLDOC = ocamldoc.opt -pp camlp4o.opt
 OCAMLDEP = ocamldep.opt -pp camlp4o.opt
 OCAMLMKTOP = ocamlmktop
