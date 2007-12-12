@@ -168,7 +168,20 @@ let static_lookup_special prog pp cn ms =
 let static_lookup_virtual prog obj ms =
   match obj with
     | TArray _ ->
-	raise (Failure ("invokevirutal on arrays are not supported yet."))
+	begin
+	  match resolve_class prog java_lang_object with
+	    | `Class c -> 
+		if implements_method c ms 
+		then [c]
+		else
+		  let ms =
+		    ignore (Format.flush_str_formatter ());
+		    JPrint.pp_method_signature Format.str_formatter ms;
+		    Format.flush_str_formatter ()
+		  in
+		    raise (Failure ("invokevirtual on an array : "^ms))
+	    | `Interface _ -> raise IncompatibleClassChangeError
+	end
     | TClass cn ->
 	let c =
 	  match resolve_class prog cn with
