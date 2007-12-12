@@ -177,13 +177,18 @@ val get_fields : interface_or_class -> field_signature list
 *)
 val resolve_class : program -> class_name -> interface_or_class
 
-(** [resolve_method ms c] return the class or interface that defines
+(** [resolve_method ms c] returns the class or interface that defines
     the method [ms], if any.  The caller is responsible to check that
     the class and the method defined in the class are visible from the
     current class.
     @raise NoSuchMethodError if the method is not found
 *)
 val resolve_method : method_signature -> class_file -> interface_or_class
+
+(** [mplements_method c ms] returns [true] iff the class has a method with the
+    signature [ms] and which is not abstract. (Note: The method can be native.)
+*)
+val implements_method : class_file -> method_signature -> bool
 
 (** [resolve_interface_method ms c] return the interface that defines
     the method [ms], or [java.lang.Object] if no interface defines

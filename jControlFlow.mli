@@ -60,8 +60,6 @@ val normal_successors : pp -> pp list
 val handlers : pp -> JBasics.exception_handler list
 val exceptional_successors : pp -> pp list
 
-val static_lookup_static :
-  program -> class_name -> method_signature -> class_file list
 val static_lookup_interface :
   program -> class_name -> method_signature -> class_file list
 val static_lookup_special :

@@ -134,15 +134,6 @@ let normal_successors pp =
     | OpBreakpoint -> assert false
     | _ -> [next_instruction pp]
 
-let static_lookup_static prog cn ms =
-  let c =
-    match resolve_class prog cn with
-      | `Class c -> resolve_method ms c
-      | `Interface c -> resolve_interface_method ms c
-  in
-    match c with
-      | `Class c' -> c'::overridden_by_methods ms c
-      | `Interface _ -> overridden_by_methods ms c
 
 let static_lookup_interface prog cn ms =
   let c =
@@ -151,8 +142,9 @@ let static_lookup_interface prog cn ms =
       | `Class _ -> raise IncompatibleClassChangeError
   in
     match c with
-      | `Class c' -> c'::overridden_by_methods ms c
-      | `Interface _ -> overridden_by_methods ms c
+      | `Class c' when implements_method c' ms ->
+	  c'::overridden_by_methods ms c
+      | _ -> overridden_by_methods ms c
 
 let static_lookup_special prog pp cn ms =
   try
@@ -184,8 +176,9 @@ let static_lookup_virtual prog obj ms =
 	    | `Interface _ -> raise IncompatibleClassChangeError
 	in
 	  match c with
-	    | `Class c' -> c'::overridden_by_methods ms c
-	    | `Interface _ -> overridden_by_methods ms c
+	    | `Class c' when implements_method c' ms ->
+		c'::overridden_by_methods ms c
+	    | _ -> overridden_by_methods ms c
 
 
 let handlers pp =

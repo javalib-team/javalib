@@ -515,16 +515,17 @@ let overrides_methods ms c =
 	    with NoSuchMethodError ->
 	      !result
 
+let implements_method c ms =
+  try
+    match MethodMap.find ms c.c_methods with
+      | ConcreteMethod _ -> true
+      | AbstractMethod _ -> false
+  with Not_found -> false
+
 let overridden_by_methods ms c =
   let result = ref [] in
-  let implements ms c =
-    try
-      match MethodMap.find ms c.c_methods with
-	| ConcreteMethod _ -> true
-	| AbstractMethod _ -> false
-    with Not_found -> false
   in let rec c_overriding_methods' c =
-    if implements ms c
+    if implements_method c ms
     then result := c::!result;
     ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
   and i_overriding_methods' i =
