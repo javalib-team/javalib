@@ -276,9 +276,11 @@ let get_class class_path class_map name =
 let add_class_referenced c program to_add =
   Array.iter
     (function
-      | ConstMethod (TClass cn,_,_) ->
-	  if not (ClassMap.mem cn program)
-	  then to_add := cn::!to_add
+      | ConstMethod (TClass cn,_,_)
+      | ConstInterfaceMethod (cn,_,_)
+      | ConstField (cn,_,_)
+      | ConstClass (TClass cn)
+	-> if not (ClassMap.mem cn program) then to_add := cn::!to_add
       | _ -> ())
     (JClass.get_consts c)
 
