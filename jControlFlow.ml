@@ -28,6 +28,28 @@ module PP = struct
 	    meth:concrete_method;
 	    pc:int;}
 
+  let eqc c1 c2 = match c1,c2 with
+    | `Class c1, `Class c2 -> c1==c2
+    | `Interface c1, `Interface c2 -> c1==c2
+    | _, _ -> false
+  let eqm = (==)
+  let eqi = (=)
+	      
+  let equal pp1 pp2 = 
+    eqc pp1.cl pp2.cl 
+    && eqm pp1.meth pp2.meth
+    && eqi pp1.pc pp2.pc
+
+  let compare pp1 pp2 =
+    let ccmp = compare (get_name pp1.cl) (get_name pp1.cl)
+    in
+      if ccmp <> 0 then ccmp
+      else
+	let mcmp = compare pp1.meth.cm_signature pp2.meth.cm_signature
+	in
+	  if mcmp <> 0 then mcmp
+	  else pp1.pc - pp2.pc
+
   exception NoCode of (class_name * method_signature)
 
   let to_string (pp:t) : string =

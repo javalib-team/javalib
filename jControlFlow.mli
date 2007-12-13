@@ -49,6 +49,9 @@ module PP : sig
 
   val to_string : t -> string
   val pprint : Format.formatter -> t -> unit
+
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
 end
 
 (** The type of program point identifier. *)
