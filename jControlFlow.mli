@@ -52,6 +52,7 @@ module PP : sig
 
   val equal : t -> t -> bool
   val compare : t -> t -> int
+  val hash : t -> int
 end
 
 (** The type of program point identifier. *)

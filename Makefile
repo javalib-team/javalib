@@ -21,21 +21,31 @@
 #
 
 include Makefile.config
+DEBUG=yes
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
-OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
 OCAMLDOC = ocamldoc.opt -pp camlp4o.opt
 OCAMLDEP = ocamldep.opt -pp camlp4o.opt
 OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 
+ifeq ($(DEBUG),yes)
+OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
+else
+ifeq ($(DEBUG),prof)
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -noassert -ccopt -O3
+else
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p -noassert
+endif
+endif
+
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction	\
 jHigh2Low jDump jUnparse jLow2High jParse jFile jProgram jPrint	\
 jControlFlow
-MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow		\
-jDump jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile	\
-jProgram jControlFlow jPrint
+MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow jDump	\
+jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile jProgram	\
+jControlFlow jPrint
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 

@@ -40,15 +40,22 @@ module PP = struct
     && eqm pp1.meth pp2.meth
     && eqi pp1.pc pp2.pc
 
-  let compare pp1 pp2 =
-    let ccmp = compare (get_name pp1.cl) (get_name pp1.cl)
-    in
-      if ccmp <> 0 then ccmp
-      else
-	let mcmp = compare pp1.meth.cm_signature pp2.meth.cm_signature
-	in
-	  if mcmp <> 0 then mcmp
-	  else pp1.pc - pp2.pc
+  let hash pp1 = 
+    Hashtbl.hash (get_name pp1.cl,pp1.meth.cm_signature.ms_name,pp1.pc)
+
+
+  let compare pp1 pp2 = 
+    if equal pp1 pp2 
+    then 0
+    else
+      match compare (get_name pp1.cl) (get_name pp2.cl) with
+	| 0 -> 
+	    begin
+	      match compare pp1.meth.cm_signature pp2.meth.cm_signature with
+		| 0 -> pp1.pc - pp2.pc
+		| n -> n
+	    end
+	| n -> n
 
   exception NoCode of (class_name * method_signature)
 
