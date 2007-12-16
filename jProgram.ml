@@ -415,25 +415,34 @@ let get_fields c =
       | `Interface i -> FieldMap.fold to_list i.i_fields []
       | `Class c -> FieldMap.fold to_list c.c_fields []
 
-let rec resolve_field fs c : interface_or_class =
+let rec resolve_field' result fs c : unit =
   let get_interfaces = function
     | `Interface i -> i.i_interfaces
     | `Class c -> c.c_interfaces
   in
-  if defines_field fs c
-  then c
-  else
-    try
-      ClassMap.iter
-	(fun _ i ->
-	  let i = resolve_field fs (`Interface i)
-	  in raise (Found_Class i)
-	)
-	(get_interfaces c);
-      match super c with
-	| Some super -> resolve_field fs (`Class super)
-	| None -> raise NoSuchFieldError
-    with Found_Class resolved -> resolved
+    if defines_field fs c
+    then result := Some c
+    else
+      begin
+	ClassMap.iter
+	  (fun _ i -> resolve_field' result fs (`Interface i))
+	  (get_interfaces c);
+	if !result = None
+	then
+	  begin
+	    match super c with
+	      | Some super -> resolve_field' result fs (`Class super)
+	      | None -> ()
+	  end
+      end
+
+let resolve_field fs c : interface_or_class =
+  let result = ref None in
+    resolve_field' result fs c;
+    match !result with
+      | Some c -> c
+      | None -> raise NoSuchFieldError
+
 
 (** [resolve_method' ms c] looks for the method [ms] in [c] and
     recursively in its super-classes.
