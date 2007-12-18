@@ -360,7 +360,7 @@ let pp_cfields cn info fmt fm =
     and sign fmt = pp_field_signature fmt f.cf_signature
     in
       fprintf fmt
-	"@[<v 2>@[%s@,%s@,%s@,%s@,%t%t@]%t%t@]"
+	"@[<hv 2>@[%s@,%s@,%s@,%s@,%t%t@]%t%t@]"
 	access static kind trans sign value (info.p_field cn f.cf_signature) attr
   in
     pp_concat
@@ -387,7 +387,7 @@ let pp_ifields cn info fmt fm =
     and sign fmt = pp_field_signature fmt f.if_signature
     in
       fprintf fmt
-	"@[<v 2>@[public@ static@ final@ %t%t@]%t%t@]"
+	"@[<hv 2>@[public@ static@ final@ %t%t@]%t%t@]"
 	sign value (info.p_field cn f.if_signature) attr
   in
     pp_concat
@@ -422,7 +422,7 @@ let pprint_class info fmt (c:jclass) =
   and fields fmt = pp_cfields c.c_name info fmt c.c_fields
   and meths fmt = pp_methods c.c_name info fmt c.c_methods
   in
-    fprintf fmt "@[<v>@[%s%s%s%s%s%t@]{@{<class>@;<0 2>@[<v>"
+    fprintf fmt "@[<v>@[%s%s%sclass %s%s%t@]{@{<class>@;<0 2>@[<v>"
       abstract access final cn super interfaces;
     fprintf fmt "@[<v>%t%t%t%t%t@]"
       (info.p_class c.c_name) source inner_classes deprecated other_attr;
@@ -457,7 +457,7 @@ let pprint_interface info fmt (c:jinterface) =
 	(fun _ -> fprintf fmt "@,@,")
 	(MethodMap.fold (fun ms a l -> if info.f_method c.i_name ms then a::l else l) c.i_methods [])
     in
-      fprintf fmt "@[<v>@[abstract@ %s%s%t@]{@{<class>@;<0 2>@[<v>"
+      fprintf fmt "@[<v>@[abstract@ %sinterface %s%t@]{@{<class>@;<0 2>@[<v>"
 	access cn interfaces;
       fprintf fmt "@[<v>%t%t%t%t%t@]"
 	(info.p_class c.i_name) source inner_classes deprecated other_attr;

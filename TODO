@@ -27,3 +27,5 @@ Here is some stuff that need to be done:
   except method calls).
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
+- make a "dist" target
+- try to see if the dependency to unix.cma can be removed
