@@ -250,7 +250,7 @@ let lookup_virtual_method ms (c:class_file) : class_file =
     with NoSuchMethodError -> raise AbstractMethodError
   in
     try
-      match get_method (`Class c) ms with
+      match get_method (`Class c') ms with
 	| ConcreteMethod _ -> c'
 	| AbstractMethod _ -> raise AbstractMethodError
     with Not_found -> raise AbstractMethodError
@@ -335,7 +335,7 @@ let static_lookup_special prog pp cn ms =
 		      || not (c1 != c2 && extends_class c1 c2)) ->
 		c2
 	    | _ ->
-		match super_class (`Class c) with
+		match super_class pp.cl with
 		  | None -> raise AbstractMethodError
 		  | Some c -> lookup_virtual_method ms c
 
