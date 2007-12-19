@@ -525,34 +525,21 @@ let to_html oc =
     pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces;
     fmt
 
-let to_text fmt =
-  pp_set_tags fmt false;
-  let blank_line = String.make 80 ' ' in
-  let (out,flush,_newline,_spaces) = pp_get_all_formatter_output_functions fmt () in
-  let rec spaces n =
-    if n > 0 then
-      if n <= 80 then out blank_line 0 n else
-	begin
-	  out blank_line 0 80;
-	  spaces (n - 80)
-	end
-  in
-  let newline _ = out "\n" 0 1
-  in
-    pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces
-
-(* let my_info = { *)
-(*   p_global = (fun _fmt -> ()); *)
-(*   p_class= (fun _cn _fmt -> ()); *)
-(*   p_field = (fun _cn _fs _fmt -> ()); *)
-(*   p_method = (fun _cn _ms _fmt -> ()); *)
-(*   p_pp = (fun _cn _ms _i _fmt -> ()); *)
-
-(*   (\* filtering functions (e.g. to avoid printing methods that are never called) *\) *)
-(*   f_class = (fun _cn -> true); *)
-(*   f_field = (fun _cn _fs -> true); *)
-(*   f_method = (fun _cn _ms -> true); *)
-(* } *)
+(* let to_text fmt = *)
+(*   pp_set_tags fmt false; *)
+(*   let blank_line = String.make 80 ' ' in *)
+(*   let (out,flush,_newline,_spaces) = pp_get_all_formatter_output_functions fmt () in *)
+(*   let rec spaces n = *)
+(*     if n > 0 then *)
+(*       if n <= 80 then out blank_line 0 n else *)
+(* 	begin *)
+(* 	  out blank_line 0 80; *)
+(* 	  spaces (n - 80) *)
+(* 	end *)
+(*   in *)
+(*   let newline _ = out "\n" 0 1 *)
+(*   in *)
+(*     pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces *)
 
 let pprint_to_html_file pprint intro info file c =
   let ic = open_in_bin intro in

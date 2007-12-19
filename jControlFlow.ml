@@ -164,44 +164,189 @@ let normal_successors pp =
     | _ -> [next_instruction pp]
 
 
-let static_lookup_interface prog cn ms =
-  let c =
-    match resolve_class prog cn with
-      | `Interface i -> resolve_interface_method ms i
-      | `Class _ -> raise IncompatibleClassChangeError
+
+let resolve_class program cn =
+  try get_interface_or_class program cn with Not_found -> raise NoClassDefFoundError
+
+let rec resolve_field' result fs c : unit =
+  let get_interfaces = function
+    | `Interface i -> i.i_interfaces
+    | `Class c -> c.c_interfaces
+  in
+    if defines_field fs c
+    then result := Some c
+    else
+      begin
+	ClassMap.iter
+	  (fun _ i -> resolve_field' result fs (`Interface i))
+	  (get_interfaces c);
+	if !result = None
+	then
+	  begin
+	    match super_class c with
+	      | Some super -> resolve_field' result fs (`Class super)
+	      | None -> ()
+	  end
+      end
+
+let resolve_field fs c : interface_or_class =
+  let result = ref None in
+    resolve_field' result fs c;
+    match !result with
+      | Some c -> c
+      | None -> raise NoSuchFieldError
+
+
+(** [resolve_method' ms c] looks for the method [ms] in [c] and
+    recursively in its super-classes.
+    @raise NoSuchMethodError if [ms] has not been found. *)
+let rec resolve_method' ms (c:class_file) : class_file =
+  if defines_method ms (`Class c)
+  then c
+  else
+    match super_class (`Class c) with
+      | Some super -> resolve_method' ms super
+      | None -> raise NoSuchMethodError
+
+(** [resolve_interface_method'' ms i] looks for the methods [ms] in
+    [i] and recursively in its interfaces. It returns the list of
+    interfaces that defines [ms], starting with [i] if [i] defines
+    [ms]. *)
+let rec resolve_interface_method'' ms (c:interface_file) : interface_file list =
+  ClassMap.fold
+    (fun _ i l -> resolve_interface_method'' ms i@l)
+    c.i_interfaces
+    (if defines_method ms (`Interface c) then [c] else [])
+
+let rec resolve_method ms (c:class_file) : interface_or_class =
+  try `Class (resolve_method' ms c)
+  with NoSuchMethodError ->
+    match
+      ClassMap.fold
+	(fun _ i l -> resolve_interface_method'' ms i@l)
+	c.c_interfaces
+	[]
+    with
+      | resolved::_ -> `Interface resolved
+      | [] -> match super_class (`Class c) with
+	  | None -> raise NoSuchMethodError
+	  | Some c' -> resolve_method ms c'
+
+
+let resolve_interface_method ms (c:interface_file) : interface_or_class =
+  match resolve_interface_method'' ms c with
+    | resolved::_ -> `Interface resolved
+    | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
+
+let resolve_all_interface_methods ms (c:interface_file) : interface_file list =
+  ClassMap.fold
+    (fun _ i l -> l@resolve_interface_method'' ms i)
+    c.i_interfaces
+    []
+
+let lookup_virtual_method ms (c:class_file) : class_file =
+  let c' =
+    try resolve_method' ms c
+    with NoSuchMethodError -> raise AbstractMethodError
+  in
+    try
+      match get_method (`Class c) ms with
+	| ConcreteMethod _ -> c'
+	| AbstractMethod _ -> raise AbstractMethodError
+    with Not_found -> raise AbstractMethodError
+
+let lookup_interface_method = lookup_virtual_method
+
+
+let overrides_methods ms c =
+  let result = ref [] in
+    match c.c_super_class with
+      | None -> []
+      | Some c ->
+	  let sc = ref c in
+	    try
+	      while true do
+		let c = resolve_method' ms c
+		in
+		  result := c::!result;
+		  sc :=
+		    (match c.c_super_class with
+		      | Some c -> c
+		      | None -> raise NoSuchMethodError);
+	      done;
+	      assert false
+	    with NoSuchMethodError ->
+	      !result
+
+let implements_method c ms =
+  try
+    match MethodMap.find ms c.c_methods with
+      | ConcreteMethod _ -> true
+      | AbstractMethod _ -> false
+  with Not_found -> false
+
+let overridden_by_methods ms c =
+  let result = ref [] in
+  in let rec c_overriding_methods' c =
+    if implements_method c ms
+    then result := c::!result;
+    ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
+  and i_overriding_methods' i =
+    ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
+    ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
   in
     match c with
-      | `Class c' when implements_method c' ms ->
-	  c'::overridden_by_methods ms c
-      | _ -> overridden_by_methods ms c
+      | `Class c ->
+	  ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children;
+	  !result
+      | `Interface i ->
+	  ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
+	  ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
+	  !result
+
+let implements_methods ms c =
+  ClassMap.fold
+    (fun _ i l -> resolve_all_interface_methods ms i @ l)
+    c.c_interfaces
+    []
+
+let static_lookup_interface prog cn ms =
+  match resolve_class prog cn with
+    | `Class _ -> raise IncompatibleClassChangeError
+    | `Interface i -> 
+	let il = 
+	  List.map
+	    (fun i -> `Interface i)
+	    (resolve_all_interface_methods ms i)
+	in
+	  try 
+	    let c = `Class (resolve_method' ms i.i_super)
+	    in c::il
+	  with _ -> il
 
 let static_lookup_special prog pp cn ms =
-  try
-    match resolve_class prog cn with
-      | `Interface _ -> raise IncompatibleClassChangeError
-      | `Class c ->
-	  let c' = resolve_method ms c in
-	    match pp.cl,c' with
-	      | `Class c1, `Class c2 when
-		    (ms.ms_name = "<init>"
-			|| not (c1 != c2 && extends_class c1 c2)) ->
-		  [c2]
-	      | _ ->
-		  match super_class (`Class c) with
-		    | None -> raise AbstractMethodError
-		    | Some c -> [lookup_virtual_method ms c]
-  with
-    | NoClassDefFoundError | NoSuchMethodError
-    | AbstractMethodError -> []
+  match resolve_class prog cn with
+    | `Interface _ -> raise IncompatibleClassChangeError
+    | `Class c ->
+	let c' = resolve_method ms c in
+	  match pp.cl,c' with
+	    | `Class c1, `Class c2 when
+		  (ms.ms_name = "<init>"
+		      || not (c1 != c2 && extends_class c1 c2)) ->
+		c2
+	    | _ ->
+		match super_class (`Class c) with
+		  | None -> raise AbstractMethodError
+		  | Some c -> lookup_virtual_method ms c
 
 let static_lookup_virtual prog obj ms =
   match obj with
     | TArray _ ->
 	begin
 	  match resolve_class prog java_lang_object with
-	    | `Class c -> 
-		if implements_method c ms 
-		then [c]
+	    | `Class c ->
+		if implements_method c ms
+		then [`Class c]
 		else
 		  let ms =
 		    ignore (Format.flush_str_formatter ());
@@ -212,15 +357,18 @@ let static_lookup_virtual prog obj ms =
 	    | `Interface _ -> raise IncompatibleClassChangeError
 	end
     | TClass cn ->
-	let c =
-	  match resolve_class prog cn with
-	    | `Class c -> resolve_method ms c
-	    | `Interface _ -> raise IncompatibleClassChangeError
-	in
-	  match c with
-	    | `Class c' when implements_method c' ms ->
-		c'::overridden_by_methods ms c
-	    | _ -> overridden_by_methods ms c
+	match resolve_class prog cn with
+	  | `Interface _ -> raise IncompatibleClassChangeError
+	  | `Class c ->
+	      try [`Class (resolve_method' ms c)]
+	      with NoSuchMethodError ->
+		ClassMap.fold
+		  (fun _ i l ->
+		    List.map
+		      (fun i -> `Interface i)
+		      (resolve_interface_method'' ms i)@l)
+		  c.c_interfaces
+		  []
 
 
 let handlers pp =

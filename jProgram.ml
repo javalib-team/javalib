@@ -376,7 +376,6 @@ exception Found_Class of interface_or_class
 let defines_method ms = function
   | `Interface i -> MethodMap.mem ms i.i_methods
   | `Class c -> MethodMap.mem ms c.c_methods
-
 let defines_field fs = function
   | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
   | `Class {c_fields=fm;} -> FieldMap.mem fs fm
@@ -384,9 +383,6 @@ let defines_field fs = function
 
 
 let get_interface_or_class program cn = ClassMap.find cn program
-
-let resolve_class program cn =
-  try get_interface_or_class program cn with Not_found -> raise NoClassDefFoundError
 
 
 let get_method c ms = match c with
@@ -414,149 +410,6 @@ let get_fields c =
     match c with
       | `Interface i -> FieldMap.fold to_list i.i_fields []
       | `Class c -> FieldMap.fold to_list c.c_fields []
-
-let rec resolve_field' result fs c : unit =
-  let get_interfaces = function
-    | `Interface i -> i.i_interfaces
-    | `Class c -> c.c_interfaces
-  in
-    if defines_field fs c
-    then result := Some c
-    else
-      begin
-	ClassMap.iter
-	  (fun _ i -> resolve_field' result fs (`Interface i))
-	  (get_interfaces c);
-	if !result = None
-	then
-	  begin
-	    match super c with
-	      | Some super -> resolve_field' result fs (`Class super)
-	      | None -> ()
-	  end
-      end
-
-let resolve_field fs c : interface_or_class =
-  let result = ref None in
-    resolve_field' result fs c;
-    match !result with
-      | Some c -> c
-      | None -> raise NoSuchFieldError
-
-
-(** [resolve_method' ms c] looks for the method [ms] in [c] and
-    recursively in its super-classes.
-    @raise NoSuchMethodError if [ms] has not been found. *)
-let rec resolve_method' ms (c:class_file) : class_file =
-  if defines_method ms (`Class c)
-  then c
-  else
-    match super (`Class c) with
-      | Some super -> resolve_method' ms super
-      | None -> raise NoSuchMethodError
-
-(** [resolve_interface_method'' ms i] looks for the methods [ms] in
-    [i] and recursively in its interfaces. It returns the list of
-    interfaces that defines [ms], starting with [i] if [i] defines
-    [ms]. *)
-let rec resolve_interface_method'' ms (c:interface_file) : interface_file list =
-  ClassMap.fold
-    (fun _ i l -> resolve_interface_method'' ms i@l)
-    c.i_interfaces
-    (if defines_method ms (`Interface c) then [c] else [])
-
-let resolve_method ms (c:class_file) : interface_or_class =
-	let rec resolve_abstract_method ms (c:class_file) : interface_or_class =
-	  try `Class (resolve_method' ms c)
-	  with NoSuchMethodError ->
-	    match
-	      ClassMap.fold
-		(fun _ i l -> resolve_interface_method'' ms i@l)
-		c.c_interfaces
-		[]
-	    with
-	      | resolved::_ -> `Interface resolved
-	      | [] -> match super (`Class c) with
-		  | None -> raise NoSuchMethodError
-		  | Some c' -> resolve_abstract_method ms c'
-	in resolve_abstract_method ms c
-
-let resolve_interface_method ms (c:interface_file) : interface_or_class =
-  match resolve_interface_method'' ms c with
-    | resolved::_ -> `Interface resolved
-    | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
-
-let resolve_all_interface_methods ms (c:interface_file) : interface_file list =
-  ClassMap.fold
-    (fun _ i l -> l@resolve_interface_method'' ms i)
-    c.i_interfaces
-    []
-
-let lookup_virtual_method ms (c:class_file) : class_file =
-  let c' =
-    try resolve_method' ms c
-    with NoSuchMethodError -> raise AbstractMethodError
-  in
-    try
-      match get_method (`Class c) ms with
-	| ConcreteMethod _ -> c'
-	| AbstractMethod _ -> raise AbstractMethodError
-    with Not_found -> raise AbstractMethodError
-
-let lookup_interface_method = lookup_virtual_method
-
-
-let overrides_methods ms c =
-  let result = ref [] in
-    match c.c_super_class with
-      | None -> []
-      | Some c ->
-	  let sc = ref c in
-	    try
-	      while true do
-		let c = resolve_method' ms c
-		in
-		  result := c::!result;
-		  sc :=
-		    (match c.c_super_class with
-		      | Some c -> c
-		      | None -> raise NoSuchMethodError);
-	      done;
-	      assert false
-	    with NoSuchMethodError ->
-	      !result
-
-let implements_method c ms =
-  try
-    match MethodMap.find ms c.c_methods with
-      | ConcreteMethod _ -> true
-      | AbstractMethod _ -> false
-  with Not_found -> false
-
-let overridden_by_methods ms c =
-  let result = ref [] in
-  in let rec c_overriding_methods' c =
-    if implements_method c ms
-    then result := c::!result;
-    ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
-  and i_overriding_methods' i =
-    ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
-    ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
-  in
-    match c with
-      | `Class c ->
-	  ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children;
-	  !result
-      | `Interface i ->
-	  ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
-	  ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
-	  !result
-
-let implements_methods ms c =
-  ClassMap.fold
-    (fun _ i l -> resolve_all_interface_methods ms i @ l)
-    c.c_interfaces
-    []
 
 (* {2 Access to the hierarchy} *)
 

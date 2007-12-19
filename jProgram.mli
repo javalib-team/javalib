@@ -162,6 +162,7 @@ val get_interface_or_class : t -> class_name -> interface_or_class
 *)
 val get_method : interface_or_class -> method_signature -> jmethod
 val get_methods : interface_or_class -> method_signature list
+val defines_method : method_signature -> interface_or_class -> bool
 
 (** [get_field c fs] returns the field with signature [fs] in class
     [c], if any.
@@ -169,99 +170,7 @@ val get_methods : interface_or_class -> method_signature list
 *)
 val get_field : interface_or_class -> field_signature -> any_field
 val get_fields : interface_or_class -> field_signature list
-
-(** [get_class p cn] returns the class named [cn] in program [p], if
-    any.
-    @raise NoClassDefFoundError if [p] does not contain a class named
-    [cn].
-*)
-val resolve_class : program -> class_name -> interface_or_class
-
-(** [resolve_method ms c] returns the class or interface that defines
-    the method [ms], if any.  The caller is responsible to check that
-    the class and the method defined in the class are visible from the
-    current class.
-    @raise NoSuchMethodError if the method is not found
-*)
-val resolve_method : method_signature -> class_file -> interface_or_class
-
-(** [mplements_method c ms] returns [true] iff the class has a method with the
-    signature [ms] and which is not abstract. (Note: The method can be native.)
-*)
-val implements_method : class_file -> method_signature -> bool
-
-(** [resolve_interface_method ms c] return the interface that defines
-    the method [ms], or [java.lang.Object] if no interface defines
-    [ms] but [Object] does.  The caller is responsible to check that
-    the interface and the method defined in the interface are visible
-    from the current class.
-    @raise NoSuchMethodError if the method is not found.
-    @raise IncompatibleClassChangeError if [c] is not an interface.
-*)
-val resolve_interface_method : method_signature -> interface_file -> interface_or_class
-
-(** [resolve_all_interface_methods ms c] return the list of interfaces
-    of [c] that defines the method [ms].  The list is ordered by
-    increasing distant in the inheritance hierarchy.  The caller is
-    responsible to check that the interface and the method defined in
-    the interface are visible from the current class.
-*)
-val resolve_all_interface_methods : method_signature -> interface_file -> interface_file list
-
-
-(** [resolve_field fs c] returns the class or interface that defines
-    the field [fs], if any.
-    @raise NoSuchFieldError if the field is not found
-    @see <http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#71685> Field Resolution
-*)
-val resolve_field : field_signature -> interface_or_class -> interface_or_class
-
-(** [lookup_virtual_method ms c] return the class that defines the
-    method [ms], if any.  The caller is responsible to check that the
-    class and the method defined in the class are visible from the
-    current class.
-    @raise AbstractMethodError if the method is not found or if the
-    method is abstract.
-*)
-val lookup_virtual_method : method_signature -> class_file -> class_file
-
-(** [lookup_interface_method ms c] return the class that defines the
-    method [ms], if any. The caller is responsible to check that the
-    class returned is visible from the current class. As the method is
-    supposed to have been declared in a interface (and
-    [resolve_interface_method] can ensure that), the method is
-    necessarily [public].
-    @raise AbstractMethodError if the method is not found or if the
-    method is abstract.
-*)
-val lookup_interface_method : method_signature -> class_file -> class_file
-
-
-(** [overriding_methods ms c] looks for the methods that overrides and
-    implements [ms] in the children of [c].
-
-    @raise Not_found if [ms] cannot be found in [c]
-*)
-val overridden_by_methods : method_signature -> interface_or_class -> class_file list
-
-
-(** [overridden_methods ms c] looks for the classes that define
-    methods that are overridden by [(c,ms)] (in the parents of
-    [c]). The result list is ordered such that [c1] is before [c2] iff
-    [c1] extends [c2].
-
-    @raise Not_found if [ms] cannot be found in [c]
-*)
-val overrides_methods : method_signature -> class_file -> class_file list
-
-(** [implements_methods ms c] looks for the interfaces that defines
-    methods [ms] in the direct interfaces of [c] and recursively in
-    their super-interfaces. If [i1] and [i2] defines [ms] and [i1]
-    extends [i2], then [i1] is before [i2] in the result list.
-
-    @raise Not_found if [ms] cannot be found in [c]
-*)
-val implements_methods : method_signature -> class_file -> interface_file list
+val defines_field : field_signature -> interface_or_class -> bool
 
 (** {2 Access to the hierarchy} *)
 
