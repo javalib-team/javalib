@@ -40,6 +40,49 @@ type info = {
 }
 
 
+let type2shortstring t = 
+  let bt2ss = function
+  | `Long -> "J"
+  | `Float -> "F"
+  | `Double -> "D"
+  | `Int -> "I"
+  | `Short -> "S"
+  | `Char -> "C"
+  | `Byte -> "B"
+  | `Bool -> "Z"
+  in
+  let rec ot2ss = function
+    | TClass cn -> "L"^JDumpBasics.class_name cn^";"
+    | TArray t -> "["^ vt2ss t
+  and vt2ss = function
+    | TBasic t -> bt2ss t
+    | TObject t -> ot2ss t
+  in vt2ss t
+
+let rettype2shortstring = function
+  | None -> "V"
+  | Some t -> type2shortstring t
+
+let fs2anchortext (cn,fs) =
+  JDumpBasics.class_name cn^fs.fs_name^":"^type2shortstring fs.fs_type
+
+let ms2anchortext (cn,ms) =
+  JDumpBasics.class_name cn^ms.ms_name^"("
+  ^ String.concat "" (List.map type2shortstring ms.ms_parameters)
+  ^")"^rettype2shortstring ms.ms_return_type
+
+let ss2anchor s fmt =
+  fprintf fmt "@{<html>@<0>%s@}" ("<a name=\"" ^ s ^ "\" />")
+let cn2anchor cn = ss2anchor (JDumpBasics.class_name cn)
+let fs2anchor (cn,fs) = ss2anchor (fs2anchortext (cn,fs))
+let ms2anchor (cn,ms) = ss2anchor (ms2anchortext (cn,ms))
+
+let ss2link s fmt text =
+  fprintf fmt "@{<html>@<0>%s@}%s@{<html>@<0>%s@}" ("<a href=\"" ^ s ^ "\" >") text "</a>"
+let cn2link cn = ss2link ("#"^JDumpBasics.class_name cn)
+let fs2link (cn,fs) = ss2link ("#"^fs2anchortext (cn,fs))
+let ms2link (cn,ms) = ss2link ("#"^ms2anchortext (cn,ms))
+  
 let access2string = function
   | `Public -> "public "
   | `Default -> ""
@@ -53,10 +96,6 @@ let final2string = function
 let static2string = function
   | false -> ""
   | true -> "static "
-
-let super2string = function
-  | None -> ""
-  | Some cn -> "extends "^class_name cn ^ " "
 
 let kind2string = function
   | NotFinal -> ""
@@ -76,7 +115,7 @@ let pp_source fmt = function
   | Some s -> fprintf fmt "@[compiled@ from@ file@ %s@]@," s
 
 let rec pp_cinterfaces fmt = function
-  | i::others -> fprintf fmt "%s@ %a" (class_name i) pp_cinterfaces others
+  | i::others -> fprintf fmt "%a@ %a" (cn2link i) (class_name i) pp_cinterfaces others
   | [] -> ()
 
 let pp_inner_classes fmt icl =
@@ -291,6 +330,7 @@ let pp_implementation cn ms info fmt c =
 let pp_cmethod cn info fmt m =
   if info.f_method cn m.cm_signature then
   let sign fmt = pp_method_signature fmt m.cm_signature
+  and anchor fmt = ms2anchor (cn,m.cm_signature) fmt
   and static = static2string m.cm_static
   and final = final2string m.cm_final
   and synchro = (if m.cm_synchronized then "synchronized " else "")
@@ -306,19 +346,20 @@ let pp_cmethod cn info fmt m =
   in
     match m.cm_implementation with
       | Native ->
-	  fprintf fmt "@[<v 2>@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]%t%t@]"
-	    access static final synchro strict sign exceptions
+	  fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]%t%t@]"
+	    anchor access static final synchro strict sign exceptions
 	    (info.p_method cn m.cm_signature) att
       | Java code ->
 	  let implem fmt = pp_implementation cn m.cm_signature info fmt code
 	  in
-	    fprintf fmt "@[<v 2>@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>%t%t%t@}@,}@]"
-	      access static final synchro strict sign exceptions
+	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>%t%t%t@}@,}@]"
+	      anchor access static final synchro strict sign exceptions
 	      (info.p_method cn m.cm_signature) att implem
 
 let pp_amethod cn info fmt m =
   if info.f_method cn m.am_signature then
   let sign fmt = pp_method_signature fmt m.am_signature
+  and anchor fmt = ms2anchor (cn,m.am_signature) fmt
   and access = access2string m.am_access
   and exceptions fmt = pp_exceptions fmt m.am_exceptions
   and att fmt =
@@ -328,8 +369,8 @@ let pp_amethod cn info fmt m =
       (fun _ -> fprintf fmt "@,")
       m.am_attributes
   in
-    fprintf fmt "@[<v 2>@[<3>%s@,abstract@ %t@ %t@]%t%t@]"
-      access sign exceptions (info.p_method cn m.am_signature) att
+    fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]%t%t@]"
+      anchor access sign exceptions (info.p_method cn m.am_signature) att
 
 let pp_methods cn info fmt mm =
   pp_concat
@@ -345,6 +386,7 @@ let pp_methods cn info fmt mm =
 let pp_cfields cn info fmt fm =
   let pp_cfield fmt f =
     let access = access2string f.cf_access
+    and anchor fmt = fs2anchor (cn,f.cf_signature) fmt
     and static = static2string f.cf_static
     and kind = kind2string f.cf_kind
     and value fmt = (match f.cf_value with
@@ -360,8 +402,8 @@ let pp_cfields cn info fmt fm =
     and sign fmt = pp_field_signature fmt f.cf_signature
     in
       fprintf fmt
-	"@[<hv 2>@[%s@,%s@,%s@,%s@,%t%t@]%t%t@]"
-	access static kind trans sign value (info.p_field cn f.cf_signature) attr
+	"@[<hv 2>%t@[%s@,%s@,%s@,%s@,%t%t@]%t%t@]"
+	anchor access static kind trans sign value (info.p_field cn f.cf_signature) attr
   in
     pp_concat
       (fun f -> pp_cfield fmt f)
@@ -378,6 +420,7 @@ let pp_ifields cn info fmt fm =
     let value fmt = (match f.if_value with
       | None -> ()
       | Some v -> fprintf fmt " =@ %s" (cstvalue2string v))
+    and anchor fmt = fs2anchor (cn,f.if_signature) fmt
     and attr fmt =
       pp_attributes fmt
 	(fun _ -> fprintf fmt "@,@[<v>")
@@ -387,8 +430,8 @@ let pp_ifields cn info fmt fm =
     and sign fmt = pp_field_signature fmt f.if_signature
     in
       fprintf fmt
-	"@[<hv 2>@[public@ static@ final@ %t%t@]%t%t@]"
-	sign value (info.p_field cn f.if_signature) attr
+	"@[<hv 2>%t@[public@ static@ final@ %t%t@]%t%t@]"
+	anchor sign value (info.p_field cn f.if_signature) attr
   in
     pp_concat
       (fun f -> pp_ifield fmt f)
@@ -401,14 +444,19 @@ let pp_ifields cn info fmt fm =
 	  [])
    
 
-let pprint_class info fmt (c:jclass) =
+let pprint_class' info fmt (c:jclass) =
   if info.f_class c.c_name then
   (* the constant pool is not printed *)
-  let cn = JDumpBasics.class_name c.c_name ^ " "
+  let cn = JDumpBasics.class_name c.c_name
+  and anchor fmt = cn2anchor c.c_name fmt
   and access = access2string c.c_access
   and abstract = (if c.c_abstract then "abstract " else "")
   and final = final2string c.c_final
-  and super = super2string c.c_super_class
+  and super fmt = match c.c_super_class with
+    | None -> ()
+    | Some super -> 
+	fprintf fmt "extends %a "
+	  (cn2link super) (JDumpBasics.class_name super)
   and interfaces fmt =
     match c.c_interfaces with
       | [] -> ()
@@ -422,16 +470,17 @@ let pprint_class info fmt (c:jclass) =
   and fields fmt = pp_cfields c.c_name info fmt c.c_fields
   and meths fmt = pp_methods c.c_name info fmt c.c_methods
   in
-    fprintf fmt "@[<v>@[%s%s%sclass %s%s%t@]{@{<class>@;<0 2>@[<v>"
-      abstract access final cn super interfaces;
+    fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
+      anchor abstract access final cn super interfaces;
     fprintf fmt "@[<v>%t%t%t%t%t@]"
       (info.p_class c.c_name) source inner_classes deprecated other_attr;
     fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
     fprintf fmt "@]@}@,}@,@]@?"
 
-let pprint_interface info fmt (c:jinterface) =
+let pprint_interface' info fmt (c:jinterface) =
   if info.f_class c.i_name then
-    let cn = JDumpBasics.class_name c.i_name ^ " "
+    let cn = JDumpBasics.class_name c.i_name in
+    let anchor fmt = cn2anchor c.i_name fmt
     and access = access2string c.i_access
     and interfaces fmt =
       match c.i_interfaces with
@@ -457,89 +506,123 @@ let pprint_interface info fmt (c:jinterface) =
 	(fun _ -> fprintf fmt "@,@,")
 	(MethodMap.fold (fun ms a l -> if info.f_method c.i_name ms then a::l else l) c.i_methods [])
     in
-      fprintf fmt "@[<v>@[abstract@ %sinterface %s%t@]{@{<class>@;<0 2>@[<v>"
-	access cn interfaces;
+      fprintf fmt "@[<v>%t@[abstract@ %sinterface %s %t@]{@{<class>@;<0 2>@[<v>"
+	anchor access cn interfaces;
       fprintf fmt "@[<v>%t%t%t%t%t@]"
 	(info.p_class c.i_name) source inner_classes deprecated other_attr;
       fprintf fmt "@[@ @ @[<v>%t%t%t@]@]" fields clinit meths;
       fprintf fmt "@]@}@,}@,@]@?"
 
-
-let pprint_class (info:info) fmt = function
-  | `Class c -> pprint_class info fmt c
-  | `Interface c -> pprint_interface info fmt c
-
-let pprint_program info fmt prog =
-  info.p_global fmt;
-  pp_concat
-    (fun c -> pprint_class info fmt (JProgram.to_class c))
-    (fun _ -> fprintf fmt "@[<v>")
-    (fun _ -> fprintf fmt "@]")
-    (fun _ -> fprintf fmt "@,")
-    (JProgram.fold
-	(fun l c -> if info.f_class (JProgram.get_name c) then c::l else l)
-	[] prog)
-
-
-let to_html oc =
-  let fmt = formatter_of_out_channel oc in
-  let opening_tag s = "<span class=\""^s^"\"><span onclick=\"hbrothers(this);\">-</span><span class=\"hideable\">"
-  and closing_tag s = "</span></span><!-- "^s^" -->"
+(** [to_text fmt] returns a formatter that is compatible with the
+    latter function. {b side-effects:} The formatter is modified, so
+    the behaviour with other pretty-printing function might not work
+    anymore.*)
+let to_text fmt =
+  let html_mode = ref false in
+  let (old_out,flush,newline,spaces) = pp_get_all_formatter_output_functions fmt () in
+  let out str start arrival =
+    if !html_mode
+    then ()
+    else old_out str start arrival
   in
-  let (old_out,flush,_,_) = pp_get_all_formatter_output_functions fmt () in
-  let newline _ = old_out "<br/>\n" 0 6 in
-  let rec spaces n = (if n > 0 then (old_out "&nbsp;" 0 6;spaces (pred n)))
-  in let out str start arrival =
-    let replace_all ~str ~sub ~by =
-      let continue = ref true
-      and s = ref str
-      and i = ref 0 in
-	while !continue do
-	  let (c,str) = ExtString.String.replace ~str:!s ~sub ~by in
-	    s := str;
-	    continue := c;
-	    incr i
-	done;
-	(!i,!s);
-    in
-    let str = String.sub str start arrival in
-    let (_,str) = replace_all ~str ~sub:"<" ~by:"&lt;" in
-    let (_,str) = replace_all ~str ~sub:">" ~by:"&gt;" in
-    let (_,str) = replace_all ~str ~sub:"  " ~by:" &nbsp;" in
-    let str =
-      if str<> "" && str.[0] = ' '
-      then "&nbsp;" ^(ExtString.String.slice ~first:1 str)
-      else str
-    in
-      old_out str 0 (String.length str)
-  in
+    pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces;
     pp_set_tags fmt true;
     pp_set_print_tags fmt false;
     pp_set_mark_tags fmt true;
     pp_set_formatter_tag_functions fmt
-      {mark_open_tag = (fun s -> (* pp_flush fmt;  *)let str = opening_tag s in old_out str 0 (String.length str);"");
-       mark_close_tag = (fun s -> (* pp_flush fmt;  *)let str = closing_tag s in old_out str 0 (String.length str);"");
-       print_open_tag = (fun s -> (* pp_flush fmt;  *)let str = opening_tag s in old_out str 0 (String.length str));
-       print_close_tag = (fun s -> (* pp_flush fmt;  *)let str = closing_tag s in old_out str 0 (String.length str));
+      {mark_open_tag = 
+	  (function
+	    | "html" -> html_mode := true;""
+	    | _ -> "");
+       mark_close_tag =
+	  (function
+	    | "html" -> html_mode := false;""
+	    | _ -> "");
+       print_open_tag = (fun _ -> ());
+       print_close_tag = (fun _ -> ());
       };
-    pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces;
     fmt
 
-(* let to_text fmt = *)
-(*   pp_set_tags fmt false; *)
-(*   let blank_line = String.make 80 ' ' in *)
-(*   let (out,flush,_newline,_spaces) = pp_get_all_formatter_output_functions fmt () in *)
-(*   let rec spaces n = *)
-(*     if n > 0 then *)
-(*       if n <= 80 then out blank_line 0 n else *)
-(* 	begin *)
-(* 	  out blank_line 0 80; *)
-(* 	  spaces (n - 80) *)
-(* 	end *)
-(*   in *)
-(*   let newline _ = out "\n" 0 1 *)
-(*   in *)
-(*     pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces *)
+
+let to_html oc =
+  let fmt = formatter_of_out_channel oc in
+  let html_mode = ref false in
+  let opening_tag = function
+    | "html" -> html_mode := true; ""
+    | s -> "<span class=\""^s^"\"><span onclick=\"hbrothers(this);\">-</span><span class=\"hideable\">"
+  and closing_tag = function
+    | "html" -> html_mode := false;""
+    | s -> "</span></span><!-- "^s^" -->"
+  in
+  let (old_out,flush,_,_) = pp_get_all_formatter_output_functions fmt () in
+  let replace_all ~str ~sub ~by =
+    let continue = ref true
+    and s = ref str
+    and i = ref 0 in
+      while !continue do
+	let (c,str) = ExtString.String.replace ~str:!s ~sub ~by in
+	  s := str;
+	  continue := c;
+	  incr i
+      done;
+      (!i,!s);
+  in
+  let finishes_by_space = ref false
+  and new_line = ref true in
+  let replace_spaces str =
+    if str = "" then str
+    else
+      let str = 
+	if (!finishes_by_space || !new_line) && str.[0] = ' '
+	then "&nbsp;" ^(ExtString.String.slice ~first:1 str)
+	else str
+      in
+	if str.[String.length str - 1] = ' '
+	then finishes_by_space := true
+	else finishes_by_space := false;
+	snd (replace_all ~str ~sub:"  " ~by:" &nbsp;")
+  in
+  let out str start arrival =
+    let str = String.sub str start arrival in
+    let str =
+      if !html_mode then
+	str
+      else
+	begin
+	  let (_,str) = replace_all ~str ~sub:"<" ~by:"&lt;" in
+	  let (_,str) = replace_all ~str ~sub:">" ~by:"&gt;" in
+	    replace_spaces str
+	end
+    in
+      old_out str 0 (String.length str);
+      new_line := false
+  in
+  let newline _ = 
+    new_line := true;
+    old_out "<br/>\n" 0 6 in
+  let spaces80 = "                                                                                " in
+  let rec spaces n =
+    begin
+      if n > 80 then
+	let str = replace_spaces spaces80 in
+	  (old_out str 0 (String.length str);spaces (n-80))
+      else if n > 0 then
+	let str = replace_spaces (String.sub spaces80 0 n) in
+	  (old_out str 0 (String.length str))
+    end;
+    if n > 0 then new_line := false;
+  in
+    pp_set_all_formatter_output_functions fmt ~out ~flush ~newline ~spaces;
+    pp_set_tags fmt true;
+    pp_set_print_tags fmt false;
+    pp_set_mark_tags fmt true;
+    pp_set_formatter_tag_functions fmt
+      {mark_open_tag = (fun s -> let str = opening_tag s in old_out str 0 (String.length str);"");
+       mark_close_tag = (fun s -> let str = closing_tag s in old_out str 0 (String.length str);"");
+       print_open_tag = (fun _ -> ());
+       print_close_tag = (fun _ -> ());
+      };
+    fmt
 
 let pprint_to_html_file pprint intro info file c =
   let ic = open_in_bin intro in
@@ -555,5 +638,26 @@ let pprint_to_html_file pprint intro info file c =
     output_string oc "\n</body></html>\n";
     close_out oc
 
-let pprint_class_to_html_file args = pprint_to_html_file pprint_class args
-let pprint_program_to_html_file args = pprint_to_html_file pprint_program args
+let pprint_class'' (info:info) fmt = function
+  | `Class c -> pprint_class' info fmt c
+  | `Interface c -> pprint_interface' info fmt c
+
+
+let pprint_program'' info fmt prog =
+  info.p_global fmt;
+  pp_concat
+    (fun c -> match (JProgram.to_class c) with
+      | `Class c -> pprint_class' info fmt c
+      | `Interface c -> pprint_interface' info fmt c)
+    (fun _ -> fprintf fmt "@[<v>")
+    (fun _ -> fprintf fmt "@]")
+    (fun _ -> fprintf fmt "@,")
+    (JProgram.fold
+	(fun l c -> if info.f_class (JProgram.get_name c) then c::l else l)
+	[] prog)
+
+let pprint_class info fmt = pprint_class'' info (to_text fmt)
+let pprint_program info fmt = pprint_program'' info (to_text fmt)
+
+let pprint_class_to_html_file args = pprint_to_html_file pprint_class'' args
+let pprint_program_to_html_file args = pprint_to_html_file pprint_program'' args
