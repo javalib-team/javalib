@@ -33,8 +33,41 @@ open JClass
 
 module ClassMap : Map.S with type key = class_name
 
+type concrete_method = {
+  cm_signature : method_signature;
+  cm_static : bool;
+  cm_final : bool;
+  cm_synchronized : bool;
+  cm_strict : bool;
+  cm_access: access;
+  cm_bridge: bool;
+  cm_varargs : bool;
+  cm_synthetic : bool;
+  cm_other_flags : int list;
+  cm_exceptions : class_name list;
+  cm_attributes : attributes;
+  cm_implementation : implementation;
+  mutable cm_overridden_in : class_file list;
+}
 
-type class_file = {
+and abstract_method = {
+  am_signature : method_signature;
+  am_access: [`Public | `Protected | `Default];
+  am_bridge: bool;
+  am_varargs: bool;
+  am_synthetic: bool;
+  am_other_flags : int list;
+  am_exceptions : class_name list;
+  am_attributes : attributes;
+  mutable am_overridden_in : interface_file list;
+  mutable am_implemented_in : class_file list;
+}
+
+and jmethod =
+    | AbstractMethod of abstract_method
+    | ConcreteMethod of concrete_method
+
+and class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
@@ -53,7 +86,7 @@ type class_file = {
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
-  mutable c_children : class_file ClassMap.t;
+  mutable c_children : class_file ClassMap.t; (* a set would be more appropriate*)
 }
 
 and interface_file = {
@@ -75,8 +108,8 @@ and interface_file = {
   i_initializer : concrete_method option; (** should be static/ signature is <clinit>()V; *)
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t;
-  mutable i_children_interface : interface_file ClassMap.t;
-  mutable i_children_class : class_file ClassMap.t;
+  mutable i_children_interface : interface_file ClassMap.t; (* a set would be more appropriate*)
+  mutable i_children_class : class_file ClassMap.t; (* a set would be more appropriate*)
 }
 
 
@@ -84,6 +117,7 @@ type interface_or_class = [
 | `Interface of interface_file
 | `Class of class_file
 ]
+
 
 val get_name : interface_or_class -> class_name
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
@@ -148,8 +182,8 @@ exception IllegalAccessError
 (** {b Warning : lookup and resolve functions do not take in account
     visibility yet}! *)
 
-(** [get_class p cn] returns the class named [cn] in program [p], if
-    any.
+(** [get_interface_or_class p cn] returns the class named [cn] in
+    program [p], if any.
     @raise Not_found if [p] does not contain a class named [cn].
 *)
 val get_interface_or_class : t -> class_name -> interface_or_class
@@ -171,6 +205,20 @@ val defines_method : method_signature -> interface_or_class -> bool
 val get_field : interface_or_class -> field_signature -> any_field
 val get_fields : interface_or_class -> field_signature list
 val defines_field : field_signature -> interface_or_class -> bool
+
+(** [resolve_method' ms c] looks for the method [ms] in [c] and
+    recursively in its super-classes.
+    @raise NoSuchMethodError if [ms] has not been found. *)
+val resolve_method' : method_signature -> class_file -> class_file
+
+(** [resolve_interface_methods' ms i] looks for the methods [ms] in [i]
+    and recursively in its interfaces, stopping at every first
+    occurence in each hirarchy. It returns the list of interfaces that
+    defines [ms]. *)
+val resolve_interface_method' :
+  ?acc:interface_file list ->
+  JClass.MethodMap.key -> interface_or_class -> interface_file list
+
 
 (** {2 Access to the hierarchy} *)
 

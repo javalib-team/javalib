@@ -208,25 +208,12 @@ let rec resolve_method' ms (c:class_file) : class_file =
       | Some super -> resolve_method' ms super
       | None -> raise NoSuchMethodError
 
-(** [resolve_interface_method'' ms i] looks for the methods [ms] in
-    [i] and recursively in its interfaces. It returns the list of
-    interfaces that defines [ms], starting with [i] if [i] defines
-    [ms]. *)
-let rec resolve_interface_method'' ms (c:interface_file) : interface_file list =
-  ClassMap.fold
-    (fun _ i l -> resolve_interface_method'' ms i@l)
-    c.i_interfaces
-    (if defines_method ms (`Interface c) then [c] else [])
+let resolve_interface_method' = JProgram.resolve_interface_method'
 
 let rec resolve_method ms (c:class_file) : interface_or_class =
   try `Class (resolve_method' ms c)
   with NoSuchMethodError ->
-    match
-      ClassMap.fold
-	(fun _ i l -> resolve_interface_method'' ms i@l)
-	c.c_interfaces
-	[]
-    with
+    match resolve_interface_method' ms (`Class c) with
       | resolved::_ -> `Interface resolved
       | [] -> match super_class (`Class c) with
 	  | None -> raise NoSuchMethodError
@@ -234,15 +221,15 @@ let rec resolve_method ms (c:class_file) : interface_or_class =
 
 
 let resolve_interface_method ms (c:interface_file) : interface_or_class =
-  match resolve_interface_method'' ms c with
-    | resolved::_ -> `Interface resolved
-    | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
+  if defines_method ms (`Interface c)
+  then (`Interface c)
+  else
+    match resolve_interface_method' ms (`Interface c) with
+      | resolved::_ -> `Interface resolved
+      | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
 
-let resolve_all_interface_methods ms (c:interface_file) : interface_file list =
-  ClassMap.fold
-    (fun _ i l -> l@resolve_interface_method'' ms i)
-    c.i_interfaces
-    []
+let resolve_all_interface_methods ms (i:interface_file) : interface_file list =
+  resolve_interface_method' ms (`Interface i)
 
 let lookup_virtual_method ms (c:class_file) : class_file =
   let c' =
@@ -362,13 +349,9 @@ let static_lookup_virtual prog obj ms =
 	  | `Class c ->
 	      try [`Class (resolve_method' ms c)]
 	      with NoSuchMethodError ->
-		ClassMap.fold
-		  (fun _ i l ->
-		    List.map
-		      (fun i -> `Interface i)
-		      (resolve_interface_method'' ms i)@l)
-		  c.c_interfaces
-		  []
+		List.map
+		  (fun i -> `Interface i)
+		  (resolve_interface_method' ms (`Class c))
 
 
 let handlers pp =

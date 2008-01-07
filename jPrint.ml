@@ -39,17 +39,39 @@ type info = {
   f_method: class_name -> method_signature -> bool;
 }
 
+let void_info = {
+  p_global = (fun _fmt -> ());
+  p_class= (fun _cn _fmt -> ());
+  p_field = (fun _cn _fs _fmt -> ());
+  p_method = (fun _cn _ms _fmt -> ());
+  p_pp = (fun _cn _ms _i _fmt -> ());
+  f_class = (fun _cn -> true);
+  f_field = (fun _cn _fs -> true);
+  f_method = (fun _cn _ms -> true);
+}
+
+let replace_all ~str ~sub ~by =
+  let continue = ref true
+  and s = ref str
+  and i = ref 0 in
+    while !continue do
+      let (c,str) = ExtString.String.replace ~str:!s ~sub ~by in
+	s := str;
+	continue := c;
+	incr i
+    done;
+    (!i,!s)
 
 let type2shortstring t = 
   let bt2ss = function
-  | `Long -> "J"
-  | `Float -> "F"
-  | `Double -> "D"
-  | `Int -> "I"
-  | `Short -> "S"
-  | `Char -> "C"
-  | `Byte -> "B"
-  | `Bool -> "Z"
+    | `Long -> "J"
+    | `Float -> "F"
+    | `Double -> "D"
+    | `Int -> "I"
+    | `Short -> "S"
+    | `Char -> "C"
+    | `Byte -> "B"
+    | `Bool -> "Z"
   in
   let rec ot2ss = function
     | TClass cn -> "L"^JDumpBasics.class_name cn^";"
@@ -67,9 +89,11 @@ let fs2anchortext (cn,fs) =
   JDumpBasics.class_name cn^fs.fs_name^":"^type2shortstring fs.fs_type
 
 let ms2anchortext (cn,ms) =
-  JDumpBasics.class_name cn^ms.ms_name^"("
-  ^ String.concat "" (List.map type2shortstring ms.ms_parameters)
-  ^")"^rettype2shortstring ms.ms_return_type
+  let str = snd (replace_all ~str:ms.ms_name ~sub:"<" ~by:"-") in
+  let str = snd (replace_all ~str ~sub:">" ~by:"-") in
+    JDumpBasics.class_name cn^str^"("
+    ^ String.concat "" (List.map type2shortstring ms.ms_parameters)
+    ^")"^rettype2shortstring ms.ms_return_type
 
 let ss2anchor s fmt =
   fprintf fmt "@{<html>@<0>%s@}" ("<a name=\"" ^ s ^ "\" />")
@@ -78,7 +102,7 @@ let fs2anchor (cn,fs) = ss2anchor (fs2anchortext (cn,fs))
 let ms2anchor (cn,ms) = ss2anchor (ms2anchortext (cn,ms))
 
 let ss2link s fmt text =
-  fprintf fmt "@{<html>@<0>%s@}%s@{<html>@<0>%s@}" ("<a href=\"" ^ s ^ "\" >") text "</a>"
+  fprintf fmt "@{<html>@<0>%s@}%s@{<html>@<0>%s@}" ("<a href=\"" ^ s ^ "\">") text "</a>"
 let cn2link cn = ss2link ("#"^JDumpBasics.class_name cn)
 let fs2link (cn,fs) = ss2link ("#"^fs2anchortext (cn,fs))
 let ms2link (cn,ms) = ss2link ("#"^ms2anchortext (cn,ms))
@@ -168,21 +192,21 @@ pp_concat
   attrl
 
 let pp_attributes fmt pp_open pp_close pp_sep attributes =
-  let pp_deprecated fmt depre =
-    if depre then fprintf fmt "AttributeDeprecated"
-  and pp_synthetic fmt syn =
-    if syn then fprintf fmt "AttributeSynthetic"
-  in
-    if (attributes.synthetic || attributes.deprecated || List.length attributes.other > 0)
-    then
-      begin
-	pp_open ();
-	pp_deprecated fmt attributes.deprecated;
-	if attributes.synthetic
-	then (pp_sep (); pp_synthetic fmt attributes.synthetic);
-	pp_other_attr fmt pp_sep ignore pp_sep attributes.other;
-	pp_close ();
-      end
+  if (attributes.synthetic || attributes.deprecated || List.length attributes.other > 0)
+  then
+    begin
+      pp_open ();
+      if attributes.deprecated then
+	(pp_print_string fmt "AttributeDeprecated");
+      if attributes.deprecated && (attributes.synthetic || List.length attributes.other > 0)
+      then pp_sep ();
+      if attributes.synthetic then
+	(pp_print_string fmt "AttributeSynthetic");
+      if attributes.synthetic && List.length attributes.other > 0
+      then pp_sep ();
+      pp_other_attr fmt ignore ignore pp_sep attributes.other;
+      pp_close ();
+    end
 
 (* this function does not finish with a cut or a space *)
 let rec pp_object_type fmt = function
@@ -221,6 +245,36 @@ let pp_exceptions fmt = function
       List.iter (fun e -> fprintf fmt ",@ %s" (class_name e)) el;
       fprintf fmt "@]@ "
 
+let pp_opcode fmt =
+  let ppfs fmt (cn,fs) =
+    fs2link
+      (cn,fs) fmt
+      (sprintf "%s.%s:%s" (class_name cn) fs.fs_name (value_signature fs.fs_type))
+  and ppms fmt (cn,ms) =
+    ms2link
+      (cn,ms) fmt
+      (sprintf "%s.%s:%s"
+	  (class_name cn)
+	  ms.ms_name
+	  (method_signature "" (ms.ms_parameters,ms.ms_return_type)))
+  in function
+    | OpGetStatic (cn,fs) ->
+	fprintf fmt "getstatic %a" ppfs (cn,fs)
+    | OpPutStatic (cn,fs) -> fprintf fmt "putstatic %a" ppfs (cn,fs)
+    | OpPutField (cn,fs) -> fprintf fmt "putfield %a" ppfs (cn,fs)
+    | OpGetField (cn,fs) -> fprintf fmt "getfield %a" ppfs (cn,fs)
+    | OpInvoke (x, ms) ->
+	(match x with
+	  | `Virtual (TClass cn) -> fprintf fmt "invokevirtual %a" ppms (cn,ms)
+	  | `Virtual (TArray _) -> 
+	      fprintf fmt "invokevirtual [array].%s:%s" ms.ms_name
+		(method_signature "" (ms.ms_parameters,ms.ms_return_type))
+	  | `Special c -> fprintf fmt "invokespecial %a" ppms (c,ms)
+	  | `Static c -> fprintf fmt "invokestatic %a" ppms (c,ms)
+	  | `Interface c -> fprintf fmt "invokeinterface %a" ppms (c,ms))
+    | other -> pp_print_string fmt (JDump.opcode other)
+
+
 let pp_code cn ms info fmt code =
   let hasinfo i = 
     Buffer.reset stdbuf;
@@ -234,7 +288,7 @@ let pp_code cn ms info fmt code =
 	| OpInvalid -> ()
 	| op ->
 	    if hasinfo i then fprintf fmt "    @[%t@]@," (pp_inst i);
-	    fprintf fmt "@[<4>%3d: %s@]@,"  i (JDump.opcode op)
+	    fprintf fmt "@[<4>%3d: %a@]@,"  i pp_opcode op
       )
       code
 
@@ -324,7 +378,7 @@ let pp_implementation cn ms info fmt c =
   and att fmt = pp_other_attr fmt ignore ignore (fun _ -> fprintf fmt "@,") c.c_attributes
   in
     fprintf fmt
-      "@,@[<v>@[%t,@ %t@]@,%t{@[<v>%t@]}%t%t%t%t@]"
+      "@[<v>@[%t,@ %t@]@,%t{@[<v>%t@]}%t%t%t%t@]@,"
       nb_stack nb_loc att code exc_tbl lvt lnt sm
 
 let pp_cmethod cn info fmt m =
@@ -339,20 +393,20 @@ let pp_cmethod cn info fmt m =
   and exceptions fmt = pp_exceptions fmt m.cm_exceptions
   and att fmt =
     pp_attributes fmt
-      (fun _ -> fprintf fmt "@,@[<v>")
-      (fun _ -> fprintf fmt "@]")
+      (fun _ -> fprintf fmt "@[<v>")
+      (fun _ -> fprintf fmt "@]@,")
       (fun _ -> fprintf fmt "@,")
       m.cm_attributes
   in
     match m.cm_implementation with
       | Native ->
-	  fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]%t%t@]"
+	  fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]@,%t%t@]"
 	    anchor access static final synchro strict sign exceptions
 	    (info.p_method cn m.cm_signature) att
       | Java code ->
 	  let implem fmt = pp_implementation cn m.cm_signature info fmt code
 	  in
-	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>%t%t%t@}@,}@]"
+	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>@,%t%t%t@}}@]"
 	      anchor access static final synchro strict sign exceptions
 	      (info.p_method cn m.cm_signature) att implem
 
@@ -369,7 +423,7 @@ let pp_amethod cn info fmt m =
       (fun _ -> fprintf fmt "@,")
       m.am_attributes
   in
-    fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]%t%t@]"
+    fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]@,%t%t@]"
       anchor access sign exceptions (info.p_method cn m.am_signature) att
 
 let pp_methods cn info fmt mm =
@@ -549,24 +603,12 @@ let to_html oc =
   let html_mode = ref false in
   let opening_tag = function
     | "html" -> html_mode := true; ""
-    | s -> "<span class=\""^s^"\"><span onclick=\"hbrothers(this);\">-</span><span class=\"hideable\">"
+    | s -> "<div class=\""^s^"\"><div onclick=\"hbrothers(this);\">-</div><div class=\"hideable\">"
   and closing_tag = function
     | "html" -> html_mode := false;""
-    | s -> "</span></span><!-- "^s^" -->"
+    | s -> "</div></div><!-- "^s^" -->"
   in
   let (old_out,flush,_,_) = pp_get_all_formatter_output_functions fmt () in
-  let replace_all ~str ~sub ~by =
-    let continue = ref true
-    and s = ref str
-    and i = ref 0 in
-      while !continue do
-	let (c,str) = ExtString.String.replace ~str:!s ~sub ~by in
-	  s := str;
-	  continue := c;
-	  incr i
-      done;
-      (!i,!s);
-  in
   let finishes_by_space = ref false
   and new_line = ref true in
   let replace_spaces str =
@@ -605,7 +647,7 @@ let to_html oc =
     begin
       if n > 80 then
 	let str = replace_spaces spaces80 in
-	  (old_out str 0 (String.length str);spaces (n-80))
+	  (old_out str 0 80;spaces (n-80))
       else if n > 0 then
 	let str = replace_spaces (String.sub spaces80 0 n) in
 	  (old_out str 0 (String.length str))
@@ -661,3 +703,4 @@ let pprint_program info fmt = pprint_program'' info (to_text fmt)
 
 let pprint_class_to_html_file args = pprint_to_html_file pprint_class'' args
 let pprint_program_to_html_file args = pprint_to_html_file pprint_program'' args
+

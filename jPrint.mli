@@ -62,6 +62,21 @@ type info = {
   (** iff [f_method cn ms] returns true, the method is printed. *)
 }
 
+(** [void_info] is an instance of [info] that does not print anything
+    nor filter anything. *)
+val void_info : info
+
+(** print an anchor in an HTML formatter (or nothing in a text
+    formatter). *)
+val cn2anchor : class_name -> Format.formatter -> unit
+val fs2anchor : (class_name*field_signature) -> Format.formatter -> unit
+val ms2anchor : (class_name*method_signature) -> Format.formatter -> unit
+
+(** print the string a link in an HTML formatter (or just the string
+    in a text formatter). *)
+val cn2link : class_name -> Format.formatter -> string -> unit
+val fs2link : (class_name*field_signature) -> Format.formatter -> string -> unit
+val ms2link : (class_name*method_signature) -> Format.formatter -> string -> unit
 
 (** {2 HTML printing functions} *)
 

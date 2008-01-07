@@ -38,7 +38,7 @@ let basic_type = function
 
 let rec object_value_signature = function
 	| TClass cl -> class_name cl
-	| TArray s -> value_signature s
+	| TArray s -> value_signature s ^"[]"
 
 and value_signature = function
   | TBasic b -> basic_type b

@@ -24,8 +24,41 @@ open JClass
 
 module ClassMap = Map.Make(struct type t = class_name let compare = compare end)
 
+type concrete_method = {
+  cm_signature : method_signature;
+  cm_static : bool;
+  cm_final : bool;
+  cm_synchronized : bool;
+  cm_strict : bool;
+  cm_access: access;
+  cm_bridge: bool;
+  cm_varargs : bool;
+  cm_synthetic : bool;
+  cm_other_flags : int list;
+  cm_exceptions : class_name list;
+  cm_attributes : attributes;
+  cm_implementation : implementation;
+  mutable cm_overridden_in : class_file list;
+}
 
-type class_file = {
+and abstract_method = {
+  am_signature : method_signature;
+  am_access: [`Public | `Protected | `Default];
+  am_bridge: bool;
+  am_varargs: bool;
+  am_synthetic: bool;
+  am_other_flags : int list;
+  am_exceptions : class_name list;
+  am_attributes : attributes;
+  mutable am_overridden_in : interface_file list;
+  mutable am_implemented_in : class_file list;
+}
+
+and jmethod =
+    | AbstractMethod of abstract_method
+    | ConcreteMethod of concrete_method
+
+and class_file = {
   c_name : class_name;
   c_access : [`Public | `Default];
   c_final : bool;
@@ -96,6 +129,182 @@ let super = function
     program structure (i.e. in the map).*)
 exception Class_not_found of class_name
 
+
+type any_field =
+    | InterfaceField of interface_field
+    | ClassField of class_field
+
+(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
+exception IncompatibleClassChangeError
+exception NoSuchMethodError
+exception NoSuchFieldError
+exception NoClassDefFoundError
+exception AbstractMethodError
+exception IllegalAccessError
+
+
+(** this exception is raised to avoid a full unfolding of the
+    hierarchy. *)
+exception Found_Class of interface_or_class
+
+
+let defines_method ms = function
+  | `Interface i -> MethodMap.mem ms i.i_methods
+  | `Class c -> MethodMap.mem ms c.c_methods
+let defines_field fs = function
+  | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
+  | `Class {c_fields=fm;} -> FieldMap.mem fs fm
+
+
+
+let get_interface_or_class program cn = ClassMap.find cn program
+
+let super_class c : class_file option = super c
+
+
+let get_method c ms = match c with
+  | `Interface i ->
+      if ms = clinit_signature
+      then
+	match i.i_initializer with
+	  | Some m -> ConcreteMethod m
+	  | None -> raise Not_found
+      else
+	AbstractMethod (MethodMap.find ms i.i_methods)
+  | `Class c -> MethodMap.find ms c.c_methods
+
+let get_methods = function
+  | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
+  | `Class {c_methods = mm;} ->
+      MethodMap.fold (fun ms _ l -> ms::l) mm []
+
+let get_field c fs = match c with
+  | `Interface i -> InterfaceField (FieldMap.find fs i.i_fields)
+  | `Class c -> ClassField (FieldMap.find fs c.c_fields)
+
+let get_fields c =
+  let to_list fs _f l = fs::l in
+    match c with
+      | `Interface i -> FieldMap.fold to_list i.i_fields []
+      | `Class c -> FieldMap.fold to_list c.c_fields []
+
+
+let rec resolve_method' ms (c:class_file) : class_file =
+  if defines_method ms (`Class c)
+  then c
+  else
+    match c.c_super_class with
+      | Some super -> resolve_method' ms super
+      | None -> raise NoSuchMethodError
+
+
+let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
+  ClassMap.fold
+    (fun _ i acc -> 
+      if defines_method ms (`Interface i)
+      then i::acc
+      else resolve_interface_method' ~acc ms (`Interface i))
+    (get_interfaces c)
+    acc
+
+let declare_method ioc ms =
+  if ms.ms_name = "<init>" || ms.ms_name = "<clinit>" then ()
+  else
+    let ioc2c = function
+      | `Class c -> c
+      | `Interface _ -> raise (Invalid_argument "ioc2c")
+    in
+    let add c' c ms =
+      match get_method c ms with
+	| ConcreteMethod m -> m.cm_overridden_in <- (ioc2c c')::m.cm_overridden_in
+	| AbstractMethod m ->
+	    match c' with
+	      | `Interface c' -> m.am_overridden_in <- c'::m.am_overridden_in
+	      | `Class c' -> m.am_implemented_in <- c'::m.am_implemented_in
+    in
+      try
+	List.iter
+	  (fun i -> add ioc (`Interface i) ms)
+	  (resolve_interface_method' ms ioc);
+	match ioc with
+	  | `Interface _ -> ()
+	  | `Class c ->
+	      try
+		match c.c_super_class with
+		  | None -> ()
+		  | Some c ->
+		      add ioc (`Class (resolve_method' ms c)) ms
+	      with NoSuchMethodError -> ()
+      with Invalid_argument "ioc2c" ->
+	raise (Failure "bug in JavaLib: jProgram.add_method")
+
+let ccm2pcm m = {
+  cm_signature = m.JClass.cm_signature;
+  cm_static = m.JClass.cm_static;
+  cm_final = m.JClass.cm_final;
+  cm_synchronized = m.JClass.cm_synchronized;
+  cm_strict = m.JClass.cm_strict;
+  cm_access = m.JClass.cm_access;
+  cm_bridge = m.JClass.cm_bridge;
+  cm_varargs = m.JClass.cm_varargs;
+  cm_synthetic = m.JClass.cm_synthetic;
+  cm_other_flags = m.JClass.cm_other_flags;
+  cm_exceptions = m.JClass.cm_exceptions;
+  cm_attributes = m.JClass.cm_attributes;
+  cm_implementation = m.JClass.cm_implementation;
+  cm_overridden_in = [];
+}
+
+let pcm2ccm m = {
+  JClass.cm_signature = m.cm_signature;
+  JClass.cm_static = m.cm_static;
+  JClass.cm_final = m.cm_final;
+  JClass.cm_synchronized = m.cm_synchronized;
+  JClass.cm_strict = m.cm_strict;
+  JClass.cm_access = m.cm_access;
+  JClass.cm_bridge = m.cm_bridge;
+  JClass.cm_varargs = m.cm_varargs;
+  JClass.cm_synthetic = m.cm_synthetic;
+  JClass.cm_other_flags = m.cm_other_flags;
+  JClass.cm_exceptions = m.cm_exceptions;
+  JClass.cm_attributes = m.cm_attributes;
+  JClass.cm_implementation = m.cm_implementation;
+}
+
+let cam2pam m = {
+  am_signature = m.JClass.am_signature;
+  am_access = m.JClass.am_access;
+  am_bridge = m.JClass.am_bridge;
+  am_varargs = m.JClass.am_varargs;
+  am_synthetic = m.JClass.am_synthetic;
+  am_other_flags = m.JClass.am_other_flags;
+  am_exceptions = m.JClass.am_exceptions;
+  am_attributes = m.JClass.am_attributes;
+  am_overridden_in = [];
+  am_implemented_in = [];
+}
+
+let pam2cam m = {
+  JClass.am_signature = m.am_signature;
+  JClass.am_access = m.am_access;
+  JClass.am_bridge = m.am_bridge;
+  JClass.am_varargs = m.am_varargs;
+  JClass.am_synthetic = m.am_synthetic;
+  JClass.am_other_flags = m.am_other_flags;
+  JClass.am_exceptions = m.am_exceptions;
+  JClass.am_attributes = m.am_attributes;
+}
+
+let add_methods mm =
+  MethodMap.map
+    (fun m ->
+      match m with
+	| JClass.AbstractMethod m -> AbstractMethod (cam2pam m)
+	| JClass.ConcreteMethod m -> ConcreteMethod (ccm2pcm m))
+    mm
+
+let add_amethods mm = MethodMap.map (fun m -> cam2pam m) mm
+
 let add_classFile c (program:program) =
   let imap =
     List.fold_left
@@ -142,14 +351,17 @@ let add_classFile c (program:program) =
      c_inner_classes = c.JClass.c_inner_classes;
      c_other_attributes = c.JClass.c_other_attributes;
      c_fields = c.JClass.c_fields;
-     c_methods = c.JClass.c_methods;
+     c_methods = add_methods c.JClass.c_methods;
      c_children = ClassMap.empty;}
   in
+    MethodMap.iter
+      (fun ms _ -> declare_method (`Class c') ms)
+      c'.c_methods;
+    ClassMap.iter
+      (fun _ i ->
+	i.i_children_class <- ClassMap.add c'.c_name c' i.i_children_class)
+      c'.c_interfaces;
     begin
-      ClassMap.iter
-	(fun _ i ->
-	  i.i_children_class <- ClassMap.add c'.c_name c' i.i_children_class)
-	c'.c_interfaces;
       match super (`Class c') with
 	| None -> ();
 	| Some parent ->
@@ -198,17 +410,23 @@ let add_interfaceFile c (program:program) =
      i_children_interface = ClassMap.empty;
      i_children_class = ClassMap.empty;
      i_super = super;
-     i_initializer = c.JClass.i_initializer;
+     i_initializer =
+	begin
+	  match c.JClass.i_initializer with
+	    | None -> None
+	    | Some m -> Some (ccm2pcm m)
+	end;
      i_fields = c.JClass.i_fields;
-     i_methods = c.JClass.i_methods;
+     i_methods = add_amethods c.JClass.i_methods;
     }
   in
-    begin
-      ClassMap.iter
-	(fun _ i ->
-	  i.i_children_interface <- ClassMap.add c'.i_name c' i.i_children_interface)
-	c'.i_interfaces
-    end;
+    MethodMap.iter
+      (fun ms _ -> declare_method (`Interface c') ms)
+      c'.i_methods;
+    ClassMap.iter
+      (fun _ i ->
+	i.i_children_interface <- ClassMap.add c'.i_name c' i.i_children_interface)
+      c'.i_interfaces;
     ClassMap.add
       c'.i_name
       (`Interface c')
@@ -233,9 +451,14 @@ let to_class = function
        JClass.i_deprecated = c.i_deprecated;
        JClass.i_inner_classes = c.i_inner_classes;
        JClass.i_other_attributes = c.i_other_attributes;
-       JClass.i_initializer = c.i_initializer;
+       JClass.i_initializer =
+	  begin
+	    match c.i_initializer with
+	      | Some m -> Some (pcm2ccm m)
+	      | None -> None
+	  end;
        JClass.i_fields = c.i_fields;
-       JClass.i_methods = c.i_methods;
+       JClass.i_methods = MethodMap.map (fun m -> pam2cam m) c.i_methods;
       }
   | `Class c -> `Class
       {JClass.c_name = c.c_name;
@@ -257,9 +480,13 @@ let to_class = function
        JClass.c_inner_classes = c.c_inner_classes;
        JClass.c_other_attributes = c.c_other_attributes;
        JClass.c_fields = c.c_fields;
-       JClass.c_methods = c.c_methods;}
-
-
+       JClass.c_methods =
+	  MethodMap.map
+	    (function
+	      | AbstractMethod m -> JClass.AbstractMethod (pam2cam m)
+	      | ConcreteMethod m -> JClass.ConcreteMethod (pcm2ccm m))
+	    c.c_methods;
+      }
 
 
 let get_class class_path class_map name =
@@ -299,16 +526,16 @@ let rec add_file class_path c program =
 	add_file class_path c (add_file class_path missing_class program)
   in begin
     let program = ref program in
-    try while true do
-	let cn = List.hd !to_add in
-	  to_add := List.tl !to_add;
-	  if not (ClassMap.mem cn !program)
-	  then
-	    let c = get_class class_path classmap cn
-	    in program := add_file class_path c !program
-      done;
-      !program
-    with Failure "hd" -> !program
+      try while true do
+	  let cn = List.hd !to_add in
+	    to_add := List.tl !to_add;
+	    if not (ClassMap.mem cn !program)
+	    then
+	      let c = get_class class_path classmap cn
+	      in program := add_file class_path c !program
+	done;
+	!program
+      with Failure "hd" -> !program
   end
 
 
@@ -355,62 +582,6 @@ let load_program filename : program =
 let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
 let iter f p = ClassMap.iter (fun _ c -> f c) p
 
-type any_field =
-    | InterfaceField of interface_field
-    | ClassField of class_field
-
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
-exception IncompatibleClassChangeError
-exception NoSuchMethodError
-exception NoSuchFieldError
-exception NoClassDefFoundError
-exception AbstractMethodError
-exception IllegalAccessError
-
-
-(** this exception is raised to avoid a full unfolding of the
-    hierarchy. *)
-exception Found_Class of interface_or_class
-
-
-let defines_method ms = function
-  | `Interface i -> MethodMap.mem ms i.i_methods
-  | `Class c -> MethodMap.mem ms c.c_methods
-let defines_field fs = function
-  | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
-  | `Class {c_fields=fm;} -> FieldMap.mem fs fm
-
-
-
-let get_interface_or_class program cn = ClassMap.find cn program
-
-
-let get_method c ms = match c with
-  | `Interface i ->
-      if ms = clinit_signature
-      then
-	match i.i_initializer with
-	  | Some m -> ConcreteMethod m
-	  | None -> raise Not_found
-      else
-	AbstractMethod (MethodMap.find ms i.i_methods)
-  | `Class c -> MethodMap.find ms c.c_methods
-
-let get_methods = function
-  | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
-  | `Class {c_methods = mm;} ->
-      MethodMap.fold (fun ms _ l -> ms::l) mm []
-
-let get_field c fs = match c with
-  | `Interface i -> InterfaceField (FieldMap.find fs i.i_fields)
-  | `Class c -> ClassField (FieldMap.find fs c.c_fields)
-
-let get_fields c =
-  let to_list fs _f l = fs::l in
-    match c with
-      | `Interface i -> FieldMap.fold to_list i.i_fields []
-      | `Class c -> FieldMap.fold to_list c.c_fields []
-
 (* {2 Access to the hierarchy} *)
 
 (** The name of a real class, i.e., not an interface or an implicit array class name. *)
@@ -454,8 +625,6 @@ let rec implements (c1:class_file) (i2:interface_file) : bool =
     | None -> false
     | Some c3 -> implements c3 i2
 
-let super_class c : class_file option = super c
-
 let rec super_interfaces i =
   ClassMap.fold
     (fun _iname i ilist ->
@@ -488,3 +657,4 @@ let rec firstCommonSuperClass (c1:class_file) (c2:class_file) : class_file =
   else match super_class (`Class c2) with
     | Some c3 -> firstCommonSuperClass c1 c3
     | None -> raise (Failure "firstCommonSuperClass: c1 and c2 has been found such that c1 does not extends c2 and c2 has no super class.")
+

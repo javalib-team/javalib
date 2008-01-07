@@ -42,10 +42,10 @@ endif
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction	\
 jHigh2Low jDump jUnparse jLow2High jParse jFile jProgram jPrint	\
-jControlFlow
+jControlFlow jPrintHierarchy
 MODULE_INTERFACES=jBasics jClassLow jClass jDumpBasics jDumpLow jDump	\
 jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile jProgram	\
-jControlFlow jPrint
+jControlFlow jPrint jPrintHierarchy
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 

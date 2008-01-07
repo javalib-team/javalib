@@ -79,6 +79,8 @@ val resolve_class : program -> class_name -> interface_or_class
     @raise NoSuchMethodError if the method is not found
 *)
 val resolve_method : method_signature -> class_file -> interface_or_class
+val resolve_method' : method_signature -> class_file -> class_file
+  (** only look for the method in the superclasses. *)
 
 (** [mplements_method c ms] returns [true] iff the class has a method with the
     signature [ms] and which is not abstract. (Note: The method can be native.)
@@ -94,6 +96,13 @@ val implements_method : class_file -> method_signature -> bool
     @raise IncompatibleClassChangeError if [c] is not an interface.
 *)
 val resolve_interface_method : method_signature -> interface_file -> interface_or_class
+
+(** [resolve_interface_methods' ms i] looks for the methods [ms] in [i]
+    and recursively in its interfaces, stopping at every first
+    occurence in each hirarchy. It returns the list of interfaces that
+    defines [ms]. *)
+val resolve_interface_method' :
+  ?acc:interface_file list -> method_signature -> interface_or_class -> interface_file list
 
 (** [resolve_all_interface_methods ms c] return the list of interfaces
     of [c] that defines the method [ms].  The list is ordered by
