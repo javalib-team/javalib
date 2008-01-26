@@ -208,7 +208,14 @@ let rec resolve_method' ms (c:class_file) : class_file =
       | Some super -> resolve_method' ms super
       | None -> raise NoSuchMethodError
 
-let resolve_interface_method' = JProgram.resolve_interface_method'
+let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
+  ClassMap.fold
+    (fun _ i acc -> 
+      if defines_method ms (`Interface i)
+      then i::acc
+      else resolve_interface_method' ~acc ms (`Interface i))
+    (get_interfaces c)
+    acc
 
 let rec resolve_method ms (c:class_file) : interface_or_class =
   try `Class (resolve_method' ms c)
@@ -229,7 +236,9 @@ let resolve_interface_method ms (c:interface_file) : interface_or_class =
       | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
 
 let resolve_all_interface_methods ms (i:interface_file) : interface_file list =
-  resolve_interface_method' ms (`Interface i)
+  if defines_method ms (`Interface i)
+  then [i]
+  else resolve_interface_method' ms (`Interface i)
 
 let lookup_virtual_method ms (c:class_file) : class_file =
   let c' =
@@ -265,6 +274,52 @@ let overrides_methods ms c =
 	    with NoSuchMethodError ->
 	      !result
 
+module CSet = Set.Make (
+  struct
+    type t = class_file
+    let compare c1 c2 =
+      Pervasives.compare
+	(c1.c_name)
+	(c2.c_name)
+  end)
+
+let overridden_by_methods ms c =
+  let result = ref CSet.empty in
+  let rec overridden_by_methods' ms c =
+    match get_method c ms with
+      | AbstractMethod am ->
+	  List.iter
+	    (fun c -> overridden_by_methods' ms (`Class c))
+	    am.am_implemented_in;
+	  List.iter
+	    (fun i -> overridden_by_methods' ms (`Interface i))
+	    am.am_overridden_in
+      | ConcreteMethod cm ->
+	  begin
+	    match c with
+	      | `Class c -> result := CSet.add c !result
+	      | `Interface _ -> assert(false)
+	  end;
+	  List.iter
+	    (fun c -> overridden_by_methods' ms (`Class c))
+	    cm.cm_overridden_in
+  in
+    begin
+      match get_method c ms with
+	| AbstractMethod am ->
+	    List.iter
+	      (fun c -> overridden_by_methods' ms (`Class c))
+	      am.am_implemented_in;
+	    List.iter
+	      (fun i -> overridden_by_methods' ms (`Interface i))
+	      am.am_overridden_in
+	| ConcreteMethod cm ->
+	    List.iter
+	      (fun c -> overridden_by_methods' ms (`Class c))
+	      cm.cm_overridden_in
+    end;
+    CSet.fold (fun ioc l -> ioc::l) !result []
+
 let implements_method c ms =
   try
     match MethodMap.find ms c.c_methods with
@@ -272,41 +327,22 @@ let implements_method c ms =
       | AbstractMethod _ -> false
   with Not_found -> false
 
-let overridden_by_methods ms c =
-  let result = ref [] in
-  in let rec c_overriding_methods' c =
-    if implements_method c ms
-    then result := c::!result;
-    ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children
-  and i_overriding_methods' i =
-    ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
-    ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
-  in
-    match c with
-      | `Class c ->
-	  ClassMap.iter (fun _cn -> c_overriding_methods') c.c_children;
-	  !result
-      | `Interface i ->
-	  ClassMap.iter (fun _cn -> i_overriding_methods') i.i_children_interface;
-	  ClassMap.iter (fun _cn -> c_overriding_methods') i.i_children_class;
-	  !result
-
 let implements_methods ms c =
   ClassMap.fold
     (fun _ i l -> resolve_all_interface_methods ms i @ l)
     c.c_interfaces
     []
 
-let static_lookup_interface prog cn ms =
+let static_lookup_interface prog cn ms : interface_or_class list =
   match resolve_class prog cn with
     | `Class _ -> raise IncompatibleClassChangeError
     | `Interface i -> 
-	let il = 
+	let il =
 	  List.map
 	    (fun i -> `Interface i)
 	    (resolve_all_interface_methods ms i)
 	in
-	  try 
+	  try
 	    let c = `Class (resolve_method' ms i.i_super)
 	    in c::il
 	  with _ -> il

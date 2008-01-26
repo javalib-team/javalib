@@ -82,7 +82,7 @@ let get_hierachy prog info : info =
 		    match c.c_super_class with
 		      | None -> ()
 		      | Some c ->
-			  let c' = resolve_method' ms c in
+			  let c' = JControlFlow.resolve_method' ms c in
 			    fprintf fmt "@[<hv 2>Overrides the method in: {@{<hierarchy>@,%a@}}@]@,"
 			      (fun fmt cn -> ms2link (cn,ms) fmt (class_name cn)) (c'.c_name)
 		  with NoSuchMethodError -> ()

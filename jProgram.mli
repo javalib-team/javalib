@@ -206,19 +206,6 @@ val get_field : interface_or_class -> field_signature -> any_field
 val get_fields : interface_or_class -> field_signature list
 val defines_field : field_signature -> interface_or_class -> bool
 
-(** [resolve_method' ms c] looks for the method [ms] in [c] and
-    recursively in its super-classes.
-    @raise NoSuchMethodError if [ms] has not been found. *)
-val resolve_method' : method_signature -> class_file -> class_file
-
-(** [resolve_interface_methods' ms i] looks for the methods [ms] in [i]
-    and recursively in its interfaces, stopping at every first
-    occurence in each hirarchy. It returns the list of interfaces that
-    defines [ms]. *)
-val resolve_interface_method' :
-  ?acc:interface_file list ->
-  JClass.MethodMap.key -> interface_or_class -> interface_file list
-
 
 (** {2 Access to the hierarchy} *)
 

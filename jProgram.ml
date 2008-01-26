@@ -188,16 +188,6 @@ let get_fields c =
       | `Interface i -> FieldMap.fold to_list i.i_fields []
       | `Class c -> FieldMap.fold to_list c.c_fields []
 
-
-let rec resolve_method' ms (c:class_file) : class_file =
-  if defines_method ms (`Class c)
-  then c
-  else
-    match c.c_super_class with
-      | Some super -> resolve_method' ms super
-      | None -> raise NoSuchMethodError
-
-
 let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
   ClassMap.fold
     (fun _ i acc -> 
@@ -206,6 +196,18 @@ let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interfac
       else resolve_interface_method' ~acc ms (`Interface i))
     (get_interfaces c)
     acc
+
+let rec implements ?(acc=[]) ms (c:class_file) : (class_file option * interface_file list) =
+  match c.c_super_class with
+    | None -> (None,resolve_interface_method' ~acc ms (`Class c))
+    | Some sc ->
+	if defines_method ms (`Class sc)
+	then (Some sc,resolve_interface_method' ~acc ms (`Class c))
+	else implements ~acc:(resolve_interface_method' ~acc ms (`Class c)) ms sc
+
+let rec rem_dbl = function
+  | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
+  | l -> l
 
 let declare_method ioc ms =
   if ms.ms_name = "<init>" || ms.ms_name = "<clinit>" then ()
@@ -223,18 +225,17 @@ let declare_method ioc ms =
 	      | `Class c' -> m.am_implemented_in <- c'::m.am_implemented_in
     in
       try
-	List.iter
-	  (fun i -> add ioc (`Interface i) ms)
-	  (resolve_interface_method' ms ioc);
 	match ioc with
-	  | `Interface _ -> ()
+	  | `Interface _ ->
+	      List.iter
+		(fun i -> add ioc (`Interface i) ms)
+		(rem_dbl (resolve_interface_method' ms ioc));
 	  | `Class c ->
-	      try
-		match c.c_super_class with
+	      let (super,il) = implements ms c in
+		List.iter (fun i -> add ioc (`Interface i) ms) (rem_dbl il);
+		match super with
+		  | Some c -> add ioc (`Class c) ms
 		  | None -> ()
-		  | Some c ->
-		      add ioc (`Class (resolve_method' ms c)) ms
-	      with NoSuchMethodError -> ()
       with Invalid_argument "ioc2c" ->
 	raise (Failure "bug in JavaLib: jProgram.add_method")
 
@@ -645,11 +646,7 @@ let rec implemented_interfaces' (c:class_file) : interface_file list =
       | Some c' ->
 	  List.rev_append directly_implemented_interfaces (implemented_interfaces' c')
 
-let implemented_interfaces c =
-  let rec rem_dbl = function
-    | e::l -> e:: (List.filter ((!=)e) (rem_dbl l))
-    | [] -> []
-  in (rem_dbl (implemented_interfaces' c))
+let implemented_interfaces c = rem_dbl (implemented_interfaces' c)
 
 let rec firstCommonSuperClass (c1:class_file) (c2:class_file) : class_file =
   if extends_class' c1 c2
