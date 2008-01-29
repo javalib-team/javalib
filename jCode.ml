@@ -78,11 +78,8 @@ let parse_opcode op ch wide =
 	| 15 ->
 		OpDConst 1.
 	| 16 ->
-		OpBIPush (IO.read_byte ch)
+		OpBIPush (IO.read_signed_byte ch)
 	| 17 ->
-(*		let b1 = IO.read_byte ch in
-		let b2 = IO.read_byte ch in
-		OpSIPush (b1,b2) *)
 	    OpSIPush (read_i16 ch)
 	| 18 ->
 	    OpLdc1 (IO.read_byte ch)
@@ -622,7 +619,7 @@ let other count ch = function
   | OpDConst n -> assert (0.=n || n=1.);write_ui8 ch (14 + int_of_float n)
   | OpBIPush n ->
       write_ui8 ch 16;
-      write_ui8 ch n
+      write_i8 ch n
   | OpLdc1 index ->
       write_ui8 ch 18;
       write_ui8 ch index
