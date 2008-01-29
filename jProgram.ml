@@ -583,7 +583,7 @@ let load_program filename : program =
 let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
 let iter f p = ClassMap.iter (fun _ c -> f c) p
 
-(* {2 Access to the hierarchy} *)
+(** {2 Access to the hierarchy} *)
 
 (** The name of a real class, i.e., not an interface or an implicit array class name. *)
 type className = class_name

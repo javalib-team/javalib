@@ -8,7 +8,7 @@ The command "sample Main.class" will parse and dump the class file.
 
 {b {L Prerequisites}}
 
-- {{:http://ocaml-lib.sourceforge.net/}ExtLib}
+- {{:http://code.google.com/p/ocaml-extlib/}ExtLib} (>=1.5.1)
 - {{:http://cristal.inria.fr/~xleroy/software.html#camlzip}CamlZip}
 
 {b {L Installing}}
@@ -30,13 +30,7 @@ For documentation you can :
 
 {b {L About this version}}
 
-This version has a slightly different interface from the previous one.
-All references to the constant pool have been removed from the data
-structures, and replaced by their value, making the use of the library
-easier. The constant pool is still present however.
-
-Some wide instructions also have been removed, and merged with their
-simple version.
+À écrire...
 
 {b {L Authors}}
 

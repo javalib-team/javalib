@@ -39,7 +39,7 @@ with the following exceptions:
 INSTALL
 -------
 
-get recent version of Extlib at http://ocaml-lib.sf.net
+get recent version of Extlib (1.5.1) at http://code.google.com/p/ocaml-extlib/
 install CamlZip
 edit Makefile.config to configure the paths (see Makefile.config.example)
 > make install
