@@ -170,7 +170,7 @@ val implements_methods : method_signature -> class_file -> interface_file list
 
 
 (** static_lookup_* functions return the highest methods that can be
-    called, i.e. the method actually calls is known to implement or
+    called, i.e. the method actually called is known to implement or
     override the result.*)
 val static_lookup_interface :
   program -> class_name -> method_signature -> interface_or_class list

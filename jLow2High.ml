@@ -410,10 +410,8 @@ let low2high_class cl =
 	| _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
-    if not (accsuper || is_interface)
-    then raise (Class_structure_error "ACC_SUPER must be set for all classes");
-    if is_final && is_abstract
-    then raise (Class_structure_error "An abstract class cannot be final.");
+    (try assert ((accsuper || is_interface)) with _ -> raise (Class_structure_error "ACC_SUPER must be set for all classes"));
+    (try assert (not(is_final && is_abstract)) with _ -> raise (Class_structure_error "An abstract class cannot be final."));
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
     let my_access =
@@ -446,12 +444,11 @@ let low2high_class cl =
       if is_interface
       then
 	begin
-	  if not is_abstract
-	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
-	  if cl.j_super <> Some java_lang_object
-	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
-	  if accsuper
-	  then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";
+	  (try assert is_abstract
+	    with _ -> raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set."));
+	  (try assert (cl.j_super = Some java_lang_object) with _ -> raise (Class_structure_error "The super-class of interfaces must be java.lang.Object."));
+	  (*if accsuper
+	    then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";*)
 	  if is_enum || is_synthetic
 	  then raise (Class_structure_error "Class file with their `AccInterface flag set must not have their `AccEnum or `AccSynthetic flags set.");
 	  let (init,methods) =

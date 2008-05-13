@@ -122,6 +122,9 @@ type interface_or_class = [
 val get_name : interface_or_class -> class_name
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
 
+val is_static_method : jmethod -> bool
+val get_method_signature : jmethod -> method_signature
+
 (** [to_class c] return the same class but in the representation of
     JClass, i.e. without pointers for classes.*)
 val to_class : interface_or_class -> JClass.interface_or_class

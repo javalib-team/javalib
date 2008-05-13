@@ -108,6 +108,14 @@ let get_name = function
   | `Interface i -> i.i_name
   | `Class c -> c.c_name
 
+let is_static_method = function
+  | AbstractMethod _ -> false
+  | ConcreteMethod m -> m.cm_static
+
+let get_method_signature = function
+  | AbstractMethod m -> m.am_signature
+  | ConcreteMethod m -> m.cm_signature
+
 let get_interfaces = function
   | `Interface i -> i.i_interfaces
   | `Class c -> c.c_interfaces
@@ -149,7 +157,9 @@ exception Found_Class of interface_or_class
 
 
 let defines_method ms = function
-  | `Interface i -> MethodMap.mem ms i.i_methods
+  | `Interface i -> 
+      if ms = clinit then i.i_initializer <> None
+      else MethodMap.mem ms i.i_methods
   | `Class c -> MethodMap.mem ms c.c_methods
 let defines_field fs = function
   | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
@@ -174,7 +184,11 @@ let get_method c ms = match c with
   | `Class c -> MethodMap.find ms c.c_methods
 
 let get_methods = function
-  | `Interface i -> MethodMap.fold (fun ms _ l -> ms::l) i.i_methods []
+  | `Interface i ->
+      let init =
+	if i.i_initializer = None then []
+	else [clinit]
+      in MethodMap.fold (fun ms _ l -> ms::l) i.i_methods init
   | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
 
