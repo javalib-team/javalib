@@ -158,7 +158,7 @@ exception Found_Class of interface_or_class
 
 let defines_method ms = function
   | `Interface i -> 
-      if ms = clinit then i.i_initializer <> None
+      if ms = clinit_signature then i.i_initializer <> None
       else MethodMap.mem ms i.i_methods
   | `Class c -> MethodMap.mem ms c.c_methods
 let defines_field fs = function
@@ -187,7 +187,7 @@ let get_methods = function
   | `Interface i ->
       let init =
 	if i.i_initializer = None then []
-	else [clinit]
+	else [clinit_signature]
       in MethodMap.fold (fun ms _ l -> ms::l) i.i_methods init
   | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
