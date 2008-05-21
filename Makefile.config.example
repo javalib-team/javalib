@@ -2,3 +2,4 @@ EXTLIB_PATH=+extlib
 CAMLZIP_PATH=+zip
 
 INSTALL_DIR = `ocamlc -where`/javaLib
+DOCDIR = doc

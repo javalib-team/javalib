@@ -33,9 +33,9 @@ ifeq ($(DEBUG),yes)
 OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
 else
 ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -noassert -ccopt -O3
-else
 OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p -noassert
+else
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -noassert -ccopt -O3
 endif
 endif
 
@@ -48,6 +48,7 @@ jCode jInstruction jUnparse jParse jLow2High jHigh2Low jFile jProgram	\
 jControlFlow jPrint jPrintHierarchy
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
+.PHONY : all install clean cleanall doc
 
 all: javaLib.cma javaLib.cmxa ocaml tests
 
@@ -77,8 +78,8 @@ javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
-	mkdir -p doc
-	$(OCAMLDOC) $(INCLUDE) -keep-code -d doc -html -stars -colorize-code \
+	mkdir -p $(DOCDIR)
+	$(OCAMLDOC) $(INCLUDE) -keep-code -d $(DOCDIR) -html -stars -colorize-code \
 		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 
 clean:

@@ -26,6 +26,8 @@ val basic_type :
   string
 val object_value_signature : JBasics.object_type -> string
 val value_signature : JBasics.value_type -> string
+val type2shortstring : JBasics.value_type -> string
+val rettype2shortstring : JBasics.value_type option -> string
 val method_signature :
   string -> JBasics.value_type list * JBasics.value_type option -> string
 val signature : string -> JBasics.name_and_type -> string

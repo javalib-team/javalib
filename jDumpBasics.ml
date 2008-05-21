@@ -44,6 +44,30 @@ and value_signature = function
   | TBasic b -> basic_type b
   | TObject o -> object_value_signature o
 
+
+let type2shortstring t = 
+  let bt2ss = function
+    | `Long -> "J"
+    | `Float -> "F"
+    | `Double -> "D"
+    | `Int -> "I"
+    | `Short -> "S"
+    | `Char -> "C"
+    | `Byte -> "B"
+    | `Bool -> "Z"
+  in
+  let rec ot2ss = function
+    | TClass cn -> "L"^class_name cn^";"
+    | TArray t -> "["^ vt2ss t
+  and vt2ss = function
+    | TBasic t -> bt2ss t
+    | TObject t -> ot2ss t
+  in vt2ss t
+
+let rettype2shortstring = function
+  | None -> "V"
+  | Some t -> type2shortstring t
+
 let method_signature name (sl,sr) =
 		(match sr with
 		| None -> "void"
