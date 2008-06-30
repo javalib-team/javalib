@@ -26,17 +26,24 @@ open Format
 
 type info = {
   (* printing functions *)
-  (* those printing function must print a cut at the begining of their output*)
+  (* those printing function must print a cut at the begining of their
+     output*)
   p_global : formatter -> unit;
   p_class: class_name -> formatter -> unit;
   p_field: class_name -> field_signature -> formatter -> unit;
   p_method: class_name -> method_signature -> formatter -> unit;
   p_pp: class_name -> method_signature -> int -> formatter -> unit;
+  (* if [has_pp cn ms i] returns [false] then [p_pp cn ms i] will not
+     be called *)
+  has_pp:class_name -> method_signature -> int -> bool;
 
-  (* filtering functions (e.g. to avoid printing methods that are never called) *)
+  (* filtering functions (e.g. to avoid printing methods that are
+     never called) *)
   f_class: class_name -> bool;
   f_field: class_name -> field_signature -> bool;
   f_method: class_name -> method_signature -> bool;
+
+  
 }
 
 let void_info = {
@@ -45,6 +52,7 @@ let void_info = {
   p_field = (fun _cn _fs _fmt -> ());
   p_method = (fun _cn _ms _fmt -> ());
   p_pp = (fun _cn _ms _i _fmt -> ());
+  has_pp = (fun _cn _ms _i -> false);
   f_class = (fun _cn -> true);
   f_field = (fun _cn _fs -> true);
   f_method = (fun _cn _ms -> true);
@@ -96,7 +104,9 @@ let ms2anchortext (cn,ms) =
     ^")"^rettype2shortstring ms.ms_return_type
 
 let ss2anchor s fmt =
-  fprintf fmt "@{<html>@<0>%s@}" ("<a name=\"" ^ s ^ "\" />")
+  pp_open_tag fmt "html";
+  pp_print_as fmt 0 ("<a name=\"" ^ s ^ "\" />");
+  pp_close_tag fmt ()
 let cn2anchor cn = ss2anchor (JDumpBasics.class_name cn)
 let fs2anchor (cn,fs) = ss2anchor (fs2anchortext (cn,fs))
 let ms2anchor (cn,ms) = ss2anchor (ms2anchortext (cn,ms))
@@ -136,10 +146,15 @@ let cstvalue2string = function
 
 let pp_source fmt = function
   | None -> ()
-  | Some s -> fprintf fmt "@[compiled@ from@ file@ %s@]@," s
+  | Some s -> 
+      pp_print_string fmt ("compiled from file "^s);
+      pp_print_cut fmt ()
 
 let rec pp_cinterfaces fmt = function
-  | i::others -> fprintf fmt "%a@ %a" (cn2link i) (class_name i) pp_cinterfaces others
+  | i::others ->
+      cn2link i fmt (class_name i);
+      pp_print_space fmt ();
+      pp_cinterfaces fmt others
   | [] -> ()
 
 let pp_inner_classes fmt icl =
@@ -150,21 +165,25 @@ let pp_inner_classes fmt icl =
   and ic_cn fmt = function (*source_name,class_name*)
     | (None,None) -> ()
     | (Some cn_source,Some cn)  ->
-	fprintf fmt "%s =@ class %s " cn_source (class_name cn)
-    | (Some scn,None) -> fprintf fmt "%s " scn
-    | (None, Some cn) -> fprintf fmt "%s " (class_name cn)
+	pp_print_string fmt (cn_source^" =");
+	pp_print_space fmt ();
+	pp_print_string fmt ("class "^ class_name cn^" ")
+    | (Some scn,None) -> pp_print_string fmt (scn^" ")
+    | (None, Some cn) -> pp_print_string fmt (class_name cn ^" ")
   and ic_ocn fmt = function
     | None -> ()
-    | Some cn -> fprintf fmt "of class %s" (class_name cn)
+    | Some cn -> pp_print_string fmt ("of class " ^ class_name cn)
   in
   let pp_ic fmt ic =
-    fprintf fmt "@[%s%s%s%s%a%a@]"
+    pp_open_box fmt 0;
+    pp_print_string fmt (
       (access2string ic.ic_access)
-      (static2string ic.ic_static)
-      (final2string ic.ic_final)
-      (ic_type2string ic.ic_type)
-      ic_cn (ic.ic_source_name,ic.ic_class_name)
-      ic_ocn ic.ic_outer_class_name
+      ^ (static2string ic.ic_static)
+      ^ (final2string ic.ic_final)
+      ^ (ic_type2string ic.ic_type));
+    ic_cn fmt (ic.ic_source_name,ic.ic_class_name);
+    ic_ocn fmt ic.ic_outer_class_name;
+    pp_close_box fmt ()
   in
     match icl with
       | [] -> ()
@@ -210,23 +229,28 @@ let pp_attributes fmt pp_open pp_close pp_sep attributes =
 
 (* this function does not finish with a cut or a space *)
 let rec pp_object_type fmt = function
-  | TClass cl -> fprintf fmt "%s" (class_name cl)
-  | TArray s -> fprintf fmt "%a[]" pp_value_type s
+  | TClass cl -> pp_print_string fmt (class_name cl)
+  | TArray s -> 
+      pp_value_type fmt s;
+      pp_print_string fmt "[]"
 and pp_value_type fmt = function
-  | TBasic t -> fprintf fmt "%s" (JDumpBasics.basic_type t)
-  | TObject o -> fprintf fmt "%a" pp_object_type o
+  | TBasic t -> pp_print_string fmt (JDumpBasics.basic_type t)
+  | TObject o -> pp_object_type fmt o
 
 (* this function does not finish with a cut or a space *)
 let pp_field_signature fmt fs =
-  fprintf fmt "%a@ %s" pp_value_type fs.fs_type fs.fs_name
+  pp_value_type fmt fs.fs_type;
+  pp_print_space fmt ();
+  pp_print_string fmt fs.fs_name
 
 let pp_method_signature fmt ms =
   begin
     match ms.ms_return_type with
-      | None -> fprintf fmt "void@ "
-      | Some v -> fprintf fmt "%a@ " pp_value_type v
+      | None -> pp_print_string fmt "void"; pp_print_space fmt ()
+      | Some v -> pp_value_type fmt v; pp_print_space fmt ()
   end;
-  fprintf fmt "%s(@[<2>" ms.ms_name;
+  pp_print_string fmt (ms.ms_name^"(");
+  pp_open_box fmt 2;
   begin
     match ms.ms_parameters with
       | [] -> ()
@@ -249,46 +273,70 @@ let pp_opcode fmt =
   let ppfs fmt (cn,fs) =
     fs2link
       (cn,fs) fmt
-      (sprintf "%s.%s:%s" (class_name cn) fs.fs_name (value_signature fs.fs_type))
+      (class_name cn ^"."^ fs.fs_name ^":"^value_signature fs.fs_type)
   and ppms fmt (cn,ms) =
     ms2link
       (cn,ms) fmt
-      (sprintf "%s.%s:%s"
-	  (class_name cn)
-	  ms.ms_name
-	  (method_signature "" (ms.ms_parameters,ms.ms_return_type)))
+      (class_name cn
+	^"."^ ms.ms_name
+	^":"^ (method_signature "" (ms.ms_parameters,ms.ms_return_type)))
   in function
     | OpGetStatic (cn,fs) ->
-	fprintf fmt "getstatic %a" ppfs (cn,fs)
-    | OpPutStatic (cn,fs) -> fprintf fmt "putstatic %a" ppfs (cn,fs)
-    | OpPutField (cn,fs) -> fprintf fmt "putfield %a" ppfs (cn,fs)
-    | OpGetField (cn,fs) -> fprintf fmt "getfield %a" ppfs (cn,fs)
+	pp_print_string fmt "getstatic ";
+	ppfs fmt (cn,fs)
+    | OpPutStatic (cn,fs) ->
+	pp_print_string fmt "putstatic ";
+	ppfs fmt (cn,fs)
+    | OpPutField (cn,fs) ->
+	pp_print_string fmt "putfield ";
+	ppfs fmt (cn,fs)
+    | OpGetField (cn,fs) ->
+	pp_print_string fmt "getfield ";
+	ppfs fmt (cn,fs)
     | OpInvoke (x, ms) ->
 	(match x with
-	  | `Virtual (TClass cn) -> fprintf fmt "invokevirtual %a" ppms (cn,ms)
+	  | `Virtual (TClass cn) ->
+	      pp_print_string fmt "invokevirtual ";
+	      ppms fmt (cn,ms)
 	  | `Virtual (TArray _) -> 
-	      fprintf fmt "invokevirtual [array].%s:%s" ms.ms_name
-		(method_signature "" (ms.ms_parameters,ms.ms_return_type))
-	  | `Special c -> fprintf fmt "invokespecial %a" ppms (c,ms)
-	  | `Static c -> fprintf fmt "invokestatic %a" ppms (c,ms)
-	  | `Interface c -> fprintf fmt "invokeinterface %a" ppms (c,ms))
+	      pp_print_string fmt
+		("invokevirtual [array]." ^ ms.ms_name
+		  ^":"^ (method_signature "" (ms.ms_parameters,ms.ms_return_type)))
+	  | `Special c ->
+	      pp_print_string fmt "invokespecial ";
+	      ppms fmt (c,ms)
+	  | `Static c ->
+	      pp_print_string fmt "invokestatic ";
+	      ppms fmt (c,ms)
+	  | `Interface c ->
+	      fprintf fmt "invokeinterface ";
+	      ppms fmt (c,ms))
     | other -> pp_print_string fmt (JDump.opcode other)
 
 
 let pp_code cn ms info fmt code =
-  let hasinfo i = 
-    Buffer.reset stdbuf;
-    assert(Buffer.contents stdbuf = "");
-    info.p_pp cn ms i str_formatter;
-    String.length (flush_str_formatter ()) <> 0
-  and pp_inst = info.p_pp cn ms
-  in
+  (* TODO : hasinfo is very expensive, find another way to do the same.*)
+  (* use pp_get_all_formatter_output_functions, make_formatter and
+     pp_set_all_formatter_output_functions to make a special formatter
+     to output those information *)
+  let pp_inst = info.p_pp cn ms in
+(*   let hasinfo i =  *)
+(*     Buffer.reset stdbuf; *)
+(*     assert(Buffer.contents stdbuf = ""); *)
+(*     pp_inst i str_formatter; *)
+(*     String.length (flush_str_formatter ()) <> 0 *)
+(*   in *)
     Array.iteri
       (fun i -> function
-	| OpInvalid -> ()
-	| op ->
-	    if hasinfo i then fprintf fmt "    @[%t@]@," (pp_inst i);
-	    fprintf fmt "@[<4>%3d: %a@]@,"  i pp_opcode op
+ 	| OpInvalid -> ()
+ 	| op ->
+	    fprintf fmt "    @[%t@]@," (pp_inst i);
+	    pp_open_box fmt 4;
+	    fprintf fmt "%3d" i;
+	    pp_print_string fmt ": ";
+	    pp_opcode fmt op;
+	    pp_close_box fmt ();
+	    pp_print_cut fmt ()
       )
       code
 
@@ -298,8 +346,8 @@ let pp_line_number_table fmt = function
       pp_concat
 	(fun (pc,line) -> fprintf fmt "@[line %2d:%2d @]" line pc)
 	(fun _ -> fprintf fmt "@,@[<v 2>Line Number Table:@,")
-	(fun _ -> fprintf fmt "@]")
-	(fun _ -> fprintf fmt "@,")
+	(fun _ -> pp_close_box fmt ())
+	(fun _ -> pp_print_cut fmt ())
 	lnt
 
 let pp_local_variable_table fmt = function
@@ -310,47 +358,57 @@ let pp_local_variable_table fmt = function
 	  fprintf fmt "@[<2>[%2d,%2d]: %d is %a %s@]"
 	    start (start+len) index pp_value_type sign name)
 	(fun _ -> fprintf fmt "@,@[<v 2>Local Variable Table:@,")
-	(fun _ -> fprintf fmt "@]")
-	(fun _ -> fprintf fmt "@,")
+	(fun _ -> pp_close_box fmt ())
+	(fun _ -> pp_print_cut fmt ())
 	lvt
 
 let pp_stack_map fmt = function
   | None -> ()
   | Some sm ->
       let pp_verif_info fmt = function
-	| VTop -> fprintf fmt "Top"
-	| VInteger -> fprintf fmt "Integer"
-	| VFloat -> fprintf fmt "Float"
-	| VDouble -> fprintf fmt "Double"
-	| VLong -> fprintf fmt "Long"
-	| VNull -> fprintf fmt "Null"
-	| VUninitializedThis -> fprintf fmt "UninitializedThis"
-	| VObject c -> fprintf fmt "Object %a" pp_object_type c
-	| VUninitialized off -> fprintf fmt "Uninitialized %d" off
+	| VTop -> pp_print_string fmt "Top"
+	| VInteger -> pp_print_string fmt "Integer"
+	| VFloat -> pp_print_string fmt "Float"
+	| VDouble -> pp_print_string fmt "Double"
+	| VLong -> pp_print_string fmt "Long"
+	| VNull -> pp_print_string fmt "Null"
+	| VUninitializedThis -> pp_print_string fmt "UninitializedThis"
+	| VObject c -> 
+	    pp_print_string fmt "Object ";
+	    pp_object_type fmt c
+	| VUninitialized off -> 
+	    pp_print_string fmt ("Uninitialized "^string_of_int off)
       in
       let pp_line fmt (offset,locals,stack) =
 	fprintf fmt "@[<hv 2>offset=%2d,@ locals=[" offset;
 	pp_concat
 	  (pp_verif_info fmt)
-	  (fun _ -> fprintf fmt "@[")
-	  (fun _ -> fprintf fmt "@]")
-	  (fun _ -> fprintf fmt ";@ ")
+	  (fun _ -> pp_open_box fmt 0)
+	  (fun _ -> pp_close_box fmt ())
+	  (fun _ -> 
+	    pp_print_string fmt ";";
+	    pp_print_space fmt ())
 	  locals;
-	fprintf fmt "],@ stack=[";
+	pp_print_string fmt "],";
+	pp_print_space fmt ();
+	pp_print_string fmt " stack=[";
 	pp_concat
 	  (pp_verif_info fmt)
-	  (fun _ -> fprintf fmt "@[")
-	  (fun _ -> fprintf fmt "@]")
-	  (fun _ -> fprintf fmt ";@ ")
+	  (fun _ -> pp_open_box fmt 0)
+	  (fun _ -> pp_close_box fmt ())
+	  (fun _ -> 
+	    pp_print_string fmt ";";
+	    pp_print_space fmt ())
 	  stack;
-	fprintf fmt "]@]"
+	pp_print_string fmt "]";
+	pp_close_box fmt ()
       in
-      pp_concat
-	(fun line -> pp_line fmt line)
-	(fun _ -> fprintf fmt "@,@[<v 2>Stack Map:@,")
-	(fun _ -> fprintf fmt "@]")
-	(fun _ -> fprintf fmt "@,")
-	sm
+	pp_concat
+	  (fun line -> pp_line fmt line)
+	  (fun _ -> fprintf fmt "@,@[<v 2>Stack Map:@,")
+	  (fun _ -> pp_close_box fmt ())
+	  (fun _ -> pp_print_cut fmt ())
+	  sm
 
 let pp_exc_tbl fmt exc_tbl =
   let catch_type = function
@@ -363,19 +421,19 @@ let pp_exc_tbl fmt exc_tbl =
 	"@[[%d,%d) -> %d : catch %s@]"
 	e.e_start e.e_end e.e_handler (catch_type e.e_catch_type))
     (fun _ -> fprintf fmt "@,@[<v 2>Exception handlers:@,")
-    (fun _ -> fprintf fmt "@]")
-    (fun _ -> fprintf fmt "@,")
+    (fun _ -> pp_close_box fmt ())
+    (fun _ -> pp_print_cut fmt ())
     exc_tbl
 
 let pp_implementation cn ms info fmt c =
-  let nb_loc fmt = fprintf fmt "Locals=%d" c.c_max_locals
-  and nb_stack fmt = fprintf fmt "Stack=%d" c.c_max_stack
+  let nb_loc fmt = pp_print_string fmt ("Locals="^ string_of_int c.c_max_locals)
+  and nb_stack fmt = pp_print_string  fmt ("Stack=" ^ string_of_int c.c_max_stack)
   and code fmt = pp_code cn ms info fmt c.c_code
   and exc_tbl fmt = pp_exc_tbl fmt c.c_exc_tbl
   and lnt fmt = pp_line_number_table fmt c.c_line_number_table
   and lvt fmt = pp_local_variable_table fmt c.c_local_variable_table
   and sm fmt = pp_stack_map fmt c.c_stack_map
-  and att fmt = pp_other_attr fmt ignore ignore (fun _ -> fprintf fmt "@,") c.c_attributes
+  and att fmt = pp_other_attr fmt ignore ignore (fun _ -> pp_print_cut fmt ()) c.c_attributes
   in
     fprintf fmt
       "@[<v>@[%t,@ %t@]@,%t{@[<v>%t@]}%t%t%t%t@]@,"
@@ -395,7 +453,7 @@ let pp_cmethod cn info fmt m =
     pp_attributes fmt
       (fun _ -> fprintf fmt "@[<v>")
       (fun _ -> fprintf fmt "@]@,")
-      (fun _ -> fprintf fmt "@,")
+      (fun _ -> pp_print_cut fmt ())
       m.cm_attributes
   in
     match m.cm_implementation with
@@ -419,8 +477,8 @@ let pp_amethod cn info fmt m =
   and att fmt =
     pp_attributes fmt
       (fun _ -> fprintf fmt "@,@[<v>")
-      (fun _ -> fprintf fmt "@]")
-      (fun _ -> fprintf fmt "@,")
+      (fun _ -> pp_close_box fmt ())
+      (fun _ -> pp_print_cut fmt ())
       m.am_attributes
   in
     fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]@,%t%t@]"
@@ -432,7 +490,7 @@ let pp_methods cn info fmt mm =
       | AbstractMethod m -> pp_amethod cn info fmt m
       | ConcreteMethod m -> pp_cmethod cn info fmt m)
     (fun _ -> fprintf fmt "@,@[<v>")
-    (fun _ -> fprintf fmt "@]")
+    (fun _ -> pp_close_box fmt ())
     (fun _ -> fprintf fmt "@,@,")
     (MethodMap.fold (fun ms a l -> if info.f_method cn ms then a::l else l) mm [])
 
@@ -450,8 +508,8 @@ let pp_cfields cn info fmt fm =
     and attr fmt =
       pp_attributes fmt
 	(fun _ -> fprintf fmt "@,@[<v>")
-	(fun _ -> fprintf fmt "@]")
-	(fun _ -> fprintf fmt "@,")
+	(fun _ -> pp_close_box fmt ())
+	(fun _ -> pp_print_cut fmt ())
 	f.cf_attributes
     and sign fmt = pp_field_signature fmt f.cf_signature
     in
@@ -463,7 +521,7 @@ let pp_cfields cn info fmt fm =
       (fun f -> pp_cfield fmt f)
       (fun _ ->fprintf fmt "@,@[<v>")
       (fun _ ->fprintf fmt "@]@,")
-      (fun _ ->fprintf fmt "@,")
+      (fun _ ->pp_print_cut fmt ())
       (FieldMap.fold
 	  (fun fs f l -> if info.f_field cn fs then f::l else l)
 	  fm
@@ -478,8 +536,8 @@ let pp_ifields cn info fmt fm =
     and attr fmt =
       pp_attributes fmt
 	(fun _ -> fprintf fmt "@,@[<v>")
-	(fun _ -> fprintf fmt "@]")
-	(fun _ -> fprintf fmt "@,")
+	(fun _ -> pp_close_box fmt ())
+	(fun _ -> pp_print_cut fmt ())
 	f.if_attributes
     and sign fmt = pp_field_signature fmt f.if_signature
     in
@@ -491,7 +549,7 @@ let pp_ifields cn info fmt fm =
       (fun f -> pp_ifield fmt f)
       (fun _ ->fprintf fmt "@,@[<v>")
       (fun _ ->fprintf fmt "@]@,")
-      (fun _ ->fprintf fmt "@,")
+      (fun _ ->pp_print_cut fmt ())
       (FieldMap.fold
 	  (fun fs f l -> if info.f_field cn fs then f::l else l)
 	  fm
@@ -519,8 +577,8 @@ let pprint_class' info fmt (c:jclass) =
   and source fmt = pp_source fmt c.c_sourcefile
   and inner_classes fmt = pp_inner_classes fmt c.c_inner_classes
   and other_attr fmt =
-    pp_other_attr fmt ignore (fun _ -> fprintf fmt "@,")
-      (fun _ -> fprintf fmt "@,") c.c_other_attributes
+    pp_other_attr fmt ignore (fun _ -> pp_print_cut fmt ())
+      (fun _ -> pp_print_cut fmt ()) c.c_other_attributes
   and fields fmt = pp_cfields c.c_name info fmt c.c_fields
   and meths fmt = pp_methods c.c_name info fmt c.c_methods
   in
@@ -544,8 +602,8 @@ let pprint_interface' info fmt (c:jinterface) =
     and source fmt = pp_source fmt c.i_sourcefile
     and inner_classes fmt = pp_inner_classes fmt c.i_inner_classes
     and other_attr fmt =
-      pp_other_attr fmt ignore (fun _ -> fprintf fmt "@,")
-	(fun _ -> fprintf fmt "@,") c.i_other_attributes
+      pp_other_attr fmt ignore (fun _ -> pp_print_cut fmt ())
+	(fun _ -> pp_print_cut fmt ()) c.i_other_attributes
     and fields fmt = pp_ifields c.i_name info fmt c.i_fields
     and clinit fmt = match c.i_initializer with
       | None -> ()
@@ -556,16 +614,28 @@ let pprint_interface' info fmt (c:jinterface) =
       pp_concat
 	(pp_amethod c.i_name info fmt)
 	(fun _ -> fprintf fmt "@[<v>")
-	(fun _ -> fprintf fmt "@]")
+	(fun _ -> pp_close_box fmt ())
 	(fun _ -> fprintf fmt "@,@,")
 	(MethodMap.fold (fun ms a l -> if info.f_method c.i_name ms then a::l else l) c.i_methods [])
     in
-      fprintf fmt "@[<v>%t@[abstract@ %sinterface %s %t@]{@{<class>@;<0 2>@[<v>"
-	anchor access cn interfaces;
-      fprintf fmt "@[<v>%t%t%t%t%t@]"
-	(info.p_class c.i_name) source inner_classes deprecated other_attr;
-      fprintf fmt "@[@ @ @[<v>%t%t%t@]@]" fields clinit meths;
-      fprintf fmt "@]@}@,}@,@]@?"
+      (* fprintf fmt "@[<v>%t@[abstract@ %sinterface %s %t@]{@{<class>@;<0 2>@[<v>" *)
+      (*   anchor access cn interfaces; *)
+      pp_open_vbox fmt 0;
+      anchor fmt;
+      pp_open_box fmt 0;
+      pp_print_string fmt ("abstract "^access^"interface "^cn^" ");
+      interfaces fmt;
+      pp_close_box fmt ();
+      (* fprintf fmt "@[<v>%t%t%t%t%t@]" *)
+(* 	(info.p_class c.i_name) source inner_classes deprecated other_attr; *)
+      pp_open_vbox fmt 0;
+      info.p_class c.i_name fmt;
+      source fmt;
+      inner_classes fmt;
+      deprecated fmt;
+      other_attr fmt;
+      pp_close_box fmt ();
+      fprintf fmt "@[@ @ @[<v>%t%t%t@]@]@]@}@,}@,@]@?" fields clinit meths
 
 (** [to_text fmt] returns a formatter that is compatible with the
     latter function. {b side-effects:} The formatter is modified, so
@@ -692,8 +762,8 @@ let pprint_program'' info fmt prog =
       | `Class c -> pprint_class' info fmt c
       | `Interface c -> pprint_interface' info fmt c)
     (fun _ -> fprintf fmt "@[<v>")
-    (fun _ -> fprintf fmt "@]")
-    (fun _ -> fprintf fmt "@,")
+    (fun _ -> pp_close_box fmt ())
+    (fun _ -> pp_print_cut fmt ())
     (JProgram.fold
 	(fun l c -> if info.f_class (JProgram.get_name c) then c::l else l)
 	[] prog)

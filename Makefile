@@ -21,7 +21,7 @@
 #
 
 include Makefile.config
-DEBUG=yes
+DEBUG=no
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
 OCAMLDOC = ocamldoc.opt -pp camlp4o.opt
@@ -33,7 +33,7 @@ ifeq ($(DEBUG),yes)
 OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
 else
 ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p -noassert
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p -noassert -ccopt -O3
 else
 OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -noassert -ccopt -O3
 endif
@@ -91,7 +91,11 @@ cleanall: clean
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(INCLUDES) $^ > $@
+ifneq ($(MAKECMDGOALS),clean)
+ifneq ($(MAKECMDGOALS),cleanall)
 -include .depend
+endif
+endif
 
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<

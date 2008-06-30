@@ -53,6 +53,9 @@ type info = {
   p_pp : class_name -> method_signature -> int -> Format.formatter -> unit;
   (** Prints information associated to program points. The information is
       printed after the instruction. *)
+  has_pp:class_name -> method_signature -> int -> bool;
+  (** If [has_pp cn ms i] returns [false] then [p_pp cn ms i] will not
+      be called *)
   
   f_class : class_name -> bool;
   (** iff [f_class cn] returns true, the class is printed. *)

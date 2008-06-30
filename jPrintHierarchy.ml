@@ -30,15 +30,18 @@ open JProgram
 let get_hierachy prog info : info =
   let ppclassmap cn2link fmt cm =
     let first = ref true in
-    let ppcn fmt cn =
-      fprintf fmt "%a" (cn2link cn) (class_name cn)
+    let ppcn fmt cn = cn2link cn fmt (class_name cn)
     in
       ClassMap.iter 
 	(fun cn _ -> 
 	  if !first && info.f_class cn then 
 	    (ppcn fmt cn; first := false)
 	  else if info.f_class cn then
-	    fprintf fmt ",@ %a" ppcn cn)
+	    begin
+	      pp_print_string fmt ",";
+	      pp_print_space fmt ();
+	      ppcn fmt cn
+	    end)
 	cm
   in
     {info with
@@ -66,9 +69,9 @@ let get_hierachy prog info : info =
 	and ppcnl fmt cnl =
 	  pp_concat
 	    (fun cn -> ms2link (cn,ms) fmt (class_name cn))
-	    (fun _ -> fprintf fmt "@{<hierarchy>@,")
-	    (fun _ -> fprintf fmt "@}")
-	    (fun _ -> fprintf fmt ";@ ")
+	    (fun _ -> pp_open_tag fmt "hierarchy"; pp_print_cut fmt ())
+	    (fun _ -> pp_close_tag fmt ())
+	    (fun _ -> pp_print_string fmt ";"; pp_print_space fmt ())
 	    cnl
 	in
 	let pp_overrides fmt =
@@ -104,8 +107,10 @@ let get_hierachy prog info : info =
 	    | `Interface _ ->
 		fprintf fmt "@[<hv 2>Implemented in: {@{<hierarchy>@,%a@}}@]@,"
 		  ppcnl (get_implemented_in m)
-	in 
-	  fprintf fmt "%t%t%t%t"
-	    (info.p_method cn ms) pp_implements pp_overrides pp_overridden_in
+	in
+	  info.p_method cn ms fmt;
+	  pp_implements fmt;
+	  pp_overrides fmt;
+	  pp_overridden_in fmt
       )
     }
