@@ -626,6 +626,10 @@ let pprint_interface' info fmt (c:jinterface) =
       pp_print_string fmt ("abstract "^access^"interface "^cn^" ");
       interfaces fmt;
       pp_close_box fmt ();
+      pp_print_string fmt "{";
+      pp_open_tag fmt "class";
+      pp_print_break fmt 0 2;
+      pp_open_vbox fmt 0;
       (* fprintf fmt "@[<v>%t%t%t%t%t@]" *)
 (* 	(info.p_class c.i_name) source inner_classes deprecated other_attr; *)
       pp_open_vbox fmt 0;
