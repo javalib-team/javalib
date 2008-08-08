@@ -23,9 +23,11 @@ open JBasics
 open JClass
 open JProgram
 
+(** Allows some navigation in the control flow graph of a program. *)
+
 (** {2 Access to instructions}*)
 
-(** manipulation of program pointers *)
+(** Manipulation of program pointers *)
 module PP : sig
   type t
   exception NoCode of (class_name * method_signature)
@@ -63,6 +65,13 @@ val next_instruction : pp -> pp
 val normal_successors : pp -> pp list
 val handlers : pp -> JBasics.exception_handler list
 val exceptional_successors : pp -> pp list
+
+
+
+(** {2 Lookup and resolve procedure} *)
+
+(** {b Warning : lookup and resolve functions do not take in account
+    visibility yet}! *)
 
 
 (** [get_class p cn] returns the class named [cn] in program [p], if

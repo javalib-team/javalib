@@ -25,35 +25,34 @@ open IO.BigEndian
 open ExtList
 open ExtString
 
-(** {2 Basic Elements.} *)
+(* {2 Basic Elements.} *)
 
-(** Fully qualified ordinary class or interface name (not an array).
+(* Fully qualified ordinary class or interface name (not an array).
     For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
-(** [java.lang.Object] *)
 let java_lang_object = ["java";"lang";"Object"]
 
-(** Numerical types that are not smaller than int. *)
+(* Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
 | `Float
 | `Double
 ]
 
-(** JVM basic type (int = short = char = byte = bool). *)
+(* JVM basic type (int = short = char = byte = bool). *)
 type jvm_basic_type = [
 | `Int2Bool
 | other_num
 ]
 
-(** JVM type (int = short = char = byte = bool, all objects have the same type). *)
+(* JVM type (int = short = char = byte = bool, all objects have the same type). *)
 type jvm_type = [
 | jvm_basic_type
 | `Object
 ]
 
-(** JVM array element type (byte = bool, all objects have the same type). *)
+(* JVM array element type (byte = bool, all objects have the same type). *)
 type jvm_array_type = [
 | `Int
 | `Short
@@ -63,14 +62,14 @@ type jvm_array_type = [
 | `Object
 ]
 
-(** JVM return type (byte = bool, all objects have the same type). *)
+(* JVM return type (byte = bool, all objects have the same type). *)
 type jvm_return_type = [
 |  jvm_basic_type
 | `Object
 | `Void
 ]
 
-(** Java basic type. *)
+(* Java basic type. *)
 type java_basic_type = [
 | `Int
 | `Short
@@ -80,37 +79,37 @@ type java_basic_type = [
 | other_num
 ]
 
-(** Java object type *)
+(* Java object type *)
 type object_type =
   | TClass of class_name
   | TArray of value_type
 
-(** Java type *)
+(* Java type *)
 and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
 
-(** Field descriptor. *)
+(* Field descriptor. *)
 type field_descriptor = value_type
 
-(** Method descriptor. *)
+(* Method descriptor. *)
 type method_descriptor = value_type list * value_type option
 
-(** Signatures parsed from CONSTANT_NameAndType_info structures. *)
+(* Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type name_and_type =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(** Constant value. *)
+(* Constant value. *)
 type constant_value =
   | ConstString of string
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64
   | ConstDouble of float
-  | ConstClass of object_type (** This is not documented in the JVM spec. *)
+  | ConstClass of object_type
 
-(** Constant. *)
+(* Constant. *)
 type constant =
   | ConstValue of constant_value
   | ConstField of (class_name * string * field_descriptor)
@@ -120,7 +119,7 @@ type constant =
   | ConstStringUTF8 of string
   | ConstUnusable
 
-(** Exception handler. *)
+(* Exception handler. *)
 type exception_handler = {
 	e_start : int;
 	e_end : int;
@@ -128,7 +127,7 @@ type exception_handler = {
 	e_catch_type : class_name option
 }
 
-(** Stackmap type. *)
+(* Stackmap type. *)
 type verification_type =
 	| VTop
 	| VInteger
@@ -138,7 +137,7 @@ type verification_type =
 	| VNull
 	| VUninitializedThis
 	| VObject of object_type
-	| VUninitialized of int (** creation point *)
+	| VUninitialized of int (* creation point *)
 
 exception No_class_found of string
 

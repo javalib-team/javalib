@@ -26,9 +26,10 @@ open JClass
 
 (** {2 Navigable hierarchy} *)
 
-(** To be able to navigate more easily in byte-code program, we
-    replace class names with pointers to class_file structures (only
-    for super_class and implemented interfaces).
+(** To be able to navigate more easily in byte-code program, class
+    names are replaced by pointers to class_file structures ( for
+    super_class, implemented interfaces and sub-classes or
+    sub-interfaces).
 *)
 
 module ClassMap : Map.S with type key = class_name
@@ -64,8 +65,8 @@ and abstract_method = {
 }
 
 and jmethod =
-    | AbstractMethod of abstract_method
-    | ConcreteMethod of concrete_method
+  | AbstractMethod of abstract_method
+  | ConcreteMethod of concrete_method
 
 and class_file = {
   c_name : class_name;
@@ -181,9 +182,6 @@ exception AbstractMethodError
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception IllegalAccessError
 
-
-(** {b Warning : lookup and resolve functions do not take in account
-    visibility yet}! *)
 
 (** [get_interface_or_class p cn] returns the class named [cn] in
     program [p], if any.

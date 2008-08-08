@@ -21,6 +21,15 @@
 
 (** Tranformation of high level classes to low level classes. *)
 
+
+(** Convert a high level class to a lower level class.*)
+val high2low : JClass.interface_or_class -> JClassLow.jclass
+
+
+
+(** h2l_* functions are used in the JDump module so functions of
+    JDumpLow can be used. *)
+
 val h2l_cfield : 'a -> JClass.class_field -> JClassLow.jfield
 val h2l_ifield : 'a -> JClass.interface_field -> JClassLow.jfield
 val h2l_cmethod :
@@ -28,6 +37,3 @@ val h2l_cmethod :
 val h2l_amethod : 'a -> JClass.abstract_method -> JClassLow.jmethod
 val h2l_acmethod :
   JBasics.constant DynArray.t -> JClass.jmethod -> JClassLow.jmethod
-
-(** Convert a high level class to a lower level class.*)
-val high2low : JClass.interface_or_class -> JClassLow.jclass

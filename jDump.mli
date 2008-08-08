@@ -19,6 +19,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** Prints data from {!JClass} to a provided output.*)
+
 
 val opcode : JClass.opcode -> string
 val dump_code : 'a IO.output -> 'b -> JClass.code -> unit

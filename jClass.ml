@@ -19,9 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** This implementation is only to provide MapFieldSignature and MapMethodSignature.*)
-
-(** High level Ocaml representation of a Java class file. *)
+(* This implementation is only to provide MapFieldSignature and MapMethodSignature.*)
 
 open JBasics
 
@@ -39,13 +37,12 @@ type method_signature = {
 let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;}
 
 
-(** Instruction. *)
 type opcode =
 
   (* Access to a local variable *)
   | OpLoad of jvm_type * int
   | OpStore of jvm_type * int
-  | OpIInc of int * int (** index, increment *)
+  | OpIInc of int * int 
 
   (* Stack permutation *)
   | OpPop
@@ -60,12 +57,12 @@ type opcode =
 
   (* Constant loading / it corresponds to instructions *const* and ldc* *)
   | OpConst of [
-    | `ANull (** AConstNull  *)
+    | `ANull (* AConstNull  *)
     | `Int of int32
     | `Long of int64
     | `Float of float
     | `Double of float
-    | `Byte of int (** BIPush *)
+    | `Byte of int (* BIPush *)
     | `Short of int
     | `String of string
     | `Class of object_type
@@ -126,7 +123,7 @@ type opcode =
   (* Heap and static fields *)
   | OpNew of class_name
   | OpNewArray of value_type
-  | OpAMultiNewArray of object_type * int (** ClassInfo, dims *)
+  | OpAMultiNewArray of object_type * int (* ClassInfo, dims *)
   | OpCheckCast of object_type
   | OpInstanceOf of object_type
   | OpGetStatic of class_name * field_signature
@@ -160,7 +157,7 @@ type opcode =
 
 type opcodes = opcode array
 
-(** Visibility modifiers. *)
+(* Visibility modifiers. *)
 type access = [
 | `Default
 | `Public
@@ -168,14 +165,14 @@ type access = [
 | `Protected
 ]
 
-(** Generic attributes common to classes, fields and methods. *)
+(* Generic attributes common to classes, fields and methods. *)
 type attributes = {
   synthetic : bool;
   deprecated : bool;
   other : (string * string) list
 }
 
-(** {2 Fields of classes and interfaces.} *)
+(* {2 Fields of classes and interfaces.} *)
 (*******************************)
 
 type field_kind =
@@ -192,24 +189,24 @@ type class_field = {
   cf_synthetic : bool;
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option; (** Only if the field is static final. *)
+  cf_value : constant_value option; (* Only if the field is static final. *)
   cf_transient : bool;
   cf_other_flags : int list;
   cf_attributes : attributes
 }
 
-(** Fields of interfaces are implicitly [public], [static] and
+(* Fields of interfaces are implicitly [public], [static] and
     [final].*)
 type interface_field = {
   if_signature : field_signature;
   if_synthetic : bool;
-  if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
   if_other_flags : int list;
   if_attributes : attributes
 }
 
-(** {2 Methods of classes and interfaces.} *)
-(********************************)
+(* {2 Methods of classes and interfaces.} *)
+(******************************************)
 
 type code = {
   c_max_stack : int;
@@ -219,7 +216,7 @@ type code = {
   c_line_number_table : (int * int) list option;
   c_local_variable_table : (int * int * string * value_type * int) list option;
   c_stack_map : (int* verification_type list * verification_type list) list option;
-  (** This is the MIDP version, not the JSR 202 StackMapTable attribute. *)
+  (* This is the MIDP version, not the JSR 202 StackMapTable attribute. *)
   c_attributes : (string * string) list;
 }
 
@@ -258,7 +255,7 @@ type abstract_method = {
 }
 
 
-(** {2 Classes and interfaces.} *)
+(* {2 Classes and interfaces.} *)
 (***************************)
 
 module FieldMap = Map.Make(struct type t = field_signature let compare = compare end)
@@ -290,7 +287,7 @@ type jclass = {
   c_super_class : class_name option;
   c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
-  c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  c_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_inner_classes : inner_class list;
@@ -301,13 +298,13 @@ type jclass = {
   c_methods : jmethod MethodMap.t;
 }
 
-(** Interfaces cannot be final and can only contains abstract
+(* Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
 type jinterface = {
   i_name : class_name;
   i_access : [`Public | `Default];
   i_interfaces : class_name list;
-  i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  i_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
   i_inner_classes : inner_class list;

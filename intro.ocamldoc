@@ -28,13 +28,23 @@ to specify a -dllpath option when linking the main program for bytecode compilat
 
 For documentation you can :
 - browse the {{:#api}API} below
-- read http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html
+- read {{:http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html}the specifications}
   for more informations about the class file format
 - send an email to Laurent Hubert or Tiphaine Turpin <first.last\@irisa.fr>.
 
 {b {L About this version}}
 
-À écrire...
+This version improves the class and interface representations by
+providing more precise types for data and more logical names.  This
+new version also includes a representation for complete programs, some
+ways to compute information on those programs with a control flow
+module and a module to get information about the class hierarchy,
+overloading inheritance, etc.  It also improves the supports flags in
+general and specially those of Java 5.  Know bugs have been fixed and
+there are some other changes described in the CHANGELOG file.  All
+this comes at the price of an incompatibility with the previous
+version.
+
 
 {b {L Authors}}
 
@@ -42,7 +52,7 @@ JavaLib was initially developped by Nicolas Cannasse.
 
 Frédéric Besson made some corrections.
 
-Laurent Hubert <first.last\@.irisa.fr> then modified it during an
+Laurent Hubert <first.last\@irisa.fr> then modified it during an
 internship at IRISA (Rennes, France) in the Lande team, during the
 summer 2005.
 
@@ -51,7 +61,7 @@ Lande team, between March and July 2006.  These modifications mainly
 concerned an error about the "wide" instruction, which was definitely
 not properly coded.
 
-Tiphaine Turpin <first.last\@.irisa.fr> added the unparsing feature
+Tiphaine Turpin <first.last\@irisa.fr> added the unparsing feature
 and greatly improved the loading features ({!JFile}).
 
 Tiphaine Turpin and Laurent Hubert then added the high level
@@ -66,7 +76,7 @@ module, and a pretty-printer for classes and programs.
 {!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow JPrint}
 
 {b {L High level manipulations of programs}}
-{!modules: JFile JProgram JControlFlow}
+{!modules: JFile JProgram JControlFlow JPrintHierarchy}
 
 {b {L Other}}
 {!modules: JCode JParse JUnparse JInstruction JLow2High JHigh2Low}

@@ -20,6 +20,8 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** Prints data from {!JClassLow} to a provided output.*)
+
 val opcode : JClassLow.opcode -> string
 val dump_code : 'a IO.output -> 'b -> JClassLow.code -> unit
 val dump_attrib : 'a IO.output -> 'b -> JClassLow.attribute -> unit

@@ -69,7 +69,7 @@ and class_file = {
   c_super_class : class_file option;
   c_fields : class_field FieldMap.t;
   c_interfaces : interface_file ClassMap.t;
-  c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  c_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_inner_classes : inner_class list;
@@ -84,12 +84,12 @@ and interface_file = {
   i_annotation: bool;
   i_other_flags : int list;
   i_interfaces : interface_file ClassMap.t;
-  i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  i_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_super : class_file; (** must be java.lang.Object. *)
+  i_super : class_file; (* must be java.lang.Object. *)
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t;
@@ -132,9 +132,6 @@ let super = function
   | `Interface i -> Some i.i_super
   | `Class c -> c.c_super_class
 
-(** [Class_not_found c] is raised when trying to add a class when its
-    super class or one of its implemented interfaces is not yet in the
-    program structure (i.e. in the map).*)
 exception Class_not_found of class_name
 
 
@@ -142,7 +139,6 @@ type any_field =
     | InterfaceField of interface_field
     | ClassField of class_field
 
-(** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception IncompatibleClassChangeError
 exception NoSuchMethodError
 exception NoSuchFieldError
@@ -151,7 +147,7 @@ exception AbstractMethodError
 exception IllegalAccessError
 
 
-(** this exception is raised to avoid a full unfolding of the
+(* this exception is raised to avoid a full unfolding of the
     hierarchy. *)
 exception Found_Class of interface_or_class
 
@@ -597,12 +593,7 @@ let load_program filename : program =
 let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
 let iter f p = ClassMap.iter (fun _ c -> f c) p
 
-(** {2 Access to the hierarchy} *)
-
-(** The name of a real class, i.e., not an interface or an implicit array class name. *)
-type className = class_name
-
-type interfaceName = class_name
+(* Access to the hierarchy *)
 
 let rec extends_class' c1 c2 : bool =
   if c1==c2

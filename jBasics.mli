@@ -28,6 +28,7 @@
     For example: [\["java" ; "lang" ; "Object"\]]. *)
 type class_name = string list
 
+(** [java.lang.Object] *)
 val java_lang_object: class_name
 
 (** Numerical types that are not smaller than int. *)

@@ -641,10 +641,10 @@ let pprint_interface' info fmt (c:jinterface) =
       pp_close_box fmt ();
       fprintf fmt "@[@ @ @[<v>%t%t%t@]@]@]@}@,}@,@]@?" fields clinit meths
 
-(** [to_text fmt] returns a formatter that is compatible with the
-    latter function. {b side-effects:} The formatter is modified, so
-    the behaviour with other pretty-printing function might not work
-    anymore.*)
+(* [to_text fmt] returns a formatter that is compatible with the
+   latter function. {b side-effects:} The formatter is modified, so
+   the behaviour with other pretty-printing function might not work
+   anymore.*)
 let to_text fmt =
   let html_mode = ref false in
   let (old_out,flush,newline,spaces) = pp_get_all_formatter_output_functions fmt () in

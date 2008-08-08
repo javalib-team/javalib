@@ -80,7 +80,6 @@ module PP = struct
 
   let get_pp cl' meth' pc' : t = {cl=cl';meth=meth';pc=pc';}
 
-  (** @raise NoCode if the method is abstract or not found. *)
   let get_first_pp prog cn ms : t =
     match get_interface_or_class prog cn with
       | `Interface {i_initializer = Some m} as c when m.cm_signature = ms ->
@@ -197,9 +196,6 @@ let resolve_field fs c : interface_or_class =
       | None -> raise NoSuchFieldError
 
 
-(** [resolve_method' ms c] looks for the method [ms] in [c] and
-    recursively in its super-classes.
-    @raise NoSuchMethodError if [ms] has not been found. *)
 let rec resolve_method' ms (c:class_file) : class_file =
   if defines_method ms (`Class c)
   then c

@@ -46,7 +46,7 @@ let rec get_flag flag = function
   | f::fl when f=flag -> (true,List.filter ((<>)f) fl)
   | f::fl -> let (b,fl) = get_flag flag fl in (b,f::fl)
 
-(** convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
+(* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
   List.map
     (function
@@ -57,7 +57,7 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
 	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
 	     name,contents)
 
-(** convert a list of  attributes to an [attributes] structure. *)
+(* convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
   {synthetic = List.exists ((=)AttributeSynthetic) al;
    deprecated = List.exists ((=)AttributeDeprecated) al;

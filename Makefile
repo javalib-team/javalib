@@ -24,7 +24,7 @@ include Makefile.config
 DEBUG=no
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
-OCAMLDOC = ocamldoc.opt -pp camlp4o.opt
+OCAMLDOC = ocamldoc.opt
 OCAMLDEP = ocamldep.opt -pp camlp4o.opt
 OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
@@ -79,8 +79,8 @@ javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(INCLUDE) -keep-code -d $(DOCDIR) -html -stars -colorize-code \
-		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars -colorize-code \
+		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli)
 
 clean:
 	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~

@@ -31,7 +31,9 @@ type field_signature = {
 type method_signature = {
   ms_name:string;
   ms_parameters:value_type list;
-  ms_return_type : value_type option; (* 2 methods in the same can can differ only by their return type in case of bridge methods. *)
+  ms_return_type : value_type option;
+  (* Note : 2 methods in the same class can can differ only by their
+     return type in case of bridge methods. *)
 }
 
 val clinit_signature : method_signature
