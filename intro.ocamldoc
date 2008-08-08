@@ -46,7 +46,12 @@ this comes at the price of an incompatibility with the previous
 version.
 
 
-{b {L Authors}}
+{b {L Contact}}
+
+Current maintainers are Laurent Hubert and Tiphaine Turpin
+(<first.last@irisa.fr>).
+
+{b {L Some History}}
 
 JavaLib was initially developped by Nicolas Cannasse.
 

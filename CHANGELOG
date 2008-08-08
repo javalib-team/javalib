@@ -63,3 +63,14 @@ From 1.4 to 1.5
 * change many base types to reflect more accurately the constraints of
   the specification
 * fix bugs and change some small other stuff
+
+From 1.0 to 1.4
+---------------
+This version adds a lot of features (and fixes some bugs) to the latest
+version (1.0) distributed by Nicolas Cannasse while keeping an almost
+compatible interface.  The differences in the compatible interfaces
+includes :
+- a few changes in the instruction set
+- the AttributeStackMap constructor
+- the AccRFU constructor
+- an additional parameter in the function JCode.parse_opcode
