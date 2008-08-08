@@ -5,15 +5,13 @@ Here is some stuff that need to be done:
 - test lookups and resolves by comparing with jvm traces
 
 * Performance
-- add lazy parsing (keeping the code attributes unparsed until really
+- add lazy parsing (keeping (the code) attributes unparsed until really
   needed) (think of marshaling and compacity)
-- add "lazy loading": automatically load from a class-path classes
-  that are needed by the 'main' classes (it's to avoid loading the
-  full run-time, but just the part used by the current program)
+- improve "lazy loading": automatically load from a class-path classes
+  that are needed only by the 'main' method (instead of classes
+  referenced from the first classes, recursively)
 
 * Extra functionalities
-- JControlFlow/JProgram : redistribute the functions to have more
-  consistent modules
 - JFile : the classpath should not contain the [.jar] files but only
   directories and the jar files should be looked for in the given
   directories.
@@ -25,6 +23,8 @@ Here is some stuff that need to be done:
   not subclasses of java.lang.RuntimeException for instruction that
   are known not to throw declared exception (should be everything
   except method calls).
+- add class file version number to class file representation
+- check the compatibility of JavaLib with Java 5, Java 6 and Java 7
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
 - make a "dist" target
