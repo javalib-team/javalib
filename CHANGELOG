@@ -1,0 +1,65 @@
+From 1.5 to 1.6
+---------------
+New features :
+* adding a representation for complete programs
+* adding a printing module for programs that can output text and html
+  code, along with user information
+* adding a JPrintHierarchy to print information about the class
+  hierarchy, inheritance, overloading, etc.
+* adding a ControlFlow module to have some control flow information
+  more easily
+* adding a lookup function for (loading and writing) individual
+  classes in .jar files
+* add support for Java 5 flags (enum, synthetic, annotation, bridge,
+  varargs, etc.) and improve handling of those flags in general.
+* enriching dumping modules to print classes in high or low level
+  representation
+
+Changes in the interface :
+* classes and interfaces have now different type
+* renamed jConsts to jBasics
+* moved the definitions of jClassLow also used in jClass to jBasics
+* merging OpConst and OpLdc (JDump/JClass/JInstruction) in high level
+  class representation
+* signatures added to fields and classes in JClass
+* the return type has been included in the signature (useful for
+  bridge methods)
+* method_signature renamed to method_descriptor as it includes the
+  return type wich is not part of the signature
+* more accurate (and cumbersome) typing for access flags in JClassLow
+* some renaming so names should be more 'logic'
+
+Minor changes in the code :
+* add more access functions to classes and interfaces
+* more consistent treatment of exceptions in all the library
+* adding some checks on bytecode generation (JCode)
+* adding some checks on conversion (JLow2High)
+* some code factorizing (is_dir/is_file) in JFile, for the constant
+  pool accesses and in the representation of abstract and concrete
+  classes
+
+Bug fix :
+* bugfix : in unparsing line number tables
+* bugfix : in JDumpBasics.object_value_signature
+* bugfix : in JFile, correct a bug when trying to open an nonexistent
+  file
+* bugfix : in (un-)parsing of BIPush
+* bugfix : a ConstantValue attribute was expected for non-static
+  fields
+* bugfix : in JLow2High : unexpected attributes were causing the
+  conversion to fail (it now works and prints a warning)
+* bugfix : in JLow2High
+* bugfix : in JHigh2Low : correcting some bugs with abstract classes
+  and methods
+* fix encoding problems in documentation 
+* Removed the extlib patch (included in extlib 1.5.1)
+
+
+From 1.4 to 1.5
+---------------
+* new type for bytecode instructions (more generic opcodes)
+* the low level instructions are still available, and even more low
+  level
+* change many base types to reflect more accurately the constraints of
+  the specification
+* fix bugs and change some small other stuff

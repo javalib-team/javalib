@@ -1,7 +1,11 @@
+{i {C Tiphaine Turpin, Laurent Hubert and Nicolas Cannasse}}
+
+{i {C August 2008}}
+
 {b {L Introduction}}
 
-JavaLib is a library to access .class files from OCaml.
-Look at sample.ml sources to see how you can parse and dump a class file.
+JavaLib is a library to access .class files from OCaml.  Look at
+[sample.ml] sources to see how you can parse and dump a class file.
 The command "sample Main.class" will parse and dump the class file.
 
 {2 Quick start}
@@ -15,7 +19,7 @@ The command "sample Main.class" will parse and dump the class file.
 
 Edit Makefile.config (see Makefile.config.example). Then:
 - 	[make install]
-- 	[make doc] if you want the html documentation.
+- 	[make doc]  (if you want the html documentation).
 
 Note that, depending on the location of the CamlZip shared library, you may need
 to specify a -dllpath option when linking the main program for bytecode compilation.
@@ -23,7 +27,7 @@ to specify a -dllpath option when linking the main program for bytecode compilat
 {b {L Documentation}}
 
 For documentation you can :
-- browse the api below
+- browse the {{:#api}API} below
 - read http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html
   for more informations about the class file format
 - send an email to Laurent Hubert or Tiphaine Turpin <first.last\@irisa.fr>.
@@ -38,13 +42,14 @@ JavaLib was initially developped by Nicolas Cannasse.
 
 Frédéric Besson made some corrections.
 
-Laurent Hubert then modified it during an internship at IRISA (Rennes, France)
-in the Lande team, during the summer 2005.
+Laurent Hubert <first.last\@.irisa.fr> then modified it during an
+internship at IRISA (Rennes, France) in the Lande team, during the
+summer 2005.
 
-Étienne André then modified it during an internship at IRISA
-in the Lande team, between March and July 2006.
-These modifications mainly concerned an error about the "wide"
-instruction, which was definitely not properly coded.
+Étienne André then modified it during an internship at IRISA in the
+Lande team, between March and July 2006.  These modifications mainly
+concerned an error about the "wide" instruction, which was definitely
+not properly coded.
 
 Tiphaine Turpin <first.last\@.irisa.fr> added the unparsing feature
 and greatly improved the loading features ({!JFile}).
@@ -52,10 +57,10 @@ and greatly improved the loading features ({!JFile}).
 Tiphaine Turpin and Laurent Hubert then added the high level
 representation of classes.
 
-Laurent Hubert added the representation of programs, the control flow
-module, and the pretty-printer for classes and programs.
+Laurent Hubert added a representation for programs, a control flow
+module, and a pretty-printer for classes and programs.
 
-{2 API}
+{2:api API}
 
 {b {L Representation of classes}}
 {!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow JPrint}

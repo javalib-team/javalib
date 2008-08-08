@@ -1,6 +1,6 @@
 (*
  *  This file is part of JavaLib
- *  Copyright (c)2007 Université de Rennes 1
+ *  Copyright (c)2007-2008 Université de Rennes 1
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
