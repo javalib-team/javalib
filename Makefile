@@ -20,7 +20,7 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 
-include Makefile.config
+-include Makefile.config
 DEBUG=no
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
