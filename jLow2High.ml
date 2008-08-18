@@ -414,6 +414,7 @@ let low2high_class cl =
     (try assert (not(is_final && is_abstract)) with _ -> raise (Class_structure_error "An abstract class cannot be final."));
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
+    let my_version = cl.j_version in
     let my_access =
       match access with
 	| `Public -> `Public
@@ -465,6 +466,7 @@ let low2high_class cl =
 	  in
 	    `Interface {
 	      i_name = my_name;
+	      i_version = my_version;
 	      i_access = my_access;
 	      i_interfaces = my_interfaces;
 	      i_consts = DynArray.to_array consts;
@@ -541,6 +543,7 @@ let low2high_class cl =
 	in
 	  `Class {
 	    c_name = my_name;
+	    c_version = my_version;
 	    c_super_class = cl.j_super;
 	    c_final = is_final;
 	    c_abstract = is_abstract;

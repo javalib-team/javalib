@@ -60,6 +60,7 @@ and jmethod =
 
 and class_file = {
   c_name : class_name;
+  c_version : version;
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
@@ -80,6 +81,7 @@ and class_file = {
 
 and interface_file = {
   i_name : class_name;
+  i_version : version;
   i_access : [`Public | `Default];
   i_annotation: bool;
   i_other_flags : int list;
@@ -348,6 +350,7 @@ let add_classFile c (program:program) =
   in
   let c' =
     {c_name = c.JClass.c_name;
+     c_version = c.JClass.c_version;
      c_access = c.JClass.c_access;
      c_final = c.JClass.c_final;
      c_abstract = c.JClass.c_abstract;
@@ -409,6 +412,7 @@ let add_interfaceFile c (program:program) =
   in
   let c' =
     {i_name = c.JClass.i_name;
+     i_version = c.JClass.i_version;
      i_access = c.JClass.i_access;
      i_consts = c.JClass.i_consts;
      i_annotation = c.JClass.i_annotation;
@@ -452,6 +456,7 @@ let add_one_file f program = match f with
 let to_class = function
   | `Interface c -> `Interface
       {JClass.i_name = c.i_name;
+       JClass.i_version = c.i_version;
        JClass.i_access = c.i_access;
        JClass.i_consts = c.i_consts;
        JClass.i_annotation = c.i_annotation;
@@ -473,6 +478,7 @@ let to_class = function
       }
   | `Class c -> `Class
       {JClass.c_name = c.c_name;
+       JClass.c_version = c.c_version;
        JClass.c_access = c.c_access;
        JClass.c_final = c.c_final;
        JClass.c_abstract = c.c_abstract;

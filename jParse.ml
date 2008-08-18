@@ -45,7 +45,7 @@ let parse_constant max ch =
   let index() =
     let n = read_ui16 ch in
       if n = 0 || n >= max
-      then raise (Illegal_value (string_of_int n, "index in constant pool"));
+      then raise (Class_structure_error ("Illegal index in constant pool: " ^ string_of_int n));
       n
   in
     match cid with
@@ -83,7 +83,7 @@ let parse_constant max ch =
 	  let str = IO.really_nread ch len in
 	    ConstantStringUTF8 str
       | cid ->
-	  raise (Illegal_value (string_of_int cid, "constant kind"))
+	  raise (Class_structure_error ("Illegal constant kind: " ^ string_of_int cid))
 
 let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
@@ -211,25 +211,25 @@ let parse_objectType s =
   try
     parse_ot (read_utf8 s)
   with
-      Stream.Failure -> raise (Illegal_value (s, "object type"))
+      Stream.Failure -> raise (Class_structure_error ("Illegal object type: " ^ s))
 
 let parse_type s =
   try
     parse_type (read_utf8 s)
   with
-      Stream.Failure -> raise (Illegal_value (s, "type"))
+      Stream.Failure -> raise (Class_structure_error ("Illegal type: " ^ s))
 
 let parse_method_signature s =
   try
     parse_method_sig (read_utf8 s)
   with
-      Stream.Failure -> raise (Illegal_value (s, "method signature"))
+      Stream.Failure -> raise (Class_structure_error ("Illegal method signature: " ^ s))
 
 let parse_signature s =
   try
     parse_sig (read_utf8 s)
   with
-      Stream.Failure -> raise (Illegal_value (s, "signature"))
+      Stream.Failure -> raise (Class_structure_error ("Illegal signature: " ^ s))
 
 let parse_stackmap_frame consts ch =
   let parse_type_info ch = match IO.read_byte ch with
@@ -242,7 +242,7 @@ let parse_stackmap_frame consts ch =
     | 6 -> VUninitializedThis
     | 7 -> VObject (get_object_type consts (read_ui16 ch))
     | 8 -> VUninitialized (read_ui16 ch)
-    | n -> raise (Illegal_value (string_of_int n, "stackmap type"))
+    | n -> raise (Class_structure_error ("Illegal stackmap type: " ^ string_of_int n))
   in let parse_type_info_array ch nb_item =
       List.init nb_item (fun _ ->parse_type_info ch)
   in let offset = read_ui16 ch in
@@ -260,25 +260,28 @@ let rec parse_code consts ch =
     JCode.parse_code ch clen
   in
   let exc_tbl_length = read_ui16 ch in
-  let exc_tbl = List.init exc_tbl_length (fun _ ->
-					    let spc = read_ui16 ch in
-					    let epc = read_ui16 ch in
-					    let hpc = read_ui16 ch in
-					    let ct =
-					      match read_ui16 ch with
-						| 0 -> None
-						| ct ->
-						    match get_constant consts ct with
-						      | ConstValue (ConstClass (TClass c)) -> Some c
-						      | _ -> raise (Illegal_value ("", "class index"))
-					    in
-					      {
-						e_start = spc;
-						e_end = epc;
-						e_handler = hpc;
-						e_catch_type = ct;
-					      }
-					 ) in
+  let exc_tbl = 
+    List.init
+      exc_tbl_length
+      (fun _ ->
+	 let spc = read_ui16 ch in
+	 let epc = read_ui16 ch in
+	 let hpc = read_ui16 ch in
+	 let ct =
+	   match read_ui16 ch with
+	     | 0 -> None
+	     | ct ->
+		 match get_constant consts ct with
+		   | ConstValue (ConstClass (TClass c)) -> Some c
+		   | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
+	 in
+	   {
+	     e_start = spc;
+	     e_end = epc;
+	     e_handler = hpc;
+	     e_catch_type = ct;
+	   }
+      ) in
   let attrib_count = read_ui16 ch in
   let attribs =
     List.init
@@ -295,7 +298,7 @@ let rec parse_code consts ch =
 (* Parse an attribute, if its name is in list. *)
 and parse_attribute list consts ch =
   let aname = get_string_ui16 consts ch in
-  let error() = raise (Parse_error ("Malformed attribute " ^ aname)) in
+  let error() = raise (Class_structure_error ("Ill-formed attribute " ^ aname)) in
   let alen = read_i32 ch in
   let check name =
     if not (List.mem name list)
@@ -431,50 +434,50 @@ let rec expand_constant consts n =
       | ConstValue (ConstClass c) ->
 	  (match expand_constant consts nt with
 	     | ConstNameAndType (n,s) -> (c,n,s)
-	     | _ -> raise (Illegal_value ("", "NameAndType in " ^ name ^ " constant")))
-      | _ -> raise (Illegal_value ("", "Class in " ^ name ^ " constant"))
+	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of NameAndType in " ^ name ^ " constant")))
+      | _ -> raise (Class_structure_error ("Illegal constant refered in place of a ConstValue in " ^ name ^ " constant"))
   in
-	match consts.(n) with
-	| ConstantClass i ->
-	    (match expand_constant consts i with
-	       | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
-	       | _ -> raise (Illegal_value ("", "string in Class constant")))
-	| ConstantField (cl,nt) ->
-	    (match expand "Field" cl nt with
-	       | TClass c, n, SValue v -> ConstField (c, n, v)
-	       | TClass _, _, _ -> raise (Illegal_value ("", "type in Field constant"))
-	       | _ -> raise (Illegal_value ("", "class in Field constant")))
-	| ConstantMethod (cl,nt) ->
-	    (match expand "Method" cl nt with
-	       | c, n, SMethod v -> ConstMethod (c, n, v)
-	       | _, _, SValue _ -> raise (Illegal_value ("", "type in Method constant")))
-	| ConstantInterfaceMethod (cl,nt) ->
-	    (match expand "InterfaceMethod" cl nt with
-	       | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
-	       | TClass _, _, _ -> raise (Illegal_value ("", "type in Interface Method constant"))
-	       | _, _, _ -> raise (Illegal_value ("", "class in Interface Method constant")))
-	| ConstantString i ->
-		(match expand_constant consts i with
-		| ConstStringUTF8 s -> ConstValue (ConstString s)
-		| _ -> raise (Illegal_value ("", "String constant")))
-	| ConstantInt i -> ConstValue (ConstInt i)
-	| ConstantFloat f -> ConstValue (ConstFloat f)
-	| ConstantLong l -> ConstValue (ConstLong l)
-	| ConstantDouble f -> ConstValue (ConstDouble f)
-	| ConstantNameAndType (n,t) ->
-		(match expand_constant consts n , expand_constant consts t with
-		| ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
-		| ConstStringUTF8 _ , _ ->
-		    raise (Illegal_value ("", "type in NameAndType constant"))
-		| _ -> raise (Illegal_value ("", "name in NameAndType constant")))
-	| ConstantStringUTF8 s -> ConstStringUTF8 s
-	| ConstantUnusable -> ConstUnusable
+    match consts.(n) with
+      | ConstantClass i ->
+	  (match expand_constant consts i with
+	     | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
+	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
+      | ConstantField (cl,nt) ->
+	  (match expand "Field" cl nt with
+	     | TClass c, n, SValue v -> ConstField (c, n, v)
+	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Field constant: " ^ ""))
+	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Field constant")))
+      | ConstantMethod (cl,nt) ->
+	  (match expand "Method" cl nt with
+	     | c, n, SMethod v -> ConstMethod (c, n, v)
+	     | _, _, SValue _ -> raise (Class_structure_error ("Illegal type in Method constant")))
+      | ConstantInterfaceMethod (cl,nt) ->
+	  (match expand "InterfaceMethod" cl nt with
+	     | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
+	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
+	     | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
+      | ConstantString i ->
+	  (match expand_constant consts i with
+	     | ConstStringUTF8 s -> ConstValue (ConstString s)
+	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a String constant")))
+      | ConstantInt i -> ConstValue (ConstInt i)
+      | ConstantFloat f -> ConstValue (ConstFloat f)
+      | ConstantLong l -> ConstValue (ConstLong l)
+      | ConstantDouble f -> ConstValue (ConstDouble f)
+      | ConstantNameAndType (n,t) ->
+	  (match expand_constant consts n , expand_constant consts t with
+	     | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
+	     | ConstStringUTF8 _ , _ ->
+		 raise (Class_structure_error ("Illegal type in a NameAndType constant"))
+	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a NameAndType constant")))
+      | ConstantStringUTF8 s -> ConstStringUTF8 s
+      | ConstantUnusable -> ConstUnusable
 
 let parse_class_low_level ch =
 	let magic = read_real_i32 ch in
-	if magic <> 0xCAFEBABEl then raise (Parse_error "invalid magic number");
-	let _version_minor = read_ui16 ch in
-	let _version_major = read_ui16 ch in
+	if magic <> 0xCAFEBABEl then raise (Class_structure_error "Invalid magic number");
+	let version_minor = read_ui16 ch in
+	let version_major = read_ui16 ch in
 	let constant_count = read_ui16 ch in
 	let const_big = ref true in
 	let consts = Array.init constant_count (fun _ ->
@@ -511,6 +514,7 @@ let parse_class_low_level ch =
 		j_fields = fields;
 		j_methods = methods;
 		j_attributes = attribs;
+		j_version = {major=version_major; minor=version_minor};
 	}
 
 let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)

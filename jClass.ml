@@ -281,6 +281,7 @@ type inner_class = {
 
 type jclass = {
   c_name : class_name;
+  c_version : version;
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
@@ -302,6 +303,7 @@ type jclass = {
     methods. Their super class is [java.lang.Object].*)
 type jinterface = {
   i_name : class_name;
+  i_version : version;
   i_access : [`Public | `Default];
   i_interfaces : class_name list;
   i_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)

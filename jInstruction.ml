@@ -48,12 +48,12 @@ let opcode2instruction consts = function
 		 | ConstFloat c -> `Float c
 		 | ConstString c -> `String c
 		 | ConstClass c -> `Class c
-		 | ConstLong _ | ConstDouble _ -> raise (Illegal_value ("long/double", "constant for Ldc1")))
+		 | ConstLong _ | ConstDouble _ -> raise (Class_structure_error ("Illegal constant for Ldc1: long/double")))
 	| OpLdc2w n ->
 	    JClass.OpConst
 	      (match get_constant_value consts n with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-		     raise (Illegal_value ("int/float/string/class", "constant for Ldc2"))
+		     raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
 		 | ConstLong c -> `Long c
 		 | ConstDouble c -> `Double c)
 
@@ -177,11 +177,11 @@ let opcode2instruction consts = function
 	| OpInvokeNonVirtual i ->
 	    (match get_method consts i with
 	       | TClass t, n, s -> JClass.OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
-	       | _ -> raise (Illegal_value ("array class", "invokespecial")))
+	       | _ -> raise (Class_structure_error ("Illegal invokespecial: array class")))
 	| OpInvokeStatic i ->
 	    (match get_method consts i with
 	       | TClass t, n, s -> JClass.OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
-	       | _ -> raise (Illegal_value ("array class", "invokestatic")))
+	       | _ -> raise (Class_structure_error ("Illegal invokestatic: array class")))
 	| OpInvokeInterface (i, c) ->
 	    let t, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c

@@ -50,7 +50,7 @@ jControlFlow jPrint jPrintHierarchy
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc
 
-all: javaLib.cma javaLib.cmxa ocaml tests
+all: javaLib.cma javaLib.cmxa ocaml tests tests.opt
 
 install: javaLib.cma javaLib.cmxa
 	mkdir -p $(INSTALL_DIR)

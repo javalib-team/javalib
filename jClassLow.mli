@@ -283,5 +283,6 @@ type jclass = {
 	j_flags : class_flag list;
 	j_fields : jfield list;
 	j_methods : jmethod list;
-	j_attributes : attribute list
+	j_attributes : attribute list;
+	j_version : version; 
 }

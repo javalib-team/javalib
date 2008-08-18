@@ -31,6 +31,13 @@ type class_name = string list
 (** [java.lang.Object] *)
 val java_lang_object: class_name
 
+(** Verison number of the class file. Extract of the specification: An
+    implementation of Java 1.k sould support class file formats of
+    versions in the range of 45.0 through 44+k.0 inclusive. E.g. Java
+    1.6 implementations support class file formats of versions up to
+    50.0. *)
+type version = {major :int; minor:int;}
+
 (** Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
@@ -203,15 +210,10 @@ type verification_type =
 (** Indicates that a class name could not be found in a given classpath. *)
 exception No_class_found of string
 
-(** Indicates a serious error in the basic structure of a class file. *)
-exception Parse_error of string
-
-(** Indicates that some value is illegal at some place *)
-exception Illegal_value of string * string
-
-(** Indicates the argument of a parsing/unparsing function does not satisfy
-    some structural constraint. *)
+(** Indicates the argument of a parsing/unparsing function does not
+    satisfy a structural constraint of class files. *)
 exception Class_structure_error of string
+
 
 (**/**)
 

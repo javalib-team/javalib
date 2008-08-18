@@ -33,6 +33,8 @@ type class_name = string list
 
 let java_lang_object = ["java";"lang";"Object"]
 
+type version = {major :int; minor:int;}
+
 (* Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
@@ -141,10 +143,6 @@ type verification_type =
 
 exception No_class_found of string
 
-exception Parse_error of string
-
-exception Illegal_value of string * string
-
 exception Class_structure_error of string
 
 (* Usefull functions *)
@@ -179,52 +177,52 @@ let write_with_size size ch write l =
 (*****************)
 
 let get_constant c n =
-	if n < 0 || n >= Array.length c then raise (Illegal_value (string_of_int n, "constant index"));
+	if n < 0 || n >= Array.length c then raise (Class_structure_error ("Illegal constant index:" ^ string_of_int n));
 	match c.(n) with
-	| ConstUnusable -> raise (Illegal_value ("unusable", "constant"))
+	| ConstUnusable -> raise (Class_structure_error ("Illegal constant: unusable"))
 	| x -> x
 
 let get_constant_value c n =
   match get_constant c n with
     | ConstValue v -> v
-    | _ -> raise (Illegal_value ("", "constant value index"))
+    | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value)"))
 
 let get_object_type consts i =
 	match get_constant consts i with
 	  | ConstValue (ConstClass n) -> n
-	  | _ -> raise (Illegal_value ("", "class index"))
+	  | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 
 let get_class consts i =
   match get_object_type consts i with
     | TClass c -> c
-    | _ -> raise (Illegal_value ("array type descriptor", "class index"))
+    | _ -> raise (Class_structure_error ("Illegal class index: refers to an array type descriptor"))
 
 let get_field consts i =
   match get_constant consts i with
     | ConstField (c, f, s) -> c, f, s
-    | _ -> raise (Illegal_value ("", "field index"))
+    | _ -> raise (Class_structure_error ("Illegal field index (does not refer to a constant field)"))
 
 let get_method consts i =
 	match get_constant consts i with
 	| ConstMethod (c, m, s) -> c, m, s
-	| _ -> raise (Illegal_value ("", "method index"))
+	| _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
 
 let get_interface_method consts i =
   match get_constant consts i with
     | ConstInterfaceMethod (c, m, s) -> c, m, s
-    | _ -> raise (Illegal_value ("", "interface method index"))
+    | _ -> raise (Class_structure_error ("Illegal interface method index (does not refer to a constant interface method)"))
 
 let get_string consts i =
   match get_constant consts i with
     | ConstStringUTF8 s -> s
-    | _ -> raise (Illegal_value (string_of_int i, "string index"))
+    | _ -> raise (Class_structure_error ("Illegal string index (does not refer to a constant string)"))
 
 let get_class_ui16 consts ch = get_class consts (read_ui16 ch)
 let get_string_ui16 consts ch = get_string consts (read_ui16 ch)
 
 let constant_to_int cp c =
   if c = ConstUnusable
-  then raise (Illegal_value ("unusable", "constant"));
+  then raise (Class_structure_error ("Illegal constant: unusable"));
   try
     DynArray.index_of (fun c' -> 0 = compare c c') cp (* [nan <> nan], where as [0 = compare nan nan] *)
   with

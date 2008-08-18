@@ -41,14 +41,14 @@ let jvm_basic_type place = function
 	| 1 -> `Long
 	| 2 -> `Float
 	| 3 -> `Double
-	| n -> raise (Illegal_value (string_of_int n, "type of " ^ place))
+	| n -> raise (Class_structure_error ("Illegal type of "^ place ^": " ^ string_of_int n))
 
 let jvm_basic_type' place = function
 	| 0 -> `Int
 	| 1 -> `Long
 	| 2 -> `Float
 	| 3 -> `Double
-	| n -> raise (Illegal_value (string_of_int n, "type of " ^ place))
+	| n -> raise (Class_structure_error ("Illegal type of "^ place ^": " ^ string_of_int n))
 
 let read_unsigned ch wide =
   if wide then read_ui16 ch else IO.read_byte ch
@@ -332,7 +332,7 @@ let parse_opcode op ch wide =
 			| 9 -> `Short
 			| 10 -> `Int
 			| 11 -> `Long
-			| n -> raise (Illegal_value (string_of_int n, "type of newarray")))
+			| n -> raise (Class_structure_error ("Illegal type of newarray: " ^ string_of_int n)))
 	| 189 ->
 		OpANewArray (read_ui16 ch)
 	| 190 ->
@@ -365,7 +365,7 @@ let parse_opcode op ch wide =
 	| 209 ->
 		OpRetW (read_ui16 ch)
 	| _ ->
-	    raise (Illegal_value (string_of_int op, "opcode"))
+	    raise (Class_structure_error ("Illegal opcode: " ^ string_of_int op))
 
 let parse_full_opcode ch pos =
   let p = pos() in

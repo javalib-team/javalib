@@ -3,14 +3,6 @@ Here is some stuff that need to be done:
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
 - test lookups and resolves by comparing with jvm traces
-- check that Illegal_value, Parse_error and Class_structure_error are
-  all needed (what is the difference? is it documented?)
-
-* Performance
-- improve "lazy loading": automatically load from a class-path classes
-  that are needed only by the 'main' method (instead of classes
-  referenced from the first classes, recursively)
-  (WARNING: incompatible with lazy parsing)
 
 * Extra functionalities
 - JFile : the classpath should not contain the [.jar] files but only
@@ -28,5 +20,4 @@ Here is some stuff that need to be done:
 - check the compatibility of JavaLib with Java 5, Java 6 and Java 7
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
-- make a "dist" target
 - try to see if the dependency to unix.cma can be removed

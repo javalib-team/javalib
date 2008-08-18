@@ -70,6 +70,7 @@ and jmethod =
 
 and class_file = {
   c_name : class_name;
+  c_version : version;
   c_access : [`Public | `Default];
   c_final : bool;
   c_abstract : bool;
@@ -92,6 +93,7 @@ and class_file = {
 
 and interface_file = {
   i_name : class_name;
+  i_version : version;
   i_access : [`Public | `Default];
   i_annotation: bool;
   i_other_flags : int list;
