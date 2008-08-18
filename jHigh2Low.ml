@@ -69,24 +69,25 @@ let h2l_inner_classes = function
 let h2l_code2attribute consts = function
   | Native -> []
   | Java code ->
-      let code =
-	{JClassLow.c_max_stack = code.c_max_stack;
-	 JClassLow.c_max_locals = code.c_max_locals;
-	 JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
-	 JClassLow.c_exc_tbl = code.c_exc_tbl;
-	 JClassLow.c_attributes =
-	    (match code.c_stack_map with
-	      | Some sm -> [AttributeStackMap sm]
-	      | None -> [])
-	    @ (match code.c_line_number_table with
-	      | Some lnt -> [AttributeLineNumberTable lnt]
-	      | None -> [])
-	    @ (match code.c_local_variable_table with
-	      | Some lvt -> [AttributeLocalVariableTable lvt]
-	      | None -> [])
-	    @ h2l_other_attributes code.c_attributes;
-	}
-      in [AttributeCode code]
+      let h2l () =
+	let code = Lazy.force code in
+	  {JClassLow.c_max_stack = code.c_max_stack;
+	   JClassLow.c_max_locals = code.c_max_locals;
+	   JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
+	   JClassLow.c_exc_tbl = code.c_exc_tbl;
+	   JClassLow.c_attributes =
+	      (match code.c_stack_map with
+		 | Some sm -> [AttributeStackMap sm]
+		 | None -> [])
+	      @ (match code.c_line_number_table with
+		   | Some lnt -> [AttributeLineNumberTable lnt]
+		   | None -> [])
+	      @ (match code.c_local_variable_table with
+		   | Some lvt -> [AttributeLocalVariableTable lvt]
+		   | None -> [])
+	      @ h2l_other_attributes code.c_attributes;
+	  }
+      in [AttributeCode (Lazy.lazy_from_fun h2l)]
 
 let h2l_cfield _consts f =
   {f_name = f.cf_signature.fs_name;

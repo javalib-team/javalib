@@ -311,7 +311,7 @@ let low2high_cmethod consts ms = function m ->
 		if List.exists (function AttributeCode _ -> true| _-> false) l
 		then raise (Class_structure_error "Only one Code attribute is allowed in a method.");
 		if not is_native
-		then Java (low2high_code consts c)
+		then Java (lazy (low2high_code consts (Lazy.force c)))
 		else begin
 		  if !debug > 0 then prerr_endline "A method declared as Native with code has been found.";
 		  Native

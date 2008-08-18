@@ -111,7 +111,7 @@ type pp = PP.t
 
 let get_code (pp:pp): opcodes =
   match pp.meth.cm_implementation with
-    | Java c -> c.c_code
+    | Java c -> (Lazy.force c).c_code
     | Native -> raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
 
 let get_opcode (pp:pp) :opcode = (get_code pp).(pp.pc)
@@ -389,7 +389,7 @@ let static_lookup_virtual prog obj ms =
 let handlers pp =
   match pp.meth.cm_implementation with
     | Java code ->
-	List.filter (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end) code.c_exc_tbl
+	List.filter (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end) (Lazy.force code).c_exc_tbl
     | Native ->
 	raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
 

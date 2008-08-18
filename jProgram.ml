@@ -571,10 +571,14 @@ let parse_program class_path names =
 	class_map
 	others
     end in
+  let program =
     ClassMap.fold
       (fun _ -> add_file class_path)
       !class_map
       ClassMap.empty
+  in
+    JFile.close_class_path class_path;
+    program
     
 
 let store_program filename program : unit =

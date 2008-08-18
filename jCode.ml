@@ -374,7 +374,7 @@ let parse_full_opcode ch pos =
     then parse_opcode (IO.read_byte ch) ch true
     else (
       if (op = 170 || op = 171) && (p + 1) mod 4 > 0
-      then ignore(IO.nread ch (4 - ((p + 1) mod 4)));
+      then ignore(IO.really_nread ch (4 - ((p + 1) mod 4)));
       parse_opcode op ch false
     )
 

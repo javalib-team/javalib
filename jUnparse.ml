@@ -217,17 +217,17 @@ let rec unparse_attribute_to_strings consts =
       | AttributeInnerClasses l ->
 	  write_with_size write_ui16 ch
 	    (function inner, outer, inner_name, flags ->
-	      (match inner with
-		| None -> write_ui16 ch 0
-		| Some inner -> write_class ch consts inner);
-	      (match outer with
-		| None -> write_ui16 ch 0
-		| Some outer -> write_class ch consts outer);
-	      (match inner_name with
-		| None -> write_ui16 ch 0
-		| Some inner_name ->
-		    write_string ch consts inner_name);
-	      write_ui16 ch (unparse_flags innerclass_flags flags))
+	       (match inner with
+		  | None -> write_ui16 ch 0
+		  | Some inner -> write_class ch consts inner);
+	       (match outer with
+		  | None -> write_ui16 ch 0
+		  | Some outer -> write_class ch consts outer);
+	       (match inner_name with
+		  | None -> write_ui16 ch 0
+		  | Some inner_name ->
+		      write_string ch consts inner_name);
+	       write_ui16 ch (unparse_flags innerclass_flags flags))
 	    l;
 	  ("InnerClasses",close_out ch)
       | AttributeSynthetic ->
@@ -235,18 +235,18 @@ let rec unparse_attribute_to_strings consts =
       | AttributeLineNumberTable l ->
 	  write_with_size write_ui16 ch
 	    (function pc, line ->
-	      write_ui16 ch pc;
-	      write_ui16 ch line)
+	       write_ui16 ch pc;
+	       write_ui16 ch line)
 	    l;
 	  ("LineNumberTable",close_out ch)
       | AttributeLocalVariableTable l ->
 	  write_with_size write_ui16 ch
 	    (function start_pc, length, name, signature, index ->
-	      write_ui16 ch start_pc;
-	      write_ui16 ch length;
-	      write_string ch consts name;
-	      write_string ch consts (unparse_value_signature signature);
-	      write_ui16 ch index)
+	       write_ui16 ch start_pc;
+	       write_ui16 ch length;
+	       write_string ch consts name;
+	       write_string ch consts (unparse_value_signature signature);
+	       write_ui16 ch index)
 	    l;
 	  ("LocalVariableTable",close_out ch)
       | AttributeDeprecated ->
@@ -257,24 +257,25 @@ let rec unparse_attribute_to_strings consts =
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
       | AttributeCode code ->
-	  write_ui16 ch code.c_max_stack;
-	  write_ui16 ch code.c_max_locals;
-	  write_with_length write_i32 ch
-	    (function ch ->
-	      JCode.unparse_code ch code.c_code);
-	  write_with_size write_ui16 ch
-	    (function e ->
-	      write_ui16 ch e.e_start;
-	      write_ui16 ch e.e_end;
-	      write_ui16 ch e.e_handler;
-	      match e.e_catch_type with
-		| Some cl -> write_class ch consts cl
-		| None -> write_ui16 ch 0)
-	    code.c_exc_tbl;
-	  write_with_size write_ui16 ch
-	    (unparse_attribute ch consts)
-	    code.c_attributes;
-	  ("Code",close_out ch)
+	  let code = Lazy.force code in
+	    write_ui16 ch code.c_max_stack;
+	    write_ui16 ch code.c_max_locals;
+	    write_with_length write_i32 ch
+	      (function ch ->
+		 JCode.unparse_code ch code.c_code);
+	    write_with_size write_ui16 ch
+	      (function e ->
+		 write_ui16 ch e.e_start;
+		 write_ui16 ch e.e_end;
+		 write_ui16 ch e.e_handler;
+		 match e.e_catch_type with
+		   | Some cl -> write_class ch consts cl
+		   | None -> write_ui16 ch 0)
+	      code.c_exc_tbl;
+	    write_with_size write_ui16 ch
+	      (unparse_attribute ch consts)
+	      code.c_attributes;
+	    ("Code",close_out ch)
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr

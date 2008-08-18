@@ -224,7 +224,7 @@ type code = {
 
 type implementation =
   | Native
-  | Java of code
+  | Java of code Lazy.t
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)

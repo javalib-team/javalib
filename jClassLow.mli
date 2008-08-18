@@ -248,7 +248,7 @@ type code = {
 and attribute =
 	| AttributeSourceFile of string
 	| AttributeConstant of constant_value
-	| AttributeCode of code
+	| AttributeCode of code Lazy.t
 	| AttributeExceptions of class_name list
 	| AttributeInnerClasses of
 	    (class_name option * class_name option * string option * inner_flag list) list

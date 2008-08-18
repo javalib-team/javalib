@@ -181,7 +181,7 @@ and dump_attrib ch cl = function
 	| AttributeConstant c ->
 	    IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
 	| AttributeCode code ->
-	    dump_code ch cl code (* IO.printf ch "    unexpected code attribute" *)
+	    dump_code ch cl (Lazy.force code) (* IO.printf ch "    unexpected code attribute" *)
 	| AttributeExceptions l ->
 	    IO.printf ch "    exceptions";
 	    List.iter (fun cn -> IO.nwrite ch (class_name cn^" ")) l;

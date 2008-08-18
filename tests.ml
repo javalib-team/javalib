@@ -191,7 +191,7 @@ and eq_inner_classes cl icl1 icl2 =
 
 and eq_attrib cl a1 a2 =
   match a1,a2 with
-    | AttributeCode c1, AttributeCode c2 -> eq_code cl (Some c1) (Some c2)
+    | AttributeCode c1, AttributeCode c2 -> eq_code cl (Some (Lazy.force c1)) (Some (Lazy.force c2))
     | AttributeInnerClasses icl1, AttributeInnerClasses icl2 ->
 	if eq_inner_classes cl icl1 icl2
 	then true
@@ -318,7 +318,7 @@ let h2l_conversions class_path input_files =
 open JProgram
 
 let test_jprogram class_path input_files =
-  prerr_string "loading program...  ";
+  prerr_endline "loading program...  ";
   let p =
     try JProgram.load_program "library.bin"
     with _ ->
@@ -327,6 +327,7 @@ let test_jprogram class_path input_files =
   in
   let class_path = JFile.class_path class_path
   in
+  let program =
     prerr_endline "adding files... ";
     List.fold_left
       (fun p cn ->
@@ -336,6 +337,9 @@ let test_jprogram class_path input_files =
 	  p)
       p
       input_files
+  in
+    JFile.close_class_path class_path;
+    program
 
 
 (** It should run the test suite. *)
@@ -346,5 +350,11 @@ let _ =
   let class_path = "./:"^dir_class_path^":"^class_path_jar
   and input_files = ["java.lang.Object"]
   in
-    h2l_and_l2h_conversions "./" ["rt.jar"];
-    test_jprogram class_path input_files
+    (* h2l_and_l2h_conversions "./" ["rt.jar"]; *)
+  let p = test_jprogram class_path input_files in
+  let mem_usage = ((Gc.quick_stat ()).Gc.top_heap_words/1024) * (Sys.word_size/8) in
+    print_endline ("memory_consumption (kB): " ^(string_of_int mem_usage));
+    p
+(*     JProgram.iter *)
+(*       (fun c -> print_endline (JDumpBasics.class_name (JProgram.get_name c))) *)
+(*       p *)

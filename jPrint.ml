@@ -462,7 +462,7 @@ let pp_cmethod cn info fmt m =
 	    anchor access static final synchro strict sign exceptions
 	    (info.p_method cn m.cm_signature) att
       | Java code ->
-	  let implem fmt = pp_implementation cn m.cm_signature info fmt code
+	  let implem fmt = pp_implementation cn m.cm_signature info fmt (Lazy.force code)
 	  in
 	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>@,%t%t%t@}}@]"
 	      anchor access static final synchro strict sign exceptions

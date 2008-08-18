@@ -222,7 +222,7 @@ type code = {
 
 type implementation =
   | Native
-  | Java of code
+  | Java of code Lazy.t
 
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode

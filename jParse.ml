@@ -80,7 +80,7 @@ let parse_constant max ch =
 	    ConstantNameAndType (n1,n2)
       | 1 ->
 	  let len = read_ui16 ch in
-	  let str = IO.nread ch len in
+	  let str = IO.really_nread ch len in
 	    ConstantStringUTF8 str
       | cid ->
 	  raise (Illegal_value (string_of_int cid, "constant kind"))
@@ -253,68 +253,72 @@ let parse_stackmap_frame consts ch =
     (offset,locals,stack)
 
 let rec parse_code consts ch =
-	let max_stack = read_ui16 ch in
-	let max_locals = read_ui16 ch in
-	let clen = read_i32 ch in
-	let code =
-	    JCode.parse_code ch clen
-	in
-	let exc_tbl_length = read_ui16 ch in
-	let exc_tbl = List.init exc_tbl_length (fun _ ->
-		let spc = read_ui16 ch in
-		let epc = read_ui16 ch in
-		let hpc = read_ui16 ch in
-		let ct =
-		  match read_ui16 ch with
-		    | 0 -> None
-		    | ct ->
-			match get_constant consts ct with
-			  | ConstValue (ConstClass (TClass c)) -> Some c
-			  | _ -> raise (Illegal_value ("", "class index"))
-		in
-		{
-			e_start = spc;
-			e_end = epc;
-			e_handler = hpc;
-			e_catch_type = ct;
-		}
-	) in
-	let attrib_count = read_ui16 ch in
-	let attribs =
-	  List.init
-	    attrib_count
-	    (fun _ -> parse_attribute [`LineNumberTable ; `LocalVariableTable ; `StackMap] consts ch) in
-	{
-		c_max_stack = max_stack;
-		c_max_locals = max_locals;
-		c_exc_tbl = exc_tbl;
-		c_attributes = attribs;
-		c_code = code;
-	}
+  let max_stack = read_ui16 ch in
+  let max_locals = read_ui16 ch in
+  let clen = read_i32 ch in
+  let code =
+    JCode.parse_code ch clen
+  in
+  let exc_tbl_length = read_ui16 ch in
+  let exc_tbl = List.init exc_tbl_length (fun _ ->
+					    let spc = read_ui16 ch in
+					    let epc = read_ui16 ch in
+					    let hpc = read_ui16 ch in
+					    let ct =
+					      match read_ui16 ch with
+						| 0 -> None
+						| ct ->
+						    match get_constant consts ct with
+						      | ConstValue (ConstClass (TClass c)) -> Some c
+						      | _ -> raise (Illegal_value ("", "class index"))
+					    in
+					      {
+						e_start = spc;
+						e_end = epc;
+						e_handler = hpc;
+						e_catch_type = ct;
+					      }
+					 ) in
+  let attrib_count = read_ui16 ch in
+  let attribs =
+    List.init
+      attrib_count
+      (fun _ -> parse_attribute [`LineNumberTable ; `LocalVariableTable ; `StackMap] consts ch) in
+    {
+      c_max_stack = max_stack;
+      c_max_locals = max_locals;
+      c_exc_tbl = exc_tbl;
+      c_attributes = attribs;
+      c_code = code;
+    }
 
 (* Parse an attribute, if its name is in list. *)
 and parse_attribute list consts ch =
-	let aname = get_string_ui16 consts ch in
-	let error() = raise (Parse_error ("Malformed attribute " ^ aname)) in
-	let alen = read_i32 ch in
-	let check name =
-	  if List.mem name list
-	  then ()
-	  else raise Exit
-	in
-	  try
-	match aname with
+  let aname = get_string_ui16 consts ch in
+  let error() = raise (Parse_error ("Malformed attribute " ^ aname)) in
+  let alen = read_i32 ch in
+  let check name =
+    if not (List.mem name list)
+    then raise Exit
+  in
+    try
+      match aname with
 	| "SourceFile" -> check `SourceFile;
-		if alen <> 2 then error();
-		AttributeSourceFile (get_string_ui16 consts ch)
+	    if alen <> 2 then error();
+	    AttributeSourceFile (get_string_ui16 consts ch)
 	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
 	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
-	    let ch, count = IO.pos_in ch in
-	    let code = parse_code consts ch in
-	      if count() <> alen then error();
-	      AttributeCode code
+	    let ch = IO.input_string (IO.really_nread ch alen) in
+	    let parse_code _ =
+	      let ch, count = IO.pos_in ch in
+	      let code = parse_code consts ch
+	      in
+		if count() <> alen then error();
+		code
+	    in
+	      AttributeCode (Lazy.lazy_from_fun parse_code)
 	| "Exceptions" -> check `Exceptions;
 	    let nentry = read_ui16 ch in
 	      if nentry * 2 + 2 <> alen then error();
@@ -382,8 +386,8 @@ and parse_attribute list consts ch =
 	      if count() <> alen then error();
 	      AttributeStackMap stackmap
 	| _ -> raise Exit
-	  with
-	      Exit -> AttributeUnknown (aname,IO.nread ch alen)
+    with
+	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
 
 let parse_field consts ch =
 	let acc = parse_access_flags field_flags ch in
