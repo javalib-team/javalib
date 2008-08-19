@@ -399,7 +399,7 @@ let handlers program pp =
 	      | Some exn_name ->
 		  (* an exception handler can be pruned for an instruction if:
 		     - the exception handler is a subtype of Exception and
-		     - the exception handler is not a subtype of RuntimeException and
+		     - the exception handler is not a subtype nor a super-type of RuntimeException and
 		     - the instruction is not a method call or if
                      the instruction is a method call which is not declared to throw 
 		     an exception of a subtype of the handler
@@ -417,6 +417,7 @@ let handlers program pp =
 			  ioc2c (JProgram.get_interface_or_class program ["java";"lang";"RuntimeException"])
 			in
 			  if JProgram.extends_class exn_class javalangruntimeexception
+			    || JProgram.extends_class javalangruntimeexception exn_class
 			  then false
 			  else
 			    match get_opcode pp with
