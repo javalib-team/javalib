@@ -344,10 +344,7 @@ let test_jprogram class_path input_files =
 
 (** It should run the test suite. *)
 let _ =
-  let dir_class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
-  and jars = ["charsets.jar";"dt.jar";"laf.jar";"classes.jar";"jce.jar";"jsse.jar";"ui.jar"] in
-  let class_path_jar = String.concat ":" (List.map (fun s -> dir_class_path^s) jars) in
-  let class_path = "./:"^dir_class_path^":"^class_path_jar
+  let class_path = "/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Classes/"
   and input_files = ["java.lang.Object"]
   in
     (* h2l_and_l2h_conversions "./" ["rt.jar"]; *)

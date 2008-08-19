@@ -310,8 +310,8 @@ let unparse_method ch consts methode =
 
 let unparse_class_low_level ch c =
   write_real_i32 ch 0xCAFEBABEl;
-  write_ui16 ch cl.j_version.minor;
-  write_ui16 ch cl.j_version.major;
+  write_ui16 ch c.j_version.minor;
+  write_ui16 ch c.j_version.major;
   let ch' = output_string ()
   and consts = DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags class_flags c.j_flags);

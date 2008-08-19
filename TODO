@@ -5,9 +5,6 @@ Here is some stuff that need to be done:
 - test lookups and resolves by comparing with jvm traces
 
 * Extra functionalities
-- JFile : the classpath should not contain the [.jar] files but only
-  directories and the jar files should be looked for in the given
-  directories.
 - jDump : we should dump the constant pool, the tableswitch and
   lookupswith instructions (it seems that many things are not dump by
   jDumpLow)

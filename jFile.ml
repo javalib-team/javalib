@@ -80,7 +80,28 @@ let directories dirs =
     | cp -> cp
 
 let class_path cp =
-  List.filter_map open_path (directories cp)
+  let cp_list = 
+    match ExtString.String.nsplit cp ":" with
+      | [] -> [Filename.current_dir_name]
+      | cp -> cp
+  in
+  let cp_with_jars =
+    List.concat
+      (List.map
+	 (fun cp_item ->
+	      if Sys.is_directory cp_item
+	      then 
+		let files =
+		  List.filter
+		    (fun file -> Filename.check_suffix file ".jar")
+		    (Array.to_list (Sys.readdir cp_item))
+		in cp_item::(List.map (Filename.concat cp_item) files)
+	      else
+		[cp_item]
+	 )
+	 cp_list)
+  in
+    List.filter_map open_path cp_with_jars
 
 let close_class_path =
   List.iter
