@@ -63,8 +63,8 @@ type pp = PP.t
 val get_opcode : pp -> JClass.opcode
 val next_instruction : pp -> pp
 val normal_successors : pp -> pp list
-val handlers : pp -> JBasics.exception_handler list
-val exceptional_successors : pp -> pp list
+val handlers : program -> pp -> JBasics.exception_handler list
+val exceptional_successors : program -> pp -> pp list
 
 
 

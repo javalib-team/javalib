@@ -5,16 +5,10 @@ Here is some stuff that need to be done:
 - test lookups and resolves by comparing with jvm traces
 
 * Extra functionalities
-- jDump : we should dump the constant pool, the tableswitch and
-  lookupswith instructions (it seems that many things are not dump by
-  jDumpLow)
-- JControlFlow : improve precession of exceptional_successors by
-  pruning edges to handles of subclasses of java.lang.Exception and
-  not subclasses of java.lang.RuntimeException for instruction that
-  are known not to throw declared exception (should be everything
-  except method calls).
-- add class file version number to class file representation
 - check the compatibility of JavaLib with Java 5, Java 6 and Java 7
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
+- jDumpLow : should we dump the constant pool? (it seems many other
+  things are not dump by jDumpLow, but JPrint and jLow2High offer much
+  more)
 - try to see if the dependency to unix.cma can be removed

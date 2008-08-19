@@ -128,8 +128,19 @@ let opcode = function
   | OpJsr i -> sprintf "goto %d" i
   | OpRet i -> sprintf "goto %d" i
 
-  | OpTableSwitch _ -> "tableswitch <...>"
-  | OpLookupSwitch _ -> "lookupswitch <...>"
+  | OpTableSwitch (def,min,max,tbl) ->
+      (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
+      let inst = "tableswitch (["^ Int32.to_string min ^":"^ Int32.to_string max ^"] -> ["
+      and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
+      in inst^table^"],default:"^ string_of_int def^")"
+
+  | OpLookupSwitch (default,jumps) ->
+      let inst =
+	List.fold_left
+	  (fun s (int,offset) -> s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
+	  "lookupswitch "
+	  jumps
+      in inst ^ "_ ->" ^string_of_int default
 
   | OpReturn k -> sprintf "%creturn" (jvm_basic_type k)
   | OpAReturn -> "areturn"

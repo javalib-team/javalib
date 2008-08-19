@@ -386,12 +386,85 @@ let static_lookup_virtual prog obj ms =
 		  (resolve_interface_method' ms (`Class c))
 
 
-let handlers pp =
-  match pp.meth.cm_implementation with
-    | Java code ->
-	List.filter (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end) (Lazy.force code).c_exc_tbl
-    | Native ->
-	raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
+let handlers program pp =
+  let ioc2c = function
+    | `Class c -> c
+    | `Interface _ -> raise IncompatibleClassChangeError
+  in
+    match pp.meth.cm_implementation with
+      | Java code ->
+	  let is_prunable exn pp =
+	    match exn.e_catch_type with
+	      | None -> false
+	      | Some exn_name ->
+		  (* an exception handler can be pruned for an instruction if:
+		     - the exception handler is a subtype of Exception and
+		     - the exception handler is not a subtype of RuntimeException and
+		     - the instruction is not a method call or if
+                     the instruction is a method call which is not declared to throw 
+		     an exception of a subtype of the handler
+		  *)
+		  try
+		    let exn_class = 
+		      ioc2c (JProgram.get_interface_or_class program exn_name)
+		    and javalangexception =
+		      ioc2c (JProgram.get_interface_or_class program ["java";"lang";"Exception"])
+		    in
+		      if not (JProgram.extends_class exn_class javalangexception)
+		      then false
+		      else
+			let javalangruntimeexception =
+			  ioc2c (JProgram.get_interface_or_class program ["java";"lang";"RuntimeException"])
+			in
+			  if JProgram.extends_class exn_class javalangruntimeexception
+			  then false
+			  else
+			    match get_opcode pp with
+			      | OpInvoke (typ,ms) ->
+				  let cl =
+				    match typ with
+				      | `Special cn -> [`Class (static_lookup_special program pp cn ms)]
+				      | `Virtual obj -> static_lookup_virtual program obj ms
+				      | `Static cn ->
+					  let c = 
+					    match resolve_class program cn with
+					      | `Class c -> resolve_method ms c
+					      | `Interface _ -> raise IncompatibleClassChangeError
+					  in
+					  let c =
+					    match c with
+					      | `Class c' when implements_method c' ms -> c
+					      | _ -> raise AbstractMethodError
+					  in [c]
+				      | `Interface cn -> static_lookup_interface program cn ms
+				  and throws_instance_of m exn =
+				    (* return true if the method m is
+				       declared to throw exceptions of a
+				       subtype of exn *)
+				    List.exists
+				      (fun e ->
+					 let e = JProgram.get_interface_or_class program e
+					 in JProgram.extends_class (ioc2c e) exn)
+				      (match m with
+					 | AbstractMethod {am_exceptions=exn_list}
+					 | ConcreteMethod {cm_exceptions=exn_list} -> exn_list)
+				  in
+				    not (List.exists
+					   (fun c ->
+					      let m = JProgram.get_method c ms
+					      in throws_instance_of m exn_class)
+					   cl)
+			      | _ -> true
+		  with Not_found -> false
+		    (* false is safe, but it would be stange to end up
+		       here as it would mean that some classes have not
+		       been loaded.*)
+	  in
+	    List.filter
+	      (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end && not (is_prunable e pp))
+	      (Lazy.force code).c_exc_tbl
+      | Native ->
+	  raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
 
-let exceptional_successors pp =
-  List.map (fun e -> goto_absolute pp e.e_handler) (handlers pp)
+let exceptional_successors program pp =
+  List.map (fun e -> goto_absolute pp e.e_handler) (handlers program pp)

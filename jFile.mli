@@ -29,12 +29,12 @@ type class_path
 (** [class_path cp] opens a class path from the list [cp] of
     directories and jar files separated by colons ([:]).  jar files in
     the given directories are also considered, but they are not looked
-    for recursively.  If cp is empty, then the current directory is
-    used.  Note: the order matters: the search stops when a class file
-    is found. Directories and jar files are read in the given
-    order. When several directories are given, the order of the jar
-    file inside those directory are unspecified, but the jar file of
-    the first directory will be read before the others.
+    for recursively.  If [cp] is empty([""]), then the current
+    directory is used.  Note: the order matters: the search stops when
+    a class file is found. Directories and jar files are read in the
+    given order. When several directories are given, the order of the
+    jar file inside those directory are unspecified, but the jar file
+    of the first directory will be read before the others.
     Note : the following works :
 {[try class_path (Sys.getenv "CLASSPATH")
 with Not_found -> class_path ""]}*)
