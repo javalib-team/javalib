@@ -259,6 +259,11 @@ and attribute =
 	    (** start_pc, length, name, type, index *)
 	| AttributeDeprecated
 	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
+	| AttributeSignature of string
+	    (** Introduced in Java 5 ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
+(* 	| AttributeEnclosingMethod *)
+(* 	    (\** Introduced in Java 5 *)
+(* 		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*\) *)
 	| AttributeUnknown of string * string
 
 type jfield = {

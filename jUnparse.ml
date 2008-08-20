@@ -200,6 +200,9 @@ let unparse_stackmap_attribute consts stackmap =
 let rec unparse_attribute_to_strings consts =
   let ch = output_string () in
     function
+      | AttributeSignature s ->
+	  write_string ch consts s;
+	  ("Signature",close_out ch)
       | AttributeSourceFile s ->
 	  write_string ch consts s;
 	  ("SourceFile",close_out ch)

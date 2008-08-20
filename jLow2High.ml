@@ -57,13 +57,25 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
 	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
 	     name,contents)
 
+let attribute_to_signature (al:JClassLow.attribute list) : string option =
+  match List.find_all (function AttributeSignature _ -> true | _ -> false) al with
+    | [] -> None
+    | [AttributeSignature s] -> Some s
+    | _::_::_ -> 
+	raise
+	  (Class_structure_error
+	     "A Signature attribute can only be specified at most once per element.")
+
 (* convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
   {synthetic = List.exists ((=)AttributeSynthetic) al;
    deprecated = List.exists ((=)AttributeDeprecated) al;
+   signature = attribute_to_signature al;
    other =
       low2high_other_attributes consts
-	(List.filter (fun a -> a <> AttributeDeprecated && a <> AttributeSynthetic) al);
+	(List.filter
+	   (function AttributeDeprecated | AttributeSynthetic | AttributeSignature _ -> false | _ -> true)
+	   al);
   }
 
 
@@ -406,8 +418,8 @@ let low2high_class cl =
   let flags =
     List.map
       (function
-	| `AccRFU i -> i
-	| _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
+	 | `AccRFU i -> i
+	 | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
     (try assert ((accsuper || is_interface)) with _ -> raise (Class_structure_error "ACC_SUPER must be set for all classes"));
@@ -428,6 +440,7 @@ let low2high_class cl =
 	| [] -> None
       in find_SourceFile cl.j_attributes
     and my_deprecated = List.exists ((=)AttributeDeprecated) cl.j_attributes
+    and my_signature = attribute_to_signature cl.j_attributes
     and my_inner_classes =
       let rec find_InnerClasses = function
 	| AttributeInnerClasses icl::_ -> List.rev_map low2high_innerclass icl
@@ -437,16 +450,17 @@ let low2high_class cl =
     and my_other_attributes =
       low2high_other_attributes consts
 	(List.filter
-	    (function
-	      | AttributeSourceFile _ | AttributeDeprecated | AttributeInnerClasses _ -> false
+	   (function
+	      | AttributeSignature _ | AttributeSourceFile _ 
+	      | AttributeDeprecated | AttributeInnerClasses _ -> false
 	      | _ -> true)
-	    cl.j_attributes);
+	   cl.j_attributes);
     in
       if is_interface
       then
 	begin
 	  (try assert is_abstract
-	    with _ -> raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set."));
+	   with _ -> raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set."));
 	  (try assert (cl.j_super = Some java_lang_object) with _ -> raise (Class_structure_error "The super-class of interfaces must be java.lang.Object."));
 	  (*if accsuper
 	    then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";*)
@@ -456,7 +470,7 @@ let low2high_class cl =
 	    match
 	      List.partition
 		(fun m ->
-		  m.m_name = clinit_signature.ms_name
+		   m.m_name = clinit_signature.ms_name
 		    && fst m.m_descriptor = clinit_signature.ms_parameters)
 		cl.j_methods
 	    with
@@ -472,6 +486,7 @@ let low2high_class cl =
 	      i_consts = DynArray.to_array consts;
 	      i_sourcefile = my_sourcefile;
 	      i_deprecated = my_deprecated;
+	      i_signature = my_signature;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
 	      i_initializer = init;
@@ -479,39 +494,39 @@ let low2high_class cl =
 	      i_other_flags = flags;
 	      i_fields = List.fold_left
 		(fun m f ->
-		  let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
-		    if !debug > 0 && FieldMap.mem fs m
-		    then
-		      prerr_endline
-			("Warning: 2 fields have been found with the same signature ("
+		   let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		     if !debug > 0 && FieldMap.mem fs m
+		     then
+		       prerr_endline
+			 ("Warning: 2 fields have been found with the same signature ("
 			  ^JDumpBasics.value_signature fs.fs_type^" "^ fs.fs_name^")");
-		    FieldMap.add
-		      fs
-		      (try low2high_ifield consts fs f
+		     FieldMap.add
+		       fs
+		       (try low2high_ifield consts fs f
 			with Class_structure_error msg ->
 			  raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
-		      m)
+		       m)
 		FieldMap.empty
 		cl.j_fields;
 	      i_methods = List.fold_left
 		(fun map meth ->
-		  let ms =
-		    {ms_name=meth.m_name;
-		     ms_parameters = fst meth.m_descriptor;
-		     ms_return_type = snd meth.m_descriptor;}
-		  in
-		    if !debug > 0 && MethodMap.mem ms map
-		    then
-		      prerr_endline
-			("2 methods have been found with the same signature ("^ms.ms_name
+		   let ms =
+		     {ms_name=meth.m_name;
+		      ms_parameters = fst meth.m_descriptor;
+		      ms_return_type = snd meth.m_descriptor;}
+		   in
+		     if !debug > 0 && MethodMap.mem ms map
+		     then
+		       prerr_endline
+			 ("2 methods have been found with the same signature ("^ms.ms_name
 			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
-		    MethodMap.add
-		      ms
-		      (try low2high_amethod consts ms meth
+		     MethodMap.add
+		       ms
+		       (try low2high_amethod consts ms meth
 			with Class_structure_error msg ->
 			  let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
 			  in raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": method " ^sign^": "^msg)))
-		      map)
+		       map)
 		MethodMap.empty
 		methods;
 	    }
@@ -520,44 +535,45 @@ let low2high_class cl =
 	begin
 	  if is_annotation
 	  then raise (Class_structure_error "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
-	let my_methods =
-	  try low2high_methods consts cl
-	  with
-	    | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
-	and my_fields =
-	  List.fold_left
-	    (fun m f ->
-	      let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
-		if !debug > 0 && FieldMap.mem fs m
-		then
-		  prerr_endline
-		    ("Warning: 2 fields have been found with the same signature ("
-		      ^JDumpBasics.value_signature fs.fs_type^" "^fs.fs_name ^")");
-		FieldMap.add
-		  fs
-		  (try low2high_cfield consts fs f
-		    with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
-		  m)
-	    FieldMap.empty
-	    cl.j_fields
-	in
-	  `Class {
-	    c_name = my_name;
-	    c_version = my_version;
-	    c_super_class = cl.j_super;
-	    c_final = is_final;
-	    c_abstract = is_abstract;
-	    c_access = my_access;
-	    c_synthetic = is_synthetic;
-	    c_enum = is_enum;
-	    c_other_flags = flags;
-	    c_interfaces = my_interfaces;
-	    c_consts = DynArray.to_array consts;
-	    c_sourcefile = my_sourcefile;
-	    c_deprecated = my_deprecated;
-	    c_inner_classes = my_inner_classes;
-	    c_other_attributes = my_other_attributes;
-	    c_fields = my_fields;
-	    c_methods = my_methods;
-	  }
+	  let my_methods =
+	    try low2high_methods consts cl
+	    with
+	      | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
+	  and my_fields =
+	    List.fold_left
+	      (fun m f ->
+		 let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		   if !debug > 0 && FieldMap.mem fs m
+		   then
+		     prerr_endline
+		       ("Warning: 2 fields have been found with the same signature ("
+			^JDumpBasics.value_signature fs.fs_type^" "^fs.fs_name ^")");
+		   FieldMap.add
+		     fs
+		     (try low2high_cfield consts fs f
+		      with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
+		     m)
+	      FieldMap.empty
+	      cl.j_fields
+	  in
+	    `Class {
+	      c_name = my_name;
+	      c_version = my_version;
+	      c_super_class = cl.j_super;
+	      c_final = is_final;
+	      c_abstract = is_abstract;
+	      c_access = my_access;
+	      c_synthetic = is_synthetic;
+	      c_enum = is_enum;
+	      c_other_flags = flags;
+	      c_interfaces = my_interfaces;
+	      c_consts = DynArray.to_array consts;
+	      c_sourcefile = my_sourcefile;
+	      c_deprecated = my_deprecated;
+	      c_signature = my_signature;
+	      c_inner_classes = my_inner_classes;
+	      c_other_attributes = my_other_attributes;
+	      c_fields = my_fields;
+	      c_methods = my_methods;
+	    }
 	end

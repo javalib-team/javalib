@@ -85,6 +85,7 @@ and class_file = {
       to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
+  c_signature : string option; (** introduced with Java 5 for generics*)
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
@@ -103,6 +104,7 @@ and interface_file = {
       to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
+  i_signature : string option; (** introduced with Java 5 for generics*)
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
   i_super : class_file;

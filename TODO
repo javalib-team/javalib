@@ -3,6 +3,24 @@ Here is some stuff that need to be done:
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
 - test lookups and resolves by comparing with jvm traces
+- BUG: it should be possible to have more than one LocalVariableTable
+  per code attribute (there can be one per local variable) (jLow2High)
+
+* Compatibility with Java 5
+- Add AttributeSignature to jClassLow and jClass and update handling
+  code (JL2H, JH2L, jParse/jUnparse) (see §4.4.4 and §4.8.8)
+- Use AttributeSignature to print signatures of methods, fields and
+  class if present (case of generics)SourceDebugExtension
+- Add AttributeEnclosingMethod to jClassLow and jClass and update
+  handling code (JL2H, JH2L, jParse/jUnparse)
+- Add AttributeLocalVariableTypeTable (see §4.8.13)
+  (LocalVariableTable for generics)
+- Add AttributeRuntimeVisibleAnnotations (see §4.8.15)
+- Add AttributeRuntimeInvisibleAnnotations (see §4.8.16)
+- Add AttributeRuntimeVisibleParameterAnnotations (see §4.8.17)
+- Add AttributeRuntimeInvisibleParameterAnnotations (see §4.8.18)
+- Add AttributeAnnotationDefault (see §4.8.19)
+- Check modifications of UTF8 encoding (§4.5.7)
 
 * Extra functionalities
 - check the compatibility of JavaLib with Java 5, Java 6 and Java 7

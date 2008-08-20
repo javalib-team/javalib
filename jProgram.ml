@@ -73,6 +73,7 @@ and class_file = {
   c_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
+  c_signature: string option;
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
@@ -89,6 +90,7 @@ and interface_file = {
   i_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
+  i_signature: string option;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
   i_super : class_file; (* must be java.lang.Object. *)
@@ -362,6 +364,7 @@ let add_classFile c (program:program) =
      c_interfaces = imap;
      c_sourcefile = c.JClass.c_sourcefile;
      c_deprecated = c.JClass.c_deprecated;
+     c_signature = c.JClass.c_signature;
      c_inner_classes = c.JClass.c_inner_classes;
      c_other_attributes = c.JClass.c_other_attributes;
      c_fields = c.JClass.c_fields;
@@ -420,6 +423,7 @@ let add_interfaceFile c (program:program) =
      i_interfaces = imap;
      i_sourcefile = c.JClass.i_sourcefile;
      i_deprecated = c.JClass.i_deprecated;
+     i_signature = c.JClass.i_signature;
      i_inner_classes = c.JClass.i_inner_classes;
      i_other_attributes = c.JClass.i_other_attributes;
      i_children_interface = ClassMap.empty;
@@ -465,6 +469,7 @@ let to_class = function
 	  ClassMap.fold (fun cn _ l -> cn::l) c.i_interfaces [];
        JClass.i_sourcefile = c.i_sourcefile;
        JClass.i_deprecated = c.i_deprecated;
+       JClass.i_signature = c.i_signature;
        JClass.i_inner_classes = c.i_inner_classes;
        JClass.i_other_attributes = c.i_other_attributes;
        JClass.i_initializer =
@@ -494,6 +499,7 @@ let to_class = function
 	  ClassMap.fold (fun cn _ l -> cn::l) c.c_interfaces [];
        JClass.c_sourcefile = c.c_sourcefile;
        JClass.c_deprecated = c.c_deprecated;
+       JClass.c_signature = c.c_signature;
        JClass.c_inner_classes = c.c_inner_classes;
        JClass.c_other_attributes = c.c_other_attributes;
        JClass.c_fields = c.c_fields;

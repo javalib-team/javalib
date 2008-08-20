@@ -306,6 +306,10 @@ and parse_attribute list consts ch =
   in
     try
       match aname with
+	| "Signature" ->
+	    check `Signature;
+	    if alen <> 2 then error();
+	    AttributeSignature (get_string_ui16 consts ch)
 	| "SourceFile" -> check `SourceFile;
 	    if alen <> 2 then error();
 	    AttributeSourceFile (get_string_ui16 consts ch)
@@ -313,6 +317,7 @@ and parse_attribute list consts ch =
 	    if alen <> 2 then error();
 	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
+	    if alen > 65535 then error();
 	    let ch = IO.input_string (IO.really_nread ch alen) in
 	    let parse_code _ =
 	      let ch, count = IO.pos_in ch in

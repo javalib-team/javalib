@@ -173,6 +173,7 @@ type access = [
 type attributes = {
   synthetic : bool;
   deprecated : bool;
+  signature: string option; (** Introduced with Java 5 for generics.*)
   other : (string * string) list
 }
 
@@ -291,6 +292,7 @@ type jclass = {
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
+  c_signature : string option; (** introduced with Java 5 for generics*)
   c_inner_classes : inner_class list;
   c_synthetic: bool;
   c_enum: bool;
@@ -309,6 +311,7 @@ type jinterface = {
   i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
+  i_signature : string option; (** introduced with Java 5 for generics*)
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)

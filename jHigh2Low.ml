@@ -30,11 +30,16 @@ let synthetic_to_attribute = function
   | false -> []
   | true -> [AttributeSynthetic]
 
+let signature_to_attribute = function
+  | None -> []
+  | Some s -> [AttributeSignature s]
+
 let h2l_other_attributes l = List.map (fun (n,a) -> AttributeUnknown (n,a)) l
 
 let h2l_attributes a =
   deprecated_to_attribute a.deprecated
   @ synthetic_to_attribute a.synthetic
+  @ signature_to_attribute a.signature
   @ h2l_other_attributes a.other
 
 let access2flags = function
@@ -198,6 +203,7 @@ let high2low_class c =
      j_methods = []; (*will be set later on*)
      j_attributes =
 	(deprecated_to_attribute c.c_deprecated)
+	@ (signature_to_attribute c.c_signature)
 	@ (h2l_inner_classes c.c_inner_classes)
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.c_other_attributes);
@@ -227,6 +233,7 @@ let high2low_interface (c:jinterface) =
 	@ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
      j_attributes =
 	(deprecated_to_attribute c.i_deprecated)
+	@ (signature_to_attribute c.i_signature)
 	@ (h2l_inner_classes c.i_inner_classes)
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.i_other_attributes);
