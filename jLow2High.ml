@@ -61,10 +61,29 @@ let attribute_to_signature (al:JClassLow.attribute list) : string option =
   match List.find_all (function AttributeSignature _ -> true | _ -> false) al with
     | [] -> None
     | [AttributeSignature s] -> Some s
-    | _::_::_ -> 
+    | _ ->
 	raise
 	  (Class_structure_error
 	     "A Signature attribute can only be specified at most once per element.")
+
+let attribute_to_enclosing_method (al:JClassLow.attribute list) : (class_name * method_signature option) option =
+  match List.find_all (function | AttributeEnclosingMethod _ -> true | _ -> false) al  with
+    | [] -> None
+    | [AttributeEnclosingMethod (cn,mso)] ->
+	let ms =
+	  match mso with
+	    | None -> None
+	    | Some (mn,SMethod (pl,rt)) ->
+		Some {ms_name=mn; ms_parameters=pl; ms_return_type=rt;}
+	    | Some (_,SValue _) ->
+		raise
+		  (Class_structure_error
+		     "A EnclosingMethod attribute cannot specify a field as enclosing method.")
+	in Some (cn,ms)
+    | _ ->
+	raise
+	  (Class_structure_error
+	     "A EnclosingMethod attribute can only be specified at most once per class.")
 
 (* convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
@@ -535,7 +554,8 @@ let low2high_class cl =
 	begin
 	  if is_annotation
 	  then raise (Class_structure_error "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
-	  let my_methods =
+	  let my_enclosing_method = attribute_to_enclosing_method cl.j_attributes
+	  and my_methods =
 	    try low2high_methods consts cl
 	    with
 	      | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
@@ -571,6 +591,7 @@ let low2high_class cl =
 	      c_sourcefile = my_sourcefile;
 	      c_deprecated = my_deprecated;
 	      c_signature = my_signature;
+	      c_enclosing_method = my_enclosing_method;
 	      c_inner_classes = my_inner_classes;
 	      c_other_attributes = my_other_attributes;
 	      c_fields = my_fields;

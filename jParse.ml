@@ -310,6 +310,18 @@ and parse_attribute list consts ch =
 	    check `Signature;
 	    if alen <> 2 then error();
 	    AttributeSignature (get_string_ui16 consts ch)
+	| "EnclosingMethod" ->
+	    check `EnclosingMethod;
+	    if alen <> 4 then error();
+	    let c = get_class_ui16 consts ch
+	    and m = match read_ui16 ch with
+	      | 0 -> None
+	      | n ->
+		  match get_constant consts n with
+		    | ConstNameAndType (n,t) -> Some (n,t)
+		    | _ -> raise (Class_structure_error "EnclosingMethod attribute cannot refer to a constant which is not a NameAndType")
+	    in
+	      AttributeEnclosingMethod (c,m)
 	| "SourceFile" -> check `SourceFile;
 	    if alen <> 2 then error();
 	    AttributeSourceFile (get_string_ui16 consts ch)
@@ -404,8 +416,8 @@ let parse_field consts ch =
 	let attrib_count = read_ui16 ch in
 	let attrib_to_parse =
 	  if List.exists ((=)`AccStatic) acc
-	  then  [`ConstantValue ; `Synthetic ; `Deprecated]
-	  else  [`Synthetic ; `Deprecated] in
+	  then  [`ConstantValue ; `Synthetic ; `Deprecated ; `Signature]
+	  else  [`Synthetic ; `Deprecated ; `Signature] in
 	let attribs =
 	  List.init
 	    attrib_count
@@ -424,7 +436,7 @@ let parse_method consts ch =
 	let attrib_count = read_ui16 ch in
 	let attribs = List.init attrib_count
 	  (fun _ ->
-	     parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated] consts ch)
+	     parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated ; `Signature] consts ch)
 	in
 	{
 		m_name = name;
@@ -479,47 +491,53 @@ let rec expand_constant consts n =
       | ConstantUnusable -> ConstUnusable
 
 let parse_class_low_level ch =
-	let magic = read_real_i32 ch in
-	if magic <> 0xCAFEBABEl then raise (Class_structure_error "Invalid magic number");
-	let version_minor = read_ui16 ch in
-	let version_major = read_ui16 ch in
-	let constant_count = read_ui16 ch in
-	let const_big = ref true in
-	let consts = Array.init constant_count (fun _ ->
-		if !const_big then begin
-			const_big := false;
-			ConstantUnusable
-		end else
-			let c = parse_constant constant_count ch in
-			(match c with ConstantLong _ | ConstantDouble _ -> const_big := true | _ -> ());
-			c
+  let magic = read_real_i32 ch in
+    if magic <> 0xCAFEBABEl then raise (Class_structure_error "Invalid magic number");
+    let version_minor = read_ui16 ch in
+    let version_major = read_ui16 ch in
+    let constant_count = read_ui16 ch in
+    let const_big = ref true in
+    let consts =
+      Array.init
+	constant_count
+	(fun _ ->
+	   if !const_big then begin
+	     const_big := false;
+	     ConstantUnusable
+	   end else
+	     let c = parse_constant constant_count ch in
+	       (match c with ConstantLong _ | ConstantDouble _ -> const_big := true | _ -> ());
+	       c
 	) in
-	let consts = Array.mapi (fun i _ -> expand_constant consts i) consts in
-	let flags = parse_access_flags class_flags ch in
-	let this = get_class_ui16 consts ch in
-	let super_idx = read_ui16 ch in
-	let super = if super_idx = 0 then None else Some (get_class consts super_idx) in
-	let interface_count = read_ui16 ch in
-	let interfaces = List.init interface_count (fun _ -> get_class_ui16 consts ch) in
-	let field_count = read_ui16 ch in
-	let fields = List.init field_count (fun _ -> parse_field consts ch) in
-	let method_count = read_ui16 ch in
-	let methods = List.init method_count (fun _ -> parse_method consts ch) in
-	let attrib_count = read_ui16 ch in
-	let attribs =
-	  List.init
-	    attrib_count
-	    (fun _ -> parse_attribute [`SourceFile ; `Deprecated;`InnerClasses] consts ch) in
-	{
-		j_consts = consts;
-		j_flags = flags;
-		j_name = this;
-		j_super = super;
-		j_interfaces = interfaces;
-		j_fields = fields;
-		j_methods = methods;
-		j_attributes = attribs;
-		j_version = {major=version_major; minor=version_minor};
-	}
+    let consts = Array.mapi (fun i _ -> expand_constant consts i) consts in
+    let flags = parse_access_flags class_flags ch in
+    let this = get_class_ui16 consts ch in
+    let super_idx = read_ui16 ch in
+    let super = if super_idx = 0 then None else Some (get_class consts super_idx) in
+    let interface_count = read_ui16 ch in
+    let interfaces = List.init interface_count (fun _ -> get_class_ui16 consts ch) in
+    let field_count = read_ui16 ch in
+    let fields = List.init field_count (fun _ -> parse_field consts ch) in
+    let method_count = read_ui16 ch in
+    let methods = List.init method_count (fun _ -> parse_method consts ch) in
+    let attrib_count = read_ui16 ch in
+    let attribs =
+      List.init
+	attrib_count
+	(fun _ -> 
+           parse_attribute
+	     [`SourceFile ; `Deprecated ; `InnerClasses ; `Signature; `EnclosingMethod]
+	     consts ch)
+    in
+      {j_consts = consts;
+       j_flags = flags;
+       j_name = this;
+       j_super = super;
+       j_interfaces = interfaces;
+       j_fields = fields;
+       j_methods = methods;
+       j_attributes = attribs;
+       j_version = {major=version_major; minor=version_minor};
+      }
 
 let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)

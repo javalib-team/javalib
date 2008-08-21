@@ -203,6 +203,14 @@ let rec unparse_attribute_to_strings consts =
       | AttributeSignature s ->
 	  write_string ch consts s;
 	  ("Signature",close_out ch)
+      | AttributeEnclosingMethod (cn,mso) ->
+	  write_class ch consts cn;
+	  (match mso with
+	     | Some (n,t) -> 
+                 write_name_and_type ch consts (n,t)
+	     | None ->
+		 write_ui16 ch 0);
+	  ("EnclosingMethod", close_out ch)
       | AttributeSourceFile s ->
 	  write_string ch consts s;
 	  ("SourceFile",close_out ch)

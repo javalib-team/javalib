@@ -189,6 +189,14 @@ let rec dump_code ch cl code =
 and dump_attrib ch cl = function
 	| AttributeSourceFile s ->
 	    IO.printf ch "    source = %s\n" s
+	| AttributeSignature s ->
+	    IO.printf ch "    signature = %s\n" s
+	| AttributeEnclosingMethod (cn,mso) ->
+	    IO.printf ch "    enclosing method : class = %s, method = " (JDumpBasics.class_name cn);
+	    (match mso with
+	       | None -> IO.printf ch "None"
+	       | Some (mn,ms) -> IO.printf ch "%s" (JDumpBasics.signature mn ms));
+	    IO.printf ch "\n"
 	| AttributeConstant c ->
 	    IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
 	| AttributeCode code ->

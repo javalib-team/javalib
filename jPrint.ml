@@ -202,30 +202,40 @@ let pp_concat f pp_open pp_close pp_sep = function
       pp_close ()
      
 let pp_other_attr fmt pp_open pp_close pp_sep attrl =
-pp_concat
-  (fun (name,content) ->
-    fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
-  pp_open
-  pp_close
-  pp_sep
-  attrl
+  pp_concat
+    (fun (name,content) ->
+       fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
+    pp_open
+    pp_close
+    pp_sep
+    attrl
 
 let pp_attributes fmt pp_open pp_close pp_sep attributes =
   if (attributes.synthetic || attributes.deprecated || List.length attributes.other > 0)
   then
-    begin
-      pp_open ();
-      if attributes.deprecated then
-	(pp_print_string fmt "AttributeDeprecated");
-      if attributes.deprecated && (attributes.synthetic || List.length attributes.other > 0)
-      then pp_sep ();
-      if attributes.synthetic then
-	(pp_print_string fmt "AttributeSynthetic");
-      if attributes.synthetic && List.length attributes.other > 0
-      then pp_sep ();
-      pp_other_attr fmt ignore ignore pp_sep attributes.other;
-      pp_close ();
-    end
+    let print_attributes_functions=
+      (if attributes.deprecated
+       then [fun fmt -> pp_print_string fmt "AttributeDeprecated"]
+       else [])
+      @
+	(if attributes.synthetic
+	 then [fun fmt -> pp_print_string fmt "AttributeSynthetic"]
+	 else [])
+      @
+	(match attributes.signature with
+	   | None -> []
+	   | Some s -> [fun fmt -> pp_print_string fmt ("AttributeSignature \"" ^ s ^ "\"")])
+      @ (List.map 
+	   (fun (name,content) fmt ->
+	      fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
+	   attributes.other)
+    in
+      pp_concat
+	(fun f -> f fmt)
+	pp_open
+	pp_close
+	pp_sep
+	print_attributes_functions
 
 (* this function does not finish with a cut or a space *)
 let rec pp_object_type fmt = function
@@ -558,36 +568,51 @@ let pp_ifields cn info fmt fm =
 
 let pprint_class' info fmt (c:jclass) =
   if info.f_class c.c_name then
-  (* the constant pool is not printed *)
-  let cn = JDumpBasics.class_name c.c_name
-  and anchor fmt = cn2anchor c.c_name fmt
-  and access = access2string c.c_access
-  and abstract = (if c.c_abstract then "abstract " else "")
-  and final = final2string c.c_final
-  and super fmt = match c.c_super_class with
-    | None -> ()
-    | Some super -> 
-	fprintf fmt "extends %a "
-	  (cn2link super) (JDumpBasics.class_name super)
-  and interfaces fmt =
-    match c.c_interfaces with
-      | [] -> ()
-      | il -> fprintf fmt "implements@ @[%a@]" pp_cinterfaces il
-  and deprecated fmt = if c.c_deprecated then fprintf fmt "AttributeDeprecated@,"
-  and source fmt = pp_source fmt c.c_sourcefile
-  and inner_classes fmt = pp_inner_classes fmt c.c_inner_classes
-  and other_attr fmt =
-    pp_other_attr fmt ignore (fun _ -> pp_print_cut fmt ())
-      (fun _ -> pp_print_cut fmt ()) c.c_other_attributes
-  and fields fmt = pp_cfields c.c_name info fmt c.c_fields
-  and meths fmt = pp_methods c.c_name info fmt c.c_methods
-  in
-    fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
-      anchor abstract access final cn super interfaces;
-    fprintf fmt "@[<v>%t%t%t%t%t@]"
-      (info.p_class c.c_name) source inner_classes deprecated other_attr;
-    fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
-    fprintf fmt "@]@}@,}@,@]@?"
+    (* the constant pool is not printed *)
+    let cn = JDumpBasics.class_name c.c_name
+    and anchor fmt = cn2anchor c.c_name fmt
+    and access = access2string c.c_access
+    and abstract = (if c.c_abstract then "abstract " else "")
+    and final = final2string c.c_final
+    and super fmt = match c.c_super_class with
+      | None -> ()
+      | Some super -> 
+	  fprintf fmt "extends %a "
+	    (cn2link super) (JDumpBasics.class_name super)
+    and interfaces fmt =
+      match c.c_interfaces with
+	| [] -> ()
+	| il -> fprintf fmt "implements@ @[%a@]" pp_cinterfaces il
+    and deprecated fmt = if c.c_deprecated then fprintf fmt "AttributeDeprecated@,"
+    and signature fmt =
+      match c.c_signature with
+	| None -> ()
+	| Some s -> fprintf fmt "AttributeSignature \"%s\"@," s
+    and enclosing_method fmt =
+      match c.c_enclosing_method with
+	| None -> ()
+	| Some (cn,mso) ->
+	    let cn = JDumpBasics.class_name cn
+	    and ms =
+	      match mso with
+		| None -> (fun fmt -> pp_print_string fmt "_")
+		| Some ms -> (fun fmt -> pp_method_signature fmt ms)
+	    in
+	      fprintf fmt "AttributeEnclosingMethod (%s,%t)@," cn ms
+    and source fmt = pp_source fmt c.c_sourcefile
+    and inner_classes fmt = pp_inner_classes fmt c.c_inner_classes
+    and other_attr fmt =
+      pp_other_attr fmt ignore (fun _ -> pp_print_cut fmt ())
+	(fun _ -> pp_print_cut fmt ()) c.c_other_attributes
+    and fields fmt = pp_cfields c.c_name info fmt c.c_fields
+    and meths fmt = pp_methods c.c_name info fmt c.c_methods
+    in
+      fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
+	anchor abstract access final cn super interfaces;
+      fprintf fmt "@[<v>%t%t%t%t%t%t%t@]"
+	(info.p_class c.c_name) source inner_classes deprecated signature enclosing_method other_attr;
+      fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
+      fprintf fmt "@]@}@,}@,@]@?"
 
 let pprint_interface' info fmt (c:jinterface) =
   if info.f_class c.i_name then
@@ -599,6 +624,10 @@ let pprint_interface' info fmt (c:jinterface) =
 	| [] -> ()
 	| il -> fprintf fmt "extends@ @[%a@]" pp_cinterfaces il
     and deprecated fmt = if c.i_deprecated then fprintf fmt "AttributeDeprecated@,"
+    and signature fmt =
+      match c.i_signature with
+	| None -> ()
+	| Some s -> fprintf fmt "AttributeSignature \"%s\"@," s
     and source fmt = pp_source fmt c.i_sourcefile
     and inner_classes fmt = pp_inner_classes fmt c.i_inner_classes
     and other_attr fmt =
@@ -637,6 +666,7 @@ let pprint_interface' info fmt (c:jinterface) =
       source fmt;
       inner_classes fmt;
       deprecated fmt;
+      signature fmt;
       other_attr fmt;
       pp_close_box fmt ();
       fprintf fmt "@[@ @ @[<v>%t%t%t@]@]@]@}@,}@,@]@?" fields clinit meths

@@ -293,6 +293,7 @@ type jclass = {
   c_sourcefile : string option;
   c_deprecated : bool;
   c_signature: string option;
+  c_enclosing_method : (class_name * method_signature option) option;
   c_inner_classes : inner_class list;
   c_synthetic: bool;
   c_enum: bool;

@@ -34,6 +34,16 @@ let signature_to_attribute = function
   | None -> []
   | Some s -> [AttributeSignature s]
 
+let enclosingmethod_to_attribute = function
+  | None -> []
+  | Some (cn,mso) ->
+      let meth = match mso with
+	| None -> None
+	| Some ms ->
+	    Some (ms.ms_name, JBasics.SMethod (ms.ms_parameters,ms.ms_return_type))
+      in 
+	[AttributeEnclosingMethod (cn,meth)]
+
 let h2l_other_attributes l = List.map (fun (n,a) -> AttributeUnknown (n,a)) l
 
 let h2l_attributes a =
@@ -204,6 +214,7 @@ let high2low_class c =
      j_attributes =
 	(deprecated_to_attribute c.c_deprecated)
 	@ (signature_to_attribute c.c_signature)
+	@ (enclosingmethod_to_attribute c.c_enclosing_method)
 	@ (h2l_inner_classes c.c_inner_classes)
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.c_other_attributes);
