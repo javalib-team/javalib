@@ -22,9 +22,8 @@ Here is some stuff that need to be done:
 
 * Compatibility with Java 5
 - Use AttributeSignature to print signatures of methods, fields and
-  class if present (case of generics)SourceDebugExtension
-- Add AttributeEnclosingMethod to jClassLow and jClass and update
-  handling code (JL2H, JH2L, jParse/jUnparse)
+  class if present (case of generics)
+- Add AttributeSourceDebugExtension
 - Add AttributeLocalVariableTypeTable (see §4.8.13)
   (LocalVariableTable for generics)
 - Add AttributeRuntimeVisibleAnnotations (see §4.8.15)
@@ -35,7 +34,7 @@ Here is some stuff that need to be done:
 - Check modifications of UTF8 encoding (§4.5.7)
 
 * Extra functionalities
-- check the compatibility of JavaLib with Java 5, Java 6 and Java 7
+- check the compatibility of JavaLib with Java 6 and Java 7
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
 - jDumpLow : should we dump the constant pool? (it seems many other

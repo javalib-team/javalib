@@ -75,12 +75,6 @@ and class_file = {
   c_deprecated : bool;
   c_signature: string option;
   c_enclosing_method : (class_name * method_signature option) option;
-  (** introduced with Java 5 for local classes (defined in methods'
-      code). The first element is innermost class that encloses the
-      declaration of the current class. The second element is the
-      method that encose this class definition. cf
-      {{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS},
-      paragraph 4.8.6.*)
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
