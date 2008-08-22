@@ -460,6 +460,19 @@ let low2high_class cl =
       in find_SourceFile cl.j_attributes
     and my_deprecated = List.exists ((=)AttributeDeprecated) cl.j_attributes
     and my_signature = attribute_to_signature cl.j_attributes
+    and my_source_debug_extention =
+      let sde_attributes =
+	List.find_all
+	  (function AttributeSourceDebugExtension _ -> true | _ -> false)
+	  cl.j_attributes
+      in
+	match sde_attributes with
+	  | [] -> None
+	  | [AttributeSourceDebugExtension s] -> Some s
+	  | _ ->
+	      raise
+		(Class_structure_error
+		   "A class cannot contain several SourceDebugExtension attribute.")
     and my_inner_classes =
       let rec find_InnerClasses = function
 	| AttributeInnerClasses icl::_ -> List.rev_map low2high_innerclass icl
@@ -472,6 +485,7 @@ let low2high_class cl =
 	   (function
 	      | AttributeSignature _ | AttributeSourceFile _ 
 	      | AttributeDeprecated | AttributeInnerClasses _ -> false
+	      | AttributeEnclosingMethod _ -> is_interface
 	      | _ -> true)
 	   cl.j_attributes);
     in
@@ -506,6 +520,7 @@ let low2high_class cl =
 	      i_sourcefile = my_sourcefile;
 	      i_deprecated = my_deprecated;
 	      i_signature = my_signature;
+	      i_source_debug_extention = my_source_debug_extention;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
 	      i_initializer = init;
@@ -591,6 +606,7 @@ let low2high_class cl =
 	      c_sourcefile = my_sourcefile;
 	      c_deprecated = my_deprecated;
 	      c_signature = my_signature;
+	      c_source_debug_extention = my_source_debug_extention;
 	      c_enclosing_method = my_enclosing_method;
 	      c_inner_classes = my_inner_classes;
 	      c_other_attributes = my_other_attributes;

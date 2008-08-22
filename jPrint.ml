@@ -587,18 +587,25 @@ let pprint_class' info fmt (c:jclass) =
     and signature fmt =
       match c.c_signature with
 	| None -> ()
-	| Some s -> fprintf fmt "AttributeSignature \"%s\"@," s
+	| Some s ->
+	    pp_print_string fmt ("AttributeSignature \""^s^"\"");
+	    pp_print_cut fmt ()
     and enclosing_method fmt =
       match c.c_enclosing_method with
 	| None -> ()
 	| Some (cn,mso) ->
-	    let cn = JDumpBasics.class_name cn
-	    and ms =
-	      match mso with
-		| None -> (fun fmt -> pp_print_string fmt "_")
-		| Some ms -> (fun fmt -> pp_method_signature fmt ms)
-	    in
-	      fprintf fmt "AttributeEnclosingMethod (%s,%t)@," cn ms
+	    pp_print_string fmt ("AttributeEnclosingMethod (" ^ JDumpBasics.class_name cn);
+	    (match mso with
+	       | None -> pp_print_string fmt "_"
+	       | Some ms -> pp_method_signature fmt ms);
+	    pp_print_string fmt ")";
+	    pp_print_cut fmt ()		    
+    and source_debug_extension fmt =
+      match c.c_source_debug_extention with
+	| None -> ()
+	| Some s -> 
+	    pp_print_string fmt ("AttributeSourceDebugExtension \""^s^"\"");
+	    pp_print_cut fmt ()
     and source fmt = pp_source fmt c.c_sourcefile
     and inner_classes fmt = pp_inner_classes fmt c.c_inner_classes
     and other_attr fmt =
@@ -609,8 +616,8 @@ let pprint_class' info fmt (c:jclass) =
     in
       fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
 	anchor abstract access final cn super interfaces;
-      fprintf fmt "@[<v>%t%t%t%t%t%t%t@]"
-	(info.p_class c.c_name) source inner_classes deprecated signature enclosing_method other_attr;
+      fprintf fmt "@[<v>%t%t%t%t%t%t%t%t@]"
+	(info.p_class c.c_name) source inner_classes deprecated signature enclosing_method source_debug_extension other_attr;
       fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
       fprintf fmt "@]@}@,}@,@]@?"
 
@@ -628,6 +635,12 @@ let pprint_interface' info fmt (c:jinterface) =
       match c.i_signature with
 	| None -> ()
 	| Some s -> fprintf fmt "AttributeSignature \"%s\"@," s
+    and source_debug_extension fmt =
+      match c.i_source_debug_extention with
+	| None -> ()
+	| Some s -> 
+	    pp_print_string fmt ("AttributeSourceDebugExtension \""^s^"\"");
+	    pp_print_cut fmt ()
     and source fmt = pp_source fmt c.i_sourcefile
     and inner_classes fmt = pp_inner_classes fmt c.i_inner_classes
     and other_attr fmt =
@@ -664,6 +677,7 @@ let pprint_interface' info fmt (c:jinterface) =
       pp_open_vbox fmt 0;
       info.p_class c.i_name fmt;
       source fmt;
+      source_debug_extension fmt;
       inner_classes fmt;
       deprecated fmt;
       signature fmt;

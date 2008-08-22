@@ -44,6 +44,10 @@ let enclosingmethod_to_attribute = function
       in 
 	[AttributeEnclosingMethod (cn,meth)]
 
+let sourcedebugextension_to_attribute = function
+  | None -> []
+  | Some s -> [AttributeSourceDebugExtension s]
+
 let h2l_other_attributes l = List.map (fun (n,a) -> AttributeUnknown (n,a)) l
 
 let h2l_attributes a =
@@ -215,6 +219,7 @@ let high2low_class c =
 	(deprecated_to_attribute c.c_deprecated)
 	@ (signature_to_attribute c.c_signature)
 	@ (enclosingmethod_to_attribute c.c_enclosing_method)
+	@ (sourcedebugextension_to_attribute c.c_source_debug_extention)
 	@ (h2l_inner_classes c.c_inner_classes)
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.c_other_attributes);
@@ -245,6 +250,7 @@ let high2low_interface (c:jinterface) =
      j_attributes =
 	(deprecated_to_attribute c.i_deprecated)
 	@ (signature_to_attribute c.i_signature)
+	@ (sourcedebugextension_to_attribute c.i_source_debug_extention)
 	@ (h2l_inner_classes c.i_inner_classes)
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ (h2l_other_attributes c.i_other_attributes);

@@ -211,6 +211,8 @@ let rec unparse_attribute_to_strings consts =
 	     | None ->
 		 write_ui16 ch 0);
 	  ("EnclosingMethod", close_out ch)
+      | AttributeSourceDebugExtension s ->
+	  ("SourceDebugExtension", s)
       | AttributeSourceFile s ->
 	  write_string ch consts s;
 	  ("SourceFile",close_out ch)

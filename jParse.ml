@@ -322,6 +322,9 @@ and parse_attribute list consts ch =
 		    | _ -> raise (Class_structure_error "EnclosingMethod attribute cannot refer to a constant which is not a NameAndType")
 	    in
 	      AttributeEnclosingMethod (c,m)
+	| "SourceDebugExtension" ->
+	    check `SourceDebugExtension;
+	    AttributeSourceDebugExtension (IO.really_nread ch alen)
 	| "SourceFile" -> check `SourceFile;
 	    if alen <> 2 then error();
 	    AttributeSourceFile (get_string_ui16 consts ch)
@@ -526,7 +529,7 @@ let parse_class_low_level ch =
 	attrib_count
 	(fun _ -> 
            parse_attribute
-	     [`SourceFile ; `Deprecated ; `InnerClasses ; `Signature; `EnclosingMethod]
+	     [`SourceFile ; `Deprecated ; `InnerClasses ; `Signature; `EnclosingMethod; `SourceDebugExtension]
 	     consts ch)
     in
       {j_consts = consts;

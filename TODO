@@ -1,14 +1,4 @@
 Here is some stuff that need to be done:
-* Documentation
-- avoid duplicated information at source level in README, INSTALL,
-  intro.ocamldoc and the website (but generate the files from one
-  common source) (tip: use lynx -dump)
-- installation documentation : give all the operation to perform to
-  install extlib and camlzip, give the command in case ocamlfind is
-  not installed
-- installation documentation should be on the first page of the
-  website
-
 * Correctness
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
@@ -23,7 +13,6 @@ Here is some stuff that need to be done:
 * Compatibility with Java 5
 - Use AttributeSignature to print signatures of methods, fields and
   class if present (case of generics)
-- Add AttributeSourceDebugExtension
 - Add AttributeLocalVariableTypeTable (see §4.8.13)
   (LocalVariableTable for generics)
 - Add AttributeRuntimeVisibleAnnotations (see §4.8.15)

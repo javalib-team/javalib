@@ -169,7 +169,7 @@ let write_with_length length ch write =
     write ch';
     write_string_with_length length ch (close_out ch')
 
-let write_with_size size ch write l =
+let write_with_size (size:'a IO.output -> int -> unit) ch write l =
   size ch (List.length l);
   List.iter write l
 

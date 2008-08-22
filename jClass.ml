@@ -294,6 +294,7 @@ type jclass = {
   c_deprecated : bool;
   c_signature: string option;
   c_enclosing_method : (class_name * method_signature option) option;
+  c_source_debug_extention : string option;
   c_inner_classes : inner_class list;
   c_synthetic: bool;
   c_enum: bool;
@@ -313,6 +314,7 @@ type jinterface = {
   i_sourcefile : string option;
   i_deprecated : bool;
   i_signature: string option;
+  i_source_debug_extention : string option;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
   i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)

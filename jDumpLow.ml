@@ -197,6 +197,8 @@ and dump_attrib ch cl = function
 	       | None -> IO.printf ch "None"
 	       | Some (mn,ms) -> IO.printf ch "%s" (JDumpBasics.signature mn ms));
 	    IO.printf ch "\n"
+	| AttributeSourceDebugExtension s ->
+	    IO.printf ch "    SourceDebugExtension = %s\n" s
 	| AttributeConstant c ->
 	    IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
 	| AttributeCode code ->
