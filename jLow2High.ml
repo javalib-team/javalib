@@ -46,6 +46,23 @@ let rec get_flag flag = function
   | f::fl when f=flag -> (true,List.filter ((<>)f) fl)
   | f::fl -> let (b,fl) = get_flag flag fl in (b,f::fl)
 
+type lvt = (int * int * string * value_type * int) list
+
+let combine_LocalVariableTable (lvts:lvt list) : lvt =
+  let lvt = List.concat lvts in
+  let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
+    List.for_all
+      (fun e1 -> List.for_all (f e1) l)
+      l
+  and overlap (e1_start,e1_end,_,_,_) (e2_start,e2_end,_,_,_) =
+    (e2_start < e1_end && e1_start < e2_end)
+  and similar (_,_,e1_name,_,e1_index) (_,_,e2_name,_,e2_index) =
+    e1_name = e2_name || e1_index = e2_index
+  in
+    assert(for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt);
+    lvt
+ 
+  
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
   List.map
@@ -88,14 +105,12 @@ let low2high_code consts = function c ->
       end;
     c_local_variable_table =
       begin
-	let rec find_LocalVariableTable = function
-	  | AttributeLocalVariableTable l::l' ->
-	      if find_LocalVariableTable l' <> None
-	      then raise (Class_structure_error "Only one AttributeLocalVariableTable can be attached to a method.");
-	      Some l
-	  | _::l -> find_LocalVariableTable l
+	let lvt =
+	  combine_LocalVariableTable
+	    (List.fold_left (fun lvts -> (function AttributeLocalVariableTable lvt -> lvt::lvts | _ -> lvts)) [] c.JClassLow.c_attributes)
+	in match lvt with
 	  | [] -> None
-	in find_LocalVariableTable c.JClassLow.c_attributes
+	  | _ -> Some lvt
       end;
     c_stack_map =
       begin
@@ -110,11 +125,11 @@ let low2high_code consts = function c ->
       end;
     c_attributes = low2high_other_attributes consts
       (List.filter
-	  (function
+	 (function
 	    | AttributeStackMap _ | AttributeLocalVariableTable _
 	    | AttributeLineNumberTable _ -> false
 	    | _ -> true)
-	  c.JClassLow.c_attributes);
+	 c.JClassLow.c_attributes);
   }
 
 let low2high_cfield consts fs = function f ->
@@ -277,8 +292,8 @@ let low2high_cmethod consts ms = function m ->
     List.exists (fun a -> a=`AccStatic || a=`AccFinal || a=`AccSynchronized || a=`AccNative || a=`AccAbstract)
     m.m_flags
   then raise (Class_structure_error ("A specific instance initialization method may have at most "
-				      ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
-				      ^ "and may also have its ACC_STRICT flag set."));
+				     ^ "one of its ACC_PRIVATE, ACC_PROTECTED, and ACC_PUBLIC flags set "
+				     ^ "and may also have its ACC_STRICT flag set."));
   let flags = m.m_flags in
   let (access,flags) = flags2access flags in
   let (is_static,flags) = get_flag `AccStatic flags in
@@ -291,9 +306,9 @@ let low2high_cmethod consts ms = function m ->
   let (is_native,flags) = get_flag `AccNative flags in
   let flags = List.map
     (function
-      | `AccRFU i -> i
-      | `AccAbstract -> raise (Class_structure_error "Non abstract class cannot have abstract methods.")
-      | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
+       | `AccRFU i -> i
+       | `AccAbstract -> raise (Class_structure_error "Non abstract class cannot have abstract methods.")
+       | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
     flags
   in
   let (generic_signature,other_att) =

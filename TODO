@@ -7,8 +7,6 @@ Here is some stuff that need to be done:
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
 - test lookups and resolves by comparing with jvm traces
-- BUG: it should be possible to have more than one LocalVariableTable
-  per code attribute (there can be one per local variable) (jLow2High)
 - BUG: when unparsing, if a constant refered in the code is not in the
   constant pool it is added, but it seems it's too late because the
   constant pool is written first. (the cause might be that the
