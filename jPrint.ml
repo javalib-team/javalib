@@ -211,31 +211,25 @@ let pp_other_attr fmt pp_open pp_close pp_sep attrl =
     attrl
 
 let pp_attributes fmt pp_open pp_close pp_sep attributes =
-  if (attributes.synthetic || attributes.deprecated || List.length attributes.other > 0)
-  then
-    let print_attributes_functions=
-      (if attributes.deprecated
-       then [fun fmt -> pp_print_string fmt "AttributeDeprecated"]
+  let print_attributes_functions=
+    (if attributes.deprecated
+     then [fun fmt -> pp_print_string fmt "AttributeDeprecated"]
+     else [])
+    @
+      (if attributes.synthetic
+       then [fun fmt -> pp_print_string fmt "AttributeSynthetic"]
        else [])
-      @
-	(if attributes.synthetic
-	 then [fun fmt -> pp_print_string fmt "AttributeSynthetic"]
-	 else [])
-      @
-	(match attributes.signature with
-	   | None -> []
-	   | Some s -> [fun fmt -> pp_print_string fmt ("AttributeSignature \"" ^ s ^ "\"")])
-      @ (List.map 
-	   (fun (name,content) fmt ->
-	      fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
-	   attributes.other)
-    in
-      pp_concat
-	(fun f -> f fmt)
-	pp_open
-	pp_close
-	pp_sep
-	print_attributes_functions
+    @ (List.map 
+	 (fun (name,content) fmt ->
+	    fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
+	 attributes.other)
+  in
+    pp_concat
+      (fun f -> f fmt)
+      pp_open
+      pp_close
+      pp_sep
+      print_attributes_functions
 
 (* this function does not finish with a cut or a space *)
 let rec pp_object_type fmt = function
@@ -270,6 +264,16 @@ let pp_method_signature fmt ms =
 	  List.iter  (fun p -> fprintf fmt ",@ "; pp_value_type fmt p) pl
   end;
   fprintf fmt "@])"
+
+let pp_field_generic_signature fmt = function
+  | None -> ()
+  | Some s -> fprintf fmt "@ @[<2>AttributeSignature@ %s@]" (JUnparseSignature.unparse_FieldTypeSignature s)
+let pp_method_generic_signature fmt = function
+  | None -> ()
+  | Some s -> fprintf fmt "@[<2>AttributeSignature@ %s@]@," (JUnparseSignature.unparse_MethodTypeSignature s)
+let pp_class_generic_signature fmt = function
+  | None -> ()
+  | Some s -> fprintf fmt "@[<2>AttributeSignature@ %s@]@," (JUnparseSignature.unparse_ClassSignature s)
 
 let pp_exceptions fmt = function
   | [] -> ()
@@ -459,6 +463,7 @@ let pp_cmethod cn info fmt m =
   and strict = (if m.cm_strict then "strict " else "")
   and access = access2string m.cm_access
   and exceptions fmt = pp_exceptions fmt m.cm_exceptions
+  and generic_signature fmt = pp_method_generic_signature fmt m.cm_generic_signature
   and att fmt =
     pp_attributes fmt
       (fun _ -> fprintf fmt "@[<v>")
@@ -468,15 +473,15 @@ let pp_cmethod cn info fmt m =
   in
     match m.cm_implementation with
       | Native ->
-	  fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]@,%t%t@]"
+	  fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,native@ %s@,%s@,%t@ %t@]@,%t%t%t@]"
 	    anchor access static final synchro strict sign exceptions
-	    (info.p_method cn m.cm_signature) att
+	    (info.p_method cn m.cm_signature) att generic_signature
       | Java code ->
 	  let implem fmt = pp_implementation cn m.cm_signature info fmt (Lazy.force code)
 	  in
-	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>@,%t%t%t@}}@]"
+	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>@,%t%t%t%t@}}@]"
 	      anchor access static final synchro strict sign exceptions
-	      (info.p_method cn m.cm_signature) att implem
+	      (info.p_method cn m.cm_signature) att generic_signature implem
 
 let pp_amethod cn info fmt m =
   if info.f_method cn m.am_signature then
@@ -484,6 +489,7 @@ let pp_amethod cn info fmt m =
   and anchor fmt = ms2anchor (cn,m.am_signature) fmt
   and access = access2string m.am_access
   and exceptions fmt = pp_exceptions fmt m.am_exceptions
+  and generic_signature fmt = pp_method_generic_signature fmt m.am_generic_signature
   and att fmt =
     pp_attributes fmt
       (fun _ -> fprintf fmt "@,@[<v>")
@@ -491,8 +497,8 @@ let pp_amethod cn info fmt m =
       (fun _ -> pp_print_cut fmt ())
       m.am_attributes
   in
-    fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]@,%t%t@]"
-      anchor access sign exceptions (info.p_method cn m.am_signature) att
+    fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]@,%t%t%t@]"
+      anchor access sign exceptions (info.p_method cn m.am_signature) att generic_signature
 
 let pp_methods cn info fmt mm =
   pp_concat
@@ -511,21 +517,22 @@ let pp_cfields cn info fmt fm =
     and anchor fmt = fs2anchor (cn,f.cf_signature) fmt
     and static = static2string f.cf_static
     and kind = kind2string f.cf_kind
+    and generic_signature fmt = pp_field_generic_signature fmt f.cf_generic_signature
     and value fmt = (match f.cf_value with
       | None -> ()
       | Some v -> fprintf fmt " =@ %s" (cstvalue2string v))
     and trans = (if f.cf_transient then "transient " else "")
     and attr fmt =
       pp_attributes fmt
-	(fun _ -> fprintf fmt "@,@[<v>")
+	(fun _ -> fprintf fmt "@ @[<v>")
 	(fun _ -> pp_close_box fmt ())
 	(fun _ -> pp_print_cut fmt ())
 	f.cf_attributes
     and sign fmt = pp_field_signature fmt f.cf_signature
     in
       fprintf fmt
-	"@[<hv 2>%t@[%s@,%s@,%s@,%s@,%t%t@]%t%t@]"
-	anchor access static kind trans sign value (info.p_field cn f.cf_signature) attr
+	"@[<hv 2>%t@[%s@,%s@,%s@,%s@,%t%t@]%t%t%t@]"
+	anchor access static kind trans sign value (info.p_field cn f.cf_signature) attr generic_signature
   in
     pp_concat
       (fun f -> pp_cfield fmt f)
@@ -545,15 +552,16 @@ let pp_ifields cn info fmt fm =
     and anchor fmt = fs2anchor (cn,f.if_signature) fmt
     and attr fmt =
       pp_attributes fmt
-	(fun _ -> fprintf fmt "@,@[<v>")
+	(fun _ -> fprintf fmt "@ @[<v>")
 	(fun _ -> pp_close_box fmt ())
 	(fun _ -> pp_print_cut fmt ())
 	f.if_attributes
+    and generic_signature fmt = pp_field_generic_signature fmt f.if_generic_signature
     and sign fmt = pp_field_signature fmt f.if_signature
     in
       fprintf fmt
-	"@[<hv 2>%t@[public@ static@ final@ %t%t@]%t%t@]"
-	anchor sign value (info.p_field cn f.if_signature) attr
+	"@[<hv 2>%t@[public@ static@ final@ %t%t@]%t%t%t@]"
+	anchor sign value (info.p_field cn f.if_signature) attr generic_signature
   in
     pp_concat
       (fun f -> pp_ifield fmt f)
@@ -584,12 +592,7 @@ let pprint_class' info fmt (c:jclass) =
 	| [] -> ()
 	| il -> fprintf fmt "implements@ @[%a@]" pp_cinterfaces il
     and deprecated fmt = if c.c_deprecated then fprintf fmt "AttributeDeprecated@,"
-    and signature fmt =
-      match c.c_signature with
-	| None -> ()
-	| Some s ->
-	    pp_print_string fmt ("AttributeSignature \""^s^"\"");
-	    pp_print_cut fmt ()
+    and generic_signature fmt = pp_class_generic_signature fmt c.c_generic_signature
     and enclosing_method fmt =
       match c.c_enclosing_method with
 	| None -> ()
@@ -617,7 +620,7 @@ let pprint_class' info fmt (c:jclass) =
       fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
 	anchor abstract access final cn super interfaces;
       fprintf fmt "@[<v>%t%t%t%t%t%t%t%t@]"
-	(info.p_class c.c_name) source inner_classes deprecated signature enclosing_method source_debug_extension other_attr;
+	(info.p_class c.c_name) source inner_classes deprecated generic_signature enclosing_method source_debug_extension other_attr;
       fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
       fprintf fmt "@]@}@,}@,@]@?"
 
@@ -631,10 +634,7 @@ let pprint_interface' info fmt (c:jinterface) =
 	| [] -> ()
 	| il -> fprintf fmt "extends@ @[%a@]" pp_cinterfaces il
     and deprecated fmt = if c.i_deprecated then fprintf fmt "AttributeDeprecated@,"
-    and signature fmt =
-      match c.i_signature with
-	| None -> ()
-	| Some s -> fprintf fmt "AttributeSignature \"%s\"@," s
+    and generic_signature fmt = pp_class_generic_signature fmt c.i_generic_signature
     and source_debug_extension fmt =
       match c.i_source_debug_extention with
 	| None -> ()
@@ -677,10 +677,10 @@ let pprint_interface' info fmt (c:jinterface) =
       pp_open_vbox fmt 0;
       info.p_class c.i_name fmt;
       source fmt;
+      generic_signature fmt;
       source_debug_extension fmt;
       inner_classes fmt;
       deprecated fmt;
-      signature fmt;
       other_attr fmt;
       pp_close_box fmt ();
       fprintf fmt "@[@ @ @[<v>%t%t%t@]@]@]@}@,}@,@]@?" fields clinit meths

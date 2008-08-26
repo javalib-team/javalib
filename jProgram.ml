@@ -31,6 +31,7 @@ type concrete_method = {
   cm_synchronized : bool;
   cm_strict : bool;
   cm_access: access;
+  cm_generic_signature : JSignature.methodTypeSignature option;
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
@@ -44,6 +45,7 @@ type concrete_method = {
 and abstract_method = {
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
+  am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
@@ -62,6 +64,7 @@ and class_file = {
   c_name : class_name;
   c_version : version;
   c_access : [`Public | `Default];
+  c_generic_signature : JSignature.classSignature option;
   c_final : bool;
   c_abstract : bool;
   c_synthetic: bool;
@@ -73,7 +76,6 @@ and class_file = {
   c_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
-  c_signature: string option;
   c_enclosing_method : (class_name * method_signature option) option;
   c_source_debug_extention : string option;
   c_inner_classes : inner_class list;
@@ -86,13 +88,13 @@ and interface_file = {
   i_name : class_name;
   i_version : version;
   i_access : [`Public | `Default];
+  i_generic_signature : JSignature.classSignature option;
   i_annotation: bool;
   i_other_flags : int list;
   i_interfaces : interface_file ClassMap.t;
   i_consts : constant array; (* needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
-  i_signature: string option;
   i_source_debug_extention : string option;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
@@ -263,6 +265,7 @@ let ccm2pcm m = {
   cm_synchronized = m.JClass.cm_synchronized;
   cm_strict = m.JClass.cm_strict;
   cm_access = m.JClass.cm_access;
+  cm_generic_signature = m.JClass.cm_generic_signature;
   cm_bridge = m.JClass.cm_bridge;
   cm_varargs = m.JClass.cm_varargs;
   cm_synthetic = m.JClass.cm_synthetic;
@@ -280,6 +283,7 @@ let pcm2ccm m = {
   JClass.cm_synchronized = m.cm_synchronized;
   JClass.cm_strict = m.cm_strict;
   JClass.cm_access = m.cm_access;
+  JClass.cm_generic_signature = m.cm_generic_signature;
   JClass.cm_bridge = m.cm_bridge;
   JClass.cm_varargs = m.cm_varargs;
   JClass.cm_synthetic = m.cm_synthetic;
@@ -292,6 +296,7 @@ let pcm2ccm m = {
 let cam2pam m = {
   am_signature = m.JClass.am_signature;
   am_access = m.JClass.am_access;
+  am_generic_signature = m.JClass.am_generic_signature;
   am_bridge = m.JClass.am_bridge;
   am_varargs = m.JClass.am_varargs;
   am_synthetic = m.JClass.am_synthetic;
@@ -305,6 +310,7 @@ let cam2pam m = {
 let pam2cam m = {
   JClass.am_signature = m.am_signature;
   JClass.am_access = m.am_access;
+  JClass.am_generic_signature = m.am_generic_signature;
   JClass.am_bridge = m.am_bridge;
   JClass.am_varargs = m.am_varargs;
   JClass.am_synthetic = m.am_synthetic;
@@ -357,6 +363,7 @@ let add_classFile c (program:program) =
     {c_name = c.JClass.c_name;
      c_version = c.JClass.c_version;
      c_access = c.JClass.c_access;
+     c_generic_signature = c.JClass.c_generic_signature;
      c_final = c.JClass.c_final;
      c_abstract = c.JClass.c_abstract;
      c_synthetic = c.JClass.c_synthetic;
@@ -367,7 +374,6 @@ let add_classFile c (program:program) =
      c_interfaces = imap;
      c_sourcefile = c.JClass.c_sourcefile;
      c_deprecated = c.JClass.c_deprecated;
-     c_signature = c.JClass.c_signature;
      c_enclosing_method = c.JClass.c_enclosing_method;
      c_source_debug_extention =c.JClass.c_source_debug_extention;
      c_inner_classes = c.JClass.c_inner_classes;
@@ -422,13 +428,13 @@ let add_interfaceFile c (program:program) =
     {i_name = c.JClass.i_name;
      i_version = c.JClass.i_version;
      i_access = c.JClass.i_access;
+     i_generic_signature = c.JClass.i_generic_signature;
      i_consts = c.JClass.i_consts;
      i_annotation = c.JClass.i_annotation;
      i_other_flags = c.JClass.i_other_flags;
      i_interfaces = imap;
      i_sourcefile = c.JClass.i_sourcefile;
      i_deprecated = c.JClass.i_deprecated;
-     i_signature = c.JClass.i_signature;
      i_source_debug_extention = c.JClass.i_source_debug_extention;
      i_inner_classes = c.JClass.i_inner_classes;
      i_other_attributes = c.JClass.i_other_attributes;
@@ -468,6 +474,7 @@ let to_class = function
       {JClass.i_name = c.i_name;
        JClass.i_version = c.i_version;
        JClass.i_access = c.i_access;
+       JClass.i_generic_signature = c.i_generic_signature;
        JClass.i_consts = c.i_consts;
        JClass.i_annotation = c.i_annotation;
        JClass.i_other_flags = c.i_other_flags;
@@ -475,7 +482,6 @@ let to_class = function
 	  ClassMap.fold (fun cn _ l -> cn::l) c.i_interfaces [];
        JClass.i_sourcefile = c.i_sourcefile;
        JClass.i_deprecated = c.i_deprecated;
-       JClass.i_signature = c.i_signature;
        JClass.i_source_debug_extention = c.i_source_debug_extention;
        JClass.i_inner_classes = c.i_inner_classes;
        JClass.i_other_attributes = c.i_other_attributes;
@@ -492,6 +498,7 @@ let to_class = function
       {JClass.c_name = c.c_name;
        JClass.c_version = c.c_version;
        JClass.c_access = c.c_access;
+       JClass.c_generic_signature = c.c_generic_signature;
        JClass.c_final = c.c_final;
        JClass.c_abstract = c.c_abstract;
        JClass.c_enum = c.c_enum ;
@@ -506,7 +513,6 @@ let to_class = function
 	  ClassMap.fold (fun cn _ l -> cn::l) c.c_interfaces [];
        JClass.c_sourcefile = c.c_sourcefile;
        JClass.c_deprecated = c.c_deprecated;
-       JClass.c_signature = c.c_signature;
        JClass.c_enclosing_method = c.c_enclosing_method;
        JClass.c_source_debug_extention = c.c_source_debug_extention;
        JClass.c_inner_classes = c.c_inner_classes;

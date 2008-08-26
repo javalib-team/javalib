@@ -1,4 +1,8 @@
 Here is some stuff that need to be done:
+* Documentation
+- JSignature/JUnparseSignature and JParseSignature need more
+  documentation
+
 * Correctness
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
@@ -22,11 +26,14 @@ Here is some stuff that need to be done:
 - Add AttributeAnnotationDefault (see §4.8.19)
 - Check modifications of UTF8 encoding (§4.5.7)
 
+* Compatibility with Java 6
+- handle StackMapTable attribute
+
 * Extra functionalities
-- check the compatibility of JavaLib with Java 6 and Java 7
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
 - jDumpLow : should we dump the constant pool? (it seems many other
   things are not dump by jDumpLow, but JPrint and jLow2High offer much
   more)
+- check the compatibility of JavaLib with Java 7
 - try to see if the dependency to unix.cma can be removed

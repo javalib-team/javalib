@@ -41,6 +41,7 @@ type concrete_method = {
   cm_synchronized : bool;
   cm_strict : bool;
   cm_access: access;
+  cm_generic_signature : JSignature.methodTypeSignature option;
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
@@ -54,6 +55,7 @@ type concrete_method = {
 and abstract_method = {
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
+  am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
@@ -72,6 +74,7 @@ and class_file = {
   c_name : class_name;
   c_version : version;
   c_access : [`Public | `Default];
+  c_generic_signature : JSignature.classSignature option;
   c_final : bool;
   c_abstract : bool;
   c_synthetic: bool;
@@ -85,7 +88,6 @@ and class_file = {
       to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
-  c_signature : string option; (** introduced with Java 5 for generics*)
   c_enclosing_method : (class_name * method_signature option) option;
   (** introduced with Java 5 for local classes (defined in methods'
       code). The first element is innermost class that encloses the
@@ -107,6 +109,7 @@ and interface_file = {
   i_name : class_name;
   i_version : version;
   i_access : [`Public | `Default];
+  i_generic_signature : JSignature.classSignature option;
   i_annotation: bool;
   i_other_flags : int list;
   i_interfaces : interface_file ClassMap.t;
@@ -115,7 +118,6 @@ and interface_file = {
       to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
-  i_signature : string option; (** introduced with Java 5 for generics*)
   i_source_debug_extention : string option;
   (** Introduced in Java 5 for debugging purpose (no
       semantics defined)

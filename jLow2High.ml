@@ -57,43 +57,14 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
 	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
 	     name,contents)
 
-let attribute_to_signature (al:JClassLow.attribute list) : string option =
-  match List.find_all (function AttributeSignature _ -> true | _ -> false) al with
-    | [] -> None
-    | [AttributeSignature s] -> Some s
-    | _ ->
-	raise
-	  (Class_structure_error
-	     "A Signature attribute can only be specified at most once per element.")
-
-let attribute_to_enclosing_method (al:JClassLow.attribute list) : (class_name * method_signature option) option =
-  match List.find_all (function | AttributeEnclosingMethod _ -> true | _ -> false) al  with
-    | [] -> None
-    | [AttributeEnclosingMethod (cn,mso)] ->
-	let ms =
-	  match mso with
-	    | None -> None
-	    | Some (mn,SMethod (pl,rt)) ->
-		Some {ms_name=mn; ms_parameters=pl; ms_return_type=rt;}
-	    | Some (_,SValue _) ->
-		raise
-		  (Class_structure_error
-		     "A EnclosingMethod attribute cannot specify a field as enclosing method.")
-	in Some (cn,ms)
-    | _ ->
-	raise
-	  (Class_structure_error
-	     "A EnclosingMethod attribute can only be specified at most once per class.")
-
 (* convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
   {synthetic = List.exists ((=)AttributeSynthetic) al;
    deprecated = List.exists ((=)AttributeDeprecated) al;
-   signature = attribute_to_signature al;
    other =
       low2high_other_attributes consts
 	(List.filter
-	   (function AttributeDeprecated | AttributeSynthetic | AttributeSignature _ -> false | _ -> true)
+	   (function AttributeDeprecated | AttributeSynthetic -> false | _ -> true)
 	   al);
   }
 
@@ -187,8 +158,18 @@ let low2high_cfield consts fs = function f ->
 	  Some c, (oc@other_att)
       | _ -> assert false
   in
+  let (generic_signature,other_att) =
+    List.partition (function AttributeSignature _ -> true | _ -> false) other_att in
+  let generic_signature =
+    match generic_signature with
+      | [] -> None
+      | [AttributeSignature s] ->
+	  Some (JParseSignature.parse_FieldTypeSignature s)
+      | _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+  in
     {
       cf_signature = fs;
+      cf_generic_signature = generic_signature;
       cf_access = access;
       cf_static = is_static;
       cf_kind = kind;
@@ -211,28 +192,34 @@ let low2high_ifield consts fs = function f ->
     then raise (Class_structure_error "A field of an interface must be : Public, Static and Final.");
     let flags = List.map
       (function
-	| `AccRFU i -> i
-	| _ -> raise (Class_structure_error "A field of an interface may only have it `AccSynthetic flag set in addition of `AccPublic, `AccStatic and `AccFinal."))
+	 | `AccRFU i -> i
+	 | _ -> raise (Class_structure_error "A field of an interface may only have it `AccSynthetic flag set in addition of `AccPublic, `AccStatic and `AccFinal."))
       flags
     in
-    {
-      if_signature = fs;
-      if_value =
-	begin
-	  let rec find_Constant = function
-	    | AttributeConstant c::_ -> Some c
-	    | _::l -> find_Constant l
-	    | [] -> None
-	  in find_Constant f.f_attributes
-	end;
-      if_synthetic = is_synthetic;
-      if_other_flags = flags;
-      if_attributes =
-	low2high_attributes consts
-	  (List.filter
-	      (function AttributeConstant _ -> false| _ -> true)
-	      f.f_attributes);
-    }
+    let (generic_signature,other_att) =
+      List.partition (function AttributeSignature _ -> true | _ -> false) f.f_attributes in
+    let generic_signature =
+      match generic_signature with
+	| [] -> None
+	| [AttributeSignature s] ->
+	    Some (JParseSignature.parse_FieldTypeSignature s)
+	| _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+    in
+    let (csts,other_att) =
+      List.partition (function AttributeConstant _ -> true | _ -> false) other_att in
+    let cst = match csts with
+      | [] -> None
+      | [AttributeConstant c] -> Some c
+      | _ -> raise (Class_structure_error "An interface field contains more than one Constant Attribute.")
+    in
+      {
+	if_signature = fs;
+	if_generic_signature = generic_signature;
+	if_value = cst;
+	if_synthetic = is_synthetic;
+	if_other_flags = flags;
+	if_attributes = low2high_attributes consts other_att;
+      }
 
 let low2high_amethod consts ms = function m ->
   let flags = m.m_flags in
@@ -258,30 +245,31 @@ let low2high_amethod consts ms = function m ->
 	    ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set.")))
       flags
   in
+  let (generic_signature, other_att) =
+    List.partition (function AttributeSignature _ -> true | _ -> false) m.m_attributes in
+  let generic_signature = match generic_signature with
+    | [] -> None
+    | [AttributeSignature s] -> Some (JParseSignature.parse_MethodTypeSignature s)
+    | _ -> raise (Class_structure_error "An abstract method cannot have several Signature attributes.")
+  in
+  let (exn,other_att) =
+    List.partition (function AttributeExceptions _-> true | _ -> false) other_att in
+  let exn = match exn with
+    | [] -> []
+    | [AttributeExceptions cl] -> cl
+    | _ -> raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
+  in
     assert(is_abstract);
     {
       am_signature = ms;
       am_access = access;
+      am_generic_signature = generic_signature;
       am_synthetic = is_synthetic;
       am_bridge = is_bridge;
       am_varargs = is_varargs;
       am_other_flags = flags;
-      am_exceptions =
-	begin
-	  let rec find_Exceptions = function
-	    | AttributeExceptions cl::l ->
-		if find_Exceptions l <> []
-		then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
-		else cl
-	    | _::l -> find_Exceptions l
-	    | [] -> []
-	  in find_Exceptions m.m_attributes
-	end;
-      am_attributes =
-	low2high_attributes consts
-	  (List.filter
-	      (function AttributeExceptions _ -> false| _ -> true)
-	      m.m_attributes);
+      am_exceptions = exn;
+      am_attributes = low2high_attributes consts other_att;
     }
 
 let low2high_cmethod consts ms = function m ->
@@ -308,6 +296,28 @@ let low2high_cmethod consts ms = function m ->
       | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_cmethod : unexpected flag found."))
     flags
   in
+  let (generic_signature,other_att) =
+    List.partition (function AttributeSignature _ -> true | _ -> false) m.m_attributes in
+  let generic_signature = match generic_signature with
+    | [] -> None
+    | [AttributeSignature s] -> Some (JParseSignature.parse_MethodTypeSignature s)
+    | _ -> raise (Class_structure_error "A method cannot have several Signature attributes.")
+  and (exn,other_att) =
+    List.partition (function AttributeExceptions _ -> true | _ -> false) other_att in
+  let exn = match exn with 
+    | [] -> []
+    | [AttributeExceptions cl] -> cl
+    | _ -> raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
+  and (code,other_att) =
+    List.partition (function AttributeCode _ -> true | _ -> false) other_att in
+  let code = match code with
+    | [AttributeCode c] when not is_native ->
+	Java (lazy (low2high_code consts (Lazy.force c)))
+    | [] when is_native -> Native
+    | [] -> raise (Class_structure_error "A method not declared as Native, nor Abstract has been found without code.")
+    | [_] -> raise (Class_structure_error "A method declared as Native has been found with a code attribute.")
+    | _::_::_ -> raise (Class_structure_error "Only one Code attribute is allowed in a method.")
+  in
     {
       cm_signature = ms;
       cm_static = is_static;
@@ -315,48 +325,14 @@ let low2high_cmethod consts ms = function m ->
       cm_synchronized = is_synchronized;
       cm_strict = is_strict;
       cm_access = access;
+      cm_generic_signature = generic_signature;
       cm_bridge = is_bridge;
       cm_varargs = is_varargs;
       cm_synthetic = is_synthetic;
       cm_other_flags = flags;
-      cm_exceptions =
-	begin
-	  let rec find_Exceptions = function
-	    | AttributeExceptions cl::l ->
-		if find_Exceptions l <> []
-		then raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
-		else cl
-	    | _::l -> find_Exceptions l
-	    | [] -> []
-	  in find_Exceptions m.m_attributes
-	end;
-      cm_attributes =
-	low2high_attributes consts
-	  (List.filter
-	      (function |AttributeExceptions _ | AttributeCode _ -> false| _ -> true)
-	      m.m_attributes);
-      cm_implementation =
-	begin
-	  let rec find_Code = function
-	    | AttributeCode c::l ->
-		if List.exists (function AttributeCode _ -> true| _-> false) l
-		then raise (Class_structure_error "Only one Code attribute is allowed in a method.");
-		if not is_native
-		then Java (lazy (low2high_code consts (Lazy.force c)))
-		else begin
-		  if !debug > 0 then prerr_endline "A method declared as Native with code has been found.";
-		  Native
-		end
-	    | _::l -> find_Code l
-	    | [] ->
-		if is_native
-		then Native
-		else begin
-		  if !debug > 0 then prerr_endline "A method not declared as Native, nor Abstract has been found without code.";
-		  Native
-		end
-	  in find_Code m.m_attributes
-	end;
+      cm_exceptions = exn;
+      cm_attributes = low2high_attributes consts other_att;
+      cm_implementation = code;
     }
 
 let low2high_acmethod consts ms = function m ->
@@ -459,7 +435,11 @@ let low2high_class cl =
 	| [] -> None
       in find_SourceFile cl.j_attributes
     and my_deprecated = List.exists ((=)AttributeDeprecated) cl.j_attributes
-    and my_signature = attribute_to_signature cl.j_attributes
+    and my_generic_signature =
+      match List.find_all (function AttributeSignature _ -> true| _ -> false) cl.j_attributes with
+	| [] -> None
+	| [AttributeSignature s] -> Some (JParseSignature.parse_ClassSignature s)
+	| _ -> raise (Class_structure_error "A class or interface cannot have several Signature attributes.")
     and my_source_debug_extention =
       let sde_attributes =
 	List.find_all
@@ -515,11 +495,11 @@ let low2high_class cl =
 	      i_name = my_name;
 	      i_version = my_version;
 	      i_access = my_access;
+	      i_generic_signature = my_generic_signature;
 	      i_interfaces = my_interfaces;
 	      i_consts = DynArray.to_array consts;
 	      i_sourcefile = my_sourcefile;
 	      i_deprecated = my_deprecated;
-	      i_signature = my_signature;
 	      i_source_debug_extention = my_source_debug_extention;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
@@ -569,7 +549,24 @@ let low2high_class cl =
 	begin
 	  if is_annotation
 	  then raise (Class_structure_error "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
-	  let my_enclosing_method = attribute_to_enclosing_method cl.j_attributes
+	  let my_enclosing_method =
+	    match List.find_all (function AttributeEnclosingMethod _ -> true | _ -> false) cl.j_attributes  with
+	      | [] -> None
+	      | [AttributeEnclosingMethod (cn,mso)] ->
+		  let ms =
+		    match mso with
+		      | None -> None
+		      | Some (mn,SMethod (pl,rt)) ->
+			  Some {ms_name=mn; ms_parameters=pl; ms_return_type=rt;}
+		      | Some (_,SValue _) ->
+			  raise
+			    (Class_structure_error
+			       "A EnclosingMethod attribute cannot specify a field as enclosing method.")
+		  in Some (cn,ms)
+	      | _ ->
+		  raise
+		    (Class_structure_error
+		       "A EnclosingMethod attribute can only be specified at most once per class.")
 	  and my_methods =
 	    try low2high_methods consts cl
 	    with
@@ -595,6 +592,7 @@ let low2high_class cl =
 	      c_name = my_name;
 	      c_version = my_version;
 	      c_super_class = cl.j_super;
+	      c_generic_signature = my_generic_signature;
 	      c_final = is_final;
 	      c_abstract = is_abstract;
 	      c_access = my_access;
@@ -605,7 +603,6 @@ let low2high_class cl =
 	      c_consts = DynArray.to_array consts;
 	      c_sourcefile = my_sourcefile;
 	      c_deprecated = my_deprecated;
-	      c_signature = my_signature;
 	      c_source_debug_extention = my_source_debug_extention;
 	      c_enclosing_method = my_enclosing_method;
 	      c_inner_classes = my_inner_classes;

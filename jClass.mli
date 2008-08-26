@@ -173,7 +173,6 @@ type access = [
 type attributes = {
   synthetic : bool;
   deprecated : bool;
-  signature: string option; (** Introduced with Java 5 for generics.*)
   other : (string * string) list
 }
 
@@ -187,6 +186,7 @@ type field_kind =
 
 type class_field = {
   cf_signature : field_signature;
+  cf_generic_signature : JSignature.fieldTypeSignature option;
   cf_access: access;
   cf_static : bool;
   cf_synthetic : bool;
@@ -202,6 +202,7 @@ type class_field = {
     [final].*)
 type interface_field = {
   if_signature : field_signature;
+  if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
   if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
   if_other_flags : int list;
@@ -236,6 +237,7 @@ type concrete_method = {
   cm_synchronized : bool;
   cm_strict : bool;
   cm_access: access;
+  cm_generic_signature : JSignature.methodTypeSignature option;
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
@@ -248,6 +250,7 @@ type concrete_method = {
 type abstract_method = {
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
+  am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
@@ -287,12 +290,12 @@ type jclass = {
   c_final : bool;
   c_abstract : bool;
   c_super_class : class_name option;
+  c_generic_signature : JSignature.classSignature option;
   c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
   c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
-  c_signature : string option; (** introduced with Java 5 for generics*)
   c_enclosing_method : (class_name * method_signature option) option;
   (** introduced with Java 5 for local classes (defined in methods'
       code). The first element is innermost class that encloses the
@@ -319,10 +322,10 @@ type jinterface = {
   i_version : version;
   i_access : [`Public | `Default];
   i_interfaces : class_name list;
+  i_generic_signature : JSignature.classSignature option;
   i_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
   i_sourcefile : string option;
   i_deprecated : bool;
-  i_signature : string option; (** introduced with Java 5 for generics*)
   i_source_debug_extention : string option;
   (** Introduced in Java 5 for debugging purpose (no
       semantics defined)

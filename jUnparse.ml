@@ -24,59 +24,8 @@ open IO.BigEndian
 open JBasics
 open JClassLow
 open JCode
+open JUnparseSignature
 
-
-(* Signature and classname encoding *)
-(************************************)
-
-let encode_class_name = function
-  | t :: q ->
-      List.fold_left
-	(fun s x -> s ^ "/" ^ x)
-	t
-	q
-  | [] -> raise (Class_structure_error ("Empty class file name"))
-
-let unparse_basic_type = function
-  | `Byte -> "B"
-  | `Char -> "C"
-  | `Double -> "D"
-  | `Float -> "F"
-  | `Int -> "I"
-  | `Long -> "J"
-  | `Short -> "S"
-  | `Bool -> "Z"
-
-let rec unparse_object_type = function
-  | TClass c ->
-      "L" ^ encode_class_name c ^ ";"
-  | TArray s ->
-      "[" ^ unparse_value_signature s
-
-and unparse_value_signature = function
-  | TBasic b -> unparse_basic_type b
-  | TObject o -> unparse_object_type o
-
-let rec unparse_method_signature (sigs, s) =
-      List.fold_left
-	(fun desc s ->
-	   desc ^ unparse_value_signature s)
-	"("
-	sigs
-      ^ ")"
-      ^ (match s with
-	   | Some s -> unparse_value_signature s
-	   | None -> "V")
-
-let rec unparse_signature = function
-  | SValue v -> unparse_value_signature v
-  | SMethod m -> unparse_method_signature m
-
-(* Unparse an type that must be an object.Therefore, there is no
-   L ; around the classname (if this is a class). *)
-let unparse_objectType = function
-  | TClass c -> encode_class_name c
-  | TArray _ as s -> unparse_object_type s
 
 (* Constant pool unparsing *)
 (***************************)
@@ -119,7 +68,7 @@ let unparse_constant ch consts =
     | ConstNameAndType (s, signature) ->
 	write_ui8 ch 12;
 	write_string ch consts s;
-	write_string ch consts (unparse_signature signature)
+	write_string ch consts (unparse_descriptor signature)
     | ConstStringUTF8 s ->
 	write_ui8 ch 1;
 	write_string_with_length write_ui16 ch s
@@ -255,7 +204,7 @@ let rec unparse_attribute_to_strings consts =
 	       write_ui16 ch start_pc;
 	       write_ui16 ch length;
 	       write_string ch consts name;
-	       write_string ch consts (unparse_value_signature signature);
+	       write_string ch consts (unparse_value_type signature);
 	       write_ui16 ch index)
 	    l;
 	  ("LocalVariableTable",close_out ch)
@@ -299,7 +248,7 @@ and unparse_attribute ch consts attr =
 let unparse_field ch consts field =
   write_ui16 ch (unparse_flags field_flags field.f_flags);
   write_string ch consts field.f_name;
-  write_string ch consts (unparse_value_signature field.f_descriptor);
+  write_string ch consts (unparse_value_type field.f_descriptor);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     field.f_attributes
@@ -316,7 +265,7 @@ let unparse_method ch consts methode =
       (Class_structure_error "duplicate code or different versions in m_code and m_attributes");
   write_ui16 ch (unparse_flags method_flags methode.m_flags);
   write_string ch consts methode.m_name;
-  write_string ch consts (unparse_method_signature methode.m_descriptor);
+  write_string ch consts (unparse_method_descriptor methode.m_descriptor);
   write_with_size write_ui16 ch
     (unparse_attribute ch consts)
     methode.m_attributes

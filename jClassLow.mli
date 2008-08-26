@@ -262,7 +262,7 @@ and attribute =
 	| AttributeSignature of string
 	    (** Introduced in Java 5 for generics
 		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
-	| AttributeEnclosingMethod of (class_name * (string * name_and_type) option)
+	| AttributeEnclosingMethod of (class_name * (string * descriptor) option)
 	    (** Introduced in Java 5 for local classes (classes
 		defined in a method body)
 		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)

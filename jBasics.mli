@@ -101,7 +101,7 @@ type field_descriptor = value_type
 type method_descriptor = value_type list * value_type option
 
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
-type name_and_type =
+type descriptor =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
@@ -136,7 +136,7 @@ type constant =
   | ConstField of (class_name * string * field_descriptor)
   | ConstMethod of (object_type * string * method_descriptor)
   | ConstInterfaceMethod of (class_name * string * method_descriptor)
-  | ConstNameAndType of string * name_and_type
+  | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
 
@@ -184,7 +184,7 @@ val write_class :
 val write_string :
   'a IO.output -> constant DynArray.t -> string -> unit
 val write_name_and_type :
-  'a IO.output -> constant DynArray.t -> string * name_and_type -> unit
+  'a IO.output -> constant DynArray.t -> string * descriptor -> unit
 
 (** {2 Stackmaps}  *)
 

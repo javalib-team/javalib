@@ -24,7 +24,9 @@ open JClassLow
 open IO.BigEndian
 open ExtList
 open ExtString
-include JBasics
+open JBasics
+
+open JParseSignature
 
 type tmp_constant =
 	| ConstantClass of int
@@ -114,122 +116,6 @@ let parse_access_flags all_flags ch =
 	    all_flags;
 	!flags
 
-(* Validate an utf8 string and return a stream of characters. *)
-let read_utf8 s =
-  UTF8.validate s;
-  let index = ref 0 in
-    Stream.from
-      (function _ ->
-	 if UTF8.out_of_range s ! index
-	 then None
-	 else
-	   let c = UTF8.look s ! index in
-	     index := UTF8.next s ! index;
-	     Some c)
-
-(* Java ident, with unicode letter and numbers, starting with a letter. *)
-let rec parse_ident buff = parser
-  | [< 'c when c <> UChar.of_char ';'
-	 && c <> UChar.of_char '/'; (* should be a letter *)
-       name =
-	 (UTF8.Buf.add_char buff c;
-	  parse_more_ident buff) >] -> name
-
-and parse_more_ident buff = parser
-  | [< 'c when c <> UChar.of_char ';'
-	 && c <> UChar.of_char '/'; (* should be a letter or a number *)
-       name =
-	 (UTF8.Buf.add_char buff c;
-	  parse_more_ident buff) >] -> name
-  | [< >] ->
-      UTF8.Buf.contents buff
-
-(* Qualified name (internally encoded with '/'). *)
-let rec parse_name = parser
-  | [< ident = parse_ident (UTF8.Buf.create 0);
-       name = parse_more_name >] -> ident :: name
-
-and parse_more_name = parser
-  | [< 'slash when slash = UChar.of_char '/';
-       name = parse_name >] -> name
-  | [< >] -> []
-
-(* Java type. *)
-let parse_basic_type = parser
-  | [< 'b when b = UChar.of_char 'B' >] -> `Byte
-  | [< 'c when c = UChar.of_char 'C' >] -> `Char
-  | [< 'd when d = UChar.of_char 'D' >] -> `Double
-  | [< 'f when f = UChar.of_char 'F' >] -> `Float
-  | [< 'i when i = UChar.of_char 'I' >] -> `Int
-  | [< 'j when j = UChar.of_char 'J' >] -> `Long
-  | [< 's when s = UChar.of_char 'S' >] -> `Short
-  | [< 'z when z = UChar.of_char 'Z' >] -> `Bool
-
-let rec parse_object_type = parser
-  | [< 'l when l = UChar.of_char 'L';
-       name = parse_name;
-       'semicolon when semicolon = UChar.of_char ';' >] -> TClass name
-
-  | [< a = parse_array >] -> a
-
-and parse_type = parser
-  | [< b = parse_basic_type >] -> TBasic b
-  | [< o = parse_object_type >] -> TObject o
-
-(* Java array type. *)
-and parse_array = parser
-  | [< 'lbracket when lbracket = UChar.of_char '['; typ = parse_type >] ->
-      TArray typ
-
-let rec parse_types = parser
-  | [< typ = parse_type ; types = parse_types >] -> typ :: types
-  | [< >] -> []
-
-let parse_type_option = parser
-  | [< typ = parse_type >] -> Some typ
-  | [< >] -> None
-
-(* A class name, possibly an array class. *)
-let parse_ot = parser
-  | [< array = parse_array >] -> array
-  | [< name = parse_name >] -> TClass name
-
-let parse_method_sig = parser
-  | [< 'lpar when lpar = UChar.of_char '(';
-       types = parse_types;
-       'rpar when rpar = UChar.of_char ')';
-       typ = parse_type_option >] ->
-      (types, typ)
-
-(* Java signature. *)
-let rec parse_sig = parser
-    (* We cannot delete that because of "NameAndType" constants. *)
-  | [< typ = parse_type >] -> SValue typ
-  | [< sign = parse_method_sig >] -> SMethod sign
-
-let parse_objectType s =
-  try
-    parse_ot (read_utf8 s)
-  with
-      Stream.Failure -> raise (Class_structure_error ("Illegal object type: " ^ s))
-
-let parse_type s =
-  try
-    parse_type (read_utf8 s)
-  with
-      Stream.Failure -> raise (Class_structure_error ("Illegal type: " ^ s))
-
-let parse_method_signature s =
-  try
-    parse_method_sig (read_utf8 s)
-  with
-      Stream.Failure -> raise (Class_structure_error ("Illegal method signature: " ^ s))
-
-let parse_signature s =
-  try
-    parse_sig (read_utf8 s)
-  with
-      Stream.Failure -> raise (Class_structure_error ("Illegal signature: " ^ s))
 
 let parse_stackmap_frame consts ch =
   let parse_type_info ch = match IO.read_byte ch with
@@ -286,7 +172,10 @@ let rec parse_code consts ch =
   let attribs =
     List.init
       attrib_count
-      (fun _ -> parse_attribute [`LineNumberTable ; `LocalVariableTable ; `StackMap] consts ch) in
+      (fun _ -> 
+	 parse_attribute
+	   [`LineNumberTable ; `LocalVariableTable ; `StackMap]
+	   consts ch) in
     {
       c_max_stack = max_stack;
       c_max_locals = max_locals;
@@ -394,7 +283,7 @@ and parse_attribute list consts ch =
 		      let start_pc = read_ui16 ch in
 		      let length = read_ui16 ch in
 		      let name = (get_string_ui16 consts ch) in
-		      let signature = parse_type (get_string_ui16 consts ch) in
+		      let signature = parse_field_descriptor (get_string_ui16 consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
 	| "Deprecated" -> check `Deprecated;
@@ -415,7 +304,7 @@ and parse_attribute list consts ch =
 let parse_field consts ch =
 	let acc = parse_access_flags field_flags ch in
 	let name = get_string_ui16 consts ch in
-	let sign = parse_type (get_string_ui16 consts ch) in
+	let sign = parse_field_descriptor (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
 	let attrib_to_parse =
 	  if List.exists ((=)`AccStatic) acc
@@ -435,7 +324,7 @@ let parse_field consts ch =
 let parse_method consts ch =
 	let acc = parse_access_flags method_flags ch in
 	let name = get_string_ui16 consts ch in
-	let sign = parse_method_signature (get_string_ui16 consts ch) in
+	let sign = parse_method_descriptor (get_string_ui16 consts ch) in
 	let attrib_count = read_ui16 ch in
 	let attribs = List.init attrib_count
 	  (fun _ ->
@@ -486,7 +375,7 @@ let rec expand_constant consts n =
       | ConstantDouble f -> ConstValue (ConstDouble f)
       | ConstantNameAndType (n,t) ->
 	  (match expand_constant consts n , expand_constant consts t with
-	     | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_signature t)
+	     | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_descriptor t)
 	     | ConstStringUTF8 _ , _ ->
 		 raise (Class_structure_error ("Illegal type in a NameAndType constant"))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a NameAndType constant")))

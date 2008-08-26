@@ -49,7 +49,7 @@ val method_signature : string -> method_descriptor -> string
   (** [method_signature mn md], where [mn] is a method name and [md] a
       method descriptor, returns the method signature as in Java ({i
       e.g.} "bool equals(java.lang.Object)"). *)
-val signature : string -> name_and_type -> string
+val signature : string -> descriptor -> string
   (** [signature name des] returns a string corresponding to the field
       or method [name] with the descriptor [des].  (See
       {!JDumpBasics.method_signature})*)
