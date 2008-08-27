@@ -43,7 +43,7 @@ type info = {
   f_field: class_name -> field_signature -> bool;
   f_method: class_name -> method_signature -> bool;
 
-  
+
 }
 
 let void_info = {
@@ -70,7 +70,7 @@ let replace_all ~str ~sub ~by =
     done;
     (!i,!s)
 
-let type2shortstring t = 
+let type2shortstring t =
   let bt2ss = function
     | `Long -> "J"
     | `Float -> "F"
@@ -116,7 +116,7 @@ let ss2link s fmt text =
 let cn2link cn = ss2link ("#"^JDumpBasics.class_name cn)
 let fs2link (cn,fs) = ss2link ("#"^fs2anchortext (cn,fs))
 let ms2link (cn,ms) = ss2link ("#"^ms2anchortext (cn,ms))
-  
+
 let access2string = function
   | `Public -> "public "
   | `Default -> ""
@@ -146,7 +146,7 @@ let cstvalue2string = function
 
 let pp_source fmt = function
   | None -> ()
-  | Some s -> 
+  | Some s ->
       pp_print_string fmt ("compiled from file "^s);
       pp_print_cut fmt ()
 
@@ -200,7 +200,7 @@ let pp_concat f pp_open pp_close pp_sep = function
       f a;
       List.iter (fun a -> pp_sep ();f a) l;
       pp_close ()
-     
+
 let pp_other_attr fmt pp_open pp_close pp_sep attrl =
   pp_concat
     (fun (name,content) ->
@@ -219,7 +219,7 @@ let pp_attributes fmt pp_open pp_close pp_sep attributes =
       (if attributes.synthetic
        then [fun fmt -> pp_print_string fmt "AttributeSynthetic"]
        else [])
-    @ (List.map 
+    @ (List.map
 	 (fun (name,content) fmt ->
 	    fprintf fmt "@[Unknown attribute:@ %s@ (%s)@]" name content)
 	 attributes.other)
@@ -234,7 +234,7 @@ let pp_attributes fmt pp_open pp_close pp_sep attributes =
 (* this function does not finish with a cut or a space *)
 let rec pp_object_type fmt = function
   | TClass cl -> pp_print_string fmt (class_name cl)
-  | TArray s -> 
+  | TArray s ->
       pp_value_type fmt s;
       pp_print_string fmt "[]"
 and pp_value_type fmt = function
@@ -312,7 +312,7 @@ let pp_opcode fmt =
 	  | `Virtual (TClass cn) ->
 	      pp_print_string fmt "invokevirtual ";
 	      ppms fmt (cn,ms)
-	  | `Virtual (TArray _) -> 
+	  | `Virtual (TArray _) ->
 	      pp_print_string fmt
 		("invokevirtual [array]." ^ ms.ms_name
 		  ^":"^ (method_signature "" (ms.ms_parameters,ms.ms_return_type)))
@@ -387,10 +387,10 @@ let pp_stack_map fmt = function
 	| VLong -> pp_print_string fmt "Long"
 	| VNull -> pp_print_string fmt "Null"
 	| VUninitializedThis -> pp_print_string fmt "UninitializedThis"
-	| VObject c -> 
+	| VObject c ->
 	    pp_print_string fmt "Object ";
 	    pp_object_type fmt c
-	| VUninitialized off -> 
+	| VUninitialized off ->
 	    pp_print_string fmt ("Uninitialized "^string_of_int off)
       in
       let pp_line fmt (offset,locals,stack) =
@@ -399,7 +399,7 @@ let pp_stack_map fmt = function
 	  (pp_verif_info fmt)
 	  (fun _ -> pp_open_box fmt 0)
 	  (fun _ -> pp_close_box fmt ())
-	  (fun _ -> 
+	  (fun _ ->
 	    pp_print_string fmt ";";
 	    pp_print_space fmt ())
 	  locals;
@@ -410,7 +410,7 @@ let pp_stack_map fmt = function
 	  (pp_verif_info fmt)
 	  (fun _ -> pp_open_box fmt 0)
 	  (fun _ -> pp_close_box fmt ())
-	  (fun _ -> 
+	  (fun _ ->
 	    pp_print_string fmt ";";
 	    pp_print_space fmt ())
 	  stack;
@@ -572,7 +572,7 @@ let pp_ifields cn info fmt fm =
 	  (fun fs f l -> if info.f_field cn fs then f::l else l)
 	  fm
 	  [])
-   
+
 
 let pprint_class' info fmt (c:jclass) =
   if info.f_class c.c_name then
@@ -584,7 +584,7 @@ let pprint_class' info fmt (c:jclass) =
     and final = final2string c.c_final
     and super fmt = match c.c_super_class with
       | None -> ()
-      | Some super -> 
+      | Some super ->
 	  fprintf fmt "extends %a "
 	    (cn2link super) (JDumpBasics.class_name super)
     and interfaces fmt =
@@ -602,11 +602,11 @@ let pprint_class' info fmt (c:jclass) =
 	       | None -> pp_print_string fmt "_"
 	       | Some ms -> pp_method_signature fmt ms);
 	    pp_print_string fmt ")";
-	    pp_print_cut fmt ()		    
+	    pp_print_cut fmt ()
     and source_debug_extension fmt =
       match c.c_source_debug_extention with
 	| None -> ()
-	| Some s -> 
+	| Some s ->
 	    pp_print_string fmt ("AttributeSourceDebugExtension \""^s^"\"");
 	    pp_print_cut fmt ()
     and source fmt = pp_source fmt c.c_sourcefile
@@ -638,7 +638,7 @@ let pprint_interface' info fmt (c:jinterface) =
     and source_debug_extension fmt =
       match c.i_source_debug_extention with
 	| None -> ()
-	| Some s -> 
+	| Some s ->
 	    pp_print_string fmt ("AttributeSourceDebugExtension \""^s^"\"");
 	    pp_print_cut fmt ()
     and source fmt = pp_source fmt c.i_sourcefile
@@ -702,7 +702,7 @@ let to_text fmt =
     pp_set_print_tags fmt false;
     pp_set_mark_tags fmt true;
     pp_set_formatter_tag_functions fmt
-      {mark_open_tag = 
+      {mark_open_tag =
 	  (function
 	    | "html" -> html_mode := true;""
 	    | _ -> "");
@@ -732,7 +732,7 @@ let to_html oc =
   let replace_spaces str =
     if str = "" then str
     else
-      let str = 
+      let str =
 	if (!finishes_by_space || !new_line) && str.[0] = ' '
 	then "&nbsp;" ^(ExtString.String.slice ~first:1 str)
 	else str
@@ -757,7 +757,7 @@ let to_html oc =
       old_out str 0 (String.length str);
       new_line := false
   in
-  let newline _ = 
+  let newline _ =
     new_line := true;
     old_out "<br/>\n" 0 6 in
   let spaces80 = "                                                                                " in

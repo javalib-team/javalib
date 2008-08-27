@@ -42,7 +42,7 @@ type opcode =
   (* Access to a local variable *)
   | OpLoad of jvm_type * int
   | OpStore of jvm_type * int
-  | OpIInc of int * int 
+  | OpIInc of int * int
 
   (* Stack permutation *)
   | OpPop

@@ -19,10 +19,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** Unparsing. *)
+(** Unparsing (compilation) of either high or low level class
+    representations into class files. *)
 
 (** Provided constants are kept unchanged. Missing constant are added at
-   the end of the constant pool if needed. *)
+    the end of the constant pool if needed. *)
 
 (** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
     information *)

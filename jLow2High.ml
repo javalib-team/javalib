@@ -61,8 +61,8 @@ let combine_LocalVariableTable (lvts:lvt list) : lvt =
   in
     assert(for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt);
     lvt
- 
-  
+
+
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
   List.map
@@ -319,7 +319,7 @@ let low2high_cmethod consts ms = function m ->
     | _ -> raise (Class_structure_error "A method cannot have several Signature attributes.")
   and (exn,other_att) =
     List.partition (function AttributeExceptions _ -> true | _ -> false) other_att in
-  let exn = match exn with 
+  let exn = match exn with
     | [] -> []
     | [AttributeExceptions cl] -> cl
     | _ -> raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
@@ -478,7 +478,7 @@ let low2high_class cl =
       low2high_other_attributes consts
 	(List.filter
 	   (function
-	      | AttributeSignature _ | AttributeSourceFile _ 
+	      | AttributeSignature _ | AttributeSourceFile _
 	      | AttributeDeprecated | AttributeInnerClasses _ -> false
 	      | AttributeEnclosingMethod _ -> is_interface
 	      | _ -> true)

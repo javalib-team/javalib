@@ -56,7 +56,7 @@ type info = {
   has_pp:class_name -> method_signature -> int -> bool;
   (** If [has_pp cn ms i] returns [false] then [p_pp cn ms i] will not
       be called *)
-  
+
   f_class : class_name -> bool;
   (** iff [f_class cn] returns true, the class is printed. *)
   f_field : class_name -> field_signature -> bool;

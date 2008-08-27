@@ -93,15 +93,15 @@ let class_flags =
    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000]
 let innerclass_flags =
   [`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
-   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80; 
+   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
    `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000]
 let field_flags =
-  [`AccPublic; `AccPrivate; `AccProtected; `AccStatic; 
+  [`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
    `AccFinal; `AccRFU 0x20; `AccVolatile; `AccTransient;
    `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
    `AccSynthetic; `AccRFU 0x2000; `AccEnum; `AccRFU 0x8000]
-let method_flags = 
+let method_flags =
   [`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
    `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
    `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
@@ -155,7 +155,7 @@ let rec unparse_attribute_to_strings consts =
       | AttributeEnclosingMethod (cn,mso) ->
 	  write_class ch consts cn;
 	  (match mso with
-	     | Some (n,t) -> 
+	     | Some (n,t) ->
                  write_name_and_type ch consts (n,t)
 	     | None ->
 		 write_ui16 ch 0);

@@ -80,7 +80,7 @@ let directories dirs =
     | cp -> cp
 
 let class_path cp =
-  let cp_list = 
+  let cp_list =
     match ExtString.String.nsplit cp ":" with
       | [] -> [Filename.current_dir_name]
       | cp -> cp
@@ -90,7 +90,7 @@ let class_path cp =
       (List.map
 	 (fun cp_item ->
 	      if Sys.is_directory cp_item
-	      then 
+	      then
 		let files =
 		  List.filter
 		    (fun file -> Filename.check_suffix file ".jar")

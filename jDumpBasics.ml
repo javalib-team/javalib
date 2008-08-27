@@ -45,7 +45,7 @@ and value_signature = function
   | TObject o -> object_value_signature o
 
 
-let type2shortstring t = 
+let type2shortstring t =
   let bt2ss = function
     | `Long -> "J"
     | `Float -> "F"

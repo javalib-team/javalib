@@ -19,12 +19,12 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** This module handles the decoding of descriptors and signatures.*)
+
 open JBasics
 open JSignature
 
-(** This module handles the decoding of descriptors and signatures.*)
-
-(** Simple signatures *)
+(** {2 Parsing descriptors and their components } *)
 
 (** *)
 val parse_objectType : string -> object_type
@@ -34,7 +34,7 @@ val parse_descriptor : string -> descriptor
 
 
 
-
+(** {2 Parsing generic signatures} *)
 
 (** [parse_ClassSignature s] parses a Signature attribute and expects
     to find a ClassSignature (as describe in paragraph 4.4.4 of the

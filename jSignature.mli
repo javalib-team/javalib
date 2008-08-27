@@ -19,28 +19,24 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** This module describe the signatures used with generics. It defines
+    the data types used to represent information extracted from the
+    Signature attribute defined in Java 5 (chapter 4.4.4). *)
+
 open JBasics
 
-(** This module describe the signatures used with generics. *)
 
-(** It defines the data types used to represent information extracted
-    from the Signature attribute defined in Java 5 (chapter 4.4.4). *)
+(** {2 Types used in type declarations of generic signatures} *)
 
+(** This is the type used for type variables as P in Collection<P>.*)
 type typeVariable = TypeVariable of string
 
-(** not only for fields *)
-type fieldTypeSignature =
-  | GClass of classTypeSignature
-  | GArray of typeSignature
-  | GVariable of typeVariable
-and typeSignature =
-  | GBasic of java_basic_type
-  | GObject of fieldTypeSignature
-and typeArgument =
-  | ArgumentExtends of fieldTypeSignature
-  | ArgumentInherits of fieldTypeSignature
-  | ArgumentIs of fieldTypeSignature
-  | ArgumentIsAny
+type typeArgument =
+  | ArgumentExtends of fieldTypeSignature (** e.g. <?+Object> *)
+  | ArgumentInherits of fieldTypeSignature (** e.g. <?-Object> *)
+  | ArgumentIs of fieldTypeSignature (** e.g. <Object>*)
+  | ArgumentIsAny (** <*> *)
+
 and simpleClassTypeSignature = {
   scts_name : string;
   scts_type_arguments : typeArgument list;
@@ -55,15 +51,34 @@ and formalTypeParameter = {
   ftp_class_bound : fieldTypeSignature option;
   ftp_interface_bounds : fieldTypeSignature list;
 }
+
+and throwsSignature =
+  | ThrowsClass of classTypeSignature
+  | ThrowsTypeVariable of typeVariable
+
+(** [typeSignature] is used for method parameters and return values of
+    generic methods. *)
+and typeSignature =
+  | GBasic of java_basic_type
+  | GObject of fieldTypeSignature
+
+
+(** {2 Types of generic signatures} *)
+
 and classSignature = {
   cs_formal_type_parameters : formalTypeParameter list;
   cs_super_class : classTypeSignature;
   cs_super_interfaces : classTypeSignature list;
 }
 
-type throwsSignature =
-  | ThrowsClass of classTypeSignature
-  | ThrowsTypeVariable of typeVariable
+(** This type is for references. Generic fields are of this type (it
+    cannot be of a basic type as it would not be generic anymore) but
+    method arguments or even generic parameters are also of this
+    type. *)
+and fieldTypeSignature =
+  | GClass of classTypeSignature
+  | GArray of typeSignature
+  | GVariable of typeVariable
 
 type methodTypeSignature ={
   mts_formal_type_parameters : formalTypeParameter list;

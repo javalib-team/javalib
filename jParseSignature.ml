@@ -215,7 +215,7 @@ and parse_ClassTypeSignature : stream -> classTypeSignature = parser
        cts = parse_ClassTypeSignatureSuffixes;
        'semicolon when semicolon = UChar.of_char ';' >]
     ->
-      let (ct,package) = 
+      let (ct,package) =
 	let rev = List.rev package in
 	let hd = List.hd rev in
 	  (hd,List.rev (List.tl rev))
@@ -235,7 +235,7 @@ and parse_FieldTypeSignature : stream -> fieldTypeSignature = parser
   | [< tv = parse_TypeVariableSignature >] -> GVariable tv
 
 let parse_ClassBound : stream -> fieldTypeSignature option = parser
-  | [< 'colon when colon= UChar.of_char ':'; 
+  | [< 'colon when colon= UChar.of_char ':';
        e = (parser
 	      | [< typ = parse_FieldTypeSignature >] -> Some typ
 	      | [< >] -> None) >] -> e
@@ -273,7 +273,7 @@ let rec parse_SuperinterfaceSignatures : stream -> classTypeSignature list = par
 let parse_ClassSignature : stream -> classSignature = parser
   | [< ftp = parse_FormalTypeParameters;
        scs = parse_SuperclassSignature;
-       sis = parse_SuperinterfaceSignatures >] -> 
+       sis = parse_SuperinterfaceSignatures >] ->
       {cs_formal_type_parameters = ftp;
        cs_super_class = scs;
        cs_super_interfaces = sis;}
@@ -283,7 +283,7 @@ let parse_MethodTypeSignature : stream -> methodTypeSignature =
   let parse_ReturnType : stream -> typeSignature option = parser
     | [< 'v when v = UChar.of_char 'V' >] -> None
     | [< ts = parse_TypeSignature >] -> Some ts
-  in 
+  in
   let rec parse_ThrowsSignature : stream -> throwsSignature list = parser
     | [< 'circ when circ = UChar.of_char '^';
 	 e = (parser
@@ -305,7 +305,7 @@ let parse_MethodTypeSignature : stream -> methodTypeSignature =
 	   mts_type_signature = ts;
 	   mts_return_type = rt;
 	   mts_throws = throws;}
-  
+
 let parse_ClassSignature (s:string) : classSignature =
   try
     parse_ClassSignature (read_utf8 s)
@@ -323,7 +323,7 @@ let parse_MethodTypeSignature (s:string) : methodTypeSignature =
     | Failure "hd"
     | Stream.Error _
     | Stream.Failure -> raise (Class_structure_error ("Ill-formed method Signature attribute: "^s))
-  
+
 
 let parse_FieldTypeSignature (s:string) : fieldTypeSignature =
   try

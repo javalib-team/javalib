@@ -20,7 +20,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** Parsing. *)
+(** Parsing of Java class files. *)
 
 (** Parse a Java class file and return the low level representation. *)
 val parse_class_low_level : IO.input -> JClassLow.jclass

@@ -151,7 +151,7 @@ let opcode = function
       let inst = "tableswitch (["^ Int32.to_string min ^":"^ Int32.to_string max ^"] -> ["
       and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
       in inst^table^"],default:"^ string_of_int def^")"
-      
+
   | OpLookupSwitch (default,jumps) ->
       let inst =
 	List.fold_left

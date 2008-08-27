@@ -162,7 +162,7 @@ exception Found_Class of interface_or_class
 
 
 let defines_method ms = function
-  | `Interface i -> 
+  | `Interface i ->
       if ms = clinit_signature then i.i_initializer <> None
       else MethodMap.mem ms i.i_methods
   | `Class c -> MethodMap.mem ms c.c_methods
@@ -209,7 +209,7 @@ let get_fields c =
 
 let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
   ClassMap.fold
-    (fun _ i acc -> 
+    (fun _ i acc ->
       if defines_method ms (`Interface i)
       then i::acc
       else resolve_interface_method' ~acc ms (`Interface i))
@@ -606,7 +606,7 @@ let parse_program class_path names =
   in
     JFile.close_class_path class_path;
     program
-    
+
 
 let store_program filename program : unit =
   let ch = open_out_bin filename

@@ -295,5 +295,5 @@ type jclass = {
 	j_fields : jfield list;
 	j_methods : jmethod list;
 	j_attributes : attribute list;
-	j_version : version; 
+	j_version : version;
 }

@@ -19,11 +19,11 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(** Allows some navigation in the control flow graph of a program. *)
+
 open JBasics
 open JClass
 open JProgram
-
-(** Allows some navigation in the control flow graph of a program. *)
 
 (** {2 Access to instructions}*)
 

@@ -32,9 +32,9 @@ let get_hierachy prog info : info =
     let first = ref true in
     let ppcn fmt cn = cn2link cn fmt (class_name cn)
     in
-      ClassMap.iter 
-	(fun cn _ -> 
-	  if !first && info.f_class cn then 
+      ClassMap.iter
+	(fun cn _ ->
+	  if !first && info.f_class cn then
 	    (ppcn fmt cn; first := false)
 	  else if info.f_class cn then
 	    begin
@@ -91,7 +91,7 @@ let get_hierachy prog info : info =
 		  with NoSuchMethodError -> ()
 	in
 	let pp_implements fmt =
-	  let s = 
+	  let s =
 	    match ioc with
 	      | `Class _ -> "Implements"
 	      | `Interface _ -> "Overrides"

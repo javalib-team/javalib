@@ -146,7 +146,7 @@ let rec parse_code consts ch =
     JCode.parse_code ch clen
   in
   let exc_tbl_length = read_ui16 ch in
-  let exc_tbl = 
+  let exc_tbl =
     List.init
       exc_tbl_length
       (fun _ ->
@@ -172,7 +172,7 @@ let rec parse_code consts ch =
   let attribs =
     List.init
       attrib_count
-      (fun _ -> 
+      (fun _ ->
 	 parse_attribute
 	   [`LineNumberTable ; `LocalVariableTable ; `StackMap]
 	   consts ch) in
@@ -416,7 +416,7 @@ let parse_class_low_level ch =
     let attribs =
       List.init
 	attrib_count
-	(fun _ -> 
+	(fun _ ->
            parse_attribute
 	     [`SourceFile ; `Deprecated ; `InnerClasses ; `Signature; `EnclosingMethod; `SourceDebugExtension]
 	     consts ch)

@@ -1,8 +1,4 @@
 Here is some stuff that need to be done:
-* Documentation
-- JSignature/JUnparseSignature and JParseSignature need more
-  documentation
-
 * Correctness
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)

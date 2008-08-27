@@ -96,7 +96,7 @@ let rec unparse_TypeArgument : typeArgument -> string = function
 and unparse_TypeArguments : typeArgument list -> string = function
   | [] -> ""
   | l ->
-      "<" 
+      "<"
       ^ String.concat "" (List.map unparse_TypeArgument l)
       ^ ">"
 
@@ -107,13 +107,13 @@ and unparse_TypeSignature : typeSignature -> string = function
   | GObject ot -> unparse_FieldTypeSignature ot
   | GBasic bt -> unparse_basic_type bt
 
-and unparse_SimpleClassTypeSignature (scts: simpleClassTypeSignature) : string = 
+and unparse_SimpleClassTypeSignature (scts: simpleClassTypeSignature) : string =
   scts.scts_name ^ unparse_TypeArguments scts.scts_type_arguments
 
 and unparse_ClassTypeSignature (cts:classTypeSignature) : string =
-  "L" 
+  "L"
   ^ unparse_package cts.cts_package
-  ^ String.concat "." 
+  ^ String.concat "."
     (List.map
        unparse_SimpleClassTypeSignature
        (cts.cts_enclosing_classes @ [cts.cts_simple_class_type_signature]))
@@ -122,7 +122,7 @@ and unparse_ClassTypeSignature (cts:classTypeSignature) : string =
 and unparse_FieldTypeSignature : fieldTypeSignature -> string = function
   | GClass ct -> unparse_ClassTypeSignature ct
   | GArray at -> unparse_ArrayTypeSignature at
-  | GVariable vt -> unparse_TypeVariableSignature vt  
+  | GVariable vt -> unparse_TypeVariableSignature vt
 
 and unparse_ClassBound : fieldTypeSignature option -> string = function
   | None -> ":"
@@ -165,9 +165,9 @@ let unparse_MethodTypeSignature (mts:methodTypeSignature) : string =
 	    | ThrowsClass cl -> "^" ^ unparse_ClassTypeSignature cl
 	    | ThrowsTypeVariable var -> "^" ^ unparse_TypeVariableSignature var)
 	 tsl)
-  in      
+  in
      unparse_FormalTypeParameters mts.mts_formal_type_parameters
-    ^ "(" 
+    ^ "("
     ^ String.concat "" (List.map unparse_TypeSignature mts.mts_type_signature)
     ^ ")"
     ^ unparse_ReturnType mts.mts_return_type

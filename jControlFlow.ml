@@ -34,22 +34,22 @@ module PP = struct
     | _, _ -> false
   let eqm = (==)
   let eqi = (=)
-	      
-  let equal pp1 pp2 = 
-    eqc pp1.cl pp2.cl 
+
+  let equal pp1 pp2 =
+    eqc pp1.cl pp2.cl
     && eqm pp1.meth pp2.meth
     && eqi pp1.pc pp2.pc
 
-  let hash pp1 = 
+  let hash pp1 =
     Hashtbl.hash (get_name pp1.cl,pp1.meth.cm_signature.ms_name,pp1.pc)
 
 
-  let compare pp1 pp2 = 
-    if equal pp1 pp2 
+  let compare pp1 pp2 =
+    if equal pp1 pp2
     then 0
     else
       match compare (get_name pp1.cl) (get_name pp2.cl) with
-	| 0 -> 
+	| 0 ->
 	    begin
 	      match compare pp1.meth.cm_signature pp2.meth.cm_signature with
 		| 0 -> pp1.pc - pp2.pc
@@ -72,7 +72,7 @@ module PP = struct
 
   let get_class (pp:t) : interface_or_class =
     pp.cl
-    
+
   let get_meth (pp:t) : concrete_method =
     pp.meth
 
@@ -206,7 +206,7 @@ let rec resolve_method' ms (c:class_file) : class_file =
 
 let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
   ClassMap.fold
-    (fun _ i acc -> 
+    (fun _ i acc ->
       if defines_method ms (`Interface i)
       then i::acc
       else resolve_interface_method' ~acc ms (`Interface i))
@@ -332,7 +332,7 @@ let implements_methods ms c =
 let static_lookup_interface prog cn ms : interface_or_class list =
   match resolve_class prog cn with
     | `Class _ -> raise IncompatibleClassChangeError
-    | `Interface i -> 
+    | `Interface i ->
 	let il =
 	  List.map
 	    (fun i -> `Interface i)
@@ -401,11 +401,11 @@ let handlers program pp =
 		     - the exception handler is a subtype of Exception and
 		     - the exception handler is not a subtype nor a super-type of RuntimeException and
 		     - the instruction is not a method call or if
-                     the instruction is a method call which is not declared to throw 
+                     the instruction is a method call which is not declared to throw
 		     an exception of a subtype of the handler
 		  *)
 		  try
-		    let exn_class = 
+		    let exn_class =
 		      ioc2c (JProgram.get_interface_or_class program exn_name)
 		    and javalangexception =
 		      ioc2c (JProgram.get_interface_or_class program ["java";"lang";"Exception"])
@@ -427,7 +427,7 @@ let handlers program pp =
 				      | `Special cn -> [`Class (static_lookup_special program pp cn ms)]
 				      | `Virtual obj -> static_lookup_virtual program obj ms
 				      | `Static cn ->
-					  let c = 
+					  let c =
 					    match resolve_class program cn with
 					      | `Class c -> resolve_method ms c
 					      | `Interface _ -> raise IncompatibleClassChangeError

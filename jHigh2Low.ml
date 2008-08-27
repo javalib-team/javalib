@@ -49,7 +49,7 @@ let enclosingmethod_to_attribute = function
 	| None -> None
 	| Some ms ->
 	    Some (ms.ms_name, JBasics.SMethod (ms.ms_parameters,ms.ms_return_type))
-      in 
+      in
 	[AttributeEnclosingMethod (cn,meth)]
 
 let sourcedebugextension_to_attribute = function
@@ -138,7 +138,7 @@ let h2l_cfield _consts f =
 let h2l_ifield _consts f =
   {f_name = f.if_signature.fs_name;
    f_descriptor = f.if_signature.fs_type;
-   f_flags = 
+   f_flags =
       (if f.if_synthetic then [`AccSynthetic] else [])
       @ (List.map (fun i -> `AccRFU i) f.if_other_flags)
       @ [`AccPublic;`AccStatic;`AccFinal];

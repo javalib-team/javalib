@@ -4,14 +4,15 @@
 
 {2 {L Documentation}}
 
-{b {L Representation of classes}}
-{!modules: JBasics JClass JClassLow JDumpBasics JDump JDumpLow JPrint}
-
 {b {L High level manipulations of programs}}
-{!modules: JFile JProgram JControlFlow JPrintHierarchy}
+{!modules: JFile JProgram JControlFlow JPrintHierarchy JPrint}
+
+{b {L Hight level representation of classes}}
+{!modules: JBasics JClass JSignature JDumpBasics}
 
 {b {L Other}}
-{!modules: JCode JParse JUnparse JInstruction JLow2High JHigh2Low}
+{!modules: JCode JParse JParseSignature JUnparse JUnparseSignature
+JInstruction JLow2High JHigh2Low JClassLow JDump JDumpLow}
 
 {b {L Indexes}}
 
