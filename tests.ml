@@ -210,16 +210,16 @@ and eq_attrib cl a1 a2 =
 		-> true
 	    | _,_ ->
 		failwith ("attributes differ ("
-			   ^(dump_to_string (fun ch -> dump_attrib ch cl)) a1^","
-			   ^(dump_to_string (fun ch -> dump_attrib ch cl)) a2^")")
+			   ^(dump_to_string (fun ch -> dump_attrib ch cl.j_consts)) a1^","
+			   ^(dump_to_string (fun ch -> dump_attrib ch cl.j_consts)) a2^")")
 
 and eq_attribs cl al1 al2 =
   if not (eq_list (eq_attrib cl) al1 al2)
   then
     begin
-      prerr_endline (attributes_to_string cl al1);
+      prerr_endline (attributes_to_string cl.j_consts al1);
       prerr_endline ("************");
-      prerr_endline (attributes_to_string cl al2);
+      prerr_endline (attributes_to_string cl.j_consts al2);
       failwith ("attributes' length differ ("
 		 ^string_of_int (List.length al1)^","
 		 ^string_of_int (List.length al2)^")")

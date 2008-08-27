@@ -7,10 +7,6 @@ Here is some stuff that need to be done:
 - take in account visibility in JProgram (lookups and resolves of fields
   and methods)
 - test lookups and resolves by comparing with jvm traces
-- BUG: when unparsing, if a constant refered in the code is not in the
-  constant pool it is added, but it seems it's too late because the
-  constant pool is written first. (the cause might be that the
-  Attribute representation is too high level)
 
 * Compatibility with Java 5
 - Use AttributeSignature to print signatures of methods, fields and

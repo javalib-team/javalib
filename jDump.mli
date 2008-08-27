@@ -24,12 +24,14 @@
 
 val opcode : JClass.opcode -> string
 val dump_code : 'a IO.output -> 'b -> JClass.code -> unit
-val dump_cfield : 'a IO.output -> 'b -> JClass.class_field -> unit
-val dump_ifield : 'a IO.output -> 'b -> JClass.interface_field -> unit
+val dump_cfield :
+  'a IO.output -> JBasics.constant array -> JClass.class_field -> unit
+val dump_ifield :
+  'a IO.output -> JBasics.constant array -> JClass.interface_field -> unit
 val dump_cmethod :
-  'a IO.output -> JBasics.constant DynArray.t -> JClass.concrete_method -> unit
-val dump_amethod : 'a IO.output -> 'b -> JClass.abstract_method -> unit
+  'a IO.output -> JBasics.constant array -> JClass.concrete_method -> unit
+val dump_amethod :
+  'a IO.output -> JBasics.constant array -> JClass.abstract_method -> unit
 val dump_acmethod :
-  'a IO.output -> JBasics.constant DynArray.t ->
-  JClass.jmethod -> unit
+  'a IO.output -> JBasics.constant array -> JClass.jmethod -> unit
 val dump : 'a IO.output -> JClass.interface_or_class -> unit

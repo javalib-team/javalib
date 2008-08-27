@@ -176,17 +176,17 @@ let opcode = function
 
 
 
-let rec dump_code ch cl code =
+let rec dump_code ch consts code =
 	IO.printf ch "max_stack = %d , max_locals = %d\n" code.JClassLow.c_max_stack code.JClassLow.c_max_locals;
 	Array.iteri (fun i c ->
 		match c with
 		  | OpInvalid -> (); (* IO.printf ch "__\n" *)
 		  | _ -> IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
 	) code.JClassLow.c_code;
-	IO.printf ch "    exceptions"; List.iter (dump_exc ch cl) code.JClassLow.c_exc_tbl;
-	List.iter (dump_attrib ch cl) code.JClassLow.c_attributes
+	IO.printf ch "    exceptions"; List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
+	List.iter (dump_attrib ch consts) code.JClassLow.c_attributes
 
-and dump_attrib ch cl = function
+and dump_attrib ch consts = function
 	| AttributeSourceFile s ->
 	    IO.printf ch "    source = %s\n" s
 	| AttributeSignature s ->
@@ -200,9 +200,11 @@ and dump_attrib ch cl = function
 	| AttributeSourceDebugExtension s ->
 	    IO.printf ch "    SourceDebugExtension = %s\n" s
 	| AttributeConstant c ->
-	    IO.printf ch "    const "; dump_constant_value ch c; IO.printf ch "\n";
+	    IO.printf ch "    const ";
+	    dump_constant_value ch c;
+	    IO.printf ch "\n";
 	| AttributeCode code ->
-	    dump_code ch cl (Lazy.force code) (* IO.printf ch "    unexpected code attribute" *)
+	    dump_code ch consts (Lazy.force code) (* IO.printf ch "    unexpected code attribute" *)
 	| AttributeExceptions l ->
 	    IO.printf ch "    exceptions";
 	    List.iter (fun cn -> IO.nwrite ch (class_name cn^" ")) l;
@@ -256,13 +258,13 @@ let access_flags = function
 			| `AccRFU i -> Printf.sprintf "rfu 0x%X" i
 		) flags) ^ " "
 
-let dump_field ch cl f =
+let dump_field ch consts f =
 	IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
-	List.iter (dump_attrib ch cl) f.f_attributes
+	List.iter (dump_attrib ch consts) f.f_attributes
 
-let dump_method ch cl m =
+let dump_method ch consts m =
 	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
-	List.iter (dump_attrib ch cl) m.m_attributes;
+	List.iter (dump_attrib ch consts) m.m_attributes;
 	IO.write ch '\n'
 
 let dump_super ch = function
@@ -283,7 +285,7 @@ let dump ch cl =
 	) cl.j_consts;
 *)
 	IO.printf ch "// ****************** */\n\n";
-	List.iter (dump_field ch cl) cl.j_fields;
+	List.iter (dump_field ch cl.j_consts) cl.j_fields;
 	IO.printf ch "\n";
-	List.iter (dump_method ch cl) cl.j_methods;
+	List.iter (dump_method ch cl.j_consts) cl.j_methods;
 	IO.printf ch "}\n";

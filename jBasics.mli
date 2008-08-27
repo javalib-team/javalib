@@ -128,7 +128,7 @@ type constant_value =
   | ConstFloat of float
   | ConstLong of int64
   | ConstDouble of float
-  | ConstClass of object_type (** This is not documented in the JVM spec. *)
+  | ConstClass of object_type
 
 (** Constant. *)
 type constant =
@@ -170,6 +170,7 @@ val field_to_int : constant DynArray.t ->
   class_name * string * field_descriptor -> int
 val method_to_int : constant DynArray.t ->
   object_type * string * method_descriptor -> int
+val string_to_int : constant DynArray.t -> string -> int
 
 (** Same thing, bu writes the index to a channel. *)
 
