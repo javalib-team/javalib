@@ -141,7 +141,12 @@ let parse_stackmap_frame consts ch =
 let rec parse_code consts ch =
   let max_stack = read_ui16 ch in
   let max_locals = read_ui16 ch in
-  let clen = read_i32 ch in
+  let clen = 
+    match read_i32 ch with
+      | toobig when toobig > 65535 -> 
+	  raise (Class_structure_error "There must be less than 65536 bytes of instructions in a Code attribute")
+      | ok -> ok
+  in
   let code =
     JCode.parse_code ch clen
   in
@@ -221,7 +226,6 @@ and parse_attribute list consts ch =
 	    if alen <> 2 then error();
 	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
-	    if alen > 65535 then error();
 	    let ch = IO.input_string (IO.really_nread ch alen) in
 	    let parse_code _ =
 	      let ch, count = IO.pos_in ch in

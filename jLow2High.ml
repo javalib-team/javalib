@@ -626,3 +626,8 @@ let low2high_class cl =
 	      c_methods = my_methods;
 	    }
 	end
+
+let low2high_class cl =
+  try low2high_class cl
+  with Class_structure_error msg ->
+    raise (Class_structure_error ("In " ^  JDumpBasics.class_name cl.j_name ^ ": " ^ msg))

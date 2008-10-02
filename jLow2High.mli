@@ -21,5 +21,10 @@
 
 (** Tranformation of low level classes to high level classes. *)
 
-(** Convert a low level class to a higher level class.*)
+(** Convert a low level class to a higher level class.
+
+    @raise JBasics.Class_structure_error [low2high_class] can throw an
+    exception if the class file does not match the official
+    specification (but it does not check the class file entirely) *)
+*)
 val low2high_class : JClassLow.jclass -> JClass.interface_or_class

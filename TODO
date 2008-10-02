@@ -5,8 +5,11 @@ Here is some stuff that need to be done:
 - test lookups and resolves by comparing with jvm traces
 
 * Compatibility with Java 5
-- Use AttributeSignature to print signatures of methods, fields and
-  class if present (case of generics)
+- replace some assert with a global boolean that state whether
+  consistency must be checked or if the analysis must be as permissive
+  as possible
+- parametrize some function with the version number so features
+  introduced in Java 5 or Java 6 are not applyed to old files
 - Add AttributeLocalVariableTypeTable (see §4.8.13)
   (LocalVariableTable for generics)
 - Add AttributeRuntimeVisibleAnnotations (see §4.8.15)
@@ -20,6 +23,8 @@ Here is some stuff that need to be done:
 - handle StackMapTable attribute
 
 * Extra functionalities
+- Use AttributeSignature to print signatures of methods, fields and
+  class if present (case of generics)
 - we should define equal on JProgram.program (and JClassLow.jclass) to
   be able to do some more serious tests
 - jDumpLow : should we dump the constant pool? (it seems many other
