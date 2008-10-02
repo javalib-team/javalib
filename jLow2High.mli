@@ -25,6 +25,6 @@
 
     @raise JBasics.Class_structure_error [low2high_class] can throw an
     exception if the class file does not match the official
-    specification (but it does not check the class file entirely) *)
+    specification (but it does not check the class file entirely).
 *)
 val low2high_class : JClassLow.jclass -> JClass.interface_or_class
