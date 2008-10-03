@@ -1,3 +1,53 @@
+From 1.6 to 1.7 (on going work : this need to be cleaned up) 
+---------------
+New features:
+* add lazy code parsing: the compiled code attribute is copied into
+  the memory but not parsed before it is actually needed.  Copying the
+  code attribute allows not to refer to the .class file anymore so
+  they can be garbage collected.  Tests that load classes without
+  looking at the actual code attributes shows an improvement of 22%
+  and 23% of time and memory consumption, respectively.
+* it is now possible for JFile.class_path to load the .jar files that
+  the given directories contain (so the CLASSPATH environment variable
+  can be used as the argument of the function)
+
+Changes in the interface:
+* adding version numbers to class file representations (so JUnparse
+  output the right version number).  (Note: the current implementation
+  does not check that the features actually used match the declared
+  version number)
+* merge Parse_error, Illegal_value and Class_structure_error
+  exception into Class_structure_error exception.
+* handling Java 5 signatures for generics (some old signature or
+  name_and_type have been renamed to descriptor when appropriate) to
+  jProgram, jClass and jClassLow and update handling code (jPrint,
+  jDumpLow, jParse, jUnparse, jH2L, jL2H)
+* adding attribute EnclosingMethod (introduced with Java 5 for local
+  classes) (jProgram, jClass, jClassLow) and update handling code
+  (jPrint, jDumpLow, jParse, jUnparse, jH2L, jL2H)
+* adding attribute SourceDebugExtension (jProgram, jClass, jClassLow)
+  and corresponding handling code (jPrint, jDumpLow, jParse, jUnparse,
+  jH2L, jL2H)
+
+Minor changes in the code:
+* closing the class_path when the program is loaded (should free some
+  memory)
+* tableswitch and lookupswitch instructions are now printed
+  with all the details (instead of just <...>)
+* adding a constraint check on the maximum size of the code attribute
+  (65536)
+* when an error occurs in low2high_class, it now gives the class name
+  in the error message
+* improving the documentation
+
+Bugfixes:
+* bugfix: replace IO.nread with IO.really_nread as it would be an
+  error to read less bytes than what is excepted.
+* bugfix: it is now be possible to have more than one
+  LocalVariableTable per code attribute (there can be one per local
+  variable)
+
+
 From 1.5 to 1.6
 ---------------
 New features :
