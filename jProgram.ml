@@ -533,7 +533,6 @@ let get_class class_path class_map name =
     try
       let c = JFile.get_class class_path (JDumpBasics.class_name name)
       in
-	assert (JClass.get_name c = name);
 	class_map := ClassMap.add name c !class_map;
 	c;
     with No_class_found _ -> raise (Class_not_found name)
@@ -592,9 +591,8 @@ let parse_program class_path names =
     begin
       List.fold_left
 	(fun clmap cn ->
-	  let c= JFile.get_class class_path cn in
-	    assert (cn = JDumpBasics.class_name (JClass.get_name c));
-	    ClassMap.add (JClass.get_name c) c clmap)
+	   let c= JFile.get_class class_path cn in
+	     ClassMap.add (JClass.get_name c) c clmap)
 	class_map
 	others
     end in

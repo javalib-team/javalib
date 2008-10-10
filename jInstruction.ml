@@ -414,7 +414,9 @@ let opcode_length _consts offset opcode =
     done;
     JCode.unparse_instruction ch count opcode;
     let length = count () - (offset mod 4) in
-      assert (String.length (close_out ch) - (offset mod 4) = length);
+    let opcodestring = close_out ch in
+      if JBasics.get_permissive () && not  (String.length opcodestring - (offset mod 4) = length)
+      then failwith "opcode_length: count does not seems to provide the right result";
       length
 
 let code2opcodes consts code =

@@ -154,6 +154,7 @@ val lookup_interface_method : method_signature -> class_file -> class_file
     implements [ms] in the children of [c].
 
     @raise Not_found if [ms] cannot be found in [c]
+    @raise Invalid_argument if [ms] is an initialization method
 *)
 val overridden_by_methods : method_signature -> interface_or_class -> class_file list
 

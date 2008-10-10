@@ -50,16 +50,20 @@ type lvt = (int * int * string * value_type * int) list
 
 let combine_LocalVariableTable (lvts:lvt list) : lvt =
   let lvt = List.concat lvts in
-  let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
-    List.for_all
-      (fun e1 -> List.for_all (f e1) l)
-      l
-  and overlap (e1_start,e1_end,_,_,_) (e2_start,e2_end,_,_,_) =
-    (e2_start < e1_end && e1_start < e2_end)
-  and similar (_,_,e1_name,_,e1_index) (_,_,e2_name,_,e2_index) =
-    e1_name = e2_name || e1_index = e2_index
-  in
-    assert(for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt);
+    if JBasics.get_permissive () then
+      begin
+      let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
+	List.for_all
+	  (fun e1 -> List.for_all (f e1) l)
+	  l
+      and overlap (e1_start,e1_end,_,_,_) (e2_start,e2_end,_,_,_) =
+	(e2_start < e1_end && e1_start < e2_end)
+      and similar (_,_,e1_name,_,e1_index) (_,_,e2_name,_,e2_index) =
+	e1_name = e2_name || e1_index = e2_index
+      in
+	if not (for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt)
+	then raise (Class_structure_error "A CodeAttribute contains more than one LocalVariableTable and they are not compatible with each other")
+      end;
     lvt
 
 
@@ -143,16 +147,16 @@ let low2high_cfield consts fs = function f ->
   let (is_enum,flags) = get_flag `AccEnum flags in
   let flags =
     List.map (function
-      | `AccRFU i -> i
-      | _ ->
-	  prerr_endline "unexcepted flag in JLow2High.low2high_cfield: bug in JavaLib";
-	  assert false)
+		| `AccRFU i -> i
+		| _ ->
+		    prerr_endline "unexcepted flag in JLow2High.low2high_cfield: bug in JavaLib";
+		    assert false)
       flags
   in
   let kind =
     if is_final
     then
-      if is_volatile
+      if JBasics.get_permissive () && is_volatile
       then raise (Class_structure_error "A field cannot be final and volatile.")
       else Final
     else
@@ -179,7 +183,14 @@ let low2high_cfield consts fs = function f ->
     match generic_signature with
       | [] -> None
       | [AttributeSignature s] ->
-	  Some (JParseSignature.parse_FieldTypeSignature s)
+	  begin
+	    try
+	      Some (JParseSignature.parse_FieldTypeSignature s)
+	    with e ->
+	      if JBasics.get_permissive ()
+	      then None
+	      else raise e
+	  end
       | _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
   in
     {
@@ -217,7 +228,14 @@ let low2high_ifield consts fs = function f ->
       match generic_signature with
 	| [] -> None
 	| [AttributeSignature s] ->
-	    Some (JParseSignature.parse_FieldTypeSignature s)
+	    begin
+	      try
+		Some (JParseSignature.parse_FieldTypeSignature s)
+	      with e ->
+		if JBasics.get_permissive ()
+		then None
+		else raise e
+	    end
 	| _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
     in
     let (csts,other_att) =
@@ -239,7 +257,7 @@ let low2high_ifield consts fs = function f ->
 let low2high_amethod consts ms = function m ->
   let flags = m.m_flags in
   let (access,flags) = flags2access flags in
-  let (is_abstract,flags) = get_flag `AccAbstract flags in
+  let (_is_abstract,flags) = get_flag `AccAbstract flags in
   let (is_synthetic,flags) = get_flag `AccSynthetic flags in
   let (is_bridge,flags) = get_flag `AccBridge flags in
   let (is_varargs,flags) = get_flag `AccVarArgs flags in
@@ -274,7 +292,6 @@ let low2high_amethod consts ms = function m ->
     | [AttributeExceptions cl] -> cl
     | _ -> raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
   in
-    assert(is_abstract);
     {
       am_signature = ms;
       am_access = access;
@@ -432,8 +449,10 @@ let low2high_class cl =
 	 | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
-    (try assert ((accsuper || is_interface)) with _ -> raise (Class_structure_error "ACC_SUPER must be set for all classes"));
-    (try assert (not(is_final && is_abstract)) with _ -> raise (Class_structure_error "An abstract class cannot be final."));
+    if JBasics.get_permissive () && not (accsuper || is_interface)
+    then raise (Class_structure_error "ACC_SUPER must be set for all classes");
+    if JBasics.get_permissive () && (is_final && is_abstract)
+    then raise (Class_structure_error "An abstract class cannot be final.");
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
     let my_version = cl.j_version in
@@ -487,13 +506,13 @@ let low2high_class cl =
       if is_interface
       then
 	begin
-	  (try assert is_abstract
-	   with _ -> raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set."));
-	  (try assert (cl.j_super = Some java_lang_object) with _ -> raise (Class_structure_error "The super-class of interfaces must be java.lang.Object."));
-	  (*if accsuper
-	    then prerr_endline "Warning : the ACC_SUPER flag has no meaning for a class and will be discard.";*)
-	  if is_enum || is_synthetic
-	  then raise (Class_structure_error "Class file with their `AccInterface flag set must not have their `AccEnum or `AccSynthetic flags set.");
+	  if JBasics.get_permissive () && not is_abstract
+	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
+	  if JBasics.get_permissive () && not (cl.j_super = Some java_lang_object)
+	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
+	  if JBasics.get_permissive () && (is_enum || is_synthetic)
+	  then raise (Class_structure_error ("Class file with their `AccInterface flag set must not have "
+					     ^ "their `AccEnum or `AccSynthetic flags set."));
 	  let (init,methods) =
 	    match
 	      List.partition
@@ -504,7 +523,10 @@ let low2high_class cl =
 	    with
 	      | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
 	      | [],others -> None, others
-	      | _ -> raise (Class_structure_error "has more than one class initializer <clinit>")
+	      | m::_::_,others -> 
+		  if JBasics.get_permissive ()
+		  then raise (Class_structure_error "has more than one class initializer <clinit>")
+		  else Some (low2high_cmethod consts clinit_signature m),others
 	  in
 	    `Interface {
 	      i_name = my_name;

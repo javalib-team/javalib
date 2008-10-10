@@ -29,13 +29,6 @@ open JBasics
 (* Ops Parsing *)
 (*******************)
 
-let jvm_basic_type_of = function
-	| 0 -> `Int2Bool
-	| 1 -> `Long
-	| 2 -> `Float
-	| 3 -> `Double
-	| _ -> assert false
-
 let jvm_basic_type place = function
 	| 0 -> `Int2Bool
 	| 1 -> `Long
@@ -160,17 +153,17 @@ let parse_opcode op ch wide =
 		OpSwap
 	(* ---- arithmetics ---------------------------- *)
 	| 96 | 97 | 98 | 99 ->
-		OpAdd (jvm_basic_type_of (op - 96))
+		OpAdd (jvm_basic_type "add" (op - 96))
 	| 100 | 101 | 102 | 103 ->
-		OpSub (jvm_basic_type_of (op - 100))
+		OpSub (jvm_basic_type "sub" (op - 100))
 	| 104 | 105 | 106 | 107 ->
-		OpMult (jvm_basic_type_of (op - 104))
+		OpMult (jvm_basic_type "mult" (op - 104))
 	| 108 | 109 | 110 | 111 ->
-		OpDiv (jvm_basic_type_of (op - 108))
+		OpDiv (jvm_basic_type "div" (op - 108))
 	| 112 | 113 | 114 | 115 ->
-		OpRem (jvm_basic_type_of (op - 112))
+		OpRem (jvm_basic_type "rem" (op - 112))
 	| 116 | 117 | 118 | 119 ->
-		OpNeg (jvm_basic_type_of (op - 116))
+		OpNeg (jvm_basic_type "neg" (op - 116))
 	(* ---- logicals ------------------------------- *)
 	| 120 ->
 		OpIShl
@@ -535,7 +528,7 @@ let ilfda_loadstore ch instr =
 	     | OpALoad _ -> 42
 	     | OpStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
 	     | OpAStore _ -> 75
-	     | _ -> assert false)
+	     | _ -> raise Not_in_range)
     else
       unparse_local_instruction ch
 	(match instr with
@@ -543,7 +536,7 @@ let ilfda_loadstore ch instr =
 	   | OpALoad _ -> 25
 	   | OpStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
 	   | OpAStore _ -> 58
-	   | _ -> assert false)
+	   | _ -> raise Not_in_range)
 	value
 
 (* Instructions with one 16 bits signed argument *)
@@ -613,10 +606,22 @@ let padding ch count =
 
 (* Everything else *)
 let other count ch = function
-  | OpIConst n -> assert (-1l <= n && n <= 5l);write_ui8 ch (3 + Int32.to_int n)
-  | OpLConst n -> assert (0L=n || n=1L);write_ui8 ch (9 + Int64.to_int n)
-  | OpFConst n -> assert (0.=n || n=1. || n=2.);write_ui8 ch (11 + int_of_float n)
-  | OpDConst n -> assert (0.=n || n=1.);write_ui8 ch (14 + int_of_float n)
+  | OpIConst n ->
+      if JBasics.get_permissive () && not (-1l <= n && n <= 5l)
+      then raise (Class_structure_error "Arguments of iconst should be between -1l and 5l (inclusive)");
+      write_ui8 ch (3 + Int32.to_int n)
+  | OpLConst n ->
+      if JBasics.get_permissive () && not (0L=n || n=1L)
+      then raise (Class_structure_error "Arguments of lconst should be 0L or 1L");
+      write_ui8 ch (9 + Int64.to_int n)
+  | OpFConst n ->
+      if JBasics.get_permissive () && not (0.=n || n=1. || n=2.)
+      then raise (Class_structure_error "Arguments of fconst should be 0., 1. or 2.");
+      write_ui8 ch (11 + int_of_float n)
+  | OpDConst n ->
+      if JBasics.get_permissive () && not (0.=n || n=1.)
+      then raise (Class_structure_error "Arguments of dconst should be 0. or 1.");
+      write_ui8 ch (14 + int_of_float n)
   | OpBIPush n ->
       write_ui8 ch 16;
       write_i8 ch n

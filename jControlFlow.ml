@@ -159,7 +159,8 @@ let normal_successors pp =
     | OpThrow
     | OpReturn _ -> []
     | OpInvalid
-    | OpBreakpoint -> assert false
+    | OpBreakpoint ->
+	raise (Class_structure_error "Instructions Invalid and Breakpoint are not authorized")
     | _ -> [next_instruction pp]
 
 
@@ -280,6 +281,8 @@ module CSet = Set.Make (
   end)
 
 let overridden_by_methods ms c =
+  if ms.ms_name = "<clinit>" or ms.ms_name = "<init>"
+  then raise (Invalid_argument "overridden_by_methods");
   let result = ref CSet.empty in
   let rec overridden_by_methods' ms c =
     match get_method c ms with
@@ -294,7 +297,7 @@ let overridden_by_methods ms c =
 	  begin
 	    match c with
 	      | `Class c -> result := CSet.add c !result
-	      | `Interface _ -> assert(false)
+	      | `Interface _ -> assert false
 	  end;
 	  List.iter
 	    (fun c -> overridden_by_methods' ms (`Class c))

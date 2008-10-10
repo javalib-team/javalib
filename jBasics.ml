@@ -253,3 +253,8 @@ let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
 let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)
 let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
+
+
+let permissive = ref false
+let set_permissive b = permissive := b
+let get_permissive _ = !permissive 
