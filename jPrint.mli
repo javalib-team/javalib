@@ -86,8 +86,8 @@ val ms2link : (class_name*method_signature) -> Format.formatter -> string -> uni
 val pprint_class_to_html_file :
   string -> info -> string -> interface_or_class -> unit
   (** [pprint_class_to_html_file intro info output c] prints the class
-      [c] to the HTML file [output]. It copies the content of [intro]
-      at the beginning of [output]. This file must at least open the
+      [c] to the HTML file [output]. It prints [intro]
+      at the beginning of [output]. This string must at least open the
       tags [<html>] and [<body>] and it should defines the JavaScript
       functions to switch the visibility of the data. *)
 val pprint_program_to_html_file :

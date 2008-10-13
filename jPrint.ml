@@ -785,15 +785,10 @@ let to_html oc =
     fmt
 
 let pprint_to_html_file pprint intro info file c =
-  let ic = open_in_bin intro in
   let oc = open_out_bin file in
-  let len = in_channel_length ic in
-  let buff = String.create len in
   let fmt = to_html oc
   in
-    really_input ic buff 0 len;
-    close_in ic;
-    output_string oc buff;
+    output_string oc intro;
     pprint info fmt c;
     output_string oc "\n</body></html>\n";
     close_out oc

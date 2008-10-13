@@ -5,9 +5,6 @@ Here is some stuff that need to be done:
 - test lookups and resolves by comparing with jvm traces
 
 * Compatibility with Java 5
-- replace some assert with a global boolean that state whether
-  consistency must be checked or if the analysis must be as permissive
-  as possible
 - parametrize some function with the version number so features
   introduced in Java 5 or Java 6 are not applyed to old files
 - Add AttributeLocalVariableTypeTable (see §4.8.13)
