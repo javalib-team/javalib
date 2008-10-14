@@ -607,19 +607,19 @@ let padding ch count =
 (* Everything else *)
 let other count ch = function
   | OpIConst n ->
-      if JBasics.get_permissive () && not (-1l <= n && n <= 5l)
+      if not (JBasics.get_permissive ()) && not (-1l <= n && n <= 5l)
       then raise (Class_structure_error "Arguments of iconst should be between -1l and 5l (inclusive)");
       write_ui8 ch (3 + Int32.to_int n)
   | OpLConst n ->
-      if JBasics.get_permissive () && not (0L=n || n=1L)
+      if not (JBasics.get_permissive ()) && not (0L=n || n=1L)
       then raise (Class_structure_error "Arguments of lconst should be 0L or 1L");
       write_ui8 ch (9 + Int64.to_int n)
   | OpFConst n ->
-      if JBasics.get_permissive () && not (0.=n || n=1. || n=2.)
+      if not (JBasics.get_permissive ()) && not (0.=n || n=1. || n=2.)
       then raise (Class_structure_error "Arguments of fconst should be 0., 1. or 2.");
       write_ui8 ch (11 + int_of_float n)
   | OpDConst n ->
-      if JBasics.get_permissive () && not (0.=n || n=1.)
+      if not (JBasics.get_permissive ()) && not (0.=n || n=1.)
       then raise (Class_structure_error "Arguments of dconst should be 0. or 1.");
       write_ui8 ch (14 + int_of_float n)
   | OpBIPush n ->

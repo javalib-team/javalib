@@ -415,7 +415,7 @@ let opcode_length _consts offset opcode =
     JCode.unparse_instruction ch count opcode;
     let length = count () - (offset mod 4) in
     let opcodestring = close_out ch in
-      if JBasics.get_permissive () && not  (String.length opcodestring - (offset mod 4) = length)
+      if not (JBasics.get_permissive ()) && not  (String.length opcodestring - (offset mod 4) = length)
       then failwith "opcode_length: count does not seems to provide the right result";
       length
 
