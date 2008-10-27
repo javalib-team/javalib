@@ -352,10 +352,8 @@ let static_lookup_special prog pp cn ms =
     | `Class c ->
 	let c' = resolve_method ms c in
 	  match pp.cl,c' with
-	    | `Class c1, `Class c2 when
-		  (ms.ms_name = "<init>"
-		      || not (c1 != c2 && extends_class c1 c2)) ->
-		c2
+	    | _, `Class c2 when ms.ms_name = "<init>" -> c2
+	    | `Class c1, `Class c2 when c1 == c2 || not (extends_class c1 c2) -> c2
 	    | _ ->
 		match super_class pp.cl with
 		  | None -> raise AbstractMethodError
