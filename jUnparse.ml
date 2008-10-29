@@ -78,7 +78,7 @@ let unparse_constant_pool ch consts =
   let ch'' = output_string ()
   and i = ref 0 in
     while ! i < DynArray.length consts do
-      unparse_constant ch'' consts (DynArray.get consts ! i);
+      unparse_constant ch'' consts (DynArray.unsafe_get consts ! i);
       incr i
     done;
     write_ui16 ch (DynArray.length consts);

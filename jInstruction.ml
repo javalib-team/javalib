@@ -409,13 +409,14 @@ let instruction2opcode consts = function
 let opcode_length _consts offset opcode =
   let ch = output_string () in
   let ch, count = pos_out ch in
-    for i = 1 to offset mod 4 do (* Pour les instructions alignÃ©es *)
+  let offsetmod4 = offset mod 4 in
+    for i = 1 to offsetmod4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
     JCode.unparse_instruction ch count opcode;
-    let length = count () - (offset mod 4) in
+    let length = count () - offsetmod4 in
     let opcodestring = close_out ch in
-      if not (JBasics.get_permissive ()) && not  (String.length opcodestring - (offset mod 4) = length)
+      if not (JBasics.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
       then failwith "opcode_length: count does not seems to provide the right result";
       length
 

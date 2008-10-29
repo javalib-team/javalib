@@ -229,7 +229,7 @@ let constant_to_int cp c =
       Not_found ->
 	if DynArray.length cp = 0
 	then DynArray.add cp ConstUnusable;
-	if not (DynArray.get cp 0 = ConstUnusable)
+	if not (DynArray.unsafe_get cp 0 = ConstUnusable)
 	then raise (Class_structure_error "unparsing with an incorrect constant pool");
 	let i = DynArray.length cp in
 	  DynArray.add cp c;

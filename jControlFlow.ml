@@ -36,9 +36,9 @@ module PP = struct
   let eqi = (=)
 
   let equal pp1 pp2 =
-    eqc pp1.cl pp2.cl
-    && eqm pp1.meth pp2.meth
+    eqm pp1.meth pp2.meth
     && eqi pp1.pc pp2.pc
+    && eqc pp1.cl pp2.cl
 
   let hash pp1 =
     Hashtbl.hash (get_name pp1.cl,pp1.meth.cm_signature.ms_name,pp1.pc)
