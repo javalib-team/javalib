@@ -51,7 +51,7 @@ let get_cn_index cn =
 type class_name' = class_name_index*class_name
 type method_signature' = method_signature_index*method_signature
 
-
+(*
 module ClassMap = Map.Make(struct type t = class_name' let compare = compare end)
 module MethodMap = Map.Make(struct type t = method_signature' let compare = compare end)
 module ClassMethSet : Set.S with type elt = class_name' * method_signature'
@@ -60,16 +60,16 @@ module ClassMethSet : Set.S with type elt = class_name' * method_signature'
 module ClassMethMap : Map.S with type key = class_name' * method_signature'
   = Map.Make(struct type t = class_name' * method_signature'
 					let compare = compare end)
-(*
- module ClassMap = Map.Make(struct type t = class_name' let compare (x,_) (y,_) = compare x y end) 
-   module MethodMap = Map.Make(struct type t = method_signature' let compare (x,_) (y,_) = compare x y end) 
-   module ClassMethSet : Set.S with type elt = class_name' * method_signature'
-   = Set.Make(struct type t = class_name' * method_signature' 
-   let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
-   module ClassMethMap : Map.S with type key = class_name' * method_signature'
-   = Map.Make(struct type t = class_name' * method_signature'
-   let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
 *)
+
+ module ClassMap = Map.Make(struct type t = class_name' let compare (x,_) (y,_) = compare x y end) 
+ module MethodMap = Map.Make(struct type t = method_signature' let compare (x,_) (y,_) = compare x y end) 
+ module ClassMethSet : Set.S with type elt = class_name' * method_signature'
+							   = Set.Make(struct type t = class_name' * method_signature' 
+												 let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
+ module ClassMethMap : Map.S with type key = class_name' * method_signature'
+							   = Map.Make(struct type t = class_name' * method_signature'
+												 let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
 
 (* same type class_file and interface_file , except we keep the JClass.jmethod *)
 
@@ -131,6 +131,7 @@ type class_file = {
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
+  mutable c_resolve_methods : (class_file * jmethod) MethodMap.t; 
   mutable c_may_be_instanciated : bool;
   mutable c_children : class_file ClassMap.t;
 }
@@ -231,6 +232,7 @@ let jclass2class_file name c c_super interfaces =
 	(fun ms m -> MethodMap.add (get_ms_index ms) (m2m m))
 	c.JClass.c_methods
 	MethodMap.empty;
+   c_resolve_methods = MethodMap.empty;
    c_may_be_instanciated = false;
    c_children = ClassMap.empty}
 
@@ -346,29 +348,38 @@ let rec load class_path program name =
 				c.JClass.c_interfaces ClassMap.empty in
 			let c = jclass2class_file name c super super_interfaces in
 			  program := ClassMap.add name (`Class c) !program; 
+			  (* set super.c_children *)
 			  (match super with
 				 | None -> ()
 				 | Some super ->
 					 super.c_children <- ClassMap.add (c.c_index,c.c_name) c super.c_children);
+			  (* set i.i_children_class of super interfaces *)
 			  ClassMap.iter
 				(fun _ i -> i.i_children_class <- ClassMap.add (c.c_index,c.c_name) c i.i_children_class)
 				c.c_interfaces;
+			  (* set c_resolve_methods *)
+			  (match super with
+				 | None -> c.c_resolve_methods <- MethodMap.map (fun meth -> (c,meth)) c.c_methods
+				 | Some super ->
+					 c.c_resolve_methods <-
+					   MethodMap.fold
+					   (fun ms m -> MethodMap.add ms (c,m))
+					   c.c_methods
+					   super.c_resolve_methods);
 			  `Class c
 	end
 
 (* resolve method signature [ms] in class [cl]. *)
-let rec resolve_method cl ms =
+let resolve_method cl ms =
   try
-	(cl,MethodMap.find ms cl.c_methods)
+	MethodMap.find ms cl.c_resolve_methods
   with
-	  Not_found ->
-		match cl.c_super_class with
-		  | None -> failwith "resolution failed"
-		  | Some cn_super -> resolve_method cn_super ms
+	  Not_found ->failwith "resolution failed"
 
 (* add an arc [(cn0,ms0) --> (cn,ms)] in the call graph [call_graph]. 
    Does not print call to <clinit>. *)
-let add_call_graph (cn0,ms0) (cn,ms) call_graph = ()
+let add_call_graph _ _ _  = ()
+(* (cn0,ms0) (cn,ms) call_graph *)
 (*  if ms<>JClass.clinit_signature then *)
 (* 	let l =  *)
 (* 	  try ClassMethMap.find (cn0,ms0) !call_graph  *)
@@ -557,7 +568,7 @@ let rta class_path init_workset =
 		   workset := ClassMethSet.add (cn',ms') !workset)
 	  init_workset;
 	(* sub-function to add call [(cn0,ms0) --> (cl,ms)] *)
-	let add_call cn0 ms0 cl ms' =
+	let add_call _ _ cl ms' =
  	  let (cl',meth) = resolve_method cl ms' in
 	  let cn' = (cl'.c_index,cl'.c_name) in
 		if (not (has_been_parsed meth)) then
@@ -702,7 +713,7 @@ let start_rta class_path classname =
   let class_path = JFile.class_path class_path in
   let to_be_explored = 
 	[(classname,main_signature);initializeSystemClass] in
-  let (program,call_graph) = rta class_path to_be_explored in
+  let (program,_) = rta class_path to_be_explored in
 	JFile.close_class_path class_path;
 	Printf.printf "%d classes parsed\n"
 	  (ClassMap.fold (fun _ _ n -> n+1) program 0)
