@@ -728,6 +728,8 @@ let initializeSystemClass : class_name * method_signature =
 	ms_parameters = [];
 	ms_return_type = None})
 
+
+
 (** [classname] is the entry class name *)
 let start_rta class_path classname =  
   let class_path = JFile.class_path class_path in
