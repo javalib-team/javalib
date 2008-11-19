@@ -728,15 +728,62 @@ let initializeSystemClass : class_name * method_signature =
 	ms_parameters = [];
 	ms_return_type = None})
 
-
-
+let test_parsing class_path program =
+  ClassMap.iter
+	(fun _ c_or_i ->
+	   match c_or_i with
+		 | `Interface i1 ->
+			 begin
+			   match JFile.get_class class_path (JDumpBasics.class_name i1.i_name) with	   
+				 | `Class _ -> assert false
+				 | `Interface i2 ->
+					 begin
+					   match i2.JClass.i_initializer with
+						 | None -> ()
+						 | Some meth2 ->
+							 begin
+							   match meth2.JClass.cm_implementation with
+								 | Native -> assert false
+								 | Java c -> Array.iter (fun _ -> ()) (Lazy.force c).c_code
+							 end 
+					 end
+			 end
+		 | `Class c1 ->
+			 begin
+			   match JFile.get_class class_path (JDumpBasics.class_name c1.c_name) with	   
+				 | `Interface _ -> assert false
+				 | `Class c2 ->
+					 JClass.MethodMap.iter
+					   (fun _ meth2 ->
+						  begin
+							match meth2 with
+							  | JClass.AbstractMethod _ -> ()
+							  | JClass.ConcreteMethod meth2 ->
+								  begin
+									match meth2.JClass.cm_implementation with
+									  | Native -> ()
+									  | Java c -> Array.iter (fun _ -> ()) (Lazy.force c).c_code
+								  end
+						  end)
+					   c2.JClass.c_methods
+			 end			   
+	) program
+	
 (** [classname] is the entry class name *)
 let start_rta class_path classname =  
+  let time1 = Sys.time () in
   let class_path = JFile.class_path class_path in
   let to_be_explored = 
 	[(classname,main_signature);initializeSystemClass] in
   let (program,_) = rta class_path to_be_explored in
-	JFile.close_class_path class_path;
+  let time2 = Sys.time () in
 	Printf.printf "%d classes parsed\n"
-	  (ClassMap.fold (fun _ _ n -> n+1) program 0)
+	  (ClassMap.fold (fun _ _ n -> n+1) program 0);
+	let time3 = Sys.time () in
+	  test_parsing class_path program;
+	  let time4 = Sys.time () in
+		JFile.close_class_path class_path;
+		Printf.printf "RTA parsing: %fs\nSimple parsing (all classes given by RTA and all their methods): %fs\n" 
+		  (time2-.time1) (time4-.time3) 
+
 
