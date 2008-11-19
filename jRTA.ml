@@ -74,6 +74,7 @@ module ClassMethMap : Map.S with type key = class_name' * method_signature'
 (* same type class_file and interface_file , except we keep the JClass.jmethod *)
 
 type concrete_method = {
+  mutable cm_has_been_parsed : bool;
   cm_index : method_signature_index;
   cm_signature : method_signature;
   cm_static : bool;
@@ -166,6 +167,7 @@ type interface_or_class = [
 type program = interface_or_class ClassMap.t
 
 let ccm2pcm m = {
+  cm_has_been_parsed = false;
   cm_index = fst (get_ms_index m.JClass.cm_signature);
   cm_signature = m.JClass.cm_signature;
   cm_static = m.JClass.cm_static;
@@ -378,7 +380,7 @@ let add_call_graph (cn0,ms0) (cn,ms) call_graph = ()
 let clinit_signature = get_ms_index JClass.clinit_signature
 
 (* add the <clinit> method of class name [cn] to the workset [workset], if necessary. *)
-let rec add_clinits class_path cn0 meth0 cn call_graph workset seen_in_workset program =
+let rec add_clinits class_path cn0 meth0 cn call_graph workset program =
   match load class_path program cn with
 	| `Class cl ->
 		begin
@@ -387,14 +389,14 @@ let rec add_clinits class_path cn0 meth0 cn call_graph workset seen_in_workset p
 			  | AbstractMethod _ -> failwith "add_clinits: abstract method"
 			  | ConcreteMethod meth -> 
 				  begin
-					if (not (ClassMethSet.mem ((cl.c_index,cl.c_name),(meth.cm_index,meth.cm_signature)) seen_in_workset)) then
+					if (not (meth.cm_has_been_parsed)) then
 					  begin						
 						workset := ClassMethSet.add ((cl.c_index,cl.c_name),(meth.cm_index,meth.cm_signature)) !workset;
 						match cl.c_super_class with
 						  | None -> ()
 						  | Some cl_super ->
 							  (* the <clinit> super class's must be called too *)
-							  add_clinits class_path (cl.c_index,cl.c_name) meth (cl_super.c_index,cl_super.c_name) call_graph workset seen_in_workset program
+							  add_clinits class_path (cl.c_index,cl.c_name) meth (cl_super.c_index,cl_super.c_name) call_graph workset program
 					  end;
 					add_call_graph (cn0,meth0.cm_signature) (cl.c_name,meth.cm_signature) call_graph
 				  end
@@ -403,8 +405,8 @@ let rec add_clinits class_path cn0 meth0 cn call_graph workset seen_in_workset p
 		begin
 		  match i.i_initializer with
 			| None -> ()
-			| Some _ ->
-				if (not (ClassMethSet.mem ((i.i_index,i.i_name),clinit_signature) seen_in_workset)) then
+			| Some meth ->
+				if (not meth.cm_has_been_parsed) then
 				  (* the <clinit> of super interfaces do not need to be called, according to the official spec *)
 				  workset := ClassMethSet.add ((i.i_index,i.i_name),clinit_signature) !workset;
 				add_call_graph (cn0,meth0.cm_signature) (i.i_name,JClass.clinit_signature) call_graph
@@ -532,15 +534,15 @@ let rec subclass_test cl1 cl2 =
 	| None -> false
 	| Some cl1 -> subclass_test cl1 cl2
 
+let has_been_parsed = function
+  | ConcreteMethod m -> m.cm_has_been_parsed
+  | AbstractMethod _ -> true
 
 let rta class_path init_workset =
   (* the program structure *)
   let program = ref ClassMap.empty in
   (* the workset of pending method to be explored *)
   let workset = ref ClassMethSet.empty
-  (* methods already explored.
-	 All (cn,ms) in workset must correspond to methods in [program] *)
-  and seen_in_workset = ref ClassMethSet.empty
   (* we memorize the virtual invoke instructions (invokevirtual and invokeinterface)
 	 of the methods that are already parsed *)
   and memorize_virtual_calls = ref ClassMap.empty 
@@ -556,9 +558,9 @@ let rta class_path init_workset =
 	  init_workset;
 	(* sub-function to add call [(cn0,ms0) --> (cl,ms)] *)
 	let add_call cn0 ms0 cl ms' =
- 	  let (cl',_) = resolve_method cl ms' in
+ 	  let (cl',meth) = resolve_method cl ms' in
 	  let cn' = (cl'.c_index,cl'.c_name) in
-		if (not (ClassMethSet.mem (cn',ms') !seen_in_workset)) then
+		if (not (has_been_parsed meth)) then
 		  workset := ClassMethSet.add (cn',ms') !workset;
 		(* add_call_graph (cn0,ms0) (cn,ms) call_graph *)
 	in
@@ -566,7 +568,7 @@ let rta class_path init_workset =
 	  (* we choose a method and remove it from the workset *)
 	  let (cn,meth) = choose_meth_class_in_workset workset !program in
 		(* mark [(cn,meth)] as seen *)
-		seen_in_workset := ClassMethSet.add (cn,(meth.cm_index,meth.cm_signature)) !seen_in_workset;
+		meth.cm_has_been_parsed <- true;
 		match meth.cm_implementation with 
 		  | Native -> ()
 		  | Java c ->
@@ -576,13 +578,13 @@ let rta class_path init_workset =
 				   | OpPutStatic (cn',_) -> 
 					   (* we need to explore [cn'.<clinit>] *)
 					   let cn' = get_cn_index cn' in
-						 add_clinits class_path cn meth cn' call_graph workset !seen_in_workset program
+						 add_clinits class_path cn meth cn' call_graph workset program
 				   | OpNew cn' -> 
 					   let cn' = get_cn_index cn' in
 					   let c_or_i = load class_path program cn' in
 						 begin
 						   (* we need to explore [cn'.<clinit>] *)
-						   add_clinits class_path cn meth cn' call_graph workset !seen_in_workset program;
+						   add_clinits class_path cn meth cn' call_graph workset program;
 						   match c_or_i with
 							 | `Class c1 ->
 								 if not c1.c_may_be_instanciated then
@@ -654,7 +656,7 @@ let rta class_path init_workset =
 						   | `Class cl' -> 
 						   	   add_call cn meth.cm_index cl' ms
 					   end;
-					   add_clinits class_path cn meth cn' call_graph workset !seen_in_workset program
+					   add_clinits class_path cn meth cn' call_graph workset program
 				   | OpInvoke (`Special cn',ms) -> 
 					   let cn' = get_cn_index cn' in
 					   let ms = get_ms_index ms in
@@ -695,20 +697,13 @@ let initializeSystemClass : class_name * method_signature =
 	ms_parameters = [];
 	ms_return_type = None})
 
-let start_rta class_path classname max_diameter =  
+(** [classname] is the entry class name *)
+let start_rta class_path classname =  
   let class_path = JFile.class_path class_path in
   let to_be_explored = 
 	[(classname,main_signature);initializeSystemClass] in
-  let to_be_explored = 
-	[(classname,main_signature)] in
   let (program,call_graph) = rta class_path to_be_explored in
 	JFile.close_class_path class_path;
 	Printf.printf "%d classes parsed\n"
 	  (ClassMap.fold (fun _ _ n -> n+1) program 0)
-(*	ClassMap.iter
-	  (fun cn _ -> Printf.printf "%d %s\n" (fst cn) (JDumpBasics.class_name (snd cn)))
-	  program *)
-(* ; *)
-(*  	let call_graph = reduce_call_graph (classname,main_signature) call_graph max_diameter in  *)
-(* 	  (program,call_graph) *)
 
