@@ -62,11 +62,49 @@ module ClassMethMap : Map.S with type key = class_name' * method_signature'
 					let compare = compare end)
 *)
 
- module ClassMap = Map.Make(struct type t = class_name' let compare (x,_) (y,_) = compare x y end) 
- module MethodMap = Map.Make(struct type t = method_signature' let compare (x,_) (y,_) = compare x y end) 
- module ClassMethSet : Set.S with type elt = class_name' * method_signature'
-							   = Set.Make(struct type t = class_name' * method_signature' 
-												 let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
+(* module ClassMap = Map.Make(struct type t = class_name' let compare (x,_) (y,_) = compare x y end)  *)
+ module ClassMap = Ptmap
+ module MethodMap = Ptmap
+ module ClassMethSet = struct
+   type t = (class_name*method_signature) Ptmap.t Ptmap.t
+   type elt = ((int*class_name)*(int*method_signature))
+   let empty : t = Ptmap.empty
+   let is_empty : t -> bool = Ptmap.is_empty
+   let mem : int*int -> t -> bool = fun (x,y) map ->
+	 try
+	   Ptmap.mem y (Ptmap.find x map)
+	 with Not_found -> false
+   let add : elt -> t -> t = fun ((x,x'),(y,y')) map ->
+	 try
+	   Ptmap.add x (Ptmap.add y (x',y') (Ptmap.find x map)) map
+	 with Not_found -> 
+	   Ptmap.add x (Ptmap.add y (x',y') Ptmap.empty) map
+   let remove : int*int -> t -> t = fun (x,y) map ->
+	 try
+	   let map_x = Ptmap.remove y (Ptmap.find x map) in
+		 if Ptmap.is_empty map_x then Ptmap.remove x map
+		 else Ptmap.add x map_x map
+	 with Not_found -> map
+
+   exception Choose_find
+   let choose_map map =
+	 let res = ref None in
+	 try
+	   Ptmap.fold 
+		 (fun x a _ -> res := Some (x,a); raise Choose_find)
+		 map (); raise Not_found
+	 with Choose_find ->
+	   begin match !res with
+		   None -> failwith "choose_map"
+		 | Some (x,a) -> (x,a)
+	   end
+
+   let choose : t -> elt = fun map ->
+	 let (x,map') = choose_map map in
+	 let (y,(x',y')) = choose_map map' in
+	   ((x,x'),(y,y'))
+end
+
  module ClassMethMap : Map.S with type key = class_name' * method_signature'
 							   = Map.Make(struct type t = class_name' * method_signature'
 												 let compare ((c1,_),(m1,_)) ((c2,_),(m2,_)) = compare (c1,m1) (c2,m2) end) 
@@ -229,7 +267,7 @@ let jclass2class_file name c c_super interfaces =
    c_other_attributes = c.JClass.c_other_attributes;
    c_fields = c.JClass.c_fields;
    c_methods = JClass.MethodMap.fold 
-	(fun ms m -> MethodMap.add (get_ms_index ms) (m2m m))
+	(fun ms m -> MethodMap.add (fst (get_ms_index ms)) (m2m m))
 	c.JClass.c_methods
 	MethodMap.empty;
    c_resolve_methods = MethodMap.empty;
@@ -263,32 +301,41 @@ let jinterface2interface_file i imap cl_object =
 	  end;
    i_fields = i.JClass.i_fields;
    i_methods = JClass.MethodMap.fold 
-	(fun ms m -> MethodMap.add (get_ms_index ms) (cam2pam m))
+	(fun ms m -> MethodMap.add (fst (get_ms_index ms)) (cam2pam m))
 	i.JClass.i_methods
 	MethodMap.empty;
   }
 
 
+let c_or_i_name = function
+  | `Class c -> c.c_name
+  | `Interface i -> i.i_name
+
+let signature = function
+  | AbstractMethod m -> m.am_signature
+  | ConcreteMethod m -> m.cm_signature
+
+exception Empty_workset
 (* choose a method in a worket and remove it. 
    [workset] must be non empty.
    All method signature in [workset] must correspond to concrete methods in [program]. *)
 let choose_meth_class_in_workset workset program =
   try
 	let (cn,ms) = ClassMethSet.choose !workset in
-	  workset := ClassMethSet.remove (cn,ms) !workset; 
+	  workset := ClassMethSet.remove (fst cn,fst ms) !workset; 
 	  try
-	  match ClassMap.find cn program with
+	  match ClassMap.find (fst cn) program with
 		| `Class cl ->
 			begin
 			  try
-			  match MethodMap.find ms cl.c_methods with
+			  match MethodMap.find (fst ms) cl.c_methods with
 				| AbstractMethod _ -> failwith "choose_meth_class_in_workset : abstract method"
 				| ConcreteMethod meth -> (cn,meth)
 			  with Not_found ->
 				Printf.printf "looking for %d %s in\n"
 				  (fst ms) (print_method_signature (snd ms));
 				MethodMap.iter
-				  (fun ms _ -> Printf.printf "  %d %s\n" (fst ms) (print_method_signature (snd ms)))
+				  (fun ms meth -> Printf.printf "  %d %s\n" ms (print_method_signature (signature meth)))
 				  cl.c_methods;
 				failwith "choose_meth_class_in_workset : method not found"
 			end
@@ -302,10 +349,10 @@ let choose_meth_class_in_workset workset program =
 		Printf.printf "looking for %d %s in\n"
 		  (fst cn) (JDumpBasics.class_name (snd cn));
 		ClassMap.iter
-		  (fun cn _ -> Printf.printf "  %d %s\n" (fst cn) (JDumpBasics.class_name (snd cn)))
+		  (fun cn_idx c_or_i -> Printf.printf "  %d %s\n" cn_idx (JDumpBasics.class_name (c_or_i_name c_or_i)))
 		  program;
 		failwith "choose_meth_class_in_workset : class not found"
-  with Not_found -> failwith "choose_meth_class_in_workset : workset must be non empty"
+  with Not_found -> raise Empty_workset
 
 let get_class = function
   | `Interface _ -> failwith "class expected"
@@ -320,7 +367,7 @@ let get_interface = function
    all its super classes and interfaces. *)
 let rec load class_path program name =
   try
-	ClassMap.find name !program 
+	ClassMap.find (fst name) !program 
   with Not_found -> 
 	begin
 	  match JFile.get_class class_path (JDumpBasics.class_name (snd name)) with
@@ -329,13 +376,13 @@ let rec load class_path program name =
 			  List.fold_right 
 				(fun name -> 
 				   let name = get_cn_index name in
-					 ClassMap.add name (get_interface (load class_path program name)))
+					 ClassMap.add (fst name) (get_interface (load class_path program name)))
 				i.JClass.i_interfaces ClassMap.empty in
 			let i = jinterface2interface_file i super_interfaces (get_class (load class_path program (get_cn_index java_lang_object))) in
 			  ClassMap.iter
-				(fun _ i_super -> i_super.i_children_interface <- ClassMap.add (i.i_index,i.i_name) i i_super.i_children_interface)
+				(fun _ i_super -> i_super.i_children_interface <- ClassMap.add i.i_index i i_super.i_children_interface)
 				super_interfaces;
-			  program := ClassMap.add name (`Interface i) !program; `Interface i
+			  program := ClassMap.add (fst name) (`Interface i) !program; `Interface i
 		| `Class c -> 
 			let super = match c.JClass.c_super_class with
 			  | None -> None
@@ -344,18 +391,18 @@ let rec load class_path program name =
 			  List.fold_right 
 				(fun name -> 
 				   let name = get_cn_index name in
-					 ClassMap.add name (get_interface (load class_path program name)))
+					 ClassMap.add (fst name) (get_interface (load class_path program name)))
 				c.JClass.c_interfaces ClassMap.empty in
 			let c = jclass2class_file name c super super_interfaces in
-			  program := ClassMap.add name (`Class c) !program; 
+			  program := ClassMap.add (fst name) (`Class c) !program; 
 			  (* set super.c_children *)
 			  (match super with
 				 | None -> ()
 				 | Some super ->
-					 super.c_children <- ClassMap.add (c.c_index,c.c_name) c super.c_children);
+					 super.c_children <- ClassMap.add c.c_index c super.c_children);
 			  (* set i.i_children_class of super interfaces *)
 			  ClassMap.iter
-				(fun _ i -> i.i_children_class <- ClassMap.add (c.c_index,c.c_name) c i.i_children_class)
+				(fun _ i -> i.i_children_class <- ClassMap.add c.c_index c i.i_children_class)
 				c.c_interfaces;
 			  (* set c_resolve_methods *)
 			  (match super with
@@ -372,7 +419,7 @@ let rec load class_path program name =
 (* resolve method signature [ms] in class [cl]. *)
 let resolve_method cl ms =
   try
-	MethodMap.find ms cl.c_resolve_methods
+	MethodMap.find (fst ms) cl.c_resolve_methods
   with
 	  Not_found ->failwith "resolution failed"
 
@@ -452,36 +499,6 @@ let rec forall_interface_sons f i =
   ClassMap.iter (fun _ -> forall_class_sons f) i.i_children_class;
   ClassMap.iter (fun _ -> forall_interface_sons f) i.i_children_interface
 
-(* reduce the call graph to nodes that are reachable from [nodes],
-   with a max diameter [n] if [n] is positive. *)
-let rec reduce_call_graph nodes callgraph n =
-  let stabilise = ref true in
-	if n=0 then nodes
-	else
-	  let new_nodes =
-		ClassMethSet.fold
-		  (fun (cn1,ms1) nodes ->
-			 try 
-			   List.fold_right
-				 (fun (cn2,ms2) nodes ->
-					if ClassMethSet.mem (cn2,ms2) nodes then nodes
-					else (stabilise:=false; ClassMethSet.add (cn2,ms2) nodes))
-				 (ClassMethMap.find (cn1,ms1) callgraph)
-				 nodes
-			 with Not_found -> nodes)
-		  nodes nodes in
-		if !stabilise then nodes else reduce_call_graph new_nodes callgraph (n-1)
-
-let reduce_call_graph start callgraph max_diameter =
-  let nodes = reduce_call_graph (ClassMethSet.add start ClassMethSet.empty) callgraph max_diameter in
-	ClassMethMap.fold
-	  (fun x1 l callgraph ->
-		 if ClassMethSet.mem x1 nodes then
-		   ClassMethMap.add x1 (List.filter (fun x2 -> ClassMethSet.mem x2 nodes) l) callgraph
-		 else callgraph)
-	  callgraph
-	  ClassMethMap.empty
-
 (* print call graph in [callgraph.dot] and class hierarchy in [hierarchy.dot] *)
 let print_callgraph callgraph program =
   let out = open_out "callgraph.dot" in
@@ -502,7 +519,7 @@ let print_callgraph callgraph program =
   let out = open_out "hierarchy.dot" in
 	Printf.fprintf out "digraph \"Graph\" {\n";
 	ClassMap.iter
-	  (fun cn c_or_i -> 
+	  (fun _ c_or_i -> 
 	   match c_or_i with
 		 | `Class cl ->
 			 if cl.c_may_be_instanciated then
@@ -512,22 +529,22 @@ let print_callgraph callgraph program =
 				 | None -> ()
 				 | Some cl_super ->
 					 Printf.fprintf out "   \"%s\" -> \"%s\";\n" 
-					   (JDumpBasics.class_name (snd cn))
+					   (JDumpBasics.class_name (c_or_i_name c_or_i))
 					   (JDumpBasics.class_name cl_super.c_name)
 			 end;
 			 ClassMap.iter
-			   (fun iname _ ->
+			   (fun _ i ->
 				  Printf.fprintf out "   \"%s\" -> \"%s\" [style=dotted];\n" 
-					(JDumpBasics.class_name (snd cn))
-					(JDumpBasics.class_name (snd iname)))
+					(JDumpBasics.class_name (c_or_i_name c_or_i))
+					(JDumpBasics.class_name i.i_name))
 			   cl.c_interfaces
 		 | `Interface i ->
-			 Printf.fprintf out "   \"%s\" [shape=rectangle];" (JDumpBasics.class_name (snd cn));
+			 Printf.fprintf out "   \"%s\" [shape=rectangle];" (JDumpBasics.class_name i.i_name);
 			 ClassMap.iter
-			   (fun iname _ ->
+			   (fun _ i' ->
 				  Printf.fprintf out "   \"%s\" -> \"%s\" [style=dotted];\n" 
 					(JDumpBasics.class_name i.i_name)
-					(JDumpBasics.class_name (snd iname)))
+					(JDumpBasics.class_name i'.i_name))
 			   i.i_interfaces;
 			 Printf.fprintf out "   \"%s\" -> \"%s\";\n" 
 			   (JDumpBasics.class_name i.i_name)
@@ -575,125 +592,128 @@ let rta class_path init_workset =
 		  workset := ClassMethSet.add (cn',ms') !workset;
 		(* add_call_graph (cn0,ms0) (cn,ms) call_graph *)
 	in
-	while (not (ClassMethSet.is_empty !workset)) do
-	  (* we choose a method and remove it from the workset *)
-	  let (cn,meth) = choose_meth_class_in_workset workset !program in
-		(* mark [(cn,meth)] as seen *)
-		meth.cm_has_been_parsed <- true;
-		match meth.cm_implementation with 
-		  | Native -> ()
-		  | Java c ->
-			  Array.iter
-				(function
-				   | OpGetStatic (cn',_) 
-				   | OpPutStatic (cn',_) -> 
-					   (* we need to explore [cn'.<clinit>] *)
-					   let cn' = get_cn_index cn' in
-						 add_clinits class_path cn meth cn' call_graph workset program
-				   | OpNew cn' -> 
-					   let cn' = get_cn_index cn' in
-					   let c_or_i = load class_path program cn' in
-						 begin
+	  begin try
+		while true do
+		  (* we choose a method and remove it from the workset *)
+		  let (cn,meth) = choose_meth_class_in_workset workset !program in
+			(* mark [(cn,meth)] as seen *)
+			meth.cm_has_been_parsed <- true;
+			match meth.cm_implementation with 
+			  | Native -> ()
+			  | Java c ->
+				  Array.iter
+					(function
+					   | OpGetStatic (cn',_) 
+					   | OpPutStatic (cn',_) -> 
 						   (* we need to explore [cn'.<clinit>] *)
-						   add_clinits class_path cn meth cn' call_graph workset program;
-						   match c_or_i with
-							 | `Class c1 ->
-								 if not c1.c_may_be_instanciated then
-								   (* we have never seen a [OpNew c1] before *)
-								   (* we browse all the super classes and interface
-									  of [c1] looking for virtual calls that may be ran
-									  on an object of class [c1] *)
-								   forall_super_class_and_interfaces 
- 									 (function
-										| `Class c2 -> 
-											begin try
-											  List.iter
-												(fun (cn_caller,ms_caller,ms_callee) -> 
-												   add_call cn_caller ms_caller c1 ms_callee)
-												(ClassMap.find (c2.c_index,c2.c_name) !memorize_virtual_calls)
-											with Not_found -> ()
-											end
-										| `Interface i -> 
-											begin try
-											  List.iter
-												(fun (cn_caller,ms_caller,ms_callee) -> 
-												   add_call cn_caller ms_caller c1 ms_callee)
-												(ClassMap.find (i.i_index,i.i_name) !memorize_virtual_calls)
-											with Not_found -> () end
-									 ) (`Class c1);
-								 c1.c_may_be_instanciated <- true
-							 | `Interface _ -> failwith "new interface ?"
-						 end
-				   | OpInvoke (`Virtual t, ms) ->
-					   let cn' = match t with 
-						 | TClass cn' -> cn' 
-						 | TArray _ -> (* should only happen with [clone()] *) java_lang_object
-					   in
-					   let cn' = get_cn_index cn' in
-					   let ms = get_ms_index ms in
-					   begin
-						 match load class_path program cn' with
-						   | `Interface _ -> failwith "invokevirtual on interface"
-						   | `Class cl' -> 
-							   forall_class_sons
-								 (fun cl -> if cl.c_may_be_instanciated then add_call cn meth.cm_index cl ms)
-								 cl'
-					   end;
-					   let calls = 
-						   try ClassMap.find cn' !memorize_virtual_calls 
-						   with Not_found -> [] in
-						 memorize_virtual_calls := ClassMap.add cn' ((cn,meth.cm_index,ms)::calls) !memorize_virtual_calls
-				   | OpInvoke (`Interface cn',ms) -> 
-					   let cn' = get_cn_index cn' in
-					   let ms = get_ms_index ms in
-					   begin
-						 match load class_path program cn' with
-						   | `Class _ -> failwith "invokestatic on class"
-						   | `Interface i -> 
-							   forall_interface_sons
-								 (fun cl -> if cl.c_may_be_instanciated then add_call cn meth.cm_index cl ms)
-								 i
-					   end;
-					   let calls = 
-						   try ClassMap.find cn' !memorize_virtual_calls 
-						   with Not_found -> [] in
-						 memorize_virtual_calls := ClassMap.add cn' ((cn,meth.cm_index,ms)::calls) !memorize_virtual_calls
-				   | OpInvoke (`Static cn',ms) -> 
-					   let cn' = get_cn_index cn' in
-					   let ms = get_ms_index ms in
-					   begin
-						 match load class_path program cn' with
-						   | `Interface _ -> failwith "invokestatic on interface"
-						   | `Class cl' -> 
-						   	   add_call cn meth.cm_index cl' ms
-					   end;
-					   add_clinits class_path cn meth cn' call_graph workset program
-				   | OpInvoke (`Special cn',ms) -> 
-					   let cn' = get_cn_index cn' in
-					   let ms = get_ms_index ms in
-					   begin
-						 match load class_path program cn' with
-						   | `Interface _ -> failwith "invokespecial on interface"
-						   | `Class cl' -> 
-							   if (snd ms).ms_name = "<init>" then
-								 add_call cn meth.cm_index cl' ms
-							   else
-								 let (cl',_) = resolve_method cl' ms in
-								 match ClassMap.find cn !program with
-								   | `Interface _ -> failwith "invokespecial in an interface"
-								   | `Class cl ->
-									   begin
-										   match cl.c_super_class with
-											 | None -> ()
-											 | Some cl_super ->
-												 if subclass_test cl_super cl' then
-												   add_call cn meth.cm_signature cl_super ms
-												 else add_call cn meth.cm_signature cl' ms
-									   end
-					   end					   
-				   | _ -> ()
-				) (Lazy.force c).c_code
-	done;
+						   let cn' = get_cn_index cn' in
+							 add_clinits class_path cn meth cn' call_graph workset program
+					   | OpNew cn' -> 
+						   let cn' = get_cn_index cn' in
+						   let c_or_i = load class_path program cn' in
+							 begin
+							   (* we need to explore [cn'.<clinit>] *)
+							   add_clinits class_path cn meth cn' call_graph workset program;
+							   match c_or_i with
+								 | `Class c1 ->
+									 if not c1.c_may_be_instanciated then
+									   (* we have never seen a [OpNew c1] before *)
+									   (* we browse all the super classes and interface
+										  of [c1] looking for virtual calls that may be ran
+										  on an object of class [c1] *)
+									   forall_super_class_and_interfaces 
+ 										 (function
+											| `Class c2 -> 
+												begin try
+												  List.iter
+													(fun (cn_caller,ms_caller,ms_callee) -> 
+													   add_call cn_caller ms_caller c1 ms_callee)
+													(ClassMap.find c2.c_index !memorize_virtual_calls)
+												with Not_found -> ()
+												end
+											| `Interface i -> 
+												begin try
+												  List.iter
+													(fun (cn_caller,ms_caller,ms_callee) -> 
+													   add_call cn_caller ms_caller c1 ms_callee)
+													(ClassMap.find i.i_index !memorize_virtual_calls)
+												with Not_found -> () end
+										 ) (`Class c1);
+									 c1.c_may_be_instanciated <- true
+								 | `Interface _ -> failwith "new interface ?"
+							 end
+					   | OpInvoke (`Virtual t, ms) ->
+						   let cn' = match t with 
+							 | TClass cn' -> cn' 
+							 | TArray _ -> (* should only happen with [clone()] *) java_lang_object
+						   in
+						   let cn' = get_cn_index cn' in
+						   let ms = get_ms_index ms in
+							 begin
+							   match load class_path program cn' with
+								 | `Interface _ -> failwith "invokevirtual on interface"
+								 | `Class cl' -> 
+									 forall_class_sons
+									   (fun cl -> if cl.c_may_be_instanciated then add_call cn meth.cm_index cl ms)
+									   cl'
+							 end;
+							 let calls = 
+							   try ClassMap.find (fst cn') !memorize_virtual_calls 
+							   with Not_found -> [] in
+							   memorize_virtual_calls := ClassMap.add (fst cn') ((cn,meth.cm_index,ms)::calls) !memorize_virtual_calls
+					   | OpInvoke (`Interface cn',ms) -> 
+						   let cn' = get_cn_index cn' in
+						   let ms = get_ms_index ms in
+							 begin
+							   match load class_path program cn' with
+								 | `Class _ -> failwith "invokestatic on class"
+								 | `Interface i -> 
+									 forall_interface_sons
+									   (fun cl -> if cl.c_may_be_instanciated then add_call cn meth.cm_index cl ms)
+									   i
+							 end;
+							 let calls = 
+							   try ClassMap.find (fst cn') !memorize_virtual_calls 
+							   with Not_found -> [] in
+							   memorize_virtual_calls := ClassMap.add (fst cn') ((cn,meth.cm_index,ms)::calls) !memorize_virtual_calls
+					   | OpInvoke (`Static cn',ms) -> 
+						   let cn' = get_cn_index cn' in
+						   let ms = get_ms_index ms in
+							 begin
+							   match load class_path program cn' with
+								 | `Interface _ -> failwith "invokestatic on interface"
+								 | `Class cl' -> 
+						   			 add_call cn meth.cm_index cl' ms
+							 end;
+							 add_clinits class_path cn meth cn' call_graph workset program
+					   | OpInvoke (`Special cn',ms) -> 
+						   let cn' = get_cn_index cn' in
+						   let ms = get_ms_index ms in
+							 begin
+							   match load class_path program cn' with
+								 | `Interface _ -> failwith "invokespecial on interface"
+								 | `Class cl' -> 
+									 if (snd ms).ms_name = "<init>" then
+									   add_call cn meth.cm_index cl' ms
+									 else
+									   let (cl',_) = resolve_method cl' ms in
+										 match ClassMap.find (fst cn) !program with
+										   | `Interface _ -> failwith "invokespecial in an interface"
+										   | `Class cl ->
+											   begin
+												 match cl.c_super_class with
+												   | None -> ()
+												   | Some cl_super ->
+													   if subclass_test cl_super cl' then
+														 add_call cn meth.cm_signature cl_super ms
+													   else add_call cn meth.cm_signature cl' ms
+											   end
+							 end					   
+					   | _ -> ()
+					) (Lazy.force c).c_code
+		done
+	  with Empty_workset -> ()
+	  end;
 	  (!program,!call_graph)
 
 let main_signature : JClass.method_signature =
