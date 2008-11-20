@@ -1,6 +1,14 @@
 open JBasics
 open JClass
 
+(* TODO: 
+
+ - load Main.<clinit> when starting
+ - manage visibility
+ - remove (class_name*method_signature) in ClassMethSet 
+
+*)
+
 let print_method_signature ms =
   JDumpBasics.method_signature ms.ms_name (ms.ms_parameters,ms.ms_return_type)
 
