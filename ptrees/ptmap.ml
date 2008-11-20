@@ -59,11 +59,14 @@ let join (p0,t0,p1,t1) =
 
 let match_prefix k p m = (mask k m) == p
 
-let add k x t =
+let add ?(merge=fun a b -> b) k x t =
   let rec ins = function
     | Empty -> Leaf (k,x)
-    | Leaf (j,_) as t -> 
-	if j == k then Leaf (k,x) else join (k, Leaf (k,x), j, t)
+    | Leaf (j,x') as t -> 
+	if j == k then
+	  Leaf (k,merge x' x)
+	else
+	  join (k, Leaf (k,x), j, t)
     | Branch (p,m,t0,t1) as t ->
 	if match_prefix k p m then
 	  if zero_bit k m then 
@@ -83,7 +86,9 @@ let branch = function
 let remove k t =
   let rec rmv = function
     | Empty -> Empty
-    | Leaf (j,_) as t -> if k == j then Empty else t
+    | Leaf (j,_) as t-> 
+	if k == j then Empty
+	else t
     | Branch (p,m,t0,t1) as t -> 
 	if match_prefix k p m then
 	  if zero_bit k m then
@@ -92,8 +97,7 @@ let remove k t =
 	    branch (p, m, t0, rmv t1)
 	else
 	  t
-  in
-  rmv t
+  in rmv t
 
 let rec iter f = function
   | Empty -> ()
@@ -142,7 +146,43 @@ let equal eq t1 t2 =
     | Empty, Empty -> true
     | Leaf (k1,x1), Leaf (k2,x2) -> k1 = k2 && eq x1 x2
     | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	p1 = p2 && m1 = m2 && equal_aux l1 l2 && equal_aux r1 r2
+	(p1 = p2 &&
+	    m1 = m2 &&
+	    (equal_aux l1 l2) &&
+	    (equal_aux r1 r2))
     | _ -> false
   in
-  equal_aux t1 t2
+  t1 == t2 || equal_aux t1 t2
+
+(* mostly taken from ptset.merge *)
+let merge data_join t1 t2 =
+  let rec merge t1 t2 =
+    if t1==t2 then t1
+    else
+      match t1, t2 with
+	| Empty, t
+	| t, Empty -> t
+	| Leaf (k,x), t
+	| t, Leaf (k,x) -> add ~merge:data_join k x t
+	| (Branch (p,m,s0,s1) as s), (Branch (q,n,t0,t1) as t) ->
+	    if m == n && match_prefix q p m then
+	      (* The trees have the same prefix. Merge the subtrees. *)
+	      Branch (p, m, merge s0 t0, merge s1 t1)
+	    else if m < n && match_prefix q p m then
+	      (* [q] contains [p]. Merge [t] with a subtree of [s]. *)
+	      if zero_bit q m then 
+		Branch (p, m, merge s0 t, s1)
+              else 
+		Branch (p, m, s0, merge s1 t)
+	    else if m > n && match_prefix p q n then
+	      (* [p] contains [q]. Merge [s] with a subtree of [t]. *)
+	      if zero_bit p n then
+		Branch (q, n, merge s t0, t1)
+	      else
+		Branch (q, n, t0, merge s t1)
+	    else
+	      (* The prefixes disagree. *)
+	      join (p, s, q, t)
+  in
+    merge t1 t2
+	

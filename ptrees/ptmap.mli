@@ -1,6 +1,7 @@
 (**************************************************************************)
 (*                                                                        *)
 (*  Copyright (C) Jean-Christophe Filliatre                               *)
+(*  - [add] and [merge] functions modified/added by Laurent Hubert (CNRS) *)
 (*                                                                        *)
 (*  This software is free software; you can redistribute it and/or        *)
 (*  modify it under the terms of the GNU Library General Public           *)
@@ -27,7 +28,12 @@ val empty : 'a t
 
 val is_empty : 'a t -> bool
 
-val add : int -> 'a -> 'a t -> 'a t
+(** [add ~merge:f k d m] returns a map containing the same bindings as
+    [m], plus a binding of [k] to [d].  If [k] was already bound to
+    [d'] in [m], then the value [f d' d] is added instead of [d].  If
+    no merge function is specified, then the previous bindings is
+    simply discard. *)
+val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
 
 val find : int -> 'a t -> 'a
 
@@ -46,3 +52,8 @@ val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
 val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
 val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
+(** [merge f m1 m2] returns a map that has the bindings of [m1] and
+    [m2] and which binds [k] to [f d1 d2] if [m1] and [m2] binds the
+    same [k] to [d1] and [d2], respectively. *)
+val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t

@@ -26,7 +26,7 @@ OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
 OCAMLDOC = ocamldoc.opt
 OCAMLDEP = ocamldep.opt -pp camlp4o.opt
 OCAMLMKTOP = ocamlmktop
-INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
+INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH) -I ptrees
 
 ifeq ($(DEBUG),yes)
 OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
@@ -41,11 +41,11 @@ endif
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jPrint jControlFlow jPrintHierarchy  ptmap jRTA
+jParse jFile jProgram jPrint jControlFlow jPrintHierarchy jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
 jParseSignature jParse jLow2High jHigh2Low jFile jProgram jControlFlow	\
-jPrint jPrintHierarchy ptmap
+jPrint jPrintHierarchy
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc
