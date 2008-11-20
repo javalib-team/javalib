@@ -19,7 +19,7 @@
 #  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 
--include Makefile.config
+include Makefile.config
 DEBUG=no
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
@@ -32,9 +32,9 @@ ifeq ($(DEBUG),yes)
 OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
 else
 ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p -noassert -ccopt -O3
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p $(OPT_FLAGS)
 else
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -noassert -ccopt -O3
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt $(OPT_FLAGS)
 endif
 endif
 
@@ -59,17 +59,19 @@ install: javaLib.cma javaLib.cmxa
 
 ocaml:
 	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma
+ptrees.cma ptrees.cmxa:
+	$(MAKE) -C ptrees
 
 tests:javaLib.cma tests.ml
-	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma javaLib.cma tests.ml
+	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma javaLib.cma tests.ml
 tests.opt:javaLib.cmxa tests.ml
-	$(OCAMLOPT) $(INCLUDE) -o $@ unix.cmxa zip.cmxa extLib.cmxa javaLib.cmxa tests.ml
+	$(OCAMLOPT) $(INCLUDE) -o $@ unix.cmxa zip.cmxa extLib.cmxa ptrees.cmxa javaLib.cmxa tests.ml
 
 sample:
-	$(OCAMLC) $(INCLUDE) extLib.cma javaLib.cma sample.ml -o $@
+	$(OCAMLC) $(INCLUDE) extLib.cma ptrees.cma javaLib.cma sample.ml -o $@
 
 sample.opt:
-	$(OCAMLOPT) $(INCLUDE) extLib.cmxa javaLib.cmxa sample.ml -o $@
+	$(OCAMLOPT) $(INCLUDE) extLib.cmxa ptrees.cmxa javaLib.cmxa sample.ml -o $@
 
 javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 	$(OCAMLC) -a $(MODULES:=.cmo) -o $@
