@@ -35,6 +35,8 @@ val is_empty : 'a t -> bool
     simply discard. *)
 val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
 
+val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
+
 val find : int -> 'a t -> 'a
 
 val remove : int -> 'a t -> 'a t

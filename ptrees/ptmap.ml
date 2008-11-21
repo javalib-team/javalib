@@ -59,6 +59,25 @@ let join (p0,t0,p1,t1) =
 
 let match_prefix k p m = (mask k m) == p
 
+let modify k f t =
+  let rec ins = function
+    | Empty -> Leaf (k,f None)
+    | Leaf (j,x') as t -> 
+	if j == k then
+	  Leaf (k,f (Some x'))
+	else
+	  join (k, Leaf (k,f None), j, t)
+    | Branch (p,m,t0,t1) as t ->
+	if match_prefix k p m then
+	  if zero_bit k m then 
+	    Branch (p, m, ins t0, t1)
+	  else
+	    Branch (p, m, t0, ins t1)
+	else
+	  join (k, Leaf (k,f None), p, t)
+  in
+  ins t
+
 let add ?(merge=fun a b -> b) k x t =
   let rec ins = function
     | Empty -> Leaf (k,x)
