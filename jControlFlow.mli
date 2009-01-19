@@ -45,7 +45,7 @@ module PP : sig
 
       @raise NoCode if the method [ms] has no associated code.*)
   val get_first_pp : program -> class_name -> method_signature -> t
-  val get_first_pp_wp : interface_or_class -> method_signature -> t
+  val get_first_pp_wp : interface_or_class -> method_signature_index -> t
   val goto_absolute : t -> int -> t
   val goto_relative : t -> int -> t
 
@@ -87,14 +87,14 @@ val resolve_class : program -> class_name -> interface_or_class
     current class.
     @raise NoSuchMethodError if the method is not found
 *)
-val resolve_method : method_signature -> class_file -> interface_or_class
-val resolve_method' : method_signature -> class_file -> class_file
+val resolve_method : method_signature_index -> class_file -> interface_or_class
+val resolve_method' : method_signature_index -> class_file -> class_file
   (** only look for the method in the superclasses. *)
 
 (** [mplements_method c ms] returns [true] iff the class has a method with the
     signature [ms] and which is not abstract. (Note: The method can be native.)
 *)
-val implements_method : class_file -> method_signature -> bool
+val implements_method : class_file -> method_signature_index -> bool
 
 (** [resolve_interface_method ms c] return the interface that defines
     the method [ms], or [java.lang.Object] if no interface defines
@@ -104,14 +104,14 @@ val implements_method : class_file -> method_signature -> bool
     @raise NoSuchMethodError if the method is not found.
     @raise IncompatibleClassChangeError if [c] is not an interface.
 *)
-val resolve_interface_method : method_signature -> interface_file -> interface_or_class
+val resolve_interface_method : method_signature_index -> interface_file -> interface_or_class
 
 (** [resolve_interface_methods' ms i] looks for the methods [ms] in [i]
     and recursively in its interfaces, stopping at every first
     occurence in each hirarchy. It returns the list of interfaces that
     defines [ms]. *)
 val resolve_interface_method' :
-  ?acc:interface_file list -> method_signature -> interface_or_class -> interface_file list
+  ?acc:interface_file list -> method_signature_index -> interface_or_class -> interface_file list
 
 (** [resolve_all_interface_methods ms c] return the list of interfaces
     of [c] that defines the method [ms].  The list is ordered by
@@ -119,7 +119,7 @@ val resolve_interface_method' :
     responsible to check that the interface and the method defined in
     the interface are visible from the current class.
 *)
-val resolve_all_interface_methods : method_signature -> interface_file -> interface_file list
+val resolve_all_interface_methods : method_signature_index -> interface_file -> interface_file list
 
 
 (** [resolve_field fs c] returns the class or interface that defines
@@ -136,7 +136,7 @@ val resolve_field : field_signature -> interface_or_class -> interface_or_class
     @raise AbstractMethodError if the method is not found or if the
     method is abstract.
 *)
-val lookup_virtual_method : method_signature -> class_file -> class_file
+val lookup_virtual_method : method_signature_index -> class_file -> class_file
 
 (** [lookup_interface_method ms c] return the class that defines the
     method [ms], if any. The caller is responsible to check that the
@@ -147,7 +147,7 @@ val lookup_virtual_method : method_signature -> class_file -> class_file
     @raise AbstractMethodError if the method is not found or if the
     method is abstract.
 *)
-val lookup_interface_method : method_signature -> class_file -> class_file
+val lookup_interface_method : method_signature_index -> class_file -> class_file
 
 
 (** [overriding_methods ms c] looks for the methods that overrides and
@@ -156,7 +156,7 @@ val lookup_interface_method : method_signature -> class_file -> class_file
     @raise Not_found if [ms] cannot be found in [c]
     @raise Invalid_argument if [ms] is an initialization method
 *)
-val overridden_by_methods : method_signature -> interface_or_class -> class_file list
+val overridden_by_methods : method_signature_index -> interface_or_class -> class_file list
 
 
 (** [overridden_methods ms c] looks for the classes that define
@@ -166,7 +166,7 @@ val overridden_by_methods : method_signature -> interface_or_class -> class_file
 
     @raise Not_found if [ms] cannot be found in [c]
 *)
-val overrides_methods : method_signature -> class_file -> class_file list
+val overrides_methods : method_signature_index -> class_file -> class_file list
 
 (** [implements_methods ms c] looks for the interfaces that defines
     methods [ms] in the direct interfaces of [c] and recursively in
@@ -175,7 +175,7 @@ val overrides_methods : method_signature -> class_file -> class_file list
 
     @raise Not_found if [ms] cannot be found in [c]
 *)
-val implements_methods : method_signature -> class_file -> interface_file list
+val implements_methods : method_signature_index -> class_file -> interface_file list
 
 
 

@@ -22,9 +22,72 @@
 open JBasics
 open JClass
 
-module ClassMap = Map.Make(struct type t = class_name let compare = compare end)
+module ClassIndexMap = Map.Make(
+  struct
+    type t = class_name
+    let compare = compare
+  end)
+  
+module MethodIndexMap = JClass.MethodMap
+
+type method_signature_index = int 
+type method_signature_index_table =
+    { mutable msi_map : method_signature_index MethodIndexMap.t;
+      mutable msi_next : method_signature_index }
+type class_name_index = int
+type class_name_index_table =
+    { mutable cni_map : class_name_index ClassIndexMap.t;
+      mutable cni_next : class_name_index }
+  
+let get_ms_index tab ms =
+  try
+    (MethodIndexMap.find ms tab.msi_map,ms)
+  with Not_found -> 
+    begin
+      tab.msi_map <- MethodIndexMap.add ms tab.msi_next tab.msi_map;
+      tab.msi_next <- tab.msi_next + 1;
+      (tab.msi_next-1,ms)
+    end
+	
+let get_cn_index tab cn =
+  try
+    (ClassIndexMap.find cn tab.cni_map,cn)
+  with Not_found -> 
+    begin
+      tab.cni_map <- ClassIndexMap.add cn tab.cni_next tab.cni_map;
+      tab.cni_next <- tab.cni_next + 1;
+      (tab.cni_next-1,cn)
+    end
+
+type dictionary = { msi_table : method_signature_index_table;
+		    cni_table : class_name_index_table;
+		    get_ms_index : MethodIndexMap.key -> method_signature_index * MethodIndexMap.key;
+		    get_cn_index : ClassIndexMap.key -> class_name_index * ClassIndexMap.key }
+
+let clinit_index = 0
+let init_index = 1
+
+let java_lang_object_index = 0
+
+let make_dictionary () =
+  let msi_table =
+    { msi_map = MethodIndexMap.add init_signature 1
+	(MethodIndexMap.add clinit_signature 0 MethodIndexMap.empty);
+      msi_next = 2 }
+  and cni_table =
+    { cni_map = ClassIndexMap.add java_lang_object 0 ClassIndexMap.empty;
+      cni_next = 1 } in
+    { msi_table = msi_table;
+      cni_table = cni_table;
+      get_ms_index = get_ms_index msi_table;
+      get_cn_index = get_cn_index cni_table }
+
+module ClassMap = Ptmap
+module MethodMap = Ptmap
 
 type concrete_method = {
+  mutable cm_has_been_parsed : bool;
+  cm_index : method_signature_index;
   cm_signature : method_signature;
   cm_static : bool;
   cm_final : bool;
@@ -43,6 +106,7 @@ type concrete_method = {
 }
 
 and abstract_method = {
+  am_index : method_signature_index;
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
   am_generic_signature : JSignature.methodTypeSignature option;
@@ -52,8 +116,7 @@ and abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  mutable am_overridden_in : interface_file list;
-  mutable am_implemented_in : class_file list;
+  mutable am_overridden_in : interface_or_class list;
 }
 
 and jmethod =
@@ -62,6 +125,7 @@ and jmethod =
 
 and class_file = {
   c_name : class_name;
+  c_index : class_name_index;
   c_version : version;
   c_access : [`Public | `Default];
   c_generic_signature : JSignature.classSignature option;
@@ -81,11 +145,14 @@ and class_file = {
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
+  mutable c_resolve_methods : (class_file * jmethod) MethodMap.t;
+  mutable c_may_be_instanciated : bool;
   mutable c_children : class_file ClassMap.t;
 }
 
 and interface_file = {
   i_name : class_name;
+  i_index : class_name_index;
   i_version : version;
   i_access : [`Public | `Default];
   i_generic_signature : JSignature.classSignature option;
@@ -106,12 +173,10 @@ and interface_file = {
   mutable i_children_class : class_file ClassMap.t;
 }
 
-
-type interface_or_class = [
+and interface_or_class = [
 | `Interface of interface_file
 | `Class of class_file
 ]
-
 
 let get_name = function
   | `Interface i -> i.i_name
@@ -133,8 +198,8 @@ let get_consts = function
   | `Interface i -> i.i_consts
   | `Class c -> c.c_consts
 
-
-type program = interface_or_class ClassMap.t
+type program = { classes : interface_or_class ClassMap.t;
+		 dictionary : dictionary }
 type t = program
 
 let super = function
@@ -142,7 +207,6 @@ let super = function
   | `Class c -> c.c_super_class
 
 exception Class_not_found of class_name
-
 
 type any_field =
     | InterfaceField of interface_field
@@ -155,44 +219,43 @@ exception NoClassDefFoundError
 exception AbstractMethodError
 exception IllegalAccessError
 
-
 (* this exception is raised to avoid a full unfolding of the
     hierarchy. *)
 exception Found_Class of interface_or_class
 
 
-let defines_method ms = function
+let defines_method msi = function
   | `Interface i ->
-      if ms = clinit_signature then i.i_initializer <> None
-      else MethodMap.mem ms i.i_methods
-  | `Class c -> MethodMap.mem ms c.c_methods
+      if msi = clinit_index then i.i_initializer <> None
+      else MethodMap.mem msi i.i_methods
+  | `Class c -> MethodMap.mem msi c.c_methods
 let defines_field fs = function
   | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
   | `Class {c_fields=fm;} -> FieldMap.mem fs fm
 
 
-
-let get_interface_or_class program cn = ClassMap.find cn program
+let get_interface_or_class program cn =
+  let cni = fst (program.dictionary.get_cn_index cn) in
+    ClassMap.find cni program.classes
 
 let super_class c : class_file option = super c
 
-
-let get_method c ms = match c with
+let get_method c msi = match c with
   | `Interface i ->
-      if ms = clinit_signature
+      if msi = clinit_index
       then
 	match i.i_initializer with
 	  | Some m -> ConcreteMethod m
 	  | None -> raise Not_found
       else
-	AbstractMethod (MethodMap.find ms i.i_methods)
-  | `Class c -> MethodMap.find ms c.c_methods
+	AbstractMethod (MethodMap.find msi i.i_methods)
+  | `Class c -> MethodMap.find msi c.c_methods
 
 let get_methods = function
   | `Interface i ->
       let init =
 	if i.i_initializer = None then []
-	else [clinit_signature]
+	else [clinit_index]
       in MethodMap.fold (fun ms _ l -> ms::l) i.i_methods init
   | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
@@ -207,58 +270,9 @@ let get_fields c =
       | `Interface i -> FieldMap.fold to_list i.i_fields []
       | `Class c -> FieldMap.fold to_list c.c_fields []
 
-let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
-  ClassMap.fold
-    (fun _ i acc ->
-      if defines_method ms (`Interface i)
-      then i::acc
-      else resolve_interface_method' ~acc ms (`Interface i))
-    (get_interfaces c)
-    acc
-
-let rec implements ?(acc=[]) ms (c:class_file) : (class_file option * interface_file list) =
-  match c.c_super_class with
-    | None -> (None,resolve_interface_method' ~acc ms (`Class c))
-    | Some sc ->
-	if defines_method ms (`Class sc)
-	then (Some sc,resolve_interface_method' ~acc ms (`Class c))
-	else implements ~acc:(resolve_interface_method' ~acc ms (`Class c)) ms sc
-
-let rec rem_dbl = function
-  | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
-  | l -> l
-
-let declare_method ioc ms =
-  if ms.ms_name = "<init>" || ms.ms_name = "<clinit>" then ()
-  else
-    let ioc2c = function
-      | `Class c -> c
-      | `Interface _ -> raise (Invalid_argument "ioc2c")
-    in
-    let add c' c ms =
-      match get_method c ms with
-	| ConcreteMethod m -> m.cm_overridden_in <- (ioc2c c')::m.cm_overridden_in
-	| AbstractMethod m ->
-	    match c' with
-	      | `Interface c' -> m.am_overridden_in <- c'::m.am_overridden_in
-	      | `Class c' -> m.am_implemented_in <- c'::m.am_implemented_in
-    in
-      try
-	match ioc with
-	  | `Interface _ ->
-	      List.iter
-		(fun i -> add ioc (`Interface i) ms)
-		(rem_dbl (resolve_interface_method' ms ioc));
-	  | `Class c ->
-	      let (super,il) = implements ms c in
-		List.iter (fun i -> add ioc (`Interface i) ms) (rem_dbl il);
-		match super with
-		  | Some c -> add ioc (`Class c) ms
-		  | None -> ()
-      with Invalid_argument "ioc2c" ->
-	raise (Failure "bug in JavaLib: jProgram.add_method")
-
-let ccm2pcm m = {
+let ccm2pcm p_dic m = {
+  cm_has_been_parsed = true;
+  cm_index = fst (p_dic.get_ms_index m.JClass.cm_signature);
   cm_signature = m.JClass.cm_signature;
   cm_static = m.JClass.cm_static;
   cm_final = m.JClass.cm_final;
@@ -293,7 +307,8 @@ let pcm2ccm m = {
   JClass.cm_implementation = m.cm_implementation;
 }
 
-let cam2pam m = {
+let cam2pam p_dic m = {
+  am_index = fst (p_dic.get_ms_index m.JClass.am_signature);
   am_signature = m.JClass.am_signature;
   am_access = m.JClass.am_access;
   am_generic_signature = m.JClass.am_generic_signature;
@@ -304,7 +319,6 @@ let cam2pam m = {
   am_exceptions = m.JClass.am_exceptions;
   am_attributes = m.JClass.am_attributes;
   am_overridden_in = [];
-  am_implemented_in = [];
 }
 
 let pam2cam m = {
@@ -319,155 +333,12 @@ let pam2cam m = {
   JClass.am_attributes = m.am_attributes;
 }
 
-let add_methods mm =
-  MethodMap.map
-    (fun m ->
-      match m with
-	| JClass.AbstractMethod m -> AbstractMethod (cam2pam m)
-	| JClass.ConcreteMethod m -> ConcreteMethod (ccm2pcm m))
-    mm
-
-let add_amethods mm = MethodMap.map (fun m -> cam2pam m) mm
-
-let add_classFile c (program:program) =
-  let imap =
-    List.fold_left
-      (fun imap iname ->
-	let i =
-	  try
-	    match ClassMap.find iname program with
-	      | `Interface i -> i
-	      | `Class _ ->
-		  raise (Class_structure_error
-			    (JDumpBasics.class_name c.JClass.c_name^" is declared to implements "
-			      ^JDumpBasics.class_name iname^", which is a class and not an interface."))
-	  with Not_found -> raise (Class_not_found iname)
-	in ClassMap.add iname i imap
-      )
-      ClassMap.empty
-      c.JClass.c_interfaces
-  in let c_super =
-    match c.JClass.c_super_class with
-      | None -> None
-      | Some super ->
-	  try
-	    match ClassMap.find super program with
-	      | `Class c -> Some c
-	      | `Interface _ ->
-		  raise (Class_structure_error
-			    (JDumpBasics.class_name c.JClass.c_name^" is declared to extends "
-			      ^JDumpBasics.class_name super^", which is an interface and not a class."))
-	  with Not_found -> raise (Class_not_found super)
-  in
-  let c' =
-    {c_name = c.JClass.c_name;
-     c_version = c.JClass.c_version;
-     c_access = c.JClass.c_access;
-     c_generic_signature = c.JClass.c_generic_signature;
-     c_final = c.JClass.c_final;
-     c_abstract = c.JClass.c_abstract;
-     c_synthetic = c.JClass.c_synthetic;
-     c_enum = c.JClass.c_enum;
-     c_other_flags = c.JClass.c_other_flags;
-     c_super_class = c_super;
-     c_consts = c.JClass.c_consts;
-     c_interfaces = imap;
-     c_sourcefile = c.JClass.c_sourcefile;
-     c_deprecated = c.JClass.c_deprecated;
-     c_enclosing_method = c.JClass.c_enclosing_method;
-     c_source_debug_extention =c.JClass.c_source_debug_extention;
-     c_inner_classes = c.JClass.c_inner_classes;
-     c_other_attributes = c.JClass.c_other_attributes;
-     c_fields = c.JClass.c_fields;
-     c_methods = add_methods c.JClass.c_methods;
-     c_children = ClassMap.empty;}
-  in
+let ptree2mmap get_ms f ptm =
+  let mmap = ref JClass.MethodMap.empty in
     MethodMap.iter
-      (fun ms _ -> declare_method (`Class c') ms)
-      c'.c_methods;
-    ClassMap.iter
-      (fun _ i ->
-	i.i_children_class <- ClassMap.add c'.c_name c' i.i_children_class)
-      c'.c_interfaces;
-    begin
-      match super (`Class c') with
-	| None -> ();
-	| Some parent ->
-	    parent.c_children <- ClassMap.add c'.c_name c' parent.c_children
-    end;
-    ClassMap.add
-      c'.c_name
-      (`Class c')
-      program
-
-let add_interfaceFile c (program:program) =
-  let imap =
-    List.fold_left
-      (fun imap iname ->
-	let i =
-	  try
-	    match ClassMap.find iname program with
-	      | `Interface i -> i
-	      | `Class c' ->
-		  raise (Class_structure_error
-			    ("Interface "^JDumpBasics.class_name c.JClass.i_name^" is declared to extends "
-			      ^JDumpBasics.class_name c'.c_name^", which is an interface and not a class."))
-	  with Not_found -> raise (Class_not_found iname)
-	in ClassMap.add iname i imap
-      )
-      ClassMap.empty
-      c.JClass.i_interfaces
-  and super =
-    try match ClassMap.find java_lang_object program with
-      | `Class c -> c
-      | `Interface _ ->
-	  raise (Class_structure_error"java.lang.Object is declared as an interface.")
-    with Not_found -> raise (Class_not_found java_lang_object)
-  in
-  let c' =
-    {i_name = c.JClass.i_name;
-     i_version = c.JClass.i_version;
-     i_access = c.JClass.i_access;
-     i_generic_signature = c.JClass.i_generic_signature;
-     i_consts = c.JClass.i_consts;
-     i_annotation = c.JClass.i_annotation;
-     i_other_flags = c.JClass.i_other_flags;
-     i_interfaces = imap;
-     i_sourcefile = c.JClass.i_sourcefile;
-     i_deprecated = c.JClass.i_deprecated;
-     i_source_debug_extention = c.JClass.i_source_debug_extention;
-     i_inner_classes = c.JClass.i_inner_classes;
-     i_other_attributes = c.JClass.i_other_attributes;
-     i_children_interface = ClassMap.empty;
-     i_children_class = ClassMap.empty;
-     i_super = super;
-     i_initializer =
-	begin
-	  match c.JClass.i_initializer with
-	    | None -> None
-	    | Some m -> Some (ccm2pcm m)
-	end;
-     i_fields = c.JClass.i_fields;
-     i_methods = add_amethods c.JClass.i_methods;
-    }
-  in
-    MethodMap.iter
-      (fun ms _ -> declare_method (`Interface c') ms)
-      c'.i_methods;
-    ClassMap.iter
-      (fun _ i ->
-	i.i_children_interface <- ClassMap.add c'.i_name c' i.i_children_interface)
-      c'.i_interfaces;
-    ClassMap.add
-      c'.i_name
-      (`Interface c')
-      program
-
-
-let add_one_file f program = match f with
-  | `Interface i -> add_interfaceFile i program
-  | `Class c -> add_classFile c program
-
+    (fun _ m ->
+	 mmap := JClass.MethodMap.add (get_ms m) (f m) !mmap) ptm;
+    !mmap
 
 let to_class = function
   | `Interface c -> `Interface
@@ -479,7 +350,7 @@ let to_class = function
        JClass.i_annotation = c.i_annotation;
        JClass.i_other_flags = c.i_other_flags;
        JClass.i_interfaces =
-	  ClassMap.fold (fun cn _ l -> cn::l) c.i_interfaces [];
+	  ClassMap.fold (fun _ c l -> c.i_name::l) c.i_interfaces [];
        JClass.i_sourcefile = c.i_sourcefile;
        JClass.i_deprecated = c.i_deprecated;
        JClass.i_source_debug_extention = c.i_source_debug_extention;
@@ -492,7 +363,8 @@ let to_class = function
 	      | None -> None
 	  end;
        JClass.i_fields = c.i_fields;
-       JClass.i_methods = MethodMap.map (fun m -> pam2cam m) c.i_methods;
+       JClass.i_methods = ptree2mmap (fun am -> am.am_signature)
+	  (fun m -> pam2cam m) c.i_methods;
       }
   | `Class c -> `Class
       {JClass.c_name = c.c_name;
@@ -510,7 +382,7 @@ let to_class = function
 	    | None -> None);
        JClass.c_consts = c.c_consts;
        JClass.c_interfaces =
-	  ClassMap.fold (fun cn _ l -> cn::l) c.c_interfaces [];
+	  ClassMap.fold (fun _ c l -> c.i_name::l) c.c_interfaces [];
        JClass.c_sourcefile = c.c_sourcefile;
        JClass.c_deprecated = c.c_deprecated;
        JClass.c_enclosing_method = c.c_enclosing_method;
@@ -519,92 +391,15 @@ let to_class = function
        JClass.c_other_attributes = c.c_other_attributes;
        JClass.c_fields = c.c_fields;
        JClass.c_methods =
-	  MethodMap.map
+	  ptree2mmap
+	    (function
+	      | AbstractMethod m -> m.am_signature
+	      | ConcreteMethod m -> m.cm_signature)
 	    (function
 	      | AbstractMethod m -> JClass.AbstractMethod (pam2cam m)
 	      | ConcreteMethod m -> JClass.ConcreteMethod (pcm2ccm m))
 	    c.c_methods;
       }
-
-
-let get_class class_path class_map name =
-  try ClassMap.find name !class_map
-  with Not_found ->
-    try
-      let c = JFile.get_class class_path (JDumpBasics.class_name name)
-      in
-	class_map := ClassMap.add name c !class_map;
-	c;
-    with No_class_found _ -> raise (Class_not_found name)
-
-let add_class_referenced c program to_add =
-  Array.iter
-    (function
-      | ConstMethod (TClass cn,_,_)
-      | ConstInterfaceMethod (cn,_,_)
-      | ConstField (cn,_,_)
-      | ConstValue (ConstClass (TClass cn))
-	-> if not (ClassMap.mem cn program) then to_add := cn::!to_add
-      | _ -> ())
-    (JClass.get_consts c)
-
-
-let rec add_file class_path c program =
-  let classmap = ref ClassMap.empty in
-  let to_add = ref [] in
-  let program =
-    try
-      add_class_referenced c !classmap to_add;
-      if not (ClassMap.mem (JClass.get_name c) program)
-      then add_one_file c program
-      else program
-    with Class_not_found cn ->
-      let missing_class = get_class class_path classmap cn in
-	add_file class_path c (add_file class_path missing_class program)
-  in begin
-    let program = ref program in
-      try while true do
-	  let cn = List.hd !to_add in
-	    to_add := List.tl !to_add;
-	    if not (ClassMap.mem cn !program)
-	    then
-	      let c = get_class class_path classmap cn
-	      in program := add_file class_path c !program
-	done;
-	!program
-      with Failure "hd" -> !program
-  end
-
-
-let parse_program class_path names =
-  (* build a map of all the JClass.class_file that are going to be
-     translated to build the new hierarchy.*)
-  let (jars,others) = List.partition (fun f -> Filename.check_suffix f ".jar") names in
-  let class_map =
-    JFile.read
-      class_path
-      (fun program c -> ClassMap.add (JClass.get_name c) c program)
-      ClassMap.empty
-      jars in
-  let class_path = JFile.class_path class_path in
-  let class_map = ref
-    begin
-      List.fold_left
-	(fun clmap cn ->
-	   let c= JFile.get_class class_path cn in
-	     ClassMap.add (JClass.get_name c) c clmap)
-	class_map
-	others
-    end in
-  let program =
-    ClassMap.fold
-      (fun _ -> add_file class_path)
-      !class_map
-      ClassMap.empty
-  in
-    JFile.close_class_path class_path;
-    program
-
 
 let store_program filename program : unit =
   let ch = open_out_bin filename
@@ -619,8 +414,8 @@ let load_program filename : program =
 
 
 (* Iterators *)
-let fold f s p = ClassMap.fold (fun _ c s -> f s c) p s
-let iter f p = ClassMap.iter (fun _ c -> f c) p
+let fold f s p = ClassMap.fold (fun _ c s -> f s c) p.classes s
+let iter f p = ClassMap.iter (fun _ c -> f c) p.classes
 
 (* Access to the hierarchy *)
 
@@ -679,6 +474,10 @@ let rec implemented_interfaces' (c:class_file) : interface_file list =
       | None -> directly_implemented_interfaces
       | Some c' ->
 	  List.rev_append directly_implemented_interfaces (implemented_interfaces' c')
+
+let rec rem_dbl = function
+  | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
+  | l -> l
 
 let implemented_interfaces c = rem_dbl (implemented_interfaces' c)
 

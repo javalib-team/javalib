@@ -41,16 +41,16 @@ endif
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jPrint jControlFlow jPrintHierarchy jRTA
+jParse jFile jProgram jCRA jPrint jControlFlow jPrintHierarchy jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
-jParseSignature jParse jLow2High jHigh2Low jFile jProgram jControlFlow	\
-jPrint jPrintHierarchy
+jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\
+jControlFlow jPrint jPrintHierarchy jRTA
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc
 
-all: javaLib.cma javaLib.cmxa ocaml tests tests.opt
+all: javaLib.cma javaLib.cmxa ocaml #tests tests.opt
 
 install: javaLib.cma javaLib.cmxa
 	mkdir -p $(INSTALL_DIR)

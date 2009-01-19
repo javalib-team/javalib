@@ -84,21 +84,24 @@ module PP = struct
     match get_interface_or_class prog cn with
       | `Interface {i_initializer = Some m} as c when m.cm_signature = ms ->
 	  {cl=c;meth=m;pc=0;}
-      | `Class c as cl' when MethodMap.mem ms c.c_methods ->
+      | `Class c as cl' when
+	  let msi = fst (prog.dictionary.get_ms_index ms) in
+	    MethodMap.mem msi c.c_methods ->
 	  begin
-	    match MethodMap.find ms c.c_methods with
-	      | ConcreteMethod m->
-		  {cl=cl';
-		   meth=m;
-		   pc=0;}
-	      | _ -> raise (NoCode (cn,ms))
+	    let msi = fst (prog.dictionary.get_ms_index ms) in
+	      match MethodMap.find msi c.c_methods with
+		| ConcreteMethod m->
+		    {cl=cl';
+		     meth=m;
+		     pc=0;}
+		| _ -> raise (NoCode (cn,ms))
 	  end
       | _ -> raise (NoCode (cn,ms))
-
-  let get_first_pp_wp c ms : t =
-    match get_method c ms with
+	  
+  let get_first_pp_wp c msi : t =
+    match get_method c msi with
       | ConcreteMethod m -> {cl=c;meth=m;pc=0;}
-      | AbstractMethod _ -> raise (NoCode (get_name c,ms))
+      | AbstractMethod m -> raise (NoCode (get_name c,m.am_signature))
 
   let goto_absolute pp i : t = {pp with pc=i;}
 
@@ -197,53 +200,53 @@ let resolve_field fs c : interface_or_class =
       | None -> raise NoSuchFieldError
 
 
-let rec resolve_method' ms (c:class_file) : class_file =
-  if defines_method ms (`Class c)
+let rec resolve_method' msi (c:class_file) : class_file =
+  if defines_method msi (`Class c)
   then c
   else
     match super_class (`Class c) with
-      | Some super -> resolve_method' ms super
+      | Some super -> resolve_method' msi super
       | None -> raise NoSuchMethodError
 
-let rec resolve_interface_method' ?(acc=[]) ms (c:interface_or_class) : interface_file list =
+let rec resolve_interface_method' ?(acc=[]) msi (c:interface_or_class) : interface_file list =
   ClassMap.fold
     (fun _ i acc ->
-      if defines_method ms (`Interface i)
+      if defines_method msi (`Interface i)
       then i::acc
-      else resolve_interface_method' ~acc ms (`Interface i))
+      else resolve_interface_method' ~acc msi (`Interface i))
     (get_interfaces c)
     acc
 
-let rec resolve_method ms (c:class_file) : interface_or_class =
-  try `Class (resolve_method' ms c)
+let rec resolve_method msi (c:class_file) : interface_or_class =
+  try `Class (resolve_method' msi c)
   with NoSuchMethodError ->
-    match resolve_interface_method' ms (`Class c) with
+    match resolve_interface_method' msi (`Class c) with
       | resolved::_ -> `Interface resolved
       | [] -> match super_class (`Class c) with
 	  | None -> raise NoSuchMethodError
-	  | Some c' -> resolve_method ms c'
+	  | Some c' -> resolve_method msi c'
 
 
-let resolve_interface_method ms (c:interface_file) : interface_or_class =
-  if defines_method ms (`Interface c)
+let resolve_interface_method msi (c:interface_file) : interface_or_class =
+  if defines_method msi (`Interface c)
   then (`Interface c)
   else
-    match resolve_interface_method' ms (`Interface c) with
+    match resolve_interface_method' msi (`Interface c) with
       | resolved::_ -> `Interface resolved
-      | [] -> `Class (resolve_method' ms c.i_super) (* super = java.lang.object *)
+      | [] -> `Class (resolve_method' msi c.i_super) (* super = java.lang.object *)
 
-let resolve_all_interface_methods ms (i:interface_file) : interface_file list =
-  if defines_method ms (`Interface i)
+let resolve_all_interface_methods msi (i:interface_file) : interface_file list =
+  if defines_method msi (`Interface i)
   then [i]
-  else resolve_interface_method' ms (`Interface i)
+  else resolve_interface_method' msi (`Interface i)
 
-let lookup_virtual_method ms (c:class_file) : class_file =
+let lookup_virtual_method msi (c:class_file) : class_file =
   let c' =
-    try resolve_method' ms c
+    try resolve_method' msi c
     with NoSuchMethodError -> raise AbstractMethodError
   in
     try
-      match get_method (`Class c') ms with
+      match get_method (`Class c') msi with
 	| ConcreteMethod _ -> c'
 	| AbstractMethod _ -> raise AbstractMethodError
     with Not_found -> raise AbstractMethodError
@@ -251,7 +254,7 @@ let lookup_virtual_method ms (c:class_file) : class_file =
 let lookup_interface_method = lookup_virtual_method
 
 
-let overrides_methods ms c =
+let overrides_methods msi c =
   let result = ref [] in
     match c.c_super_class with
       | None -> []
@@ -259,7 +262,7 @@ let overrides_methods ms c =
 	  let sc = ref c in
 	    try
 	      while true do
-		let c = resolve_method' ms c
+		let c = resolve_method' msi c
 		in
 		  result := c::!result;
 		  sc :=
@@ -280,18 +283,15 @@ module CSet = Set.Make (
 	(c2.c_name)
   end)
 
-let overridden_by_methods ms c =
-  if ms.ms_name = "<clinit>" or ms.ms_name = "<init>"
+let overridden_by_methods msi c =
+  if msi = clinit_index or msi = init_index
   then raise (Invalid_argument "overridden_by_methods");
   let result = ref CSet.empty in
-  let rec overridden_by_methods' ms c =
-    match get_method c ms with
+  let rec overridden_by_methods' msi c =
+    match get_method c msi with
       | AbstractMethod am ->
 	  List.iter
-	    (fun c -> overridden_by_methods' ms (`Class c))
-	    am.am_implemented_in;
-	  List.iter
-	    (fun i -> overridden_by_methods' ms (`Interface i))
+	    (fun ioc -> overridden_by_methods' msi ioc)
 	    am.am_overridden_in
       | ConcreteMethod cm ->
 	  begin
@@ -300,91 +300,91 @@ let overridden_by_methods ms c =
 	      | `Interface _ -> assert false
 	  end;
 	  List.iter
-	    (fun c -> overridden_by_methods' ms (`Class c))
+	    (fun c -> overridden_by_methods' msi (`Class c))
 	    cm.cm_overridden_in
   in
     begin
-      match get_method c ms with
+      match get_method c msi with
 	| AbstractMethod am ->
 	    List.iter
-	      (fun c -> overridden_by_methods' ms (`Class c))
-	      am.am_implemented_in;
-	    List.iter
-	      (fun i -> overridden_by_methods' ms (`Interface i))
+	      (fun ioc -> overridden_by_methods' msi ioc)
 	      am.am_overridden_in
 	| ConcreteMethod cm ->
 	    List.iter
-	      (fun c -> overridden_by_methods' ms (`Class c))
+	      (fun c -> overridden_by_methods' msi (`Class c))
 	      cm.cm_overridden_in
     end;
     CSet.fold (fun ioc l -> ioc::l) !result []
 
-let implements_method c ms =
+let implements_method c msi =
   try
-    match MethodMap.find ms c.c_methods with
+    match MethodMap.find msi c.c_methods with
       | ConcreteMethod _ -> true
       | AbstractMethod _ -> false
   with Not_found -> false
 
-let implements_methods ms c =
+let implements_methods msi c =
   ClassMap.fold
-    (fun _ i l -> resolve_all_interface_methods ms i @ l)
+    (fun _ i l -> resolve_all_interface_methods msi i @ l)
     c.c_interfaces
     []
 
 let static_lookup_interface prog cn ms : interface_or_class list =
-  match resolve_class prog cn with
-    | `Class _ -> raise IncompatibleClassChangeError
-    | `Interface i ->
-	let il =
-	  List.map
-	    (fun i -> `Interface i)
-	    (resolve_all_interface_methods ms i)
-	in
-	  try
-	    let c = `Class (resolve_method' ms i.i_super)
-	    in c::il
-	  with _ -> il
+  let msi = fst (prog.dictionary.get_ms_index ms) in
+    match resolve_class prog cn with
+      | `Class _ -> raise IncompatibleClassChangeError
+      | `Interface i ->
+	  let il =
+	    List.map
+	      (fun i -> `Interface i)
+	      (resolve_all_interface_methods msi i)
+	  in
+	    try
+	      let c = `Class (resolve_method' msi i.i_super)
+	      in c::il
+	    with _ -> il
 
 let static_lookup_special prog pp cn ms =
-  match resolve_class prog cn with
-    | `Interface _ -> raise IncompatibleClassChangeError
-    | `Class c ->
-	let c' = resolve_method ms c in
-	  match pp.cl,c' with
-	    | _, `Class c2 when ms.ms_name = "<init>" -> c2
-	    | `Class c1, `Class c2 when c1 == c2 || not (extends_class c1 c2) -> c2
-	    | _ ->
-		match super_class pp.cl with
-		  | None -> raise AbstractMethodError
-		  | Some c -> lookup_virtual_method ms c
+  let msi = fst (prog.dictionary.get_ms_index ms) in
+    match resolve_class prog cn with
+      | `Interface _ -> raise IncompatibleClassChangeError
+      | `Class c ->
+	  let c' = resolve_method msi c in
+	    match pp.cl,c' with
+	      | _, `Class c2 when msi = init_index -> c2
+	      | `Class c1, `Class c2 when c1 == c2 || not (extends_class c1 c2) -> c2
+	      | _ ->
+		  match super_class pp.cl with
+		    | None -> raise AbstractMethodError
+		    | Some c -> lookup_virtual_method msi c
 
 let static_lookup_virtual prog obj ms =
-  match obj with
-    | TArray _ ->
-	begin
-	  match resolve_class prog java_lang_object with
-	    | `Class c ->
-		if implements_method c ms
-		then [`Class c]
-		else
-		  let ms =
-		    ignore (Format.flush_str_formatter ());
-		    JPrint.pp_method_signature Format.str_formatter ms;
-		    Format.flush_str_formatter ()
-		  in
-		    raise (Failure ("invokevirtual on an array : "^ms))
+  let msi = fst (prog.dictionary.get_ms_index ms) in
+    match obj with
+      | TArray _ ->
+	  begin
+	    match resolve_class prog java_lang_object with
+	      | `Class c ->
+		  if implements_method c msi
+		  then [`Class c]
+		  else
+		    let ms =
+		      ignore (Format.flush_str_formatter ());
+		      JPrint.pp_method_signature Format.str_formatter ms;
+		      Format.flush_str_formatter ()
+		    in
+		      raise (Failure ("invokevirtual on an array : "^ms))
+	      | `Interface _ -> raise IncompatibleClassChangeError
+	  end
+      | TClass cn ->
+	  match resolve_class prog cn with
 	    | `Interface _ -> raise IncompatibleClassChangeError
-	end
-    | TClass cn ->
-	match resolve_class prog cn with
-	  | `Interface _ -> raise IncompatibleClassChangeError
-	  | `Class c ->
-	      try [`Class (resolve_method' ms c)]
-	      with NoSuchMethodError ->
-		List.map
-		  (fun i -> `Interface i)
-		  (resolve_interface_method' ms (`Class c))
+	    | `Class c ->
+		try [`Class (resolve_method' msi c)]
+		with NoSuchMethodError ->
+		  List.map
+		    (fun i -> `Interface i)
+		    (resolve_interface_method' msi (`Class c))
 
 
 let handlers program pp =
@@ -423,6 +423,7 @@ let handlers program pp =
 			  else
 			    match get_opcode pp with
 			      | OpInvoke (typ,ms) ->
+				  let msi = fst (program.dictionary.get_ms_index ms) in
 				  let cl =
 				    match typ with
 				      | `Special cn -> [`Class (static_lookup_special program pp cn ms)]
@@ -430,12 +431,12 @@ let handlers program pp =
 				      | `Static cn ->
 					  let c =
 					    match resolve_class program cn with
-					      | `Class c -> resolve_method ms c
+					      | `Class c -> resolve_method msi c
 					      | `Interface _ -> raise IncompatibleClassChangeError
 					  in
 					  let c =
 					    match c with
-					      | `Class c' when implements_method c' ms -> c
+					      | `Class c' when implements_method c' msi -> c
 					      | _ -> raise AbstractMethodError
 					  in [c]
 				      | `Interface cn -> static_lookup_interface program cn ms
@@ -453,7 +454,7 @@ let handlers program pp =
 				  in
 				    not (List.exists
 					   (fun c ->
-					      let m = JProgram.get_method c ms
+					      let m = JProgram.get_method c msi
 					      in throws_instance_of m exn_class)
 					   cl)
 			      | _ -> true

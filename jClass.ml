@@ -36,6 +36,7 @@ type method_signature = {
 
 let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;}
 
+let init_signature = {ms_name="<init>";ms_parameters=[];ms_return_type=None;}
 
 type opcode =
 

@@ -19,7 +19,7 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
-(** High level Ocaml representation of a java byte-code program. *)
+(** Defines high level Ocaml representation of a java byte-code program. *)
 
 open JBasics
 open JClass
@@ -32,9 +32,72 @@ open JClass
     sub-interfaces).
 *)
 
-module ClassMap : Map.S with type key = class_name
+module ClassIndexMap : Map.S with type key = JBasics.class_name
+module MethodIndexMap : Map.S with type key = JClass.method_signature
+
+type method_signature_index = int 
+type method_signature_index_table =
+    { mutable msi_map : method_signature_index MethodIndexMap.t;
+      mutable msi_next : method_signature_index }
+type class_name_index = int
+type class_name_index_table =
+    { mutable cni_map : class_name_index ClassIndexMap.t;
+      mutable cni_next : class_name_index }
+
+type dictionary = { msi_table : method_signature_index_table;
+		    cni_table : class_name_index_table;
+		    get_ms_index : MethodIndexMap.key -> method_signature_index * MethodIndexMap.key;
+		    get_cn_index : ClassIndexMap.key -> class_name_index * ClassIndexMap.key }
+
+val clinit_index : int
+val init_index : int
+val java_lang_object_index : int
+
+val make_dictionary : unit -> dictionary
+
+module ClassMap :
+sig
+  type 'a t = 'a Ptmap.t
+  type key = int
+  val empty : 'a t
+  val is_empty : 'a t -> bool
+  val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
+  val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
+  val find : int -> 'a t -> 'a
+  val remove : int -> 'a t -> 'a t
+  val mem : int -> 'a t -> bool
+  val iter : (int -> 'a -> unit) -> 'a t -> unit
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
+  val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+end
+
+module MethodMap :
+sig
+  type 'a t = 'a Ptmap.t
+  type key = int
+  val empty : 'a t
+  val is_empty : 'a t -> bool
+  val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
+  val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
+  val find : int -> 'a t -> 'a
+  val remove : int -> 'a t -> 'a t
+  val mem : int -> 'a t -> bool
+  val iter : (int -> 'a -> unit) -> 'a t -> unit
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
+  val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+end
 
 type concrete_method = {
+  mutable cm_has_been_parsed : bool;
+  cm_index : method_signature_index;
   cm_signature : method_signature;
   cm_static : bool;
   cm_final : bool;
@@ -53,6 +116,7 @@ type concrete_method = {
 }
 
 and abstract_method = {
+  am_index : method_signature_index;
   am_signature : method_signature;
   am_access: [`Public | `Protected | `Default];
   am_generic_signature : JSignature.methodTypeSignature option;
@@ -62,8 +126,7 @@ and abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  mutable am_overridden_in : interface_file list;
-  mutable am_implemented_in : class_file list;
+  mutable am_overridden_in : interface_or_class list;
 }
 
 and jmethod =
@@ -72,6 +135,7 @@ and jmethod =
 
 and class_file = {
   c_name : class_name;
+  c_index : class_name_index;
   c_version : version;
   c_access : [`Public | `Default];
   c_generic_signature : JSignature.classSignature option;
@@ -92,7 +156,7 @@ and class_file = {
   (** introduced with Java 5 for local classes (defined in methods'
       code). The first element is innermost class that encloses the
       declaration of the current class. The second element is the
-      method that encose this class definition. cf
+      method that enlcoses this class definition. cf
       {{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS},
       paragraph 4.8.6.*)
   c_source_debug_extention : string option;
@@ -102,11 +166,14 @@ and class_file = {
   c_inner_classes : inner_class list;
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
+  mutable c_resolve_methods : (class_file * jmethod) MethodMap.t;
+  mutable c_may_be_instanciated : bool;
   mutable c_children : class_file ClassMap.t; (* a set would be more appropriate*)
 }
 
 and interface_file = {
   i_name : class_name;
+  i_index : class_name_index;
   i_version : version;
   i_access : [`Public | `Default];
   i_generic_signature : JSignature.classSignature option;
@@ -133,13 +200,10 @@ and interface_file = {
   mutable i_children_interface : interface_file ClassMap.t; (* a set would be more appropriate*)
   mutable i_children_class : class_file ClassMap.t; (* a set would be more appropriate*)
 }
-
-
-type interface_or_class = [
+and  interface_or_class = [
 | `Interface of interface_file
 | `Class of class_file
 ]
-
 
 val get_name : interface_or_class -> class_name
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
@@ -153,23 +217,21 @@ val to_class : interface_or_class -> JClass.interface_or_class
 
 (** {2 The [program] structure} *)
 
-(** A program is a set of class files identified by their name and
-    organized as a map. *)
-type program  (* should we use an hash map ? *)
+(** A program is a record containing a map of class files identified by
+    an id, and a dictionary containing functions to retrieve classes and
+    methods ids from their names. *)
+type program = { classes : interface_or_class ClassMap.t;
+		 dictionary : dictionary } (* should we use an hash map ? *)
 
 type t = program
+
+val ccm2pcm : dictionary -> JClass.concrete_method -> concrete_method
+val cam2pam : dictionary -> JClass.abstract_method -> abstract_method
 
 (** [Class_not_found c] is raised when trying to add a class when its
     super class or one of its implemented interfaces is not in the
     program structure.*)
 exception Class_not_found of class_name
-
-(** [parse_program classpath names] parses a list of [.jar] and
-    [.class] files, looking for them in the classpath (a list of
-    directories and [.jar] files separated with ':') . *)
-val parse_program : string -> string list -> t
-val add_file :
-  JFile.class_path -> JClass.interface_or_class -> program -> program
 
 (** @raise Sys_error if the file could not be opened. *)
 val load_program : string -> t
@@ -216,9 +278,9 @@ val get_interface_or_class : t -> class_name -> interface_or_class
     [c], if any.
     @raise Not_found if [c] does not contain a method with signature [ms].
 *)
-val get_method : interface_or_class -> method_signature -> jmethod
-val get_methods : interface_or_class -> method_signature list
-val defines_method : method_signature -> interface_or_class -> bool
+val get_method : interface_or_class -> method_signature_index -> jmethod
+val get_methods : interface_or_class -> method_signature_index list
+val defines_method : method_signature_index -> interface_or_class -> bool
 
 (** [get_field c fs] returns the field with signature [fs] in class
     [c], if any.
