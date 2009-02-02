@@ -36,6 +36,38 @@
     branching bit is respectively 0 and 1. Invariant: the trees [l]
     and [r] are not empty. *)
 
+
+module type S = sig
+  type t
+  type elt = int
+  val empty : t
+  val is_empty : t -> bool
+  val mem : int -> t -> bool
+  val add : int -> t -> t
+  val singleton : int -> t
+  val remove : int -> t -> t
+  val union : t -> t -> t
+  val subset : t -> t -> bool
+  val inter : t -> t -> t
+  val diff : t -> t -> t
+  val equal : t -> t -> bool
+  val compare : t -> t -> int
+  val elements : t -> int list
+  val choose : t -> int
+  val cardinal : t -> int
+  val iter : (int -> unit) -> t -> unit
+  val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (int -> bool) -> t -> bool
+  val exists : (int -> bool) -> t -> bool
+  val filter : (int -> bool) -> t -> t
+  val partition : (int -> bool) -> t -> t * t
+  val split : int -> t -> t * bool * t
+  val min_elt : t -> int
+  val max_elt : t -> int
+  val intersect : t -> t -> bool
+end
+
+
 (*i*)
 type elt = int
 (*i*)

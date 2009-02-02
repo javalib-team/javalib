@@ -41,7 +41,7 @@ module PP = struct
     && eqc pp1.cl pp2.cl
 
   let hash pp1 =
-    Hashtbl.hash (get_name pp1.cl,pp1.meth.cm_signature.ms_name,pp1.pc)
+    Hashtbl.hash (get_index pp1.cl,pp1.meth.cm_index,pp1.pc)
 
 
   let compare pp1 pp2 =
@@ -85,10 +85,10 @@ module PP = struct
       | `Interface {i_initializer = Some m} as c when m.cm_signature = ms ->
 	  {cl=c;meth=m;pc=0;}
       | `Class c as cl' when
-	  let msi = fst (prog.dictionary.get_ms_index ms) in
+	  let msi = prog.dictionary.get_ms_index ms in
 	    MethodMap.mem msi c.c_methods ->
 	  begin
-	    let msi = fst (prog.dictionary.get_ms_index ms) in
+	    let msi = prog.dictionary.get_ms_index ms in
 	      match MethodMap.find msi c.c_methods with
 		| ConcreteMethod m->
 		    {cl=cl';
@@ -330,7 +330,7 @@ let implements_methods msi c =
     []
 
 let static_lookup_interface prog cn ms : interface_or_class list =
-  let msi = fst (prog.dictionary.get_ms_index ms) in
+  let msi = prog.dictionary.get_ms_index ms in
     match resolve_class prog cn with
       | `Class _ -> raise IncompatibleClassChangeError
       | `Interface i ->
@@ -345,7 +345,7 @@ let static_lookup_interface prog cn ms : interface_or_class list =
 	    with _ -> il
 
 let static_lookup_special prog pp cn ms =
-  let msi = fst (prog.dictionary.get_ms_index ms) in
+  let msi = prog.dictionary.get_ms_index ms in
     match resolve_class prog cn with
       | `Interface _ -> raise IncompatibleClassChangeError
       | `Class c ->
@@ -359,7 +359,7 @@ let static_lookup_special prog pp cn ms =
 		    | Some c -> lookup_virtual_method msi c
 
 let static_lookup_virtual prog obj ms =
-  let msi = fst (prog.dictionary.get_ms_index ms) in
+  let msi = prog.dictionary.get_ms_index ms in
     match obj with
       | TArray _ ->
 	  begin
@@ -423,7 +423,7 @@ let handlers program pp =
 			  else
 			    match get_opcode pp with
 			      | OpInvoke (typ,ms) ->
-				  let msi = fst (program.dictionary.get_ms_index ms) in
+				  let msi = program.dictionary.get_ms_index ms in
 				  let cl =
 				    match typ with
 				      | `Special cn -> [`Class (static_lookup_special program pp cn ms)]

@@ -21,78 +21,76 @@
     performances are similar to those of the standard library's module
     [Set]. The representation is unique and thus structural comparison
     can be performed on Patricia trees. *)
+module type S = sig
+  type t
 
-type t
+  type elt = int
 
-type elt = int
+  val empty : t
 
-val empty : t
+  val is_empty : t -> bool
 
-val is_empty : t -> bool
+  val mem : int -> t -> bool
 
-val mem : int -> t -> bool
+  val add : int -> t -> t
 
-val add : int -> t -> t
+  val singleton : int -> t
 
-val singleton : int -> t
+  val remove : int -> t -> t
 
-val remove : int -> t -> t
+  val union : t -> t -> t
 
-val union : t -> t -> t
+  val subset : t -> t -> bool
 
-val subset : t -> t -> bool
+  val inter : t -> t -> t
 
-val inter : t -> t -> t
+  val diff : t -> t -> t
 
-val diff : t -> t -> t
+  val equal : t -> t -> bool
 
-val equal : t -> t -> bool
+  val compare : t -> t -> int
 
-val compare : t -> t -> int
+  val elements : t -> int list
 
-val elements : t -> int list
+  val choose : t -> int
 
-val choose : t -> int
+  val cardinal : t -> int
 
-val cardinal : t -> int
+  val iter : (int -> unit) -> t -> unit
 
-val iter : (int -> unit) -> t -> unit
+  val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
 
-val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
+  val for_all : (int -> bool) -> t -> bool
 
-val for_all : (int -> bool) -> t -> bool
+  val exists : (int -> bool) -> t -> bool
 
-val exists : (int -> bool) -> t -> bool
+  val filter : (int -> bool) -> t -> t
 
-val filter : (int -> bool) -> t -> t
+  val partition : (int -> bool) -> t -> t * t
 
-val partition : (int -> bool) -> t -> t * t
+  val split : int -> t -> t * bool * t
 
-val split : int -> t -> t * bool * t
-
-(*s Warning: [min_elt] and [max_elt] are linear w.r.t. the size of the
+  (*s Warning: [min_elt] and [max_elt] are linear w.r.t. the size of the
     set. In other words, [min_elt t] is barely more efficient than [fold
     min t (choose t)]. *)
 
-val min_elt : t -> int
-val max_elt : t -> int
+  val min_elt : t -> int
+  val max_elt : t -> int
 
-(*s Additional functions not appearing in the signature [Set.S] from ocaml
+  (*s Additional functions not appearing in the signature [Set.S] from ocaml
     standard library. *)
 
-(* [intersect u v] determines if sets [u] and [v] have a non-empty 
-   intersection. *) 
+  (* [intersect u v] determines if sets [u] and [v] have a non-empty 
+     intersection. *) 
 
-val intersect : t -> t -> bool
-
-
-(*s Big-endian Patricia trees *)
-
-module Big : sig
-  include Set.S with type elt = int
   val intersect : t -> t -> bool
 end
 
+include S
+
+(*s Big-endian Patricia trees *)
+
+module Big : S
 
 (*s Big-endian Patricia trees with non-negative elements. Changes:
     - [add] and [singleton] raise [Invalid_arg] if a negative element is given
@@ -101,9 +99,6 @@ end
     - [elements] returns a list with elements in ascending order
  *)
 
-module BigPos : sig
-  include Set.S with type elt = int
-  val intersect : t -> t -> bool
-end
+module BigPos : S
 
 

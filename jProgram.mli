@@ -34,66 +34,44 @@ open JClass
 
 module ClassIndexMap : Map.S with type key = JBasics.class_name
 module MethodIndexMap : Map.S with type key = JClass.method_signature
+module ClassMap : Ptmap.S
+module MethodMap : Ptmap.S
 
 type method_signature_index = int 
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
+      mutable ms_map : method_signature MethodMap.t;
       mutable msi_next : method_signature_index }
 type class_name_index = int
 type class_name_index_table =
     { mutable cni_map : class_name_index ClassIndexMap.t;
+      mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
 
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
-		    get_ms_index : MethodIndexMap.key -> method_signature_index * MethodIndexMap.key;
-		    get_cn_index : ClassIndexMap.key -> class_name_index * ClassIndexMap.key }
+		    get_ms_index : MethodIndexMap.key -> method_signature_index;
+		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    retrieve_ms : method_signature_index -> method_signature;
+		    retrieve_cn : class_name_index -> class_name }
+
+val main_signature : JClass.method_signature
 
 val clinit_index : int
 val init_index : int
+val main_index : int
+
 val java_lang_object_index : int
+val main_class_index : int
 
 val make_dictionary : unit -> dictionary
 
-module ClassMap :
-sig
-  type 'a t = 'a Ptmap.t
-  type key = int
-  val empty : 'a t
-  val is_empty : 'a t -> bool
-  val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
-  val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
-  val find : int -> 'a t -> 'a
-  val remove : int -> 'a t -> 'a t
-  val mem : int -> 'a t -> bool
-  val iter : (int -> 'a -> unit) -> 'a t -> unit
-  val map : ('a -> 'b) -> 'a t -> 'b t
-  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
-  val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-end
+module ClassMethSet : Set.S with type elt = int * int
+module ClassMethMap : Map.S with type key = int * int
 
-module MethodMap :
-sig
-  type 'a t = 'a Ptmap.t
-  type key = int
-  val empty : 'a t
-  val is_empty : 'a t -> bool
-  val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
-  val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
-  val find : int -> 'a t -> 'a
-  val remove : int -> 'a t -> 'a t
-  val mem : int -> 'a t -> bool
-  val iter : (int -> 'a -> unit) -> 'a t -> unit
-  val map : ('a -> 'b) -> 'a t -> 'b t
-  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
-  val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-end
+(* Is it useful ? *)
+module ClassnameSet : Set.S with type elt = JBasics.class_name
+module MethodSet : Set.S with type elt = JClass.method_signature
 
 type concrete_method = {
   mutable cm_has_been_parsed : bool;
@@ -206,6 +184,7 @@ and  interface_or_class = [
 ]
 
 val get_name : interface_or_class -> class_name
+val get_index : interface_or_class -> class_name_index
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
 
 val is_static_method : jmethod -> bool
@@ -221,12 +200,15 @@ val to_class : interface_or_class -> JClass.interface_or_class
     an id, and a dictionary containing functions to retrieve classes and
     methods ids from their names. *)
 type program = { classes : interface_or_class ClassMap.t;
-		 dictionary : dictionary } (* should we use an hash map ? *)
+		 static_lookup : class_name_index -> method_signature_index -> 
+							  int -> ClassMethSet.t;
+		 dictionary : dictionary }
 
 type t = program
 
 val ccm2pcm : dictionary -> JClass.concrete_method -> concrete_method
 val cam2pam : dictionary -> JClass.abstract_method -> abstract_method
+val declare_method : interface_or_class -> method_signature_index -> unit
 
 (** [Class_not_found c] is raised when trying to add a class when its
     super class or one of its implemented interfaces is not in the
@@ -323,3 +305,9 @@ val implemented_interfaces : class_file -> interface_file list
 val super_interfaces : interface_file -> interface_file list
 
 val firstCommonSuperClass : class_file -> class_file -> class_file
+
+val get_parsed_classes : t -> ClassnameSet.t
+
+val get_parsed_methods : t -> MethodSet.t
+
+val get_instantiated_classes : t -> ClassnameSet.t

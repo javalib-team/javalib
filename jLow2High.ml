@@ -465,8 +465,10 @@ let low2high_class cl =
 	 | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
-    if not (JBasics.get_permissive ()) && not (accsuper || is_interface)
-    then raise (Class_structure_error "ACC_SUPER must be set for all classes");
+    if not (JBasics.get_permissive ())
+      && not (accsuper || is_interface)
+      && not (accsuper && is_interface)
+    then raise (Class_structure_error "ACC_SUPER must be set for all classes (that are not interfaces)");
     if not (JBasics.get_permissive ()) && (is_final && is_abstract)
     then raise (Class_structure_error "An abstract class cannot be final.");
     let consts = DynArray.of_array cl.j_consts in

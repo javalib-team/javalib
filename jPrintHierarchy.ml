@@ -61,7 +61,7 @@ let get_hierachy prog info : info =
 		  (ppclassmap cn2link) c.i_children_interface);
 
       p_method = (fun cn ms fmt ->
-        let msi = fst (prog.dictionary.get_ms_index ms) in
+        let msi = prog.dictionary.get_ms_index ms in
 	let ioc = get_interface_or_class prog cn in
 	let m = get_method ioc msi in
 	let get_overridden_in = function

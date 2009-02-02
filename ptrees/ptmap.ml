@@ -21,6 +21,26 @@
     See the documentation of module [Ptset] which is also based on the
     same data-structure. *)
 
+
+module type S = sig
+  type (+'a) t
+  type key = int
+  val empty : 'a t
+  val is_empty : 'a t -> bool
+  val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
+  val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
+  val find : int -> 'a t -> 'a
+  val remove : int -> 'a t -> 'a t
+  val mem :  int -> 'a t -> bool
+  val iter : (int -> 'a -> unit) -> 'a t -> unit
+  val map : ('a -> 'b) -> 'a t -> 'b t
+  val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
+  val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
+  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+end
+
 type key = int
 
 type 'a t =

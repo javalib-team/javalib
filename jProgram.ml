@@ -22,6 +22,10 @@
 open JBasics
 open JClass
 
+
+module ClassMap = Ptmap
+module MethodMap = Ptmap
+
 module ClassIndexMap = Map.Make(
   struct
     type t = class_name
@@ -33,57 +37,112 @@ module MethodIndexMap = JClass.MethodMap
 type method_signature_index = int 
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
+      mutable ms_map : method_signature MethodMap.t;
       mutable msi_next : method_signature_index }
 type class_name_index = int
 type class_name_index_table =
     { mutable cni_map : class_name_index ClassIndexMap.t;
+      mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
-  
+      
 let get_ms_index tab ms =
   try
-    (MethodIndexMap.find ms tab.msi_map,ms)
-  with Not_found -> 
+    MethodIndexMap.find ms tab.msi_map
+  with Not_found ->
     begin
       tab.msi_map <- MethodIndexMap.add ms tab.msi_next tab.msi_map;
+      tab.ms_map <- MethodMap.add tab.msi_next ms tab.ms_map;
       tab.msi_next <- tab.msi_next + 1;
-      (tab.msi_next-1,ms)
+      tab.msi_next - 1
     end
-	
+      
 let get_cn_index tab cn =
   try
-    (ClassIndexMap.find cn tab.cni_map,cn)
+    ClassIndexMap.find cn tab.cni_map
   with Not_found -> 
     begin
       tab.cni_map <- ClassIndexMap.add cn tab.cni_next tab.cni_map;
+      tab.cn_map <- ClassMap.add tab.cni_next cn tab.cn_map;
       tab.cni_next <- tab.cni_next + 1;
-      (tab.cni_next-1,cn)
+      tab.cni_next - 1
     end
+
+exception RetrieveError
+
+let retrieve_cn tab cni =
+  try
+    ClassMap.find cni tab.cn_map
+  with _ -> raise RetrieveError
+
+let retrieve_ms tab msi =
+  try
+    MethodMap.find msi tab.ms_map
+  with _ -> raise RetrieveError
 
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
-		    get_ms_index : MethodIndexMap.key -> method_signature_index * MethodIndexMap.key;
-		    get_cn_index : ClassIndexMap.key -> class_name_index * ClassIndexMap.key }
+		    get_ms_index : MethodIndexMap.key -> method_signature_index;
+		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    retrieve_ms : method_signature_index -> method_signature;
+		    retrieve_cn : class_name_index -> class_name }
+
+let main_signature : JClass.method_signature =
+  {   ms_name = "main";
+      ms_parameters = [TObject (TArray (TObject
+					  (TClass ["java";"lang";"String"])))];
+      ms_return_type = None
+  }
 
 let clinit_index = 0
 let init_index = 1
+let main_index = 2
 
 let java_lang_object_index = 0
+let main_class_index = 1
 
 let make_dictionary () =
   let msi_table =
-    { msi_map = MethodIndexMap.add init_signature 1
-	(MethodIndexMap.add clinit_signature 0 MethodIndexMap.empty);
-      msi_next = 2 }
+    { msi_map = MethodIndexMap.add main_signature 2
+	(MethodIndexMap.add init_signature 1
+	   (MethodIndexMap.add clinit_signature 0 MethodIndexMap.empty));
+      ms_map = MethodMap.add 2 main_signature
+	(MethodMap.add 1 init_signature
+	   (MethodMap.add 0 clinit_signature MethodMap.empty));
+      msi_next = 3 }
   and cni_table =
     { cni_map = ClassIndexMap.add java_lang_object 0 ClassIndexMap.empty;
+      cn_map = ClassMap.add 0 java_lang_object ClassMap.empty;
       cni_next = 1 } in
     { msi_table = msi_table;
       cni_table = cni_table;
       get_ms_index = get_ms_index msi_table;
-      get_cn_index = get_cn_index cni_table }
+      get_cn_index = get_cn_index cni_table;
+      retrieve_ms = retrieve_ms msi_table;
+      retrieve_cn = retrieve_cn cni_table }
 
-module ClassMap = Ptmap
-module MethodMap = Ptmap
+module ClassMethSet = Set.Make(
+  struct
+    type t = int * int
+    let compare = compare
+  end)
+
+module ClassMethMap = Map.Make(
+  struct
+    type t = int * int
+    let compare = compare
+  end)
+
+module ClassnameSet = Set.Make(
+  struct
+    type t = JBasics.class_name
+    let compare = compare
+  end)
+
+module MethodSet = Set.Make(
+  struct
+    type t = JClass.method_signature
+    let compare = compare
+  end)
 
 type concrete_method = {
   mutable cm_has_been_parsed : bool;
@@ -182,6 +241,10 @@ let get_name = function
   | `Interface i -> i.i_name
   | `Class c -> c.c_name
 
+let get_index = function
+  | `Class c -> c.c_index
+  | `Interface i -> i.i_index
+
 let is_static_method = function
   | AbstractMethod _ -> false
   | ConcreteMethod m -> m.cm_static
@@ -199,6 +262,8 @@ let get_consts = function
   | `Class c -> c.c_consts
 
 type program = { classes : interface_or_class ClassMap.t;
+		 static_lookup : class_name_index -> method_signature_index -> 
+							  int -> ClassMethSet.t;
 		 dictionary : dictionary }
 type t = program
 
@@ -235,7 +300,7 @@ let defines_field fs = function
 
 
 let get_interface_or_class program cn =
-  let cni = fst (program.dictionary.get_cn_index cn) in
+  let cni = program.dictionary.get_cn_index cn in
     ClassMap.find cni program.classes
 
 let super_class c : class_file option = super c
@@ -271,8 +336,8 @@ let get_fields c =
       | `Class c -> FieldMap.fold to_list c.c_fields []
 
 let ccm2pcm p_dic m = {
-  cm_has_been_parsed = true;
-  cm_index = fst (p_dic.get_ms_index m.JClass.cm_signature);
+  cm_has_been_parsed = false;
+  cm_index = p_dic.get_ms_index m.JClass.cm_signature;
   cm_signature = m.JClass.cm_signature;
   cm_static = m.JClass.cm_static;
   cm_final = m.JClass.cm_final;
@@ -308,7 +373,7 @@ let pcm2ccm m = {
 }
 
 let cam2pam p_dic m = {
-  am_index = fst (p_dic.get_ms_index m.JClass.am_signature);
+  am_index = p_dic.get_ms_index m.JClass.am_signature;
   am_signature = m.JClass.am_signature;
   am_access = m.JClass.am_access;
   am_generic_signature = m.JClass.am_generic_signature;
@@ -488,3 +553,80 @@ let rec firstCommonSuperClass (c1:class_file) (c2:class_file) : class_file =
     | Some c3 -> firstCommonSuperClass c1 c3
     | None -> raise (Failure "firstCommonSuperClass: c1 and c2 has been found such that c1 does not extends c2 and c2 has no super class.")
 
+let rec resolve_interface_method ?(acc=[]) msi (c:interface_or_class) : interface_file list =
+  ClassMap.fold
+    (fun _ i acc ->
+      if defines_method msi (`Interface i)
+      then i::acc
+      else resolve_interface_method ~acc msi (`Interface i))
+    (get_interfaces c)
+    acc
+
+let rec resolve_implemented_method ?(acc=[]) msi (c:class_file) : (class_file option * interface_file list) =
+  match c.c_super_class with
+    | None -> (None,resolve_interface_method ~acc msi (`Class c))
+    | Some sc ->
+	if defines_method msi (`Class sc)
+	then (Some sc,resolve_interface_method ~acc msi (`Class c))
+	else resolve_implemented_method ~acc:(resolve_interface_method ~acc msi (`Class c)) msi sc
+
+let declare_method ioc msi =
+  if msi = init_index || msi = clinit_index then ()
+  else
+    let ioc2c  = function
+      | `Class c -> c
+      | `Interface _ -> raise (Invalid_argument "ioc2c")
+    in
+    let add c' c msi =
+      match get_method c msi with
+	| ConcreteMethod m -> m.cm_overridden_in <- (ioc2c c')::m.cm_overridden_in
+	| AbstractMethod m ->
+	    match c' with
+	      | `Interface _ -> m.am_overridden_in <- c'::m.am_overridden_in
+	      | `Class _ -> m.am_overridden_in <- c'::m.am_overridden_in
+    in
+      try
+	match ioc with
+	  | `Interface _ ->
+	      List.iter
+		(fun i -> add ioc (`Interface i) msi)
+		(rem_dbl (resolve_interface_method msi ioc));
+	  | `Class c ->
+	      let (super,il) = resolve_implemented_method msi c in
+		List.iter (fun i -> add ioc (`Interface i) msi) (rem_dbl il);
+		match super with
+		  | Some c -> add ioc (`Class c) msi
+		  | None -> ()
+      with Invalid_argument "ioc2c" ->
+	raise (Failure "bug in JavaLib: jProgram.add_method")
+
+let get_parsed_classes p =
+  let dic = (p.dictionary) in
+  let max_classes = dic.cni_table.cni_next - 1 in
+  let s = ref ClassnameSet.empty in
+    for i = 0 to max_classes do
+      s := ClassnameSet.add (dic.retrieve_cn i) !s
+    done;
+    !s
+
+let get_parsed_methods p =
+  let dic = (p.dictionary) in
+  let max_methods = dic.msi_table.msi_next - 1 in
+  let s = ref MethodSet.empty in
+    for i = 0 to max_methods do
+      s := MethodSet.add (dic.retrieve_ms i) !s
+    done;
+    !s
+
+let get_instantiated_classes p =
+  let dic = (p.dictionary) in
+  let s = ref ClassnameSet.empty in
+    ClassMap.iter
+      (fun cni ioc ->
+	 match ioc with
+	   | `Interface _ -> ()
+	   | `Class c ->
+	       if ( c.c_may_be_instanciated = true ) then
+		 s := ClassnameSet.add (dic.retrieve_cn cni) !s)
+      p.classes;
+    !s
