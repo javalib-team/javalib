@@ -29,7 +29,9 @@ let add_methods (p:program) mm =
   and f m =
     match m with
       | JClass.AbstractMethod m -> AbstractMethod (cam2pam p.dictionary m)
-      | JClass.ConcreteMethod m -> ConcreteMethod (ccm2pcm p.dictionary m) in
+      | JClass.ConcreteMethod m -> ConcreteMethod (
+	  let m = (ccm2pcm p.dictionary m) in m.cm_has_been_parsed <- true; 
+	    m) in
     JClass.MethodMap.iter
       (fun ms m ->
 	 let msi = p.dictionary.get_ms_index ms in
@@ -290,3 +292,4 @@ let parse_program class_path names =
   in
     JFile.close_class_path class_path;
     program
+      

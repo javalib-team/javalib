@@ -10,3 +10,6 @@ val parse_program : ?debug:bool -> string -> JBasics.class_name -> JProgram.prog
 val get_callgraph : JProgram.program ->
   ((JBasics.class_name * JClass.method_signature * int)
    * (JBasics.class_name * JClass.method_signature)) list
+
+exception Invoke_not_found of JBasics.class_name * JClass.method_signature
+  * JBasics.class_name * JClass.method_signature

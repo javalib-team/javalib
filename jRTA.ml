@@ -19,6 +19,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *)
 
+(* TODO :
+   - Gérer les lookup d'interfaces comme les classes en mémorisant 
+   les new qui ont été faits 
+   - Ne pas reparcourir les fils des interfaces à chaque fois pour
+   résoudre les méthodes atteignables lors d'un appel I.m
+   - Séparer le callgraph des lookups Special du reste
+*)
+
+
 open JBasics
 open JClass
 open JProgram
@@ -529,17 +538,19 @@ struct
 	     )
       )
 
-  let rec invoke_interface_lookup p cni msi =
+  let rec interface_lookup_action p cni f =
     let i_info = get_class_info p cni in
     let i_children = i_info.children in
       if ( ClassMap.mem cni p.interfaces ) then
 	(List.iter
-	   (fun x -> invoke_virtual_lookup p x msi)
-	   (ClassMap.find cni p.interfaces));
+	   f (ClassMap.find cni p.interfaces));
       List.iter
-	(fun x -> invoke_interface_lookup p x msi)
+	(fun x -> interface_lookup_action p x f)
 	i_children
-
+	
+  let invoke_interface_lookup p cni msi =
+    interface_lookup_action p cni
+      (fun x -> invoke_virtual_lookup p x msi)
 
   let rec invoke_special_lookup p current_class_index cni msi =
     let current_class_info = get_class_info p current_class_index in
@@ -682,6 +693,8 @@ let retrieve_invoke_index p_cache op =
 	  and msi = dic.get_ms_index ms in (cni,msi)
       | _ -> failwith "Bad opcode"
 
+exception Invoke_not_found of class_name * method_signature * class_name * method_signature
+
 let static_lookup p_cache cni msi pp =
   let m = fst (Program.get_method_info p_cache cni msi) in
     match m with
@@ -693,19 +706,35 @@ let static_lookup p_cache cni msi pp =
 		 let c = (Lazy.force code).c_code in
 		   try
 		     let op = c.(pp) in
-		       match op with
-			 | OpInvoke _ ->
-			     let x = retrieve_invoke_index p_cache op in
-			       (try
-				  (ClassMethMap.find x
-				     p_cache.Program.callgraph).Program.lookup
-				with _ ->
-				  raise Not_found
-			       )
-			 | _ ->
-			     failwith "Invalid opcode found at specified program point"
-		   with _ ->
-		     failwith "Invalid program point")
+		     let (ccni,cmsi) = retrieve_invoke_index p_cache op in
+		     let dic = !(p_cache.Program.dic) in
+		     let cn = dic.retrieve_cn cni
+		     and ms = dic.retrieve_ms msi
+		     and ccn = dic.retrieve_cn ccni
+		     and cms = dic.retrieve_ms cmsi in
+		       try
+			 match op with
+			   | OpInvoke(`Interface _,_) ->
+			       let s = ref ClassMethSet.empty in
+			       let f = (fun x ->
+					  let calls =
+					    ClassMethMap.find (x,cmsi)
+					      p_cache.Program.callgraph in
+					  let s' = calls.Program.lookup in
+					    s := ClassMethSet.union !s s') in
+				 Program.interface_lookup_action p_cache ccni f;
+				 !s
+			   | OpInvoke _ ->
+			       (ClassMethMap.find (ccni,cmsi)
+				  p_cache.Program.callgraph).Program.lookup
+			   | _ ->
+			       failwith "Invalid opcode found at specified program point"
+		       with _ ->
+			 raise (Invoke_not_found (cn,ms,ccn,cms))
+		   with
+		     | Invoke_not_found (_,_,_,_) as e -> raise e
+		     | _ ->
+			 failwith "Invalid program point")
 
 
 module JProgramConverter =
@@ -899,63 +928,54 @@ let parse_program_bench ?(debug = false) classpath cn =
     ignore(parse_program ~debug classpath cn);
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
+	
 
-let get_method_calls p cni msi workset work_done =
-  if not( ClassMethSet.mem (cni,msi) !work_done ) then
-    (let l = ref [] in
-     let f_lookup = p.static_lookup in
-     let dic = p.dictionary in
-     let ioc = ClassMap.find cni p.classes in
-     let m = get_method ioc msi in
-       (match m with
-	  | AbstractMethod _ ->
-	      failwith "Can't parse Abstract methods"
-	  | ConcreteMethod cm ->
-	      (match cm.cm_implementation with
-		 | Native -> failwith "Can't parse Native methods"
-		 | Java code ->
-		     let c = (Lazy.force code).c_code in
-		       Array.iteri
-			 (fun pp op ->
-			    match op with
-			      | OpInvoke _ ->
-				  let callsites = (f_lookup cni msi pp) in
-				  let new_reachable_callsites =
-				    ClassMethSet.diff callsites !work_done in
-				  let callsites_list =
+let get_method_calls p cni m =
+  (let l = ref [] in
+   let f_lookup = p.static_lookup in
+   let dic = p.dictionary in
+     (match m with
+	| AbstractMethod _ -> ()
+	| ConcreteMethod cm ->
+	    if ( cm.cm_has_been_parsed ) then
+	      (let msi = cm.cm_index in
+		 (match cm.cm_implementation with
+		    | Native -> ()
+		    | Java code ->
+			let c = (Lazy.force code).c_code in
+			  Array.iteri
+			    (fun pp op ->
+			       match op with
+				 | OpInvoke _ ->
+				     let callsites = (f_lookup cni msi pp) in
+				     let callsites_list =
 				    ClassMethSet.elements callsites in
-				  let new_reachable_callsites_list =
-				    ClassMethSet.elements
-				      new_reachable_callsites in
-				    workset := !workset @
-				      new_reachable_callsites_list;
-				    work_done := ClassMethSet.union !work_done
-				      new_reachable_callsites;
-				    l := 
-				      !l @ (List.map
-					      (fun x -> (pp,x)) callsites_list)
-			      | _ -> ()
-			 ) c
+				       l := 
+					 !l @ (List.map
+						 (fun (ccni,cmsi) ->
+						    ((dic.retrieve_cn cni,
+						      dic.retrieve_ms msi,pp),
+						     (dic.retrieve_cn ccni,
+						      dic.retrieve_ms cmsi)))
+						 callsites_list)
+				 | _ -> ()
+			    ) c
+		 )
 	      )
-       );
-       List.map (fun (pp,(ccni,cmsi)) ->
-		   ((dic.retrieve_cn cni,
-		     dic.retrieve_ms msi,pp),
-		    (dic.retrieve_cn ccni,
-		     dic.retrieve_ms cmsi))) !l
-    )
-  else []
+     );
+     !l
+  )
 
 let get_callgraph p =
-  let rec get_callgraph_aux p
-      ?(workset = ref [(main_class_index, main_index)])
-      ?(work_done = ref ClassMethSet.empty) callgraph =
-    if not( !workset = [] ) then
-      let (cni,msi) = List.hd !workset in
-	workset := List.tl !workset;
-	get_callgraph_aux p ~workset ~work_done
-	  (callgraph @
-	     (get_method_calls p cni msi workset work_done))
-    else callgraph
-  in
-    get_callgraph_aux p []
+  JProgram.fold
+    (fun calls ioc ->
+       match ioc with
+	 | `Interface _ -> calls
+	 | `Class c ->
+	     let l = ref [] in
+	       MethodMap.iter
+		 (fun _ m ->
+		    l :=
+		      !l @ (get_method_calls p c.c_index m)) c.c_methods;
+	       calls @ !l
+    ) [] p
