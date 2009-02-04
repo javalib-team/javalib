@@ -123,7 +123,7 @@ struct
   let iter f cache =
     iteri (fun _ x -> f x) cache
 end
-
+  
 module Dllist =
 struct
   exception NilNode
@@ -140,7 +140,7 @@ struct
 		     content : 'a content;
 		     mutable next : 'a link }
   and 'a dllist = 'a cellule ref
-
+      
   let create () =
     let rec head = ref { prev = tail; content = Head; next = tail }
     and tail = ref { prev = head; content = Tail; next = head }
@@ -156,7 +156,7 @@ struct
     match (!l).content with
       | Head -> (!l).prev
       | _ -> raise NoHeadNode
-
+	  
   let add (e:'a) (l:'a dllist) =
     match (!l).content with
       | Head ->
@@ -167,7 +167,7 @@ struct
 	    (!cell).prev <- new_elm;
 	    (!l).next <- new_elm
       | _ -> raise NoHeadNode
-
+	  
   let del (l:'a dllist) =
     match (!l).content with
       | Head -> raise HeadNode
@@ -175,7 +175,7 @@ struct
       | _ ->
 	  (!((!l).next)).prev <- (!l).prev;
 	  (!((!l).prev)).next <- (!l).next
-
+	    
   let rec mem (e:'a) (l:'a dllist) =
     match (!l).content with
       | Head ->
@@ -187,10 +187,10 @@ struct
 	    true
 	  else let cell = (!l).next in
 	    mem e cell
-	    
+	      
   let add_ifn e l =
     if not( mem e l ) then add e l
-
+      
   let rec size ?(s=0) (l:'a dllist) =
     match (!l).content with
       | Head ->
@@ -200,7 +200,7 @@ struct
       | Content _ ->
 	  let cell = (!l).next in
 	    size ~s:(s+1) cell
-	    
+	      
   let rec iter (f:'a -> unit) (l:'a dllist) =
     match (!l).content with
       | Head ->
@@ -210,8 +210,8 @@ struct
       | Content c ->
 	  f c;
 	  let cell = (!l).next in
-	       iter f cell
-
+	    iter f cell
+	      
   let rec iter_until_cell (f:'a -> unit) (bound:'a dllist) (l:'a dllist) =
     match (!l).content with
       | Head ->
@@ -223,7 +223,7 @@ struct
 	    (f c;
 	     let cell = (!l).next in
 	       iter_until_cell f bound cell)
-
+	      
   let rec iter_to_head_i (f:'a dllist -> 'a -> unit) (l:'a dllist) =
     match (!l).content with
       | Head -> ()
@@ -234,17 +234,23 @@ struct
 	  f l c;
 	  let cell = (!l).prev in
 	    iter_to_head_i f cell
-
+	      
   let iter_to_head (f:'a -> unit) (l:'a dllist) =
     iter_to_head_i (fun _ x -> f x) l 
-
+      
   let map (f:'a -> 'b) (l:'a dllist) =
     let tail = tail l
     and lm = ref [] in
       iter_to_head (fun x -> lm := (f x) :: !lm) tail;
       !lm
 end
-
+  
+module ClassSet = Set.Make(
+  struct
+    type t = class_name_index
+    let compare = compare
+  end)
+  
 module Program =
 struct
   type class_info =
@@ -252,14 +258,14 @@ struct
 	mutable is_instantiated : bool;
 	mutable children : class_name_index list;
 	instantiated_subclasses : int Dllist.dllist option;
-	supers : class_name_index list;
-	implemented_interfaces : class_name_index list option;
+	super_classes : class_name_index list;
+	super_interfaces : ClassSet.t;
 	mutable resolved_methods : (class_name_index *
 				      method_signature_index) MethodMap.t;
-	(* used for compatibility with JProgram *)
+	(* resolved_methods calculated for compatibility with JProgram *)
 	methods_data : methods_info }
   and method_info = JProgram.jmethod * Opcodes.implementation_cache option
-  and methods_info = method_info MethodMap.t (* TODO : useless ? *)
+  and methods_info = method_info MethodMap.t
       
   type callgraph_info =
       { mutable tested_new_instances : int Dllist.dllist;
@@ -267,15 +273,21 @@ struct
       }
   type program_cache =
       { mutable classes : class_info ClassMap.t;
+	(* for each interface, interfaces maps a list of classes
+	   that implements this interface directly or by inheritance *)
 	mutable interfaces : class_name_index list ClassMap.t;
-	mutable callgraph : callgraph_info ClassMethMap.t;
+	(* for each interface, interfaces maps a list of classes
+	   that implements this interface directly *)
+	mutable direct_interfaces : class_name_index list ClassMap.t;
+	mutable static_virtual_lookup : callgraph_info ClassMethMap.t;
+	mutable static_interface_lookup : ClassMethSet.t ClassMethMap.t;
 	dic : dictionary ref;
 	workset : ((class_name_index * method_signature_index) *
 		     (Opcodes.implementation_cache option ref)) Dllist.dllist;
 	v_calls : ClassMethSet.t ref;
 	mutable finished : bool;
 	classpath : JFile.class_path }
-      
+	
   exception Method_not_found
     
   let methodmap2methodinfo p mm =
@@ -314,7 +326,16 @@ struct
 	     (AbstractMethod(cam2pam dic am), None) !meth_info) mm;
       !meth_info
 	
-  let rec get_class_info p cni =
+  let rec rem_dbl = function
+    | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
+    | l -> l
+	
+  let rec load_class p cni =
+    if not( ClassMap.mem cni p.classes ) then
+      (let dic = !(p.dic) in
+       let cn = dic.retrieve_cn cni in
+	 add_class p cn)
+  and get_class_info p cni =
     try
       ClassMap.find cni p.classes
     with
@@ -336,41 +357,57 @@ struct
     let ioc_index = (dic.get_cn_index (JClass.get_name ioc)) in
       match ioc with
 	| `Class c ->
-	    let supers =
+	    let super_classes =
 	      (match c.JClass.c_super_class with
 		 | None -> []
 		 | Some sc ->
 		     let sc_index = (dic.get_cn_index sc) in
 		     let sc_info = get_class_info p sc_index in
 		       sc_info.children <- ioc_index :: sc_info.children;
-		       sc_index :: sc_info.supers)
+		       sc_index :: sc_info.super_classes)
 	    and implemented_interfaces =
-	      List.map (fun iname -> 
-			  let i = dic.get_cn_index iname in
-			    (* We do this to load the implemented interfaces and
-			       all their super interfaces *)
-		       	    ignore (get_class_info p i);
-			    i
-		       ) c.JClass.c_interfaces in
+	      let s = ref ClassSet.empty in
+		List.iter (fun iname ->
+			     let i = dic.get_cn_index iname in
+			       s := ClassSet.add i !s) c.JClass.c_interfaces;
+		!s in
 	      
-	      (* For each implemented interface we add cni in the program
-		 interfaces map *)
-	      List.iter
+	      (* For each implemented interface and its super interfaces we add
+		 cni in the program interfaces map *)
+	      ClassSet.iter
 		(fun i ->
-		   if (ClassMap.mem i p.interfaces ) then
+		   if ( ClassMap.mem i p.interfaces ) then
 		     p.interfaces <- ClassMap.add i
 		       (ioc_index ::(ClassMap.find i p.interfaces)) p.interfaces
 		   else
 		     p.interfaces <- ClassMap.add i [ioc_index] p.interfaces
+		) (ClassSet.fold
+		     (fun i_index s ->
+			let i_info = get_class_info p i_index in
+			  ClassSet.add i_index
+			    (ClassSet.union s i_info.super_interfaces)
+		     ) implemented_interfaces ClassSet.empty);
+	      
+	      (* For each implemented interface and its super interfaces we add
+		 cni in the program direct_interfaces map *)
+	      ClassSet.iter
+		(fun i ->
+		   if ( ClassMap.mem i p.direct_interfaces ) then
+		     p.direct_interfaces <- ClassMap.add i
+		       (ioc_index ::(ClassMap.find i p.direct_interfaces))
+		       p.direct_interfaces
+		   else
+		     p.direct_interfaces <- ClassMap.add i [ioc_index]
+		       p.direct_interfaces
 		) implemented_interfaces;
-
+	      
 	      let ioc_info =
 		{ class_data = ref ioc;
 		  is_instantiated = false;
 		  children = [];
 		  instantiated_subclasses = Some (Dllist.create());
-		  supers = supers;
-		  implemented_interfaces = Some (implemented_interfaces);
+		  super_classes = super_classes;
+		  super_interfaces = ClassSet.empty;
 		  resolved_methods = MethodMap.empty;
 		  methods_data = methodmap2methodinfo p c.JClass.c_methods }
 	      in
@@ -380,24 +417,25 @@ struct
 		(if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
 		   add_to_workset p (ioc_index,clinit_index))
 	| `Interface i ->
-	    List.iter
-	      (* An interface should know which interfaces extend it in order
-		 to achieve the lookup_interface *)
-	      (fun iname ->
-		 let si_index = (dic.get_cn_index iname) in
-		 let si_info = get_class_info p si_index in
-		   si_info.children <- ioc_index :: si_info.children)
-	      i.JClass.i_interfaces;
+	    let super_interfaces =
+	      let s = ref ClassSet.empty in
+		List.iter (fun si ->
+			     let si_index = dic.get_cn_index si in
+			     let si_info = get_class_info p si_index in
+			       si_info.children <- ioc_index :: si_info.children;
+			       s := ClassSet.add si_index !s;
+			       s := ClassSet.union si_info.super_interfaces !s
+			  ) i.JClass.i_interfaces;
+		!s in
+	      
 	    let ioc_info =
 	      { class_data = ref ioc;
 		is_instantiated = false;
 		(* An interface will never be instantiated *)
 		children = [];
 		instantiated_subclasses = None;
-		supers = [];
-		(* An interface don't need to know which super interfaces
-		   it extends *)
-		implemented_interfaces = None;
+		super_classes = [];
+		super_interfaces = super_interfaces;
 		resolved_methods = MethodMap.empty;
 		methods_data = abstract_methodmap2methodinfo p
 		  i.JClass.i_methods i.JClass.i_initializer }
@@ -417,19 +455,19 @@ struct
 	    
   and make_workset_item p (cni,msi) =
     ((cni,msi), ref (snd (get_method_info p cni msi)))
-
+      
   and add_to_workset p (cni,msi) =
     Dllist.add (make_workset_item p (cni,msi)) p.workset;
     match (fst (get_method_info p cni msi)) with
       | ConcreteMethod cm ->
 	  cm.cm_has_been_parsed <- true
       | AbstractMethod _ -> ()
-
+	  
   let get_instantiated_subclasses c_info =
     match c_info.instantiated_subclasses with
       | None -> failwith ("Can't instanciate an interface ")
       | Some subclasses -> subclasses
-    
+	  
   let rec add_instantiated_class p cni =
     let cl_info = get_class_info p cni in
       if not( cl_info.is_instantiated ) then
@@ -441,7 +479,7 @@ struct
 	   (fun scni ->
 	      let scl_info = get_class_info p scni in
 		Dllist.add cni (get_instantiated_subclasses scl_info)
-	   ) (cni :: cl_info.supers)
+	   ) (cni :: cl_info.super_classes)
 	)
 	  
   (* Method resolution *)
@@ -450,7 +488,7 @@ struct
       try
 	MethodMap.find msi class_info.resolved_methods
       with _ ->
-	let supers = class_info.supers in
+	let super_classes = class_info.super_classes in
 	  try
 	    let meth_info = get_method_info p cni msi in
 	      match (snd meth_info) with
@@ -462,17 +500,17 @@ struct
 		    (cni,msi)
 	  with Method_not_found ->
 	    try
-	      resolve_method p (List.hd supers) msi
+	      resolve_method p (List.hd super_classes) msi
 	    with _ ->
 	      failwith ("Failing resolving (" ^ (string_of_int cni) ^ ","
 			^ (string_of_int msi) ^ ")")
-
+		
   let update_lookup_set p msi callsites cni =
     if ( callsites = ClassMethSet.empty ) then
       ClassMethSet.empty
     else
       try
-	let call_info = ClassMethMap.find (cni,msi) p.callgraph in
+	let call_info = ClassMethMap.find (cni,msi) p.static_virtual_lookup in
 	let new_callsites =
 	  ClassMethSet.diff callsites call_info.lookup in
 	  if not( new_callsites = ClassMethSet.empty ) then
@@ -481,20 +519,20 @@ struct
 	     new_callsites)
 	  else ClassMethSet.empty
       with Not_found ->
-	(* we add the information in the callgraph even if (cni,msi) is 
+	(* we add the information in the static_virtual_lookup even if (cni,msi) is 
 	   never invoked in the program *)
 	let class_info = get_class_info p cni in
 	let tested_new_instances =
 	  Dllist.tail (get_instantiated_subclasses class_info) in
-	  p.callgraph <- ClassMethMap.add (cni,msi)
+	  p.static_virtual_lookup <- ClassMethMap.add (cni,msi)
 	    { tested_new_instances = tested_new_instances;
-	      lookup = callsites } p.callgraph;
+	      lookup = callsites } p.static_virtual_lookup;
 	  callsites
-
+	    
   let invoke_virtual_lookup p cni msi =
     let class_info = get_class_info p cni in
       (try
-	 let call_info = ClassMethMap.find (cni,msi) p.callgraph in
+	 let call_info = ClassMethMap.find (cni,msi) p.static_virtual_lookup in
 	 let resolved_methods = ref ClassMethSet.empty in
 	   Dllist.iter_to_head
 	     (fun new_cni ->
@@ -511,7 +549,7 @@ struct
 		  ClassMethSet.union new_callsites call_info.lookup;
 		let new_callsites =
 		  List.fold_left (update_lookup_set p msi)
-		    new_callsites class_info.supers in
+		    new_callsites class_info.super_classes in
 		  (* we add the new call sites to the workset *)
 		  ClassMethSet.iter
 		    (fun x -> add_to_workset p x) new_callsites
@@ -525,38 +563,35 @@ struct
 		resolved_methods := ClassMethSet.add
 		  (resolve_method p new_cni msi) !resolved_methods)
 	     (get_instantiated_subclasses class_info);
-	   p.callgraph <- ClassMethMap.add (cni,msi)
+	   p.static_virtual_lookup <- ClassMethMap.add (cni,msi)
 	     { tested_new_instances = tested_new_instances;
-	       lookup = !resolved_methods } p.callgraph;
+	       lookup = !resolved_methods } p.static_virtual_lookup;
 	   if not( !resolved_methods = ClassMethSet.empty ) then
 	     (let new_callsites =
 		List.fold_left (update_lookup_set p msi)
-		  !resolved_methods class_info.supers in
+		  !resolved_methods class_info.super_classes in
 		(* we add the new call sites to the workset *)
 		ClassMethSet.iter
 		  (fun x -> add_to_workset p x) new_callsites
 	     )
       )
-
-  let rec interface_lookup_action p cni f =
-    let i_info = get_class_info p cni in
-    let i_children = i_info.children in
-      if ( ClassMap.mem cni p.interfaces ) then
-	(List.iter
-	   f (ClassMap.find cni p.interfaces));
-      List.iter
-	(fun x -> interface_lookup_action p x f)
-	i_children
 	
+  let interface_lookup_action p cni f =
+    if ( ClassMap.mem cni p.interfaces ) then
+      (List.iter
+	 f (ClassMap.find cni p.interfaces))
+    else ()
+      (* otherwise, the classes implementing the interface have not
+	 been charged yet so we can't do anything *)
+      
   let invoke_interface_lookup p cni msi =
-    interface_lookup_action p cni
-      (fun x -> invoke_virtual_lookup p x msi)
-
+    interface_lookup_action p cni (fun x -> invoke_virtual_lookup p x msi)
+      
   let rec invoke_special_lookup p current_class_index cni msi =
     let current_class_info = get_class_info p current_class_index in
     let (rcni,msi) = resolve_method p cni msi in
       if ( msi = init_index
-	  || not(List.mem rcni current_class_info.supers) ) then
+	  || not(List.mem rcni current_class_info.super_classes) ) then
 	(let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
 	   ignore(update_lookup_set p msi s cni);
 	   (* we add (cni,msi) to the workset *)
@@ -564,24 +599,24 @@ struct
 	)
       else
 	let (rcni,msi) = resolve_method p
-	  (List.hd current_class_info.supers) msi in
+	  (List.hd current_class_info.super_classes) msi in
 	  (let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
 	     ignore(update_lookup_set p msi s cni);
 	     (* we add (cni,msi) to the workset *)
 	     add_to_workset p (rcni,msi)
 	  )
-	  
+	    
   let rec invoke_static_lookup p cni msi =
     let class_info = get_class_info p cni in
     let tested_new_instances =
       Dllist.tail (get_instantiated_subclasses class_info) in
     let (rcni,msi) = resolve_method p cni msi in
-      (if not( ClassMethMap.mem (cni,msi) p.callgraph ) then
+      (if not( ClassMethMap.mem (cni,msi) p.static_virtual_lookup ) then
        	 let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
-       	   p.callgraph <-
+       	   p.static_virtual_lookup <-
        	     ClassMethMap.add (cni,msi)
        	     { tested_new_instances = tested_new_instances;
-       	       lookup = s} p.callgraph;
+       	       lookup = s} p.static_virtual_lookup;
 	   add_to_workset p (rcni,msi)
       )
 	
@@ -591,17 +626,20 @@ struct
 	  add_instantiated_class p cni
       | Opcodes.GetStatic cni
       | Opcodes.PutStatic cni ->
-	  ignore(get_class_info p cni)
+	  load_class p cni
       | Opcodes.InvokeVirtual (cni,msi) ->
 	  invoke_virtual_lookup p cni msi
       | Opcodes.InvokeInterface (cni,msi) ->
+	  (* In some cases we can see an InvokeInterface on an interface
+	     that we discover for the first time *)
+	  load_class p cni;
 	  invoke_interface_lookup p cni msi
       | Opcodes.InvokeSpecial (cni,msi) ->
       	  invoke_special_lookup p current_class_index cni msi
       | Opcodes.InvokeStatic (cni,msi) ->
       	  invoke_static_lookup p cni msi
       | _ -> ()
-
+	  
   let iter_workset p =
     let tail = Dllist.tail p.workset in
       Dllist.iter_to_head_i
@@ -620,7 +658,7 @@ struct
 		 else
 		   Opcodes.iter (parse_instruction p cni) impl
 	) tail
-
+	
   let new_program_cache debug cn classpath =
     let dic = make_dictionary () in
     let v_calls = ref ClassMethSet.empty in
@@ -633,14 +671,16 @@ struct
     and workset = Dllist.create () in
     let p =
       { classes = ClassMap.empty; interfaces = ClassMap.empty;
-	callgraph = ClassMethMap.empty; dic = ref dic;
+	direct_interfaces = ClassMap.empty; dic = ref dic;
+	static_virtual_lookup = ClassMethMap.empty; 
+	static_interface_lookup = ClassMethMap.empty;
 	workset = workset; v_calls = v_calls;
 	finished = false; classpath = classpath } in
     let class_info = get_class_info p cni in
       if not( MethodMap.mem main_index class_info.methods_data) then
 	failwith ("No main method found in class "
 		  ^ (JDumpBasics.class_name cn));
-
+      
       (* The main class MUST be the first to enter the dictionary
 	 (after java.lang.Object) *)
       add_to_workset p (cni,main_index);
@@ -658,9 +698,9 @@ struct
 	p.finished <- true;
 	iter_workset p
       done;
-      JFile.close_class_path classpath;
+      (* JFile.close_class_path classpath; *)
       p
-
+	
   let parse_program_bench ?(debug = false) classpath cn =
     let time_start = Sys.time() in
     let p = parse_program ~debug classpath cn in
@@ -670,9 +710,9 @@ struct
 	Printf.printf "program parsed in %fs.\n" (time_stop-.time_start);
 	Printf.printf "%d classes and %d methods parsed.\n"
 	  (!(p.dic).cni_table.cni_next) (!(p.dic).msi_table.msi_next)
-
+	  
 end
-
+  
 let retrieve_invoke_index p_cache op =
   let dic = !(p_cache.Program.dic) in
     match op with
@@ -692,8 +732,27 @@ let retrieve_invoke_index p_cache op =
 	  let cni = dic.get_cn_index cn
 	  and msi = dic.get_ms_index ms in (cni,msi)
       | _ -> failwith "Bad opcode"
-
+	  
 exception Invoke_not_found of class_name * method_signature * class_name * method_signature
+
+let static_virtual_lookup p_cache cni msi =
+  (ClassMethMap.find (cni,msi)
+     p_cache.Program.static_virtual_lookup).Program.lookup
+
+let static_interface_lookup p_cache cni msi =
+  try
+    ClassMethMap.find (cni,msi)
+      p_cache.Program.static_interface_lookup
+  with
+    | _ ->
+	let s = ref ClassMethSet.empty in
+	let f =
+	  (fun x ->
+	     let calls =
+	       static_virtual_lookup p_cache x msi in
+	       s := ClassMethSet.union !s calls) in
+	  Program.interface_lookup_action p_cache cni f;
+	  !s
 
 let static_lookup p_cache cni msi pp =
   let m = fst (Program.get_method_info p_cache cni msi) in
@@ -715,18 +774,9 @@ let static_lookup p_cache cni msi pp =
 		       try
 			 match op with
 			   | OpInvoke(`Interface _,_) ->
-			       let s = ref ClassMethSet.empty in
-			       let f = (fun x ->
-					  let calls =
-					    ClassMethMap.find (x,cmsi)
-					      p_cache.Program.callgraph in
-					  let s' = calls.Program.lookup in
-					    s := ClassMethSet.union !s s') in
-				 Program.interface_lookup_action p_cache ccni f;
-				 !s
+			       static_interface_lookup p_cache ccni cmsi
 			   | OpInvoke _ ->
-			       (ClassMethMap.find (ccni,cmsi)
-				  p_cache.Program.callgraph).Program.lookup
+			       static_virtual_lookup p_cache ccni cmsi
 			   | _ ->
 			       failwith "Invalid opcode found at specified program point"
 		       with _ ->
@@ -735,8 +785,8 @@ let static_lookup p_cache cni msi pp =
 		     | Invoke_not_found (_,_,_,_) as e -> raise e
 		     | _ ->
 			 failwith "Invalid program point")
-
-
+	    
+	    
 module JProgramConverter =
 struct
   let rec get_class_file p ioc_index class_file_map =
@@ -754,17 +804,19 @@ struct
     match ioc with
       | `Class _ -> failwith "to_interface_file applied on class !"
       | `Interface i -> i
-
+	  
   and ioc2iocfile p ioc_index class_file_map =
     let dic = !(p.Program.dic) in
+    let ioc_name = dic.retrieve_cn ioc_index in
     let ioc_info = Program.get_class_info p ioc_index in
     let ioc = !(ioc_info.Program.class_data)
-    and methods = MethodMap.map (fun x -> fst x) ioc_info.Program.methods_data in
+    and methods = MethodMap.map (fun x -> fst x)
+      ioc_info.Program.methods_data in
       match ioc with
 	| `Class c ->
 	    let c_struct =
 	      {c_index = ioc_index;
-	       c_name = c.JClass.c_name; (* TODO: why not reuse the name stored in the dictionary ? (save memory) *)
+	       c_name = ioc_name;
 	       c_version = c.JClass.c_version;
 	       c_access = c.JClass.c_access;
 	       c_generic_signature = c.JClass.c_generic_signature;
@@ -777,9 +829,9 @@ struct
 		  (match c.JClass.c_super_class with
 		     | None -> None
 		     | Some cn ->
-			let cni = dic.get_cn_index cn in
-			  Some(to_class_file
-				 (get_class_file p cni class_file_map)));
+			 let cni = dic.get_cn_index cn in
+			   Some(to_class_file
+				  (get_class_file p cni class_file_map)));
 	       c_consts = c.JClass.c_consts;
 	       c_interfaces =
 		  (let c_interfaces = ref ClassMap.empty in
@@ -803,7 +855,7 @@ struct
 	       c_resolve_methods = MethodMap.empty;
 	       c_may_be_instanciated = ioc_info.Program.is_instantiated;
 	       c_children = ClassMap.empty} in
-
+	      
 	      class_file_map := ClassMap.add ioc_index (`Class c_struct)
 		!class_file_map;
 	      c_struct.c_resolve_methods <-
@@ -819,7 +871,7 @@ struct
 		 (fun cni ->
 		    c_struct.c_children <-
 		      ClassMap.add cni (to_class_file
-				       (get_class_file p cni class_file_map))
+					  (get_class_file p cni class_file_map))
 		      c_struct.c_children
 		 )
 		 ioc_info.Program.children
@@ -828,7 +880,7 @@ struct
 	| `Interface i ->
 	    let i_struct =
 	      {i_index = ioc_index;
-	       i_name = i.JClass.i_name; (* TODO: why not reuse the name stored in the dictionary ? (save memory) *)
+	       i_name = ioc_name;
 	       i_version = i.JClass.i_version;
 	       i_access = i.JClass.i_access;
 	       i_generic_signature = i.JClass.i_generic_signature;
@@ -883,32 +935,32 @@ struct
 		     !i_methods
 		  )
 	      } in
-
+	      
 	      class_file_map := ClassMap.add ioc_index (`Interface i_struct)
 		!class_file_map;
 	      (List.iter
 		 (fun cni ->
 		    i_struct.i_children_interface <-
 		      ClassMap.add cni (to_interface_file
-				       (get_class_file p cni class_file_map))
+					  (get_class_file p cni class_file_map))
 		      i_struct.i_children_interface
 		 )
 		 ioc_info.Program.children
 	      );
 	      (try
-		 let l = ClassMap.find ioc_index p.Program.interfaces in
-		   List.iter
-		     (fun cni ->
-			i_struct.i_children_class <-
-			  ClassMap.add cni
-			  (to_class_file
-			     (get_class_file p cni class_file_map))
-			  i_struct.i_children_class)
-		     l
+	      	 let l = ClassMap.find ioc_index p.Program.direct_interfaces in
+	      	   List.iter
+	      	     (fun cni ->
+	      		i_struct.i_children_class <-
+	      		  ClassMap.add cni
+	      		  (to_class_file
+	      		     (get_class_file p cni class_file_map))
+	      		  i_struct.i_children_class)
+	      	     l
 	       with _ -> ()
 	      );
 	      `Interface i_struct
-
+		
   let pcache2jprogram p_cache =
     let class_file_map = ref ClassMap.empty in
       { classes =
@@ -918,7 +970,7 @@ struct
 	static_lookup = static_lookup p_cache;
 	dictionary = !(p_cache.Program.dic) }
 end
-	    
+  
 let parse_program ?(debug = false) classpath cn =
   let p_cache = (Program.parse_program ~debug classpath cn) in
     JProgramConverter.pcache2jprogram p_cache
@@ -929,7 +981,7 @@ let parse_program_bench ?(debug = false) classpath cn =
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
 	
-
+	
 let get_method_calls p cni m =
   (let l = ref [] in
    let f_lookup = p.static_lookup in
@@ -949,7 +1001,7 @@ let get_method_calls p cni m =
 				 | OpInvoke _ ->
 				     let callsites = (f_lookup cni msi pp) in
 				     let callsites_list =
-				    ClassMethSet.elements callsites in
+				       ClassMethSet.elements callsites in
 				       l := 
 					 !l @ (List.map
 						 (fun (ccni,cmsi) ->
@@ -965,12 +1017,19 @@ let get_method_calls p cni m =
      );
      !l
   )
-
+    
+type callgraph = ((JBasics.class_name * JClass.method_signature * int)
+		  * (JBasics.class_name * JClass.method_signature)) list
+    
 let get_callgraph p =
   JProgram.fold
     (fun calls ioc ->
        match ioc with
-	 | `Interface _ -> calls
+	 | `Interface i ->
+	     (match i.i_initializer with
+		| None -> calls
+		| Some m -> calls @ (get_method_calls p i.i_index
+				       (ConcreteMethod m)))
 	 | `Class c ->
 	     let l = ref [] in
 	       MethodMap.iter
@@ -979,3 +1038,45 @@ let get_callgraph p =
 		      !l @ (get_method_calls p c.c_index m)) c.c_methods;
 	       calls @ !l
     ) [] p
+    
+let store_callgraph callgraph file =
+  let out = IO.output_channel (open_out file) in
+    List.iter
+      (fun ((cn,ms,pp),(ccn,cms)) ->
+	 IO.nwrite out
+	   ((JDumpBasics.class_name cn) ^ ","
+	    ^ ms.ms_name
+	    ^ (JUnparseSignature.unparse_method_descriptor
+		 (ms.ms_parameters, ms.ms_return_type)) ^ ","
+	    ^ (string_of_int pp) ^ " -> "
+	    ^ (JDumpBasics.class_name ccn) ^ ","
+	    ^ cms.ms_name
+	    ^ (JUnparseSignature.unparse_method_descriptor
+		 (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
+      )
+      callgraph;
+    IO.close_out out
+      
+let store_simplified_callgraph callgraph file =
+  let simple_callgraph = ref [] in
+    List.iter (fun ((cn,ms,_),k) ->
+		 if not( List.mem ((cn,ms),k) !simple_callgraph) then
+		   simple_callgraph := ((cn,ms),k) :: !simple_callgraph
+	      ) callgraph;
+    let out = IO.output_channel (open_out file) in
+      List.iter
+	(fun ((cn,ms),(ccn,cms)) ->
+	   IO.nwrite out
+	     ((JDumpBasics.class_name cn) ^ ","
+	      ^ ms.ms_name
+	      ^ (JUnparseSignature.unparse_method_descriptor
+		   (ms.ms_parameters, ms.ms_return_type))
+	      ^ " -> "
+	      ^ (JDumpBasics.class_name ccn) ^ ","
+	      ^ cms.ms_name
+	      ^ (JUnparseSignature.unparse_method_descriptor
+		   (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
+	)
+	(List.rev !simple_callgraph);
+      IO.close_out out
+	
