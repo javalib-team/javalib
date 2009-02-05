@@ -32,8 +32,8 @@ open JClass
     sub-interfaces).
 *)
 
-module ClassIndexMap : Map.S with type key = JBasics.class_name
-module MethodIndexMap : Map.S with type key = JClass.method_signature
+module ClassIndexMap : Map.S with type key = class_name
+module MethodIndexMap : Map.S with type key = method_signature
 module ClassMap : Ptmap.S
 module MethodMap : Ptmap.S
 
@@ -50,8 +50,8 @@ type class_name_index_table =
 
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
-		    get_ms_index : MethodIndexMap.key -> method_signature_index;
-		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    get_ms_index : method_signature -> method_signature_index;
+		    get_cn_index : class_name -> class_name_index;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 

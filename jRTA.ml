@@ -20,10 +20,6 @@
  *)
 
 (* TODO :
-   - Gérer les lookup d'interfaces comme les classes en mémorisant 
-   les new qui ont été faits 
-   - Ne pas reparcourir les fils des interfaces à chaque fois pour
-   résoudre les méthodes atteignables lors d'un appel I.m
    - Séparer le callgraph des lookups Special du reste
 *)
 
@@ -47,8 +43,8 @@ struct
 				mutable oplist : rta_opcode list;
 				mutable oplines : int list;
 				v_calls : ClassMethSet.t ref;
-				impl : implementation ref;
-				dic : dictionary ref }
+				impl : implementation ref; (* TODO no ref needed *)
+				dic : dictionary ref } (* TODO no ref needed *)
       
   let new_cache impl dic v_calls = { oplist = []; oplines = [];
 				     usable = false; impl = impl;
@@ -134,12 +130,12 @@ struct
   exception NoHeadNode
   exception CellNotFound
     
-  type 'a link = 'a cellule ref
+  type 'a link = 'a cellule ref (* TODO no ref needed *)
   and 'a content = Content of 'a | Head | Tail
   and 'a cellule = { mutable prev : 'a link;
 		     content : 'a content;
 		     mutable next : 'a link }
-  and 'a dllist = 'a cellule ref
+  and 'a dllist = 'a cellule ref (* TODO no ref needed *)
       
   let create () =
     let rec head = ref { prev = tail; content = Head; next = tail }
@@ -767,10 +763,6 @@ let static_lookup p_cache cni msi pp =
 		     let op = c.(pp) in
 		     let (ccni,cmsi) = retrieve_invoke_index p_cache op in
 		     let dic = !(p_cache.Program.dic) in
-		     let cn = dic.retrieve_cn cni
-		     and ms = dic.retrieve_ms msi
-		     and ccn = dic.retrieve_cn ccni
-		     and cms = dic.retrieve_ms cmsi in
 		       try
 			 match op with
 			   | OpInvoke(`Interface _,_) ->
@@ -780,7 +772,11 @@ let static_lookup p_cache cni msi pp =
 			   | _ ->
 			       failwith "Invalid opcode found at specified program point"
 		       with _ ->
-			 raise (Invoke_not_found (cn,ms,ccn,cms))
+			 let cn = dic.retrieve_cn cni
+			 and ms = dic.retrieve_ms msi
+			 and ccn = dic.retrieve_cn ccni
+			 and cms = dic.retrieve_ms cmsi in
+			   raise (Invoke_not_found (cn,ms,ccn,cms))
 		   with
 		     | Invoke_not_found (_,_,_,_) as e -> raise e
 		     | _ ->
