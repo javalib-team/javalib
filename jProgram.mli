@@ -306,8 +306,8 @@ val super_interfaces : interface_file -> interface_file list
 
 val firstCommonSuperClass : class_file -> class_file -> class_file
 
-val get_parsed_classes : t -> ClassnameSet.t
+val get_loaded_classes : t -> ClassnameSet.t
 
-val get_parsed_methods : t -> MethodSet.t
+val get_loaded_methods : t -> MethodSet.t
 
 val get_instantiated_classes : t -> ClassnameSet.t

@@ -600,7 +600,7 @@ let declare_method ioc msi =
       with Invalid_argument "ioc2c" ->
 	raise (Failure "bug in JavaLib: jProgram.add_method")
 
-let get_parsed_classes p =
+let get_loaded_classes p =
   let dic = (p.dictionary) in
   let max_classes = dic.cni_table.cni_next - 1 in
   let s = ref ClassnameSet.empty in
@@ -609,7 +609,7 @@ let get_parsed_classes p =
     done;
     !s
 
-let get_parsed_methods p =
+let get_loaded_methods p =
   let dic = (p.dictionary) in
   let max_methods = dic.msi_table.msi_next - 1 in
   let s = ref MethodSet.empty in

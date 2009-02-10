@@ -21,6 +21,8 @@
 
 (* TODO :
    - Séparer le callgraph des lookups Special du reste
+   - Pour le static_lookup : retourner un couple (class,method) plutôt
+   qu'un couple d'entiers
 *)
 
 
@@ -272,7 +274,7 @@ struct
 	(* for each interface, interfaces maps a list of classes
 	   that implements this interface directly or by inheritance *)
 	mutable interfaces : class_name_index list ClassMap.t;
-	(* for each interface, interfaces maps a list of classes
+	(* for each interface, direct_interfaces maps a list of classes
 	   that implements this interface directly *)
 	mutable direct_interfaces : class_name_index list ClassMap.t;
 	mutable static_virtual_lookup : callgraph_info ClassMethMap.t;
@@ -694,7 +696,7 @@ struct
 	p.finished <- true;
 	iter_workset p
       done;
-      (* JFile.close_class_path classpath; *)
+      JFile.close_class_path classpath;
       p
 	
   let parse_program_bench ?(debug = false) classpath cn =
