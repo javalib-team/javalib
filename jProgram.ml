@@ -103,7 +103,7 @@ let make_dictionary () =
       ms_map =
 	MethodMap.add init_index init_signature
 	  (MethodMap.add clinit_index clinit_signature MethodMap.empty);
-      msi_next = 3 }
+      msi_next = 2 }
   and cni_table =
     { cni_map =
 	ClassIndexMap.add java_lang_object java_lang_object_index ClassIndexMap.empty;
