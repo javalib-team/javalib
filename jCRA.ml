@@ -229,10 +229,12 @@ let rec add_file class_path c program =
   let program =
     try
       let c_index = dic.get_cn_index (JClass.get_name c) in
-	(* TODO : the next line might be put after "then" *)
-	add_class_referenced c dic !classmap to_add;
 	if not (ClassMap.mem c_index program.classes)
-	then add_one_file c program
+	then
+	  begin
+	    add_class_referenced c dic !classmap to_add;    
+	    add_one_file c program
+	  end
 	else program
     with Class_not_found cn ->
       let missing_class = get_class class_path dic classmap cn in

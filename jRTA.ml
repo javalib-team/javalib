@@ -639,28 +639,33 @@ struct
       | _ -> ()
 	  
   let iter_workset p =
-    let tail = Dllist.tail p.workset in
-      Dllist.iter_to_head_i
-	(fun e ((cni,msi),cache) ->
-	   match !cache with
-	     | None ->
-		 failwith ("Impossible to find an implementation of method "
-			   ^ (string_of_int msi) ^ "in class "
-			   ^ (string_of_int cni))
-	     | Some impl ->
-		 if ( impl.Opcodes.usable
-		      && impl.Opcodes.oplist = [] ) then
-		   (* we delete the elements of the workset that have no
-		      new invoke_virtual instructions *)
-		   Dllist.del e
-		 else
-		   Opcodes.iter (parse_instruction p cni) impl
-	) tail
+    while not( p.finished ) do
+      p.finished <- true;
+      let tail = Dllist.tail p.workset
+      in
+	Dllist.iter_to_head_i
+	  (fun e ((cni,msi),cache) ->
+	     match !cache with
+	       | None ->
+		   failwith ("Impossible to find an implementation of method "
+			     ^ (string_of_int msi) ^ "in class "
+			     ^ (string_of_int cni))
+	       | Some impl ->
+		   if ( impl.Opcodes.usable
+			&& impl.Opcodes.oplist = [] ) then
+		     (* we delete the elements of the workset that have no
+			new invoke_virtual instructions *)
+		     Dllist.del e
+		   else
+		     Opcodes.iter (parse_instruction p cni) impl)
+	  tail
+    done
 	
-  let new_program_cache debug cn classpath =
+  let new_program_cache debug cn entrypoints classpath =
     let dic = make_dictionary () in
     let v_calls = ref ClassMethSet.empty in
     let cni = dic.get_cn_index cn
+    and msil = List.map dic.get_ms_index entrypoints
     and initializeSystemClass : class_name * method_signature = 
       (["java";"lang";"System"],
        {ms_name = "initializeSystemClass";
@@ -668,20 +673,42 @@ struct
 	ms_return_type = None})
     and workset = Dllist.create () in
     let p =
-      { classes = ClassMap.empty; interfaces = ClassMap.empty;
-	direct_interfaces = ClassMap.empty; dic = ref dic;
+      { classes = ClassMap.empty;
+	interfaces = ClassMap.empty;
+	direct_interfaces = ClassMap.empty;
+	dic = ref dic;
 	static_virtual_lookup = ClassMethMap.empty; 
 	static_interface_lookup = ClassMethMap.empty;
-	workset = workset; v_calls = v_calls;
-	finished = false; classpath = classpath } in
+	workset = workset;
+	v_calls = v_calls;
+	finished = false;
+	classpath = classpath } in
     let class_info = get_class_info p cni in
-      if not( MethodMap.mem main_index class_info.methods_data) then
-	failwith ("No main method found in class "
-		  ^ (JDumpBasics.class_name cn));
-      
+    let cn_defines_msil =
+      List.for_all (fun msi -> MethodMap.mem msi class_info.methods_data) msil
+    in
+      begin
+	if not cn_defines_msil then
+	  let faulty_ms_string =
+	    let faulty_msi =
+	      List.find
+		(fun msi -> not (MethodMap.mem msi class_info.methods_data))
+		msil
+	    in
+	    let faulty_ms = dic.retrieve_ms faulty_msi
+	    in
+	      JDumpBasics.method_signature
+		faulty_ms.ms_name
+		(faulty_ms.ms_parameters,faulty_ms.ms_return_type)
+	  in
+	    failwith ("The method "
+		      ^ faulty_ms_string
+		      ^ " given as entry point is not defined in class "
+		      ^ (JDumpBasics.class_name cn))
+      end;
       (* The main class MUST be the first to enter the dictionary
 	 (after java.lang.Object) *)
-      add_to_workset p (cni,main_index);
+      List.iter (fun msi -> add_to_workset p (cni,msi)) msil;
       (if not( debug ) then
 	 add_to_workset p
 	   (dic.get_cn_index (fst initializeSystemClass),
@@ -689,19 +716,16 @@ struct
       );
       p
 	
-  let parse_program ?(debug = false) classpath cn =
+  let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
     let classpath = JFile.class_path classpath in
-    let p = new_program_cache debug cn classpath in
-      while not( p.finished ) do
-	p.finished <- true;
-	iter_workset p
-      done;
+    let p = new_program_cache debug cn entrypoints classpath in
+      iter_workset p;
       JFile.close_class_path classpath;
       p
 	
-  let parse_program_bench ?(debug = false) classpath cn =
+  let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
     let time_start = Sys.time() in
-    let p = parse_program ~debug classpath cn in
+    let p = parse_program ~debug ~entrypoints classpath cn in
     let s = Dllist.size p.workset in
       Printf.printf "Workset of size %d\n" s;
       let time_stop = Sys.time() in
@@ -969,13 +993,13 @@ struct
 	dictionary = !(p_cache.Program.dic) }
 end
   
-let parse_program ?(debug = false) classpath cn =
-  let p_cache = (Program.parse_program ~debug classpath cn) in
+let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
+  let p_cache = (Program.parse_program ~debug ~entrypoints classpath cn) in
     JProgramConverter.pcache2jprogram p_cache
       
-let parse_program_bench ?(debug = false) classpath cn =
+let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
   let time_start = Sys.time() in
-    ignore(parse_program ~debug classpath cn);
+    ignore(parse_program ~debug ~entrypoints classpath cn);
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
 	

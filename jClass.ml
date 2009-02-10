@@ -37,6 +37,13 @@ type method_signature = {
 let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;}
 
 let init_signature = {ms_name="<init>";ms_parameters=[];ms_return_type=None;}
+let main_signature =
+  {   ms_name = "main";
+      ms_parameters = [TObject (TArray (TObject
+					  (TClass ["java";"lang";"String"])))];
+      ms_return_type = None
+  }
+
 
 type opcode =
 
@@ -181,8 +188,6 @@ type field_kind =
   | Final
   | Volatile
 
-(* TODO: Nouveaux types pour les champs ; ce serait pas mal de mettre
-   en commun un certain nombre de choses. *)
 type class_field = {
   cf_signature : field_signature;
   cf_generic_signature : JSignature.fieldTypeSignature option;

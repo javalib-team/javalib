@@ -38,6 +38,8 @@ type method_signature = {
 
 val clinit_signature : method_signature
 val init_signature : method_signature
+val main_signature : method_signature
+
 
 (** {2 Bytecode instructions.} *)
 (********************************)

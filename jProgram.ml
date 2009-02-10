@@ -50,10 +50,12 @@ let get_ms_index tab ms =
     MethodIndexMap.find ms tab.msi_map
   with Not_found ->
     begin
-      tab.msi_map <- MethodIndexMap.add ms tab.msi_next tab.msi_map;
-      tab.ms_map <- MethodMap.add tab.msi_next ms tab.ms_map;
-      tab.msi_next <- tab.msi_next + 1;
-      tab.msi_next - 1
+      let current = tab.msi_next
+      in
+	tab.msi_map <- MethodIndexMap.add ms current tab.msi_map;
+	tab.ms_map <- MethodMap.add current ms tab.ms_map;
+	tab.msi_next <- succ current;
+	current
     end
       
 let get_cn_index tab cn =
@@ -61,10 +63,12 @@ let get_cn_index tab cn =
     ClassIndexMap.find cn tab.cni_map
   with Not_found -> 
     begin
-      tab.cni_map <- ClassIndexMap.add cn tab.cni_next tab.cni_map;
-      tab.cn_map <- ClassMap.add tab.cni_next cn tab.cn_map;
-      tab.cni_next <- tab.cni_next + 1;
-      tab.cni_next - 1
+      let current = tab.cni_next
+      in
+	tab.cni_map <- ClassIndexMap.add cn current tab.cni_map;
+	tab.cn_map <- ClassMap.add current cn tab.cn_map;
+	tab.cni_next <- succ current;
+	current
     end
 
 exception RetrieveError
@@ -86,32 +90,24 @@ type dictionary = { msi_table : method_signature_index_table;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 
-let main_signature : JClass.method_signature =
-  {   ms_name = "main";
-      ms_parameters = [TObject (TArray (TObject
-					  (TClass ["java";"lang";"String"])))];
-      ms_return_type = None
-  }
-
 let clinit_index = 0
 let init_index = 1
-let main_index = 2
 
 let java_lang_object_index = 0
-let main_class_index = 1
 
 let make_dictionary () =
   let msi_table =
-    { msi_map = MethodIndexMap.add main_signature 2
-	(MethodIndexMap.add init_signature 1
-	   (MethodIndexMap.add clinit_signature 0 MethodIndexMap.empty));
-      ms_map = MethodMap.add 2 main_signature
-	(MethodMap.add 1 init_signature
-	   (MethodMap.add 0 clinit_signature MethodMap.empty));
+    { msi_map =
+	MethodIndexMap.add init_signature init_index
+	  (MethodIndexMap.add clinit_signature clinit_index MethodIndexMap.empty);
+      ms_map =
+	MethodMap.add init_index init_signature
+	  (MethodMap.add clinit_index clinit_signature MethodMap.empty);
       msi_next = 3 }
   and cni_table =
-    { cni_map = ClassIndexMap.add java_lang_object 0 ClassIndexMap.empty;
-      cn_map = ClassMap.add 0 java_lang_object ClassMap.empty;
+    { cni_map =
+	ClassIndexMap.add java_lang_object java_lang_object_index ClassIndexMap.empty;
+      cn_map = ClassMap.add java_lang_object_index java_lang_object ClassMap.empty;
       cni_next = 1 } in
     { msi_table = msi_table;
       cni_table = cni_table;

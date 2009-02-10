@@ -55,21 +55,17 @@ type dictionary = { msi_table : method_signature_index_table;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 
-val main_signature : JClass.method_signature
-
 val clinit_index : int
 val init_index : int
-val main_index : int
 
 val java_lang_object_index : int
-val main_class_index : int
 
 val make_dictionary : unit -> dictionary
 
 module ClassMethSet : Set.S with type elt = int * int
 module ClassMethMap : Map.S with type key = int * int
 
-(* Is it useful ? *)
+(* TODO : Is it useful ? *)
 module ClassnameSet : Set.S with type elt = JBasics.class_name
 module MethodSet : Set.S with type elt = JClass.method_signature
 
@@ -204,8 +200,6 @@ type program = { classes : interface_or_class ClassMap.t;
 							  int -> ClassMethSet.t;
 		 dictionary : dictionary }
 
-type t = program
-
 val ccm2pcm : dictionary -> JClass.concrete_method -> concrete_method
 val cam2pam : dictionary -> JClass.abstract_method -> abstract_method
 val declare_method : interface_or_class -> method_signature_index -> unit
@@ -216,8 +210,8 @@ val declare_method : interface_or_class -> method_signature_index -> unit
 exception Class_not_found of class_name
 
 (** @raise Sys_error if the file could not be opened. *)
-val load_program : string -> t
-val store_program : string -> t -> unit
+val load_program : string -> program
+val store_program : string -> program -> unit
 
 (** {2 Iterators}*)
 
@@ -252,7 +246,7 @@ exception IllegalAccessError
     program [p], if any.
     @raise Not_found if [p] does not contain a class named [cn].
 *)
-val get_interface_or_class : t -> class_name -> interface_or_class
+val get_interface_or_class : program -> class_name -> interface_or_class
 (* val get_class : t -> class_name -> class_file *)
 (* val get_interface : t -> class_name -> interface_file *)
 
@@ -306,8 +300,8 @@ val super_interfaces : interface_file -> interface_file list
 
 val firstCommonSuperClass : class_file -> class_file -> class_file
 
-val get_loaded_classes : t -> ClassnameSet.t
+val get_loaded_classes : program -> ClassnameSet.t
 
-val get_loaded_methods : t -> MethodSet.t
+val get_loaded_methods : program -> MethodSet.t
 
-val get_instantiated_classes : t -> ClassnameSet.t
+val get_instantiated_classes : program -> ClassnameSet.t
