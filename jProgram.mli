@@ -65,10 +65,6 @@ val make_dictionary : unit -> dictionary
 module ClassMethSet : Set.S with type elt = int * int
 module ClassMethMap : Map.S with type key = int * int
 
-(* TODO : Is it useful ? *)
-module ClassnameSet : Set.S with type elt = JBasics.class_name
-module MethodSet : Set.S with type elt = JClass.method_signature
-
 type concrete_method = {
   mutable cm_has_been_parsed : bool;
   cm_index : method_signature_index;
@@ -299,6 +295,10 @@ val implemented_interfaces : class_file -> interface_file list
 val super_interfaces : interface_file -> interface_file list
 
 val firstCommonSuperClass : class_file -> class_file -> class_file
+
+(* Mainly for test purposes... *)
+module ClassnameSet : Set.S with type elt = JBasics.class_name
+module MethodSet : Set.S with type elt = JClass.method_signature
 
 val get_loaded_classes : program -> ClassnameSet.t
 

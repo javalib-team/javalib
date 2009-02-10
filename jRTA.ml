@@ -45,15 +45,15 @@ struct
 				mutable oplist : rta_opcode list;
 				mutable oplines : int list;
 				v_calls : ClassMethSet.t ref;
-				impl : implementation ref; (* TODO no ref needed *)
-				dic : dictionary ref } (* TODO no ref needed *)
+				impl : implementation;
+				dic : dictionary}
       
   let new_cache impl dic v_calls = { oplist = []; oplines = [];
 				     usable = false; impl = impl;
 				     v_calls = v_calls;
 				     dic = dic }
   let op2rtaop op cache =
-    let dic = !(cache.dic) in
+    let dic = cache.dic in
       match op with
 	| OpNew cn -> New (dic.get_cn_index cn)
 	| OpGetStatic (cn,_) -> GetStatic (dic.get_cn_index cn)
@@ -85,7 +85,7 @@ struct
     else
       let new_ops = ref []
       and new_ops_lines = ref [] in
-	(match !(cache.impl) with 
+	(match cache.impl with 
 	   | Native -> ()
 	   | Java c ->
 	       Array.iteri
@@ -132,105 +132,105 @@ struct
   exception NoHeadNode
   exception CellNotFound
     
-  type 'a link = 'a cellule ref (* TODO no ref needed *)
+  type 'a link = 'a cellule
   and 'a content = Content of 'a | Head | Tail
   and 'a cellule = { mutable prev : 'a link;
 		     content : 'a content;
 		     mutable next : 'a link }
-  and 'a dllist = 'a cellule ref (* TODO no ref needed *)
+  and 'a dllist = 'a cellule
       
   let create () =
-    let rec head = ref { prev = tail; content = Head; next = tail }
-    and tail = ref { prev = head; content = Tail; next = head }
+    let rec head = { prev = tail; content = Head; next = tail }
+    and tail = { prev = head; content = Tail; next = head }
     in head
   let get (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Content c -> c
       | Head -> raise HeadNode
       | Tail -> raise TailNode
-  let next (l:'a dllist) : 'a dllist = (!l).next
-  let prev (l:'a dllist) : 'a dllist = (!l).prev
+  let next (l:'a dllist) : 'a dllist = l.next
+  let prev (l:'a dllist) : 'a dllist = l.prev
   let tail (l:'a dllist) : 'a dllist =
-    match (!l).content with
-      | Head -> (!l).prev
+    match l.content with
+      | Head -> l.prev
       | _ -> raise NoHeadNode
 	  
   let add (e:'a) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head ->
-	  let new_elm = ref { prev = l;
-			      content = Content e;
-			      next = (!l).next } in
-	  let cell = (!new_elm).next in
-	    (!cell).prev <- new_elm;
-	    (!l).next <- new_elm
+	  let new_elm = { prev = l;
+			  content = Content e;
+			  next = l.next } in
+	  let cell = new_elm.next in
+	    cell.prev <- new_elm;
+	    l.next <- new_elm
       | _ -> raise NoHeadNode
 	  
   let del (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head -> raise HeadNode
       | Tail -> raise TailNode
       | _ ->
-	  (!((!l).next)).prev <- (!l).prev;
-	  (!((!l).prev)).next <- (!l).next
+	  l.next.prev <- l.prev;
+	  l.prev.next <- l.next
 	    
   let rec mem (e:'a) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head ->
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    mem e cell
       | Tail -> false
       | Content c ->
 	  if (c = e) then
 	    true
-	  else let cell = (!l).next in
+	  else let cell = l.next in
 	    mem e cell
 	      
   let add_ifn e l =
     if not( mem e l ) then add e l
       
   let rec size ?(s=0) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head ->
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    size ~s:0 cell
       | Tail -> s
       | Content _ ->
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    size ~s:(s+1) cell
 	      
   let rec iter (f:'a -> unit) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head ->
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    iter f cell
       | Tail -> ()
       | Content c ->
 	  f c;
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    iter f cell
 	      
   let rec iter_until_cell (f:'a -> unit) (bound:'a dllist) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head ->
-	  let cell = (!l).next in
+	  let cell = l.next in
 	    iter_until_cell f bound cell
       | Tail -> raise CellNotFound
       | Content c ->
 	  if not( bound == l) then
 	    (f c;
-	     let cell = (!l).next in
+	     let cell = l.next in
 	       iter_until_cell f bound cell)
 	      
   let rec iter_to_head_i (f:'a dllist -> 'a -> unit) (l:'a dllist) =
-    match (!l).content with
+    match l.content with
       | Head -> ()
       | Tail ->
-	  let cell = (!l).prev in
+	  let cell = l.prev in
 	    iter_to_head_i f cell
       | Content c ->
 	  f l c;
-	  let cell = (!l).prev in
+	  let cell = l.prev in
 	    iter_to_head_i f cell
 	      
   let iter_to_head (f:'a -> unit) (l:'a dllist) =
@@ -279,7 +279,7 @@ struct
 	mutable direct_interfaces : class_name_index list ClassMap.t;
 	mutable static_virtual_lookup : callgraph_info ClassMethMap.t;
 	mutable static_interface_lookup : ClassMethSet.t ClassMethMap.t;
-	dic : dictionary ref;
+	dic : dictionary;
 	workset : ((class_name_index * method_signature_index) *
 		     (Opcodes.implementation_cache option ref)) Dllist.dllist;
 	v_calls : ClassMethSet.t ref;
@@ -289,7 +289,7 @@ struct
   exception Method_not_found
     
   let methodmap2methodinfo p mm =
-    let dic = !(p.dic) in
+    let dic = p.dic in
     let meth_info = ref MethodMap.empty in
       JClass.MethodMap.iter
 	(fun ms m ->
@@ -297,8 +297,8 @@ struct
 	     | JClass.ConcreteMethod cm ->
 		 (ConcreteMethod(ccm2pcm dic cm),
 		  Some (Opcodes.new_cache
-			  (ref cm.JClass.cm_implementation)
-			  (ref dic) p.v_calls))
+			  cm.JClass.cm_implementation
+			  dic p.v_calls))
 	     | JClass.AbstractMethod am ->
 		 (AbstractMethod(cam2pam dic am), None) in
 	     meth_info := MethodMap.add (dic.get_ms_index ms)
@@ -306,7 +306,7 @@ struct
       !meth_info
 	
   let abstract_methodmap2methodinfo p mm i_initializer =
-    let dic = !(p.dic) in
+    let dic = p.dic in
     let meth_info = ref MethodMap.empty in
       (match i_initializer with
 	 | None -> ()
@@ -314,8 +314,7 @@ struct
 	     let cache =
 	       (ConcreteMethod(ccm2pcm dic cm),
 		Some (Opcodes.new_cache
-			(ref cm.JClass.cm_implementation)
-			(ref dic) p.v_calls)) in
+			cm.JClass.cm_implementation dic p.v_calls)) in
 	       meth_info := MethodMap.add clinit_index cache !meth_info
       );
       JClass.MethodMap.iter
@@ -330,16 +329,14 @@ struct
 	
   let rec load_class p cni =
     if not( ClassMap.mem cni p.classes ) then
-      (let dic = !(p.dic) in
-       let cn = dic.retrieve_cn cni in
-	 add_class p cn)
+      let cn = p.dic.retrieve_cn cni in
+	add_class p cn
   and get_class_info p cni =
     try
       ClassMap.find cni p.classes
     with
       | Not_found ->
-	  let dic = !(p.dic) in
-	  let cn = dic.retrieve_cn cni in
+	  let cn = p.dic.retrieve_cn cni in
 	    add_class p cn;
 	    try
 	      ClassMap.find cni p.classes
@@ -350,7 +347,7 @@ struct
     (* We assume that a call to add_class is done only when a class has never *)
     (* been loaded in the program. Loading a class implies loading all its *)
     (* superclasses recursively. *)
-    let dic = !(p.dic) in
+    let dic = p.dic in
     let ioc = JFile.get_class p.classpath (String.concat "." cn) in
     let ioc_index = (dic.get_cn_index (JClass.get_name ioc)) in
       match ioc with
@@ -676,7 +673,7 @@ struct
       { classes = ClassMap.empty;
 	interfaces = ClassMap.empty;
 	direct_interfaces = ClassMap.empty;
-	dic = ref dic;
+	dic = dic;
 	static_virtual_lookup = ClassMethMap.empty; 
 	static_interface_lookup = ClassMethMap.empty;
 	workset = workset;
@@ -731,12 +728,12 @@ struct
       let time_stop = Sys.time() in
 	Printf.printf "program parsed in %fs.\n" (time_stop-.time_start);
 	Printf.printf "%d classes and %d methods parsed.\n"
-	  (!(p.dic).cni_table.cni_next) (!(p.dic).msi_table.msi_next)
+	  (p.dic.cni_table.cni_next) (p.dic.msi_table.msi_next)
 	  
 end
   
 let retrieve_invoke_index p_cache op =
-  let dic = !(p_cache.Program.dic) in
+  let dic = p_cache.Program.dic in
     match op with
       | OpInvoke (`Virtual t, ms) ->
 	  let cni = match t with 
@@ -788,7 +785,6 @@ let static_lookup p_cache cni msi pp =
 		   try
 		     let op = c.(pp) in
 		     let (ccni,cmsi) = retrieve_invoke_index p_cache op in
-		     let dic = !(p_cache.Program.dic) in
 		       try
 			 match op with
 			   | OpInvoke(`Interface _,_) ->
@@ -798,6 +794,7 @@ let static_lookup p_cache cni msi pp =
 			   | _ ->
 			       failwith "Invalid opcode found at specified program point"
 		       with _ ->
+			 let dic = p_cache.Program.dic in
 			 let cn = dic.retrieve_cn cni
 			 and ms = dic.retrieve_ms msi
 			 and ccn = dic.retrieve_cn ccni
@@ -828,7 +825,7 @@ struct
       | `Interface i -> i
 	  
   and ioc2iocfile p ioc_index class_file_map =
-    let dic = !(p.Program.dic) in
+    let dic = p.Program.dic in
     let ioc_name = dic.retrieve_cn ioc_index in
     let ioc_info = Program.get_class_info p ioc_index in
     let ioc = !(ioc_info.Program.class_data)
@@ -990,7 +987,7 @@ struct
 	    (fun i _ -> get_class_file p_cache i class_file_map)
 	    p_cache.Program.classes;
 	static_lookup = static_lookup p_cache;
-	dictionary = !(p_cache.Program.dic) }
+	dictionary = p_cache.Program.dic }
 end
   
 let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
@@ -1005,40 +1002,35 @@ let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpa
 	
 	
 let get_method_calls p cni m =
-  (let l = ref [] in
-   let f_lookup = p.static_lookup in
-   let dic = p.dictionary in
-     (match m with
-	| AbstractMethod _ -> ()
-	| ConcreteMethod cm ->
-	    if ( cm.cm_has_been_parsed ) then
-	      (let msi = cm.cm_index in
-		 (match cm.cm_implementation with
-		    | Native -> ()
-		    | Java code ->
-			let c = (Lazy.force code).c_code in
-			  Array.iteri
-			    (fun pp op ->
-			       match op with
-				 | OpInvoke _ ->
-				     let callsites = (f_lookup cni msi pp) in
-				     let callsites_list =
-				       ClassMethSet.elements callsites in
-				       l := 
-					 !l @ (List.map
-						 (fun (ccni,cmsi) ->
-						    ((dic.retrieve_cn cni,
-						      dic.retrieve_ms msi,pp),
-						     (dic.retrieve_cn ccni,
-						      dic.retrieve_ms cmsi)))
-						 callsites_list)
-				 | _ -> ()
-			    ) c
-		 )
-	      )
-     );
-     !l
-  )
+  let l = ref [] in
+  let f_lookup = p.static_lookup in
+  let dic = p.dictionary in
+  let method2callsite cni msi pp (ccni,cmsi) =
+    ((dic.retrieve_cn cni,dic.retrieve_ms msi,pp),
+     (dic.retrieve_cn ccni,dic.retrieve_ms cmsi))
+  in
+    begin
+      match m with
+	| ConcreteMethod ({cm_implementation = Java code} as cm)
+	    when cm.cm_has_been_parsed ->
+	    let msi = cm.cm_index in
+	      Array.iteri
+		(fun pp op ->
+		   match op with
+		     | OpInvoke _ ->
+			 let callsites = (f_lookup cni msi pp) in
+			 let callsites_list =
+			   ClassMethSet.elements callsites
+			 in
+			   l :=
+			     List.rev_append
+			       (List.map (method2callsite cni msi pp) callsites_list)
+			       !l
+		     | _ -> ())
+		(Lazy.force code).c_code
+	| _ -> ()
+    end;
+    !l
     
 type callgraph = ((JBasics.class_name * JClass.method_signature * int)
 		  * (JBasics.class_name * JClass.method_signature)) list
