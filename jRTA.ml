@@ -20,9 +20,9 @@
  *)
 
 (* TODO :
-   - Séparer le callgraph des lookups Special du reste
    - Pour le static_lookup : retourner un couple (class,method) plutôt
    qu'un couple d'entiers
+   - Etre précis dans le chargement des clinits
 *)
 
 
@@ -278,7 +278,11 @@ struct
 	   that implements this interface directly *)
 	mutable direct_interfaces : class_name_index list ClassMap.t;
 	mutable static_virtual_lookup : callgraph_info ClassMethMap.t;
+	(* static_interface_lookup maps a couple (class,method) to a set of
+	   equivalents invoke_virtual calls *)
 	mutable static_interface_lookup : ClassMethSet.t ClassMethMap.t;
+	mutable static_special_lookup : (ClassMethSet.t
+					   ClassMethMap.t) ClassMap.t;
 	dic : dictionary;
 	workset : ((class_name_index * method_signature_index) *
 		     (Opcodes.implementation_cache option ref)) Dllist.dllist;
@@ -409,8 +413,8 @@ struct
 		p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 
 		(* Now we add the clinit method to the workset *)
-		(if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
-		   add_to_workset p (ioc_index,clinit_index))
+		(* (if ( MethodMap.mem clinit_index ioc_info.methods_data ) then *)
+		(*    add_to_workset p (ioc_index,clinit_index)) *)
 	| `Interface i ->
 	    let super_interfaces =
 	      let s = ref ClassSet.empty in
@@ -437,8 +441,24 @@ struct
 	    in
 	      p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 	      (* Now we add the clinit method to the workset *)
-	      (if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
-		 add_to_workset p (ioc_index,clinit_index))
+	      (* add_clinit p ioc_index *)
+
+  and add_clinit p ioc_index =
+    let ioc_info = get_class_info p ioc_index in
+      if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
+	add_to_workset p (ioc_index,clinit_index)
+
+  and add_class_clinits p ioc_index =
+    let ioc_info = get_class_info p ioc_index in
+      List.iter
+	(fun cni -> add_clinit p cni)
+	(ioc_index :: ioc_info.super_classes)
+	
+  and add_interface_clinits p ioc_index =
+    let ioc_info = get_class_info p ioc_index in
+      ClassSet.iter
+	(fun cni -> add_clinit p cni)
+	(ClassSet.add ioc_index ioc_info.super_interfaces)
 
   and get_method_info p cni msi : method_info =
     let cl_info = get_class_info p cni in
@@ -500,7 +520,7 @@ struct
 	      failwith ("Failing resolving (" ^ (string_of_int cni) ^ ","
 			^ (string_of_int msi) ^ ")")
 
-  let update_lookup_set p msi callsites cni =
+  let update_virtual_lookup_set p msi callsites cni =
     if ( callsites = ClassMethSet.empty ) then
       ClassMethSet.empty
     else
@@ -543,7 +563,7 @@ struct
 	       (call_info.lookup <-
 		  ClassMethSet.union new_callsites call_info.lookup;
 		let new_callsites =
-		  List.fold_left (update_lookup_set p msi)
+		  List.fold_left (update_virtual_lookup_set p msi)
 		    new_callsites class_info.super_classes in
 		  (* we add the new call sites to the workset *)
 		  ClassMethSet.iter
@@ -563,7 +583,7 @@ struct
 	       lookup = !resolved_methods } p.static_virtual_lookup;
 	   if not( !resolved_methods = ClassMethSet.empty ) then
 	     (let new_callsites =
-		List.fold_left (update_lookup_set p msi)
+		List.fold_left (update_virtual_lookup_set p msi)
 		  !resolved_methods class_info.super_classes in
 		(* we add the new call sites to the workset *)
 		ClassMethSet.iter
@@ -582,13 +602,26 @@ struct
   let invoke_interface_lookup p cni msi =
     interface_lookup_action p cni (fun x -> invoke_virtual_lookup p x msi)
 
+  let update_special_lookup_set p current_class_index cni msi s =
+    let cmmap =
+      try ClassMap.find current_class_index p.static_special_lookup
+      with _ -> ClassMethMap.empty in
+    let cmset =
+      try ClassMethMap.find (cni,msi) cmmap
+      with _ -> ClassMethSet.empty in
+      p.static_special_lookup <-
+	(ClassMap.add current_class_index
+	   (ClassMethMap.add (cni,msi)
+	      (ClassMethSet.union cmset s) cmmap) p.static_special_lookup)
+
   let rec invoke_special_lookup p current_class_index cni msi =
     let current_class_info = get_class_info p current_class_index in
     let (rcni,msi) = resolve_method p cni msi in
       if ( msi = init_index
 	  || not(List.mem rcni current_class_info.super_classes) ) then
 	(let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
-	   ignore(update_lookup_set p msi s cni);
+	   (* ignore(update_virtual_lookup_set p msi s cni); *)
+	   update_special_lookup_set p current_class_index cni msi s;
 	   (* we add (cni,msi) to the workset *)
 	   add_to_workset p (rcni,msi)
 	)
@@ -596,7 +629,8 @@ struct
 	let (rcni,msi) = resolve_method p
 	  (List.hd current_class_info.super_classes) msi in
 	  (let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
-	     ignore(update_lookup_set p msi s cni);
+	     (* ignore(update_virtual_lookup_set p msi s cni); *)
+	     update_special_lookup_set p current_class_index cni msi s;
 	     (* we add (cni,msi) to the workset *)
 	     add_to_workset p (rcni,msi)
 	  )
@@ -618,10 +652,15 @@ struct
   let parse_instruction p current_class_index (op:Opcodes.rta_opcode) =
     match op with
       | Opcodes.New cni ->
-	  add_instantiated_class p cni
+	  add_instantiated_class p cni;
+	  add_class_clinits p cni
       | Opcodes.GetStatic cni
       | Opcodes.PutStatic cni ->
-	  load_class p cni
+	  let c_info = get_class_info p cni in
+	    (match !(c_info.class_data) with
+	       | `Class _ -> add_class_clinits p cni
+	       | `Interface _ -> add_interface_clinits p cni
+	    )
       | Opcodes.InvokeVirtual (cni,msi) ->
 	  invoke_virtual_lookup p cni msi
       | Opcodes.InvokeInterface (cni,msi) ->
@@ -632,7 +671,8 @@ struct
       | Opcodes.InvokeSpecial (cni,msi) ->
       	  invoke_special_lookup p current_class_index cni msi
       | Opcodes.InvokeStatic (cni,msi) ->
-      	  invoke_static_lookup p cni msi
+      	  invoke_static_lookup p cni msi;
+	  add_class_clinits p cni
       | _ -> ()
 
   let iter_workset p =
@@ -676,6 +716,7 @@ struct
 	dic = dic;
 	static_virtual_lookup = ClassMethMap.empty;
 	static_interface_lookup = ClassMethMap.empty;
+	static_special_lookup = ClassMap.empty;
 	workset = workset;
 	v_calls = v_calls;
 	finished = false;
@@ -773,6 +814,10 @@ let static_interface_lookup p_cache cni msi =
 	  Program.interface_lookup_action p_cache cni f;
 	  !s
 
+let static_special_lookup p_cache cni ccni cmsi =
+  ClassMethMap.find (ccni,cmsi) 
+    (ClassMap.find cni p_cache.Program.static_special_lookup)
+
 let static_lookup p_cache cni msi pp =
   let m = fst (Program.get_method_info p_cache cni msi) in
     match m with
@@ -789,8 +834,10 @@ let static_lookup p_cache cni msi pp =
 			 match op with
 			   | OpInvoke(`Interface _,_) ->
 			       static_interface_lookup p_cache ccni cmsi
-			   | OpInvoke _ ->
+			   | OpInvoke (`Virtual _,_) | OpInvoke (`Static _,_) ->
 			       static_virtual_lookup p_cache ccni cmsi
+			   | OpInvoke (`Special _,_) ->
+			       static_special_lookup p_cache cni ccni cmsi
 			   | _ ->
 			       failwith "Invalid opcode found at specified program point"
 		       with _ ->
@@ -1036,22 +1083,25 @@ type callgraph = ((JBasics.class_name * JClass.method_signature * int)
 		  * (JBasics.class_name * JClass.method_signature)) list
 
 let get_callgraph p =
-  JProgram.fold
-    (fun calls ioc ->
-       match ioc with
-	 | `Interface i ->
-	     (match i.i_initializer with
-		| None -> calls
-		| Some m -> calls @ (get_method_calls p i.i_index
-				       (ConcreteMethod m)))
-	 | `Class c ->
-	     let l = ref [] in
-	       MethodMap.iter
-		 (fun _ m ->
-		    l :=
-		      !l @ (get_method_calls p c.c_index m)) c.c_methods;
-	       calls @ !l
-    ) [] p
+  let classes = p.classes in
+  let calls = ref [] in
+    ClassMap.iter
+      (fun _ ioc ->
+	 match ioc with
+	   | `Interface i ->
+	       (match i.i_initializer with
+		  | None -> ()
+		  | Some m -> calls := (get_method_calls p i.i_index
+						   (ConcreteMethod m)) @ !calls)
+	   | `Class c ->
+	       let l = ref [] in
+		 MethodMap.iter
+		   (fun _ m ->
+		      l :=
+			!l @ (get_method_calls p c.c_index m)) c.c_methods;
+		 calls := !l @ !calls
+      ) classes;
+    !calls
 
 let store_callgraph callgraph file =
   let out = IO.output_channel (open_out file) in
@@ -1059,7 +1109,7 @@ let store_callgraph callgraph file =
       (fun ((cn,ms,pp),(ccn,cms)) ->
 	 IO.nwrite out
 	   ((JDumpBasics.class_name cn) ^ ","
-	    ^ ms.ms_name
+	    ^ ms.ms_name ^ ":"
 	    ^ (JUnparseSignature.unparse_method_descriptor
 		 (ms.ms_parameters, ms.ms_return_type)) ^ ","
 	    ^ (string_of_int pp) ^ " -> "
@@ -1082,7 +1132,7 @@ let store_simplified_callgraph callgraph file =
 	(fun ((cn,ms),(ccn,cms)) ->
 	   IO.nwrite out
 	     ((JDumpBasics.class_name cn) ^ ","
-	      ^ ms.ms_name
+	      ^ ms.ms_name ^ ":"
 	      ^ (JUnparseSignature.unparse_method_descriptor
 		   (ms.ms_parameters, ms.ms_return_type))
 	      ^ " -> "
