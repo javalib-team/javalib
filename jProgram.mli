@@ -37,7 +37,7 @@ module MethodIndexMap : Map.S with type key = method_signature
 module ClassMap : Ptmap.S
 module MethodMap : Ptmap.S
 
-type method_signature_index = int 
+type method_signature_index = int
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
       mutable ms_map : method_signature MethodMap.t;
@@ -82,7 +82,7 @@ type concrete_method = {
   cm_exceptions : class_name list;
   cm_attributes : attributes;
   cm_implementation : implementation;
-  mutable cm_overridden_in : class_file list;
+  mutable cm_overridden_in : class_file list; (* TODO: is useful ? *)
 }
 
 and abstract_method = {
@@ -96,7 +96,7 @@ and abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  mutable am_overridden_in : interface_or_class list;
+  mutable am_overridden_in : interface_or_class list; (* TODO: is useful ? *)
 }
 
 and jmethod =
@@ -192,7 +192,7 @@ val to_class : interface_or_class -> JClass.interface_or_class
     an id, and a dictionary containing functions to retrieve classes and
     methods ids from their names. *)
 type program = { classes : interface_or_class ClassMap.t;
-		 static_lookup : class_name_index -> method_signature_index -> 
+		 static_lookup : class_name_index -> method_signature_index ->
 							  int -> ClassMethSet.t;
 		 dictionary : dictionary }
 

@@ -30,7 +30,7 @@ let add_methods (p:program) mm =
     match m with
       | JClass.AbstractMethod m -> AbstractMethod (cam2pam p.dictionary m)
       | JClass.ConcreteMethod m -> ConcreteMethod (
-	  let m = (ccm2pcm p.dictionary m) in m.cm_has_been_parsed <- true; 
+	  let m = (ccm2pcm p.dictionary m) in m.cm_has_been_parsed <- true;
 	    m) in
     JClass.MethodMap.iter
       (fun ms m ->
@@ -232,7 +232,7 @@ let rec add_file class_path c program =
 	if not (ClassMap.mem c_index program.classes)
 	then
 	  begin
-	    add_class_referenced c dic !classmap to_add;    
+	    add_class_referenced c dic !classmap to_add;
 	    add_one_file c program
 	  end
 	else program
@@ -259,7 +259,7 @@ let rec add_file class_path c program =
 			       static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
 			       dictionary = dic }
     end
-       
+
 let parse_program class_path names =
   (* build a map of all the JClass.class_file that are going to be
      translated to build the new hierarchy.*)
@@ -294,4 +294,4 @@ let parse_program class_path names =
   in
     JFile.close_class_path class_path;
     program
-      
+

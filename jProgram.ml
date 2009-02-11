@@ -31,10 +31,10 @@ module ClassIndexMap = Map.Make(
     type t = class_name
     let compare = compare
   end)
-  
+
 module MethodIndexMap = JClass.MethodMap
 
-type method_signature_index = int 
+type method_signature_index = int
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
       mutable ms_map : method_signature MethodMap.t;
@@ -44,7 +44,7 @@ type class_name_index_table =
     { mutable cni_map : class_name_index ClassIndexMap.t;
       mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
-      
+
 let get_ms_index tab ms =
   try
     MethodIndexMap.find ms tab.msi_map
@@ -57,11 +57,11 @@ let get_ms_index tab ms =
 	tab.msi_next <- succ current;
 	current
     end
-      
+
 let get_cn_index tab cn =
   try
     ClassIndexMap.find cn tab.cni_map
-  with Not_found -> 
+  with Not_found ->
     begin
       let current = tab.cni_next
       in
@@ -258,7 +258,7 @@ let get_consts = function
   | `Class c -> c.c_consts
 
 type program = { classes : interface_or_class ClassMap.t;
-		 static_lookup : class_name_index -> method_signature_index -> 
+		 static_lookup : class_name_index -> method_signature_index ->
 							  int -> ClassMethSet.t;
 		 dictionary : dictionary }
 type t = program

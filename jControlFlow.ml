@@ -97,7 +97,7 @@ module PP = struct
 		| _ -> raise (NoCode (cn,ms))
 	  end
       | _ -> raise (NoCode (cn,ms))
-	  
+
   let get_first_pp_wp c msi : t =
     match get_method c msi with
       | ConcreteMethod m -> {cl=c;meth=m;pc=0;}
@@ -192,6 +192,7 @@ let rec resolve_field' result fs c : unit =
 	  end
       end
 
+(* TODO : resolve_field should return a list *)
 let resolve_field fs c : interface_or_class =
   let result = ref None in
     resolve_field' result fs c;
@@ -217,6 +218,10 @@ let rec resolve_interface_method' ?(acc=[]) msi (c:interface_or_class) : interfa
     (get_interfaces c)
     acc
 
+(* TODO : like resolve_field, resolve_method should return a list in
+   case the method is defined in several interfaces at the same time. *)
+(* TODO : we should use c_resolve_methods or update it if there are no
+   matches *)
 let rec resolve_method msi (c:class_file) : interface_or_class =
   try `Class (resolve_method' msi c)
   with NoSuchMethodError ->

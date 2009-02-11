@@ -141,9 +141,9 @@ let parse_stackmap_frame consts ch =
 let rec parse_code consts ch =
   let max_stack = read_ui16 ch in
   let max_locals = read_ui16 ch in
-  let clen = 
+  let clen =
     match read_i32 ch with
-      | toobig when toobig > 65535 -> 
+      | toobig when toobig > 65535 ->
 	  raise (Class_structure_error "There must be less than 65536 bytes of instructions in a Code attribute")
       | ok -> ok
   in

@@ -29,7 +29,7 @@
 open JBasics
 open JClass
 open JProgram
-  
+
 module Opcodes =
 struct
   type rta_opcode =
@@ -40,14 +40,14 @@ struct
     | InvokeStatic of class_name_index * method_signature_index
     | InvokeInterface of class_name_index * method_signature_index
     | Nop
-	
+
   type implementation_cache = { mutable usable : bool;
 				mutable oplist : rta_opcode list;
 				mutable oplines : int list;
 				v_calls : ClassMethSet.t ref;
 				impl : implementation;
 				dic : dictionary}
-      
+
   let new_cache impl dic v_calls = { oplist = []; oplines = [];
 				     usable = false; impl = impl;
 				     v_calls = v_calls;
@@ -59,7 +59,7 @@ struct
 	| OpGetStatic (cn,_) -> GetStatic (dic.get_cn_index cn)
 	| OpPutStatic (cn,_) -> PutStatic (dic.get_cn_index cn)
 	| OpInvoke (`Virtual t, ms) ->
-	    let cni = match t with 
+	    let cni = match t with
 	      | TClass cn -> dic.get_cn_index cn
 	      | TArray _ -> (* should only happen with [clone()] *)
 		  java_lang_object_index
@@ -78,14 +78,14 @@ struct
 	    and msi = dic.get_ms_index ms in
 	      InvokeInterface(cni,msi)
 	| _ -> Nop
-	    
+
   let iteri f cache =
     if ( cache.usable ) then
       List.iter2 f cache.oplines cache.oplist
     else
       let new_ops = ref []
       and new_ops_lines = ref [] in
-	(match cache.impl with 
+	(match cache.impl with
 	   | Native -> ()
 	   | Java c ->
 	       Array.iteri
@@ -117,11 +117,11 @@ struct
 	cache.usable <- true;
 	cache.oplist <- !new_ops;
 	cache.oplines <- !new_ops_lines
-	  
+
   let iter f cache =
     iteri (fun _ x -> f x) cache
 end
-  
+
 module Dllist =
 struct
   exception NilNode
@@ -131,14 +131,14 @@ struct
   exception NoTailNode
   exception NoHeadNode
   exception CellNotFound
-    
+
   type 'a link = 'a cellule
   and 'a content = Content of 'a | Head | Tail
   and 'a cellule = { mutable prev : 'a link;
 		     content : 'a content;
 		     mutable next : 'a link }
   and 'a dllist = 'a cellule
-      
+
   let create () =
     let rec head = { prev = tail; content = Head; next = tail }
     and tail = { prev = head; content = Tail; next = head }
@@ -154,7 +154,7 @@ struct
     match l.content with
       | Head -> l.prev
       | _ -> raise NoHeadNode
-	  
+
   let add (e:'a) (l:'a dllist) =
     match l.content with
       | Head ->
@@ -165,7 +165,7 @@ struct
 	    cell.prev <- new_elm;
 	    l.next <- new_elm
       | _ -> raise NoHeadNode
-	  
+
   let del (l:'a dllist) =
     match l.content with
       | Head -> raise HeadNode
@@ -173,7 +173,7 @@ struct
       | _ ->
 	  l.next.prev <- l.prev;
 	  l.prev.next <- l.next
-	    
+
   let rec mem (e:'a) (l:'a dllist) =
     match l.content with
       | Head ->
@@ -185,10 +185,10 @@ struct
 	    true
 	  else let cell = l.next in
 	    mem e cell
-	      
+
   let add_ifn e l =
     if not( mem e l ) then add e l
-      
+
   let rec size ?(s=0) (l:'a dllist) =
     match l.content with
       | Head ->
@@ -198,7 +198,7 @@ struct
       | Content _ ->
 	  let cell = l.next in
 	    size ~s:(s+1) cell
-	      
+
   let rec iter (f:'a -> unit) (l:'a dllist) =
     match l.content with
       | Head ->
@@ -209,7 +209,7 @@ struct
 	  f c;
 	  let cell = l.next in
 	    iter f cell
-	      
+
   let rec iter_until_cell (f:'a -> unit) (bound:'a dllist) (l:'a dllist) =
     match l.content with
       | Head ->
@@ -221,7 +221,7 @@ struct
 	    (f c;
 	     let cell = l.next in
 	       iter_until_cell f bound cell)
-	      
+
   let rec iter_to_head_i (f:'a dllist -> 'a -> unit) (l:'a dllist) =
     match l.content with
       | Head -> ()
@@ -232,23 +232,23 @@ struct
 	  f l c;
 	  let cell = l.prev in
 	    iter_to_head_i f cell
-	      
+
   let iter_to_head (f:'a -> unit) (l:'a dllist) =
-    iter_to_head_i (fun _ x -> f x) l 
-      
+    iter_to_head_i (fun _ x -> f x) l
+
   let map (f:'a -> 'b) (l:'a dllist) =
     let tail = tail l
     and lm = ref [] in
       iter_to_head (fun x -> lm := (f x) :: !lm) tail;
       !lm
 end
-  
+
 module ClassSet = Set.Make(
   struct
     type t = class_name_index
     let compare = compare
   end)
-  
+
 module Program =
 struct
   type class_info =
@@ -264,7 +264,7 @@ struct
 	methods_data : methods_info }
   and method_info = JProgram.jmethod * Opcodes.implementation_cache option
   and methods_info = method_info MethodMap.t
-      
+
   type callgraph_info =
       { mutable tested_new_instances : int Dllist.dllist;
 	mutable lookup : ClassMethSet.t
@@ -285,9 +285,9 @@ struct
 	v_calls : ClassMethSet.t ref;
 	mutable finished : bool;
 	classpath : JFile.class_path }
-	
+
   exception Method_not_found
-    
+
   let methodmap2methodinfo p mm =
     let dic = p.dic in
     let meth_info = ref MethodMap.empty in
@@ -304,7 +304,7 @@ struct
 	     meth_info := MethodMap.add (dic.get_ms_index ms)
 	       cache !meth_info) mm;
       !meth_info
-	
+
   let abstract_methodmap2methodinfo p mm i_initializer =
     let dic = p.dic in
     let meth_info = ref MethodMap.empty in
@@ -322,11 +322,11 @@ struct
 	   meth_info := MethodMap.add (dic.get_ms_index ms)
 	     (AbstractMethod(cam2pam dic am), None) !meth_info) mm;
       !meth_info
-	
+
   let rec rem_dbl = function
     | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
     | l -> l
-	
+
   let rec load_class p cni =
     if not( ClassMap.mem cni p.classes ) then
       let cn = p.dic.retrieve_cn cni in
@@ -366,7 +366,7 @@ struct
 			     let i = dic.get_cn_index iname in
 			       s := ClassSet.add i !s) c.JClass.c_interfaces;
 		!s in
-	      
+
 	      (* For each implemented interface and its super interfaces we add
 		 cni in the program interfaces map *)
 	      ClassSet.iter
@@ -382,7 +382,7 @@ struct
 			  ClassSet.add i_index
 			    (ClassSet.union s i_info.super_interfaces)
 		     ) implemented_interfaces ClassSet.empty);
-	      
+
 	      (* For each implemented interface and its super interfaces we add
 		 cni in the program direct_interfaces map *)
 	      ClassSet.iter
@@ -395,7 +395,7 @@ struct
 		     p.direct_interfaces <- ClassMap.add i [ioc_index]
 		       p.direct_interfaces
 		) implemented_interfaces;
-	      
+
 	      let ioc_info =
 		{ class_data = ref ioc;
 		  is_instantiated = false;
@@ -407,7 +407,7 @@ struct
 		  methods_data = methodmap2methodinfo p c.JClass.c_methods }
 	      in
 		p.classes <- ClassMap.add ioc_index ioc_info p.classes;
-		
+
 		(* Now we add the clinit method to the workset *)
 		(if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
 		   add_to_workset p (ioc_index,clinit_index))
@@ -422,7 +422,7 @@ struct
 			       s := ClassSet.union si_info.super_interfaces !s
 			  ) i.JClass.i_interfaces;
 		!s in
-	      
+
 	    let ioc_info =
 	      { class_data = ref ioc;
 		is_instantiated = false;
@@ -439,7 +439,7 @@ struct
 	      (* Now we add the clinit method to the workset *)
 	      (if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
 		 add_to_workset p (ioc_index,clinit_index))
-		
+
   and get_method_info p cni msi : method_info =
     let cl_info = get_class_info p cni in
       try
@@ -447,22 +447,22 @@ struct
 	  meth_impl
       with
 	| Not_found -> raise Method_not_found
-	    
+
   and make_workset_item p (cni,msi) =
     ((cni,msi), ref (snd (get_method_info p cni msi)))
-      
+
   and add_to_workset p (cni,msi) =
     Dllist.add (make_workset_item p (cni,msi)) p.workset;
     match (fst (get_method_info p cni msi)) with
       | ConcreteMethod cm ->
 	  cm.cm_has_been_parsed <- true
       | AbstractMethod _ -> ()
-	  
+
   let get_instantiated_subclasses c_info =
     match c_info.instantiated_subclasses with
       | None -> failwith ("Can't instanciate an interface ")
       | Some subclasses -> subclasses
-	  
+
   let rec add_instantiated_class p cni =
     let cl_info = get_class_info p cni in
       if not( cl_info.is_instantiated ) then
@@ -476,7 +476,7 @@ struct
 		Dllist.add cni (get_instantiated_subclasses scl_info)
 	   ) (cni :: cl_info.super_classes)
 	)
-	  
+
   (* Method resolution *)
   let rec resolve_method p cni msi =
     let class_info = get_class_info p cni in
@@ -499,7 +499,7 @@ struct
 	    with _ ->
 	      failwith ("Failing resolving (" ^ (string_of_int cni) ^ ","
 			^ (string_of_int msi) ^ ")")
-		
+
   let update_lookup_set p msi callsites cni =
     if ( callsites = ClassMethSet.empty ) then
       ClassMethSet.empty
@@ -514,7 +514,7 @@ struct
 	     new_callsites)
 	  else ClassMethSet.empty
       with Not_found ->
-	(* we add the information in the static_virtual_lookup even if (cni,msi) is 
+	(* we add the information in the static_virtual_lookup even if (cni,msi) is
 	   never invoked in the program *)
 	let class_info = get_class_info p cni in
 	let tested_new_instances =
@@ -523,7 +523,7 @@ struct
 	    { tested_new_instances = tested_new_instances;
 	      lookup = callsites } p.static_virtual_lookup;
 	  callsites
-	    
+
   let invoke_virtual_lookup p cni msi =
     let class_info = get_class_info p cni in
       (try
@@ -570,7 +570,7 @@ struct
 		  (fun x -> add_to_workset p x) new_callsites
 	     )
       )
-	
+
   let interface_lookup_action p cni f =
     if ( ClassMap.mem cni p.interfaces ) then
       (List.iter
@@ -578,10 +578,10 @@ struct
     else ()
       (* otherwise, the classes implementing the interface have not
 	 been charged yet so we can't do anything *)
-      
+
   let invoke_interface_lookup p cni msi =
     interface_lookup_action p cni (fun x -> invoke_virtual_lookup p x msi)
-      
+
   let rec invoke_special_lookup p current_class_index cni msi =
     let current_class_info = get_class_info p current_class_index in
     let (rcni,msi) = resolve_method p cni msi in
@@ -600,7 +600,7 @@ struct
 	     (* we add (cni,msi) to the workset *)
 	     add_to_workset p (rcni,msi)
 	  )
-	    
+
   let rec invoke_static_lookup p cni msi =
     let class_info = get_class_info p cni in
     let tested_new_instances =
@@ -614,7 +614,7 @@ struct
        	       lookup = s} p.static_virtual_lookup;
 	   add_to_workset p (rcni,msi)
       )
-	
+
   let parse_instruction p current_class_index (op:Opcodes.rta_opcode) =
     match op with
       | Opcodes.New cni ->
@@ -634,7 +634,7 @@ struct
       | Opcodes.InvokeStatic (cni,msi) ->
       	  invoke_static_lookup p cni msi
       | _ -> ()
-	  
+
   let iter_workset p =
     while not( p.finished ) do
       p.finished <- true;
@@ -657,13 +657,13 @@ struct
 		     Opcodes.iter (parse_instruction p cni) impl)
 	  tail
     done
-	
+
   let new_program_cache debug cn entrypoints classpath =
     let dic = make_dictionary () in
     let v_calls = ref ClassMethSet.empty in
     let cni = dic.get_cn_index cn
     and msil = List.map dic.get_ms_index entrypoints
-    and initializeSystemClass : class_name * method_signature = 
+    and initializeSystemClass : class_name * method_signature =
       (["java";"lang";"System"],
        {ms_name = "initializeSystemClass";
 	ms_parameters = [];
@@ -674,7 +674,7 @@ struct
 	interfaces = ClassMap.empty;
 	direct_interfaces = ClassMap.empty;
 	dic = dic;
-	static_virtual_lookup = ClassMethMap.empty; 
+	static_virtual_lookup = ClassMethMap.empty;
 	static_interface_lookup = ClassMethMap.empty;
 	workset = workset;
 	v_calls = v_calls;
@@ -712,14 +712,14 @@ struct
       	    dic.get_ms_index (snd initializeSystemClass))
       );
       p
-	
+
   let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
     let classpath = JFile.class_path classpath in
     let p = new_program_cache debug cn entrypoints classpath in
       iter_workset p;
       JFile.close_class_path classpath;
       p
-	
+
   let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
     let time_start = Sys.time() in
     let p = parse_program ~debug ~entrypoints classpath cn in
@@ -729,14 +729,14 @@ struct
 	Printf.printf "program parsed in %fs.\n" (time_stop-.time_start);
 	Printf.printf "%d classes and %d methods parsed.\n"
 	  (p.dic.cni_table.cni_next) (p.dic.msi_table.msi_next)
-	  
+
 end
-  
+
 let retrieve_invoke_index p_cache op =
   let dic = p_cache.Program.dic in
     match op with
       | OpInvoke (`Virtual t, ms) ->
-	  let cni = match t with 
+	  let cni = match t with
 	    | TClass cn -> dic.get_cn_index cn
 	    | TArray _ -> (* should only happen with [clone()] *)
 		java_lang_object_index
@@ -751,7 +751,7 @@ let retrieve_invoke_index p_cache op =
 	  let cni = dic.get_cn_index cn
 	  and msi = dic.get_ms_index ms in (cni,msi)
       | _ -> failwith "Bad opcode"
-	  
+
 exception Invoke_not_found of class_name * method_signature * class_name * method_signature
 
 let static_virtual_lookup p_cache cni msi =
@@ -804,8 +804,8 @@ let static_lookup p_cache cni msi pp =
 		     | Invoke_not_found (_,_,_,_) as e -> raise e
 		     | _ ->
 			 failwith "Invalid program point")
-	    
-	    
+
+
 module JProgramConverter =
 struct
   let rec get_class_file p ioc_index class_file_map =
@@ -823,7 +823,7 @@ struct
     match ioc with
       | `Class _ -> failwith "to_interface_file applied on class !"
       | `Interface i -> i
-	  
+
   and ioc2iocfile p ioc_index class_file_map =
     let dic = p.Program.dic in
     let ioc_name = dic.retrieve_cn ioc_index in
@@ -874,7 +874,7 @@ struct
 	       c_resolve_methods = MethodMap.empty;
 	       c_may_be_instanciated = ioc_info.Program.is_instantiated;
 	       c_children = ClassMap.empty} in
-	      
+
 	      class_file_map := ClassMap.add ioc_index (`Class c_struct)
 		!class_file_map;
 	      c_struct.c_resolve_methods <-
@@ -940,7 +940,7 @@ struct
 		   with
 		       _ -> None);
 	       i_fields = i.JClass.i_fields;
-	       i_methods = 
+	       i_methods =
 		  (let i_methods = ref MethodMap.empty in
 		     MethodMap.iter
 		       (fun i m ->
@@ -954,7 +954,7 @@ struct
 		     !i_methods
 		  )
 	      } in
-	      
+
 	      class_file_map := ClassMap.add ioc_index (`Interface i_struct)
 		!class_file_map;
 	      (List.iter
@@ -979,7 +979,7 @@ struct
 	       with _ -> ()
 	      );
 	      `Interface i_struct
-		
+
   let pcache2jprogram p_cache =
     let class_file_map = ref ClassMap.empty in
       { classes =
@@ -989,18 +989,18 @@ struct
 	static_lookup = static_lookup p_cache;
 	dictionary = p_cache.Program.dic }
 end
-  
+
 let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
   let p_cache = (Program.parse_program ~debug ~entrypoints classpath cn) in
     JProgramConverter.pcache2jprogram p_cache
-      
+
 let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
   let time_start = Sys.time() in
     ignore(parse_program ~debug ~entrypoints classpath cn);
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
-	
-	
+
+
 let get_method_calls p cni m =
   let l = ref [] in
   let f_lookup = p.static_lookup in
@@ -1031,10 +1031,10 @@ let get_method_calls p cni m =
 	| _ -> ()
     end;
     !l
-    
+
 type callgraph = ((JBasics.class_name * JClass.method_signature * int)
 		  * (JBasics.class_name * JClass.method_signature)) list
-    
+
 let get_callgraph p =
   JProgram.fold
     (fun calls ioc ->
@@ -1052,7 +1052,7 @@ let get_callgraph p =
 		      !l @ (get_method_calls p c.c_index m)) c.c_methods;
 	       calls @ !l
     ) [] p
-    
+
 let store_callgraph callgraph file =
   let out = IO.output_channel (open_out file) in
     List.iter
@@ -1070,7 +1070,7 @@ let store_callgraph callgraph file =
       )
       callgraph;
     IO.close_out out
-      
+
 let store_simplified_callgraph callgraph file =
   let simple_callgraph = ref [] in
     List.iter (fun ((cn,ms,_),k) ->
@@ -1093,4 +1093,4 @@ let store_simplified_callgraph callgraph file =
 	)
 	(List.rev !simple_callgraph);
       IO.close_out out
-	
+

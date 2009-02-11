@@ -257,4 +257,4 @@ let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
 
 let permissive = ref false
 let set_permissive b = permissive := b
-let get_permissive _ = !permissive 
+let get_permissive _ = !permissive

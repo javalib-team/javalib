@@ -286,7 +286,7 @@ let low2high_amethod consts ms = function m ->
 	begin
 	  try
 	    Some (JParseSignature.parse_MethodTypeSignature s)
-	  with Class_structure_error _ as e -> 
+	  with Class_structure_error _ as e ->
 	    if JBasics.get_permissive ()
 	    then None
 	    else raise e
@@ -549,7 +549,7 @@ let low2high_class cl =
 	    with
 	      | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
 	      | [],others -> None, others
-	      | m::_::_,others -> 
+	      | m::_::_,others ->
 		  if not (JBasics.get_permissive ())
 		  then raise (Class_structure_error "has more than one class initializer <clinit>")
 		  else Some (low2high_cmethod consts clinit_signature m),others
