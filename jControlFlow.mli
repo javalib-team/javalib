@@ -122,12 +122,15 @@ val resolve_interface_method' :
 val resolve_all_interface_methods : method_signature_index -> interface_file -> interface_file list
 
 
-(** [resolve_field fs c] returns the class or interface that defines
-    the field [fs], if any.
-    @raise NoSuchFieldError if the field is not found
+(** [resolve_field fsi c] returns the list of classes and interfaces
+    that define the field [(c,fsi)], if any.  See the JVM Spec for the
+    algorithm.  Several interfaces may define the same field and it is
+    not specify which one to take (there is no order relation on
+    direct interfaces), so this function returns a list.
+
     @see <http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#71685> Field Resolution
 *)
-val resolve_field : field_signature_index -> interface_or_class -> interface_or_class
+val resolve_field : field_signature_index -> interface_or_class -> interface_or_class list
 
 (** [lookup_virtual_method ms c] return the class that defines the
     method [ms], if any.  The caller is responsible to check that the
