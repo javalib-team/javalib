@@ -23,6 +23,8 @@
    - Pour le static_lookup : retourner un couple (class,method) plutôt
    qu'un couple d'entiers
    - Etre précis dans le chargement des clinits
+   - Ne plus avoir de pointeurs vers le program_cache dans la fonction
+   static_lookup retournée avec le programme
 *)
 
 
@@ -249,6 +251,8 @@ module ClassSet = Set.Make(
     let compare = compare
   end)
 
+type ioc_field = [ `CField of class_field | `IField of interface_field ]
+
 module Program =
 struct
   type class_info =
@@ -261,7 +265,8 @@ struct
 	mutable resolved_methods : (class_name_index *
 				      method_signature_index) MethodMap.t;
 	(* resolved_methods calculated for compatibility with JProgram *)
-	methods_data : methods_info }
+	methods_data : methods_info;
+	fields : ioc_field FieldMap.t }
   and method_info = JProgram.jmethod * Opcodes.implementation_cache option
   and methods_info = method_info MethodMap.t
 
@@ -327,10 +332,22 @@ struct
 	     (AbstractMethod(cam2pam dic am), None) !meth_info) mm;
       !meth_info
 
-  let rec rem_dbl = function
-    | e::(_::_ as l) -> e:: (List.filter ((!=)e) (rem_dbl l))
-    | l -> l
-
+  let cfmap2iocfmap p fm =
+    let imap = ref FieldMap.empty in
+      JClass.FieldMap.iter
+	(fun fs cf ->
+	   let fsi = p.dic.get_fs_index fs in
+	     imap := FieldMap.add fsi (`CField cf) !imap) fm;
+      !imap
+    
+  let ifmap2iocfmap p fm =
+    let imap = ref FieldMap.empty in
+      JClass.FieldMap.iter
+	(fun fs cf ->
+	   let fsi = p.dic.get_fs_index fs in
+	     imap := FieldMap.add fsi (`IField cf) !imap) fm;
+      !imap
+	
   let rec load_class p cni =
     if not( ClassMap.mem cni p.classes ) then
       let cn = p.dic.retrieve_cn cni in
@@ -408,7 +425,8 @@ struct
 		  super_classes = super_classes;
 		  super_interfaces = ClassSet.empty;
 		  resolved_methods = MethodMap.empty;
-		  methods_data = methodmap2methodinfo p c.JClass.c_methods }
+		  methods_data = methodmap2methodinfo p c.JClass.c_methods;
+		  fields = cfmap2iocfmap p c.JClass.c_fields }
 	      in
 		p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 
@@ -437,7 +455,8 @@ struct
 		super_interfaces = super_interfaces;
 		resolved_methods = MethodMap.empty;
 		methods_data = abstract_methodmap2methodinfo p
-		  i.JClass.i_methods i.JClass.i_initializer }
+		  i.JClass.i_methods i.JClass.i_initializer;
+		fields = ifmap2iocfmap p i.JClass.i_fields }
 	    in
 	      p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 	      (* Now we add the clinit method to the workset *)
@@ -855,6 +874,24 @@ let static_lookup p_cache cni msi pp =
 
 module JProgramConverter =
 struct
+  let iocfmap2cfmap fmap =
+    FieldMap.map
+      (fun iocf ->
+	 match iocf with
+	   | `CField cf -> cf
+	   | `IField _ ->
+	       failwith "Trying to convert an interface field to a class field")
+      fmap
+
+  let iocfmap2ifmap fmap =
+    FieldMap.map
+      (fun iocf ->
+	 match iocf with
+	   | `CField _ ->
+	       failwith "Trying to convert a class field to an interface field"
+	   | `IField ifield -> ifield)
+      fmap
+      
   let rec get_class_file p ioc_index class_file_map =
     try
       ClassMap.find ioc_index !class_file_map
@@ -916,7 +953,7 @@ struct
 	       c_source_debug_extention =c.JClass.c_source_debug_extention;
 	       c_inner_classes = c.JClass.c_inner_classes;
 	       c_other_attributes = c.JClass.c_other_attributes;
-	       c_fields = c.JClass.c_fields;
+	       c_fields = iocfmap2cfmap ioc_info.Program.fields;
 	       c_methods = methods;
 	       c_resolve_methods = MethodMap.empty;
 	       c_may_be_instanciated = ioc_info.Program.is_instantiated;
@@ -986,7 +1023,7 @@ struct
 			 | _ -> None (* Impossible case *)
 		   with
 		       _ -> None);
-	       i_fields = i.JClass.i_fields;
+	       i_fields = iocfmap2ifmap ioc_info.Program.fields;
 	       i_methods =
 		  (let i_methods = ref MethodMap.empty in
 		     MethodMap.iter

@@ -25,6 +25,7 @@ open JClass
 
 module ClassMap = Ptmap
 module MethodMap = Ptmap
+module FieldMap = Ptmap
 
 module ClassIndexMap = Map.Make(
   struct
@@ -33,7 +34,13 @@ module ClassIndexMap = Map.Make(
   end)
 
 module MethodIndexMap = JClass.MethodMap
+module FieldIndexMap = JClass.FieldMap
 
+type field_signature_index = int
+type field_signature_index_table =
+    { mutable fsi_map : field_signature_index FieldIndexMap.t;
+      mutable fs_map : field_signature FieldMap.t;
+      mutable fsi_next : field_signature_index }
 type method_signature_index = int
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
@@ -71,6 +78,19 @@ let get_cn_index tab cn =
 	current
     end
 
+let get_fs_index tab fs =
+  try
+    FieldIndexMap.find fs tab.fsi_map
+  with Not_found ->
+    begin
+      let current = tab.fsi_next
+      in
+	tab.fsi_map <- FieldIndexMap.add fs current tab.fsi_map;
+	tab.fs_map <- FieldMap.add current fs tab.fs_map;
+	tab.fsi_next <- succ current;
+	current
+    end
+  
 exception RetrieveError
 
 let retrieve_cn tab cni =
@@ -83,10 +103,18 @@ let retrieve_ms tab msi =
     MethodMap.find msi tab.ms_map
   with _ -> raise RetrieveError
 
+let retrieve_fs tab fsi =
+  try
+    FieldMap.find fsi tab.fs_map
+  with _ -> raise RetrieveError
+
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
+		    fsi_table : field_signature_index_table;
+		    get_fs_index : FieldIndexMap.key -> field_signature_index;
 		    get_ms_index : MethodIndexMap.key -> method_signature_index;
 		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    retrieve_fs : field_signature_index -> field_signature;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 
@@ -108,11 +136,18 @@ let make_dictionary () =
     { cni_map =
 	ClassIndexMap.add java_lang_object java_lang_object_index ClassIndexMap.empty;
       cn_map = ClassMap.add java_lang_object_index java_lang_object ClassMap.empty;
-      cni_next = 1 } in
+      cni_next = 1 }
+  and fsi_table =
+    { fsi_map = FieldIndexMap.empty;
+      fs_map = FieldMap.empty;
+      fsi_next = 0 } in
     { msi_table = msi_table;
       cni_table = cni_table;
+      fsi_table = fsi_table;
+      get_fs_index = get_fs_index fsi_table;
       get_ms_index = get_ms_index msi_table;
       get_cn_index = get_cn_index cni_table;
+      retrieve_fs = retrieve_fs fsi_table;
       retrieve_ms = retrieve_ms msi_table;
       retrieve_cn = retrieve_cn cni_table }
 
@@ -290,9 +325,9 @@ let defines_method msi = function
       if msi = clinit_index then i.i_initializer <> None
       else MethodMap.mem msi i.i_methods
   | `Class c -> MethodMap.mem msi c.c_methods
-let defines_field fs = function
-  | `Interface {i_fields=fm;} -> FieldMap.mem fs fm
-  | `Class {c_fields=fm;} -> FieldMap.mem fs fm
+let defines_field fsi = function
+  | `Interface {i_fields=fm;} -> FieldMap.mem fsi fm
+  | `Class {c_fields=fm;} -> FieldMap.mem fsi fm
 
 
 let get_interface_or_class program cn =
@@ -321,9 +356,9 @@ let get_methods = function
   | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
 
-let get_field c fs = match c with
-  | `Interface i -> InterfaceField (FieldMap.find fs i.i_fields)
-  | `Class c -> ClassField (FieldMap.find fs c.c_fields)
+let get_field c fsi = match c with
+  | `Interface i -> InterfaceField (FieldMap.find fsi i.i_fields)
+  | `Class c -> ClassField (FieldMap.find fsi c.c_fields)
 
 let get_fields c =
   let to_list fs _f l = fs::l in
@@ -401,6 +436,13 @@ let ptree2mmap get_ms f ptm =
 	 mmap := JClass.MethodMap.add (get_ms m) (f m) !mmap) ptm;
     !mmap
 
+let ptree2fmap get_fs ptm =
+  let fmap = ref JClass.FieldMap.empty in
+    FieldMap.iter
+    (fun _ cf ->
+	 fmap := JClass.FieldMap.add (get_fs cf) cf !fmap) ptm;
+    !fmap
+
 let to_class = function
   | `Interface c -> `Interface
       {JClass.i_name = c.i_name;
@@ -423,7 +465,8 @@ let to_class = function
 	      | Some m -> Some (pcm2ccm m)
 	      | None -> None
 	  end;
-       JClass.i_fields = c.i_fields;
+       JClass.i_fields = ptree2fmap (fun ifield -> ifield.if_signature)
+	  c.i_fields;
        JClass.i_methods = ptree2mmap (fun am -> am.am_signature)
 	  (fun m -> pam2cam m) c.i_methods;
       }
@@ -450,7 +493,7 @@ let to_class = function
        JClass.c_source_debug_extention = c.c_source_debug_extention;
        JClass.c_inner_classes = c.c_inner_classes;
        JClass.c_other_attributes = c.c_other_attributes;
-       JClass.c_fields = c.c_fields;
+       JClass.c_fields = ptree2fmap (fun cf -> cf.cf_signature) c.c_fields;
        JClass.c_methods =
 	  ptree2mmap
 	    (function

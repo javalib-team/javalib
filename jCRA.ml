@@ -24,37 +24,45 @@ open JClass
 open JProgram
 
 
-let add_methods (p:program) mm =
+let add_methods dictionary mm =
   let imap = ref MethodMap.empty
   and f m =
     match m with
-      | JClass.AbstractMethod m -> AbstractMethod (cam2pam p.dictionary m)
+      | JClass.AbstractMethod m -> AbstractMethod (cam2pam dictionary m)
       | JClass.ConcreteMethod m -> ConcreteMethod (
-	  let m = (ccm2pcm p.dictionary m) in m.cm_has_been_parsed <- true;
+	  let m = (ccm2pcm dictionary m) in m.cm_has_been_parsed <- true;
 	    m) in
     JClass.MethodMap.iter
       (fun ms m ->
-	 let msi = p.dictionary.get_ms_index ms in
+	 let msi = dictionary.get_ms_index ms in
 	   imap := MethodMap.add msi (f m) !imap) mm;
     !imap
 
-let add_amethods (p:program) mm =
+let add_amethods dictionary mm =
   let imap = ref MethodMap.empty
-  and f m = cam2pam p.dictionary m in
+  and f m = cam2pam dictionary m in
     JClass.MethodMap.iter
       (fun ms m ->
-	 let msi = p.dictionary.get_ms_index ms in
+	 let msi = dictionary.get_ms_index ms in
 	   imap := MethodMap.add msi (f m) !imap) mm;
     !imap
 
-let add_classFile c (program:program) =
+let add_fields dictionary fm =
+  let imap = ref FieldMap.empty in
+    JClass.FieldMap.iter
+      (fun fs cf ->
+	 let fsi = dictionary.get_fs_index fs in
+	   imap := FieldMap.add fsi cf !imap) fm;
+    !imap
+
+let add_classFile c classes dictionary =
   let imap =
     List.fold_left
       (fun imap iname ->
-	 let iname_index = program.dictionary.get_cn_index iname in
+	 let iname_index = dictionary.get_cn_index iname in
 	 let i =
 	   try
-	     match ClassMap.find iname_index program.classes with
+	     match ClassMap.find iname_index classes with
 		 | `Interface i -> i
 		 | `Class _ ->
 		     raise (Class_structure_error
@@ -69,9 +77,9 @@ let add_classFile c (program:program) =
     match c.JClass.c_super_class with
       | None -> None
       | Some super ->
-	  let super_index = program.dictionary.get_cn_index super in
+	  let super_index = dictionary.get_cn_index super in
 	    try
-	      match ClassMap.find super_index program.classes with
+	      match ClassMap.find super_index classes with
 		| `Class c -> Some c
 		| `Interface _ ->
 		    raise (Class_structure_error
@@ -81,7 +89,7 @@ let add_classFile c (program:program) =
   in
   let c' =
     {c_name = c.JClass.c_name;
-     c_index = program.dictionary.get_cn_index c.JClass.c_name;
+     c_index = dictionary.get_cn_index c.JClass.c_name;
      c_version = c.JClass.c_version;
      c_access = c.JClass.c_access;
      c_generic_signature = c.JClass.c_generic_signature;
@@ -99,13 +107,13 @@ let add_classFile c (program:program) =
      c_source_debug_extention =c.JClass.c_source_debug_extention;
      c_inner_classes = c.JClass.c_inner_classes;
      c_other_attributes = c.JClass.c_other_attributes;
-     c_fields = c.JClass.c_fields;
-     c_methods = add_methods program c.JClass.c_methods;
+     c_fields = add_fields dictionary c.JClass.c_fields;
+     c_methods = add_methods dictionary c.JClass.c_methods;
      c_resolve_methods = MethodMap.empty;
      c_may_be_instanciated = true;
      c_children = ClassMap.empty;}
   in
-  let c_index' = program.dictionary.get_cn_index c'.c_name in
+  let c_index' = dictionary.get_cn_index c'.c_name in
     MethodMap.iter
       (fun ms _ -> declare_method (`Class c') ms)
       c'.c_methods;
@@ -119,22 +127,16 @@ let add_classFile c (program:program) =
 	| Some parent ->
 	    parent.c_children <- ClassMap.add c_index' c' parent.c_children
     end;
-    { classes =
-	ClassMap.add
-	  c_index'
-	  (`Class c')
-	  program.classes;
-      static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-      dictionary = program.dictionary }
+    ClassMap.add c_index' (`Class c') classes
 
-let add_interfaceFile c (program:program) =
+let add_interfaceFile c classes dictionary =
   let imap =
     List.fold_left
       (fun imap iname ->
-	 let iname_index = program.dictionary.get_cn_index iname in
+	 let iname_index = dictionary.get_cn_index iname in
 	 let i =
 	   try
-	     match ClassMap.find iname_index program.classes with
+	     match ClassMap.find iname_index classes with
 	       | `Interface i -> i
 	       | `Class c' ->
 		   raise (Class_structure_error
@@ -146,7 +148,7 @@ let add_interfaceFile c (program:program) =
       ClassMap.empty
       c.JClass.i_interfaces
   and super =
-    try match ClassMap.find java_lang_object_index program.classes with
+    try match ClassMap.find java_lang_object_index classes with
       | `Class c -> c
       | `Interface _ ->
 	  raise (Class_structure_error"java.lang.Object is declared as an interface.")
@@ -154,7 +156,7 @@ let add_interfaceFile c (program:program) =
   in
   let c' =
     {i_name = c.JClass.i_name;
-     i_index = program.dictionary.get_cn_index c.JClass.i_name;
+     i_index = dictionary.get_cn_index c.JClass.i_name;
      i_version = c.JClass.i_version;
      i_access = c.JClass.i_access;
      i_generic_signature = c.JClass.i_generic_signature;
@@ -174,13 +176,13 @@ let add_interfaceFile c (program:program) =
 	begin
 	  match c.JClass.i_initializer with
 	    | None -> None
-	    | Some m -> Some (ccm2pcm program.dictionary m)
+	    | Some m -> Some (ccm2pcm dictionary m)
 	end;
-     i_fields = c.JClass.i_fields;
-     i_methods = add_amethods program c.JClass.i_methods;
+     i_fields = add_fields dictionary c.JClass.i_fields;
+     i_methods = add_amethods dictionary c.JClass.i_methods;
     }
   in
-  let c_index' = program.dictionary.get_cn_index c'.i_name in
+  let c_index' = dictionary.get_cn_index c'.i_name in
     MethodMap.iter
       (fun ms _ -> declare_method (`Interface c') ms)
       c'.i_methods;
@@ -188,16 +190,12 @@ let add_interfaceFile c (program:program) =
       (fun _ i ->
 	i.i_children_interface <- ClassMap.add c_index' c' i.i_children_interface)
       c'.i_interfaces;
-    { classes = ClassMap.add
-	c_index'
-	(`Interface c')
-	program.classes;
-      static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-      dictionary = program.dictionary }
+    ClassMap.add c_index' (`Interface c') classes
 
-let add_one_file f program = match f with
-  | `Interface i -> add_interfaceFile i program
-  | `Class c -> add_classFile c program
+
+let add_one_file f classes dictionary = match f with
+  | `Interface i -> add_interfaceFile i classes dictionary
+  | `Class c -> add_classFile c classes dictionary
 
 let add_class_referenced c dictionary classmap to_add =
   Array.iter
@@ -222,42 +220,35 @@ let get_class class_path dictionary class_map name =
 	  c;
       with No_class_found _ -> raise (Class_not_found name)
 
-let rec add_file class_path c program =
+let rec add_file class_path c classes dictionary =
   let classmap = ref ClassMap.empty in
   let to_add = ref [] in
-  let dic = program.dictionary in
-  let program =
+  let classes =
     try
-      let c_index = dic.get_cn_index (JClass.get_name c) in
-	if not (ClassMap.mem c_index program.classes)
+      let c_index = dictionary.get_cn_index (JClass.get_name c) in
+	if not (ClassMap.mem c_index classes)
 	then
 	  begin
-	    add_class_referenced c dic !classmap to_add;
-	    add_one_file c program
+	    add_class_referenced c dictionary !classmap to_add;
+	    add_one_file c classes dictionary
 	  end
-	else program
+	else classes
     with Class_not_found cn ->
-      let missing_class = get_class class_path dic classmap cn in
-	add_file class_path c (add_file class_path missing_class program)
+      let missing_class = get_class class_path dictionary classmap cn in
+	add_file class_path c
+	  (add_file class_path missing_class classes dictionary) dictionary
   in begin
-      let p_classes = ref program.classes in
+      let p_classes = ref classes in
 	try while true do
 	  let cn = List.hd !to_add in
 	    to_add := List.tl !to_add;
-	    if not (ClassMap.mem (dic.get_cn_index cn) !p_classes)
+	    if not (ClassMap.mem (dictionary.get_cn_index cn) !p_classes)
 	    then
-	      let c = get_class class_path dic classmap cn
-	      in p_classes := (add_file class_path c
-				 { classes = !p_classes;
-				   static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-				   dictionary = dic }).classes
+	      let c = get_class class_path dictionary classmap cn
+	      in p_classes := add_file class_path c !p_classes dictionary
 	done;
-	  { classes = !p_classes;
-	    static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-	    dictionary = dic }
-	with Failure "hd" -> { classes = !p_classes;
-			       static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-			       dictionary = dic }
+	  !p_classes
+	with Failure "hd" -> !p_classes
     end
 
 let parse_program class_path names =
@@ -284,14 +275,12 @@ let parse_program class_path names =
 	class_map
 	others
     end in
-  let program =
+  let p_classes =
     ClassMap.fold
-      (fun _ -> add_file class_path)
-      !class_map
-      { classes = ClassMap.empty;
-	static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
-	dictionary = p_dic }
+      (fun _ c classes -> add_file class_path c classes p_dic)
+      !class_map ClassMap.empty
   in
     JFile.close_class_path class_path;
-    program
-
+    { classes = p_classes;
+      static_lookup = (fun _ _ _ -> failwith "static lookup not Implemented for JCRA");
+      dictionary = p_dic }

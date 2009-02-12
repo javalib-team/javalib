@@ -127,7 +127,7 @@ val resolve_all_interface_methods : method_signature_index -> interface_file -> 
     @raise NoSuchFieldError if the field is not found
     @see <http://java.sun.com/docs/books/jvms/second_edition/html/ConstantPool.doc.html#71685> Field Resolution
 *)
-val resolve_field : field_signature -> interface_or_class -> interface_or_class
+val resolve_field : field_signature_index -> interface_or_class -> interface_or_class
 
 (** [lookup_virtual_method ms c] return the class that defines the
     method [ms], if any.  The caller is responsible to check that the

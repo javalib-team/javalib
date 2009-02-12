@@ -171,31 +171,31 @@ let normal_successors pp =
 let resolve_class program cn =
   try get_interface_or_class program cn with Not_found -> raise NoClassDefFoundError
 
-let rec resolve_field' result fs c : unit =
+let rec resolve_field' result fsi c : unit =
   let get_interfaces = function
     | `Interface i -> i.i_interfaces
     | `Class c -> c.c_interfaces
   in
-    if defines_field fs c
+    if defines_field fsi c
     then result := Some c
     else
       begin
 	ClassMap.iter
-	  (fun _ i -> resolve_field' result fs (`Interface i))
+	  (fun _ i -> resolve_field' result fsi (`Interface i))
 	  (get_interfaces c);
 	if !result = None
 	then
 	  begin
 	    match super_class c with
-	      | Some super -> resolve_field' result fs (`Class super)
+	      | Some super -> resolve_field' result fsi (`Class super)
 	      | None -> ()
 	  end
       end
 
 (* TODO : resolve_field should return a list *)
-let resolve_field fs c : interface_or_class =
+let resolve_field fsi c : interface_or_class =
   let result = ref None in
-    resolve_field' result fs c;
+    resolve_field' result fsi c;
     match !result with
       | Some c -> c
       | None -> raise NoSuchFieldError

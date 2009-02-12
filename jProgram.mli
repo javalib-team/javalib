@@ -34,9 +34,17 @@ open JClass
 
 module ClassIndexMap : Map.S with type key = class_name
 module MethodIndexMap : Map.S with type key = method_signature
+module FieldIndexMap : Map.S with type key = field_signature
+
 module ClassMap : Ptmap.S
 module MethodMap : Ptmap.S
+module FieldMap : Ptmap.S
 
+type field_signature_index = int
+type field_signature_index_table =
+    { mutable fsi_map : field_signature_index FieldIndexMap.t;
+      mutable fs_map : field_signature FieldMap.t;
+      mutable fsi_next : field_signature_index }
 type method_signature_index = int
 type method_signature_index_table =
     { mutable msi_map : method_signature_index MethodIndexMap.t;
@@ -50,8 +58,11 @@ type class_name_index_table =
 
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
-		    get_ms_index : method_signature -> method_signature_index;
-		    get_cn_index : class_name -> class_name_index;
+		    fsi_table : field_signature_index_table;
+		    get_fs_index : FieldIndexMap.key -> field_signature_index;
+		    get_ms_index : MethodIndexMap.key -> method_signature_index;
+		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    retrieve_fs : field_signature_index -> field_signature;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 
@@ -258,9 +269,9 @@ val defines_method : method_signature_index -> interface_or_class -> bool
     [c], if any.
     @raise Not_found if [c] does not contain a field with signature [fs].
 *)
-val get_field : interface_or_class -> field_signature -> any_field
-val get_fields : interface_or_class -> field_signature list
-val defines_field : field_signature -> interface_or_class -> bool
+val get_field : interface_or_class -> field_signature_index -> any_field
+val get_fields : interface_or_class -> field_signature_index list
+val defines_field : field_signature_index -> interface_or_class -> bool
 
 
 (** {2 Access to the hierarchy} *)
