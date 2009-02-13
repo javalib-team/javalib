@@ -22,7 +22,6 @@
 (* TODO :
    - Pour le static_lookup : retourner un couple (class,method) plutôt
    qu'un couple d'entiers
-   - Etre précis dans le chargement des clinits
    - Ne plus avoir de pointeurs vers le program_cache dans la fonction
    static_lookup retournée avec le programme
 *)
@@ -35,8 +34,9 @@ open JProgram
 module Opcodes =
 struct
   type rta_opcode =
-      New of class_name_index | GetStatic of class_name_index
-    | PutStatic of class_name_index
+    | New of class_name_index
+    | GetStatic of class_name_index * field_signature_index
+    | PutStatic of class_name_index * field_signature_index
     | InvokeVirtual of class_name_index * method_signature_index
     | InvokeSpecial of class_name_index * method_signature_index
     | InvokeStatic of class_name_index * method_signature_index
@@ -58,8 +58,12 @@ struct
     let dic = cache.dic in
       match op with
 	| OpNew cn -> New (dic.get_cn_index cn)
-	| OpGetStatic (cn,_) -> GetStatic (dic.get_cn_index cn)
-	| OpPutStatic (cn,_) -> PutStatic (dic.get_cn_index cn)
+	| OpGetStatic (cn,fs) ->
+	    GetStatic ((dic.get_cn_index cn),
+		       (dic.get_fs_index fs))
+	| OpPutStatic (cn,fs) ->
+	    PutStatic ((dic.get_cn_index cn),
+		       (dic.get_fs_index fs))
 	| OpInvoke (`Virtual t, ms) ->
 	    let cni = match t with
 	      | TClass cn -> dic.get_cn_index cn
@@ -288,6 +292,9 @@ struct
 	mutable static_interface_lookup : ClassMethSet.t ClassMethMap.t;
 	mutable static_special_lookup : (ClassMethSet.t
 					   ClassMethMap.t) ClassMap.t;
+	(* the clinits fields contains a set of class indexes whose clinit
+	   methods have already been added to the workset *)
+	mutable clinits : ClassSet.t;
 	dic : dictionary;
 	workset : ((class_name_index * method_signature_index) *
 		     (Opcodes.implementation_cache option ref)) Dllist.dllist;
@@ -403,7 +410,7 @@ struct
 			  ClassSet.add i_index
 			    (ClassSet.union s i_info.super_interfaces)
 		     ) implemented_interfaces ClassSet.empty);
-
+	      
 	      (* For each implemented interface and its super interfaces we add
 		 cni in the program direct_interfaces map *)
 	      ClassSet.iter
@@ -429,10 +436,6 @@ struct
 		  fields = cfmap2iocfmap p c.JClass.c_fields }
 	      in
 		p.classes <- ClassMap.add ioc_index ioc_info p.classes;
-
-		(* Now we add the clinit method to the workset *)
-		(* (if ( MethodMap.mem clinit_index ioc_info.methods_data ) then *)
-		(*    add_to_workset p (ioc_index,clinit_index)) *)
 	| `Interface i ->
 	    let super_interfaces =
 	      let s = ref ClassSet.empty in
@@ -459,13 +462,15 @@ struct
 		fields = ifmap2iocfmap p i.JClass.i_fields }
 	    in
 	      p.classes <- ClassMap.add ioc_index ioc_info p.classes;
-	      (* Now we add the clinit method to the workset *)
-	      (* add_clinit p ioc_index *)
 
   and add_clinit p ioc_index =
     let ioc_info = get_class_info p ioc_index in
-      if ( MethodMap.mem clinit_index ioc_info.methods_data ) then
-	add_to_workset p (ioc_index,clinit_index)
+      if ( not(ClassSet.mem ioc_index p.clinits)
+	   && MethodMap.mem clinit_index ioc_info.methods_data ) then
+	(
+	  add_to_workset p (ioc_index,clinit_index);
+	  p.clinits <- ClassSet.add ioc_index p.clinits
+	)
 
   and add_class_clinits p ioc_index =
     let ioc_info = get_class_info p ioc_index in
@@ -473,12 +478,6 @@ struct
 	(fun cni -> add_clinit p cni)
 	(ioc_index :: ioc_info.super_classes)
 	
-  and add_interface_clinits p ioc_index =
-    let ioc_info = get_class_info p ioc_index in
-      ClassSet.iter
-	(fun cni -> add_clinit p cni)
-	(ClassSet.add ioc_index ioc_info.super_interfaces)
-
   and get_method_info p cni msi : method_info =
     let cl_info = get_class_info p cni in
       try
@@ -538,6 +537,44 @@ struct
 	    with _ ->
 	      failwith ("Failing resolving (" ^ (string_of_int cni) ^ ","
 			^ (string_of_int msi) ^ ")")
+
+  (* Field resolution *)
+  let rec resolve_field' result p cni fsi : unit =
+    let get_interfaces = function
+      | `Interface i ->
+	  List.map (fun cn -> p.dic.get_cn_index cn) i.JClass.i_interfaces
+      | `Class c ->
+	  List.map (fun cn -> p.dic.get_cn_index cn) c.JClass.c_interfaces
+    in
+    let ioc_info = get_class_info p cni in
+    let ioc = !(ioc_info.class_data) in
+      if FieldMap.mem fsi ioc_info.fields
+      then result := cni::!result
+      else
+	begin
+	  List.iter
+	    (fun i -> resolve_field' result p i fsi)
+	    (get_interfaces ioc);
+	  if !result = []
+	  then
+	    begin
+	      let super_class = function
+		| `Interface _ ->
+		    Some java_lang_object
+		| `Class c ->
+		    c.JClass.c_super_class in
+		(match super_class ioc with
+		   | Some super ->
+		       resolve_field' result p (p.dic.get_cn_index super) fsi
+		   | None -> ()
+		)
+	    end
+	end
+	  
+  let resolve_field p cni fsi : class_name_index list =
+    let result = ref [] in
+      resolve_field' result p cni fsi;
+      !result
 
   let update_virtual_lookup_set p msi callsites cni =
     if ( callsites = ClassMethSet.empty ) then
@@ -639,7 +676,6 @@ struct
       if ( msi = init_index
 	  || not(List.mem rcni current_class_info.super_classes) ) then
 	(let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
-	   (* ignore(update_virtual_lookup_set p msi s cni); *)
 	   update_special_lookup_set p current_class_index cni msi s;
 	   (* we add (cni,msi) to the workset *)
 	   add_to_workset p (rcni,msi)
@@ -648,7 +684,6 @@ struct
 	let (rcni,msi) = resolve_method p
 	  (List.hd current_class_info.super_classes) msi in
 	  (let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
-	     (* ignore(update_virtual_lookup_set p msi s cni); *)
 	     update_special_lookup_set p current_class_index cni msi s;
 	     (* we add (cni,msi) to the workset *)
 	     add_to_workset p (rcni,msi)
@@ -666,20 +701,25 @@ struct
        	     { tested_new_instances = tested_new_instances;
        	       lookup = s} p.static_virtual_lookup;
 	   add_to_workset p (rcni,msi)
-      )
+      );
+      rcni
 
   let parse_instruction p current_class_index (op:Opcodes.rta_opcode) =
     match op with
       | Opcodes.New cni ->
 	  add_instantiated_class p cni;
 	  add_class_clinits p cni
-      | Opcodes.GetStatic cni
-      | Opcodes.PutStatic cni ->
-	  let c_info = get_class_info p cni in
-	    (match !(c_info.class_data) with
-	       | `Class _ -> add_class_clinits p cni
-	       | `Interface _ -> add_interface_clinits p cni
-	    )
+      | Opcodes.GetStatic (cni,fsi)
+      | Opcodes.PutStatic (cni,fsi) ->
+	  let rcni_list = resolve_field p cni fsi in
+	    List.iter
+	      (fun rcni ->
+		 let ioc_info = get_class_info p rcni in
+		   (match !(ioc_info.class_data) with
+		      | `Class _ -> add_class_clinits p rcni
+		      | `Interface _ -> add_clinit p rcni
+		   )
+	      ) rcni_list
       | Opcodes.InvokeVirtual (cni,msi) ->
 	  invoke_virtual_lookup p cni msi
       | Opcodes.InvokeInterface (cni,msi) ->
@@ -690,8 +730,8 @@ struct
       | Opcodes.InvokeSpecial (cni,msi) ->
       	  invoke_special_lookup p current_class_index cni msi
       | Opcodes.InvokeStatic (cni,msi) ->
-      	  invoke_static_lookup p cni msi;
-	  add_class_clinits p cni
+      	  let rcni = invoke_static_lookup p cni msi in
+	    add_class_clinits p rcni
       | _ -> ()
 
   let iter_workset p =
@@ -736,6 +776,7 @@ struct
 	static_virtual_lookup = ClassMethMap.empty;
 	static_interface_lookup = ClassMethMap.empty;
 	static_special_lookup = ClassMap.empty;
+	clinits = ClassSet.empty;
 	workset = workset;
 	v_calls = v_calls;
 	finished = false;
