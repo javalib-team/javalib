@@ -647,16 +647,17 @@ struct
 	     )
       )
 
-  let interface_lookup_action p cni f =
-    if ( ClassMap.mem cni p.interfaces ) then
+  let interface_lookup_action interfaces cni f =
+    if ( ClassMap.mem cni interfaces ) then
       (List.iter
-	 f (ClassMap.find cni p.interfaces))
+	 f (ClassMap.find cni interfaces))
     else ()
       (* otherwise, the classes implementing the interface have not
 	 been charged yet so we can't do anything *)
 
   let invoke_interface_lookup p cni msi =
-    interface_lookup_action p cni (fun x -> invoke_virtual_lookup p x msi)
+    interface_lookup_action p.interfaces cni
+      (fun x -> invoke_virtual_lookup p x msi)
 
   let update_special_lookup_set p current_class_index cni msi s =
     let cmmap =
@@ -833,53 +834,54 @@ struct
 
 end
 
-let retrieve_invoke_index p_cache op =
-  let dic = p_cache.Program.dic in
-    match op with
-      | OpInvoke (`Virtual t, ms) ->
-	  let cni = match t with
-	    | TClass cn -> dic.get_cn_index cn
-	    | TArray _ -> (* should only happen with [clone()] *)
-		java_lang_object_index
-	  and msi = dic.get_ms_index ms in (cni,msi)
-      | OpInvoke(`Special cn, ms) ->
-	  let cni = dic.get_cn_index cn
-	  and msi = dic.get_ms_index ms in (cni,msi)
-      | OpInvoke(`Static cn, ms) ->
-	  let cni = dic.get_cn_index cn
-	  and msi = dic.get_ms_index ms in (cni,msi)
-      | OpInvoke(`Interface cn, ms) ->
-	  let cni = dic.get_cn_index cn
-	  and msi = dic.get_ms_index ms in (cni,msi)
-      | _ -> failwith "Bad opcode"
+let retrieve_invoke_index dic op =
+  match op with
+    | OpInvoke (`Virtual t, ms) ->
+	let cni = match t with
+	  | TClass cn -> dic.get_cn_index cn
+	  | TArray _ -> (* should only happen with [clone()] *)
+	      java_lang_object_index
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Special cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Static cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Interface cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | _ -> failwith "Bad opcode"
+	
+exception Invoke_not_found of (class_name * method_signature
+			       * class_name * method_signature)
 
-exception Invoke_not_found of class_name * method_signature * class_name * method_signature
+let static_virtual_lookup virtual_lookup_map cni msi =
+  (ClassMethMap.find (cni,msi) virtual_lookup_map).Program.lookup
 
-let static_virtual_lookup p_cache cni msi =
-  (ClassMethMap.find (cni,msi)
-     p_cache.Program.static_virtual_lookup).Program.lookup
-
-let static_interface_lookup p_cache cni msi =
+let static_interface_lookup interface_lookup_map virtual_lookup_map
+    interfaces_map cni msi =
   try
-    ClassMethMap.find (cni,msi)
-      p_cache.Program.static_interface_lookup
+    ClassMethMap.find (cni,msi) interface_lookup_map
   with
     | _ ->
 	let s = ref ClassMethSet.empty in
 	let f =
 	  (fun x ->
 	     let calls =
-	       static_virtual_lookup p_cache x msi in
+	       static_virtual_lookup virtual_lookup_map x msi in
 	       s := ClassMethSet.union !s calls) in
-	  Program.interface_lookup_action p_cache cni f;
+	  Program.interface_lookup_action interfaces_map cni f;
 	  !s
 
-let static_special_lookup p_cache cni ccni cmsi =
-  ClassMethMap.find (ccni,cmsi) 
-    (ClassMap.find cni p_cache.Program.static_special_lookup)
+let static_special_lookup special_lookup_map cni ccni cmsi =
+  ClassMethMap.find (ccni,cmsi) (ClassMap.find cni special_lookup_map)
 
-let static_lookup p_cache cni msi pp =
-  let m = fst (Program.get_method_info p_cache cni msi) in
+let static_lookup dic virtual_lookup_map interface_lookup_map
+    special_lookup_map interfaces_map classes_map cni msi pp =
+  let m_info = MethodMap.find msi
+    (ClassMap.find cni classes_map).Program.methods_data in
+  let m = fst m_info in
     match m with
       | AbstractMethod _ -> failwith "Can't call static_lookup on Abstract Methods"
       | ConcreteMethod cm ->
@@ -889,19 +891,19 @@ let static_lookup p_cache cni msi pp =
 		 let c = (Lazy.force code).c_code in
 		   try
 		     let op = c.(pp) in
-		     let (ccni,cmsi) = retrieve_invoke_index p_cache op in
+		     let (ccni,cmsi) = retrieve_invoke_index dic op in
 		       try
 			 match op with
 			   | OpInvoke(`Interface _,_) ->
-			       static_interface_lookup p_cache ccni cmsi
+			       static_interface_lookup interface_lookup_map
+				 virtual_lookup_map interfaces_map ccni cmsi
 			   | OpInvoke (`Virtual _,_) | OpInvoke (`Static _,_) ->
-			       static_virtual_lookup p_cache ccni cmsi
+			       static_virtual_lookup virtual_lookup_map ccni cmsi
 			   | OpInvoke (`Special _,_) ->
-			       static_special_lookup p_cache cni ccni cmsi
+			       static_special_lookup special_lookup_map cni ccni cmsi
 			   | _ ->
 			       failwith "Invalid opcode found at specified program point"
 		       with _ ->
-			 let dic = p_cache.Program.dic in
 			 let cn = dic.retrieve_cn cni
 			 and ms = dic.retrieve_ms msi
 			 and ccn = dic.retrieve_cn ccni
@@ -1111,7 +1113,13 @@ struct
 	  ClassMap.mapi
 	    (fun i _ -> get_class_file p_cache i class_file_map)
 	    p_cache.Program.classes;
-	static_lookup = static_lookup p_cache;
+	static_lookup =
+	  static_lookup p_cache.Program.dic
+	    p_cache.Program.static_virtual_lookup
+	    p_cache.Program.static_interface_lookup
+	    p_cache.Program.static_special_lookup
+	    p_cache.Program.interfaces
+	    p_cache.Program.classes;
 	dictionary = p_cache.Program.dic }
 end
 

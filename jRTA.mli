@@ -27,5 +27,5 @@ val store_callgraph : callgraph -> string -> unit
 (* Not efficient at all. Only for test purposes *)
 val store_simplified_callgraph : callgraph -> string -> unit
 
-exception Invoke_not_found of JBasics.class_name * JClass.method_signature
-  * JBasics.class_name * JClass.method_signature
+exception Invoke_not_found of (JBasics.class_name * JClass.method_signature
+			       * JBasics.class_name * JClass.method_signature)
