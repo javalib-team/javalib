@@ -281,10 +281,10 @@ struct
   type program_cache =
       { mutable classes : class_info ClassMap.t;
 	(* for each interface, interfaces maps a list of classes
-	   that implements this interface directly or by inheritance *)
+	   that implements this interface or one of its subinterfaces *)
 	mutable interfaces : class_name_index list ClassMap.t;
 	(* for each interface, direct_interfaces maps a list of classes
-	   that implements this interface directly *)
+	   that implements this interface *)
 	mutable direct_interfaces : class_name_index list ClassMap.t;
 	mutable static_virtual_lookup : callgraph_info ClassMethMap.t;
 	(* static_interface_lookup maps a couple (class,method) to a set of
