@@ -805,8 +805,7 @@ struct
 		      ^ " given as entry point is not defined in class "
 		      ^ (JDumpBasics.class_name cn))
       end;
-      (* The main class MUST be the first to enter the dictionary
-	 (after java.lang.Object) *)
+      add_class_clinits p cni;
       List.iter (fun msi -> add_to_workset p (cni,msi)) msil;
       (if not( debug ) then
 	 add_to_workset p

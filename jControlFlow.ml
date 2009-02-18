@@ -51,8 +51,8 @@ module PP = struct
       match compare (get_name pp1.cl) (get_name pp2.cl) with
 	| 0 ->
 	    begin
-	      match compare pp1.meth.cm_signature pp2.meth.cm_signature with
-		| 0 -> pp1.pc - pp2.pc
+	      match compare pp1.meth.cm_index pp2.meth.cm_index with
+		| 0 -> compare pp1.pc pp2.pc
 		| n -> n
 	    end
 	| n -> n
