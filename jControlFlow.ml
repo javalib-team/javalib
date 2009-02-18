@@ -100,8 +100,12 @@ module PP = struct
 
   let get_first_pp_wp c msi : t =
     match get_method c msi with
-      | ConcreteMethod m -> {cl=c;meth=m;pc=0;}
-      | AbstractMethod m -> raise (NoCode (get_name c,m.am_signature))
+      | ConcreteMethod ({cm_implementation = Java _} as m) ->
+	  {cl=c;meth=m;pc=0;}
+      | ConcreteMethod ({cm_implementation = Native} as m) ->
+	  raise (NoCode (get_name c,m.cm_signature))
+      | AbstractMethod m ->
+	  raise (NoCode (get_name c,m.am_signature))
 
   let goto_absolute pp i : t = {pp with pc=i;}
 
