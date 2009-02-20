@@ -292,6 +292,11 @@ let get_consts = function
   | `Interface i -> i.i_consts
   | `Class c -> c.c_consts
 
+let equal c1 c2 = match c1,c2 with
+  | `Class c1, `Class c2 -> c1==c2
+  | `Interface c1, `Interface c2 -> c1==c2
+  | _, _ -> false
+
 type program = { classes : interface_or_class ClassMap.t;
 		 static_lookup : class_name_index -> method_signature_index ->
 							  int -> ClassMethSet.t;

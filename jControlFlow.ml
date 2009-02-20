@@ -28,10 +28,7 @@ module PP = struct
 	    meth:concrete_method;
 	    pc:int;}
 
-  let eqc c1 c2 = match c1,c2 with
-    | `Class c1, `Class c2 -> c1==c2
-    | `Interface c1, `Interface c2 -> c1==c2
-    | _, _ -> false
+  let eqc = JProgram.equal
   let eqm = (==)
   let eqi = (=)
 
@@ -48,7 +45,7 @@ module PP = struct
     if equal pp1 pp2
     then 0
     else
-      match compare (get_name pp1.cl) (get_name pp2.cl) with
+      match compare (get_index pp1.cl) (get_index pp2.cl) with
 	| 0 ->
 	    begin
 	      match compare pp1.meth.cm_index pp2.meth.cm_index with
@@ -181,7 +178,11 @@ let rec resolve_field' result fsi c : unit =
     | `Class c -> c.c_interfaces
   in
     if defines_field fsi c
-    then result := c::!result
+    then
+      begin
+	if not (List.exists (JProgram.equal c) !result)
+	then result := c::!result
+      end
     else
       begin
 	ClassMap.iter
@@ -213,9 +214,9 @@ let rec resolve_method' msi (c:class_file) : class_file =
 let rec resolve_interface_method' ?(acc=[]) msi (c:interface_or_class) : interface_file list =
   ClassMap.fold
     (fun _ i acc ->
-      if defines_method msi (`Interface i)
-      then i::acc
-      else resolve_interface_method' ~acc msi (`Interface i))
+       if defines_method msi (`Interface i)
+       then i::acc
+       else resolve_interface_method' ~acc msi (`Interface i))
     (get_interfaces c)
     acc
 

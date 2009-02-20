@@ -190,6 +190,8 @@ val get_name : interface_or_class -> class_name
 val get_index : interface_or_class -> class_name_index
 val get_interfaces : interface_or_class -> interface_file ClassMap.t
 
+val equal : interface_or_class -> interface_or_class -> bool
+
 val is_static_method : jmethod -> bool
 val get_method_signature : jmethod -> method_signature
 
