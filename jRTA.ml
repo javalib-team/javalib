@@ -186,28 +186,21 @@ type ioc_field = [ `CField of class_field | `IField of interface_field ]
 module Program =
 struct
   type class_info =
-      { class_data : JClass.interface_or_class ref;
+      { class_data : JProgram.interface_or_class;
 	mutable is_instantiated : bool;
-	mutable children : class_name_index list;
 	mutable instantiated_subclasses : ClassSet.t;
 	super_classes : class_name_index list;
 	super_interfaces : ClassSet.t;
 	mutable memorized_virtual_calls : MethodSet.t;
 	mutable memorized_interface_calls : MethodSet.t;
-	mutable resolved_methods : (class_name_index *
-				      method_signature_index) MethodMap.t;
-	(* resolved_methods calculated for compatibility with JProgram *)
 	methods : JProgram.jmethod MethodMap.t;
 	fields : ioc_field FieldMap.t }
-
+	
   type program_cache =
       { mutable classes : class_info ClassMap.t;
 	(* for each interface, interfaces maps a list of classes
 	   that implements this interface or one of its subinterfaces *)
 	mutable interfaces : class_name_index list ClassMap.t;
-	(* for each interface, direct_interfaces maps a list of classes
-	   that implements this interface *)
-	mutable direct_interfaces : class_name_index list ClassMap.t;
 	mutable static_virtual_lookup : ClassMethSet.t ClassMethMap.t;
 	(* static_interface_lookup maps a couple (class,method) to a set of
 	   equivalents invoke_virtual calls *)
@@ -224,7 +217,7 @@ struct
 
   exception Method_not_found
 
-  let methodmap2methodinfo p mm =
+  let mmap2pmap p mm =
     let dic = p.dic in
     let meth_info = ref MethodMap.empty in
       JClass.MethodMap.iter
@@ -238,7 +231,7 @@ struct
 	       meth !meth_info) mm;
       !meth_info
 	
-  let abstract_methodmap2methodinfo p mm i_initializer =
+  let abstract_mmap2pmap p mm i_initializer =
     let dic = p.dic in
     let meth_info = ref MethodMap.empty in
       (match i_initializer with
@@ -269,11 +262,144 @@ struct
 	   let fsi = p.dic.get_fs_index fs in
 	     imap := FieldMap.add fsi (`IField cf) !imap) fm;
       !imap
-	
-  let rec load_class p cni =
+
+  let iocfmap2cfmap fmap =
+    FieldMap.map
+      (fun iocf ->
+	 match iocf with
+	   | `CField cf -> cf
+	   | `IField _ ->
+	       failwith "Trying to convert an interface field to a class field")
+      fmap
+
+  let iocfmap2ifmap fmap =
+    FieldMap.map
+      (fun iocf ->
+	 match iocf with
+	   | `CField _ ->
+	       failwith "Trying to convert a class field to an interface field"
+	   | `IField ifield -> ifield)
+      fmap
+      
+  let rec to_class_file ioc =
+    match ioc with
+      | `Class c -> c
+      | `Interface _ -> failwith "to_class_file applied on interface !"
+  and to_interface_file ioc =
+    match ioc with
+      | `Class _ -> failwith "to_interface_file applied on class !"
+      | `Interface i -> i
+
+  and ioc2iocfile p ioc_index ioc methods fields =
+    let dic = p.dic in
+    let ioc_name = dic.retrieve_cn ioc_index in
+      match ioc with
+	| `Class c ->
+	    `Class
+	      { c_index = ioc_index;
+		c_name = ioc_name;
+		c_version = c.JClass.c_version;
+		c_access = c.JClass.c_access;
+		c_generic_signature = c.JClass.c_generic_signature;
+		c_final = c.JClass.c_final;
+		c_abstract = c.JClass.c_abstract;
+		c_synthetic = c.JClass.c_synthetic;
+		c_enum = c.JClass.c_enum;
+		c_other_flags = c.JClass.c_other_flags;
+		c_super_class =
+		  (match c.JClass.c_super_class with
+		     | None -> None
+		     | Some cn ->
+			 let cni = dic.get_cn_index cn in
+			   Some(to_class_file
+				  (get_class_info p cni).class_data));
+		c_consts = c.JClass.c_consts;
+		c_interfaces =
+		  (let c_interfaces = ref ClassMap.empty in
+		     List.iter
+		       (fun x ->
+			  let i_index = dic.get_cn_index x in
+			    c_interfaces := ClassMap.add i_index
+			      (to_interface_file
+				 (get_class_info p i_index).class_data)
+			      !c_interfaces)
+		       c.JClass.c_interfaces;
+		     !c_interfaces);
+		c_sourcefile = c.JClass.c_sourcefile;
+		c_deprecated = c.JClass.c_deprecated;
+		c_enclosing_method = c.JClass.c_enclosing_method;
+		c_source_debug_extention =c.JClass.c_source_debug_extention;
+		c_inner_classes = c.JClass.c_inner_classes;
+		c_other_attributes = c.JClass.c_other_attributes;
+		c_fields = iocfmap2cfmap fields;
+		c_methods = methods;
+		c_resolve_methods = MethodMap.empty;
+		c_may_be_instanciated = false;
+		c_children = ClassMap.empty }
+
+	| `Interface i ->
+	    `Interface
+	      { i_index = ioc_index;
+		i_name = ioc_name;
+		i_version = i.JClass.i_version;
+		i_access = i.JClass.i_access;
+		i_generic_signature = i.JClass.i_generic_signature;
+		i_consts = i.JClass.i_consts;
+		i_annotation = i.JClass.i_annotation;
+		i_other_flags = i.JClass.i_other_flags;
+		i_interfaces =
+		  (let i_interfaces = ref ClassMap.empty in
+		     List.iter
+		       (fun x ->
+			  let i_index = dic.get_cn_index x in
+			    i_interfaces := ClassMap.add i_index
+			      (to_interface_file
+				 (get_class_info p i_index).class_data)
+			      !i_interfaces)
+		       i.JClass.i_interfaces;
+		     !i_interfaces);
+		i_sourcefile = i.JClass.i_sourcefile;
+		i_deprecated = i.JClass.i_deprecated;
+		i_source_debug_extention = i.JClass.i_source_debug_extention;
+		i_inner_classes = i.JClass.i_inner_classes;
+		i_other_attributes = i.JClass.i_other_attributes;
+		i_children_interface = ClassMap.empty;
+		i_children_class = ClassMap.empty;
+		i_super =
+		  (let object_file =
+		     (get_class_info p java_lang_object_index).class_data in
+		     match object_file with
+		       | `Class c -> c
+		       | `Interface _ ->
+			   failwith "java.lang.object is an interface !");
+		i_initializer =
+		  (try
+		     let clinit_method = MethodMap.find clinit_index methods in
+		       match clinit_method with
+			 | ConcreteMethod cm -> Some cm
+			 | _ -> None (* Impossible case *)
+		   with
+		       _ -> None);
+		i_fields = iocfmap2ifmap fields;
+		i_methods =
+		  (let i_methods = ref MethodMap.empty in
+		     MethodMap.iter
+		       (fun i m ->
+			  match m with
+			    | ConcreteMethod _ -> ()
+			    | AbstractMethod am ->
+				i_methods :=
+				  MethodMap.add i am !i_methods
+		       )
+		       methods;
+		     !i_methods
+		  ) }
+
+  and load_class p cni =
     if not( ClassMap.mem cni p.classes ) then
       let cn = p.dic.retrieve_cn cni in
 	add_class p cn
+
   and get_class_info p cni =
     try
       ClassMap.find cni p.classes
@@ -286,6 +412,7 @@ struct
 	    with _ ->
 	      failwith ("Can't load class or interface "
 			^ (JDumpBasics.class_name cn))
+		
   and add_class p cn =
     (* We assume that a call to add_class is done only when a class has never *)
     (* been loaded in the program. Loading a class implies loading all its *)
@@ -301,7 +428,6 @@ struct
 		 | Some sc ->
 		     let sc_index = (dic.get_cn_index sc) in
 		     let sc_info = get_class_info p sc_index in
-		       sc_info.children <- ioc_index :: sc_info.children;
 		       sc_index :: sc_info.super_classes)
 	    and implemented_interfaces =
 	      let s = ref ClassSet.empty in
@@ -316,8 +442,8 @@ struct
 	      (ClassSet.fold
 		 (fun i_index s ->
 		    let i_info = get_class_info p i_index in
-			  ClassSet.add i_index
-			    (ClassSet.union s i_info.super_interfaces)
+		      ClassSet.add i_index
+			(ClassSet.union s i_info.super_interfaces)
 		 ) implemented_interfaces ClassSet.empty) in
 	      ClassSet.iter
 		(fun i ->
@@ -328,23 +454,12 @@ struct
 		     p.interfaces <- ClassMap.add i [ioc_index] p.interfaces
 		) super_implemented_interfaces;
 	      
-	      (* For each implemented interface and its super interfaces we add
-		 cni in the program direct_interfaces map *)
-	      ClassSet.iter
-		(fun i ->
-		   if ( ClassMap.mem i p.direct_interfaces ) then
-		     p.direct_interfaces <- ClassMap.add i
-		       (ioc_index ::(ClassMap.find i p.direct_interfaces))
-		       p.direct_interfaces
-		   else
-		     p.direct_interfaces <- ClassMap.add i [ioc_index]
-		       p.direct_interfaces
-		) implemented_interfaces;
-
+	      let methods = mmap2pmap p c.JClass.c_methods in
+	      let fields = cfmap2iocfmap p c.JClass.c_fields in
+		
 	      let ioc_info =
-		{ class_data = ref ioc;
+		{ class_data = ioc2iocfile p ioc_index ioc methods fields;
 		  is_instantiated = false;
-		  children = [];
 		  instantiated_subclasses = ClassSet.empty;
 		  super_classes = super_classes;
 		  (* for a class super_interfaces contains
@@ -352,10 +467,26 @@ struct
 		  super_interfaces = super_implemented_interfaces;
 		  memorized_virtual_calls = MethodSet.empty;
 		  memorized_interface_calls = MethodSet.empty;
-		  resolved_methods = MethodMap.empty;
-		  methods = methodmap2methodinfo p c.JClass.c_methods;
-		  fields = cfmap2iocfmap p c.JClass.c_fields }
+		  methods = methods;
+		  fields = fields }
 	      in
+	      let c = to_class_file ioc_info.class_data in
+		ClassSet.iter
+		  (fun i_index ->
+		     let i = to_interface_file
+		       ((get_class_info p i_index).class_data) in
+		       i.i_children_class <-
+			 ClassMap.add ioc_index c i.i_children_class
+		  )
+		  implemented_interfaces;
+		List.iter
+		  (fun sc_index ->
+		     let sc = to_class_file
+		       (get_class_info p sc_index).class_data in
+		       sc.c_children <-
+			 ClassMap.add ioc_index c sc.c_children
+		  )
+		  super_classes;
 		p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 	| `Interface i ->
 	    let super_interfaces =
@@ -363,27 +494,36 @@ struct
 		List.iter (fun si ->
 			     let si_index = dic.get_cn_index si in
 			     let si_info = get_class_info p si_index in
-			       si_info.children <- ioc_index :: si_info.children;
 			       s := ClassSet.add si_index !s;
 			       s := ClassSet.union si_info.super_interfaces !s
 			  ) i.JClass.i_interfaces;
 		!s in
 
+	    let methods = abstract_mmap2pmap p
+		  i.JClass.i_methods i.JClass.i_initializer in
+	    let fields = ifmap2iocfmap p i.JClass.i_fields in
+
 	    let ioc_info =
-	      { class_data = ref ioc;
+	      { class_data = ioc2iocfile p ioc_index ioc methods fields;
 		is_instantiated = false;
 		(* An interface will never be instantiated *)
-		children = [];
 		instantiated_subclasses = ClassSet.empty;
 		super_classes = [];
 		super_interfaces = super_interfaces;
 		memorized_virtual_calls = MethodSet.empty;
 		memorized_interface_calls = MethodSet.empty;
-		resolved_methods = MethodMap.empty;
-		methods = abstract_methodmap2methodinfo p
-		  i.JClass.i_methods i.JClass.i_initializer;
-		fields = ifmap2iocfmap p i.JClass.i_fields }
+		methods = methods;
+		fields = fields }
 	    in
+	    let i = to_interface_file ioc_info.class_data in
+	      ClassSet.iter
+		(fun si_index ->
+		   let si = to_interface_file
+		     (get_class_info p si_index).class_data in
+		     si.i_children_interface <-
+		       ClassMap.add ioc_index i si.i_children_interface
+		)
+		super_interfaces;
 	      p.classes <- ClassMap.add ioc_index ioc_info p.classes;
 
   and add_clinit p ioc_index =
@@ -425,70 +565,33 @@ struct
 	      (cm.cm_has_been_parsed <- true;
 	       Dllist.add (cni,cm) p.workset)
 
-  (* Method resolution *)
-  let rec resolve_method p cni msi =
-    let class_info = get_class_info p cni in
-      try
-	MethodMap.find msi class_info.resolved_methods
-      with _ ->
-	let super_classes = class_info.super_classes in
-	  try
-	    let meth_info = get_method p cni msi in
-	      match meth_info with
-		| AbstractMethod _ ->
-		    failwith ("what to do when a resolve operation lead to an abstract method ???")
-		| ConcreteMethod _ ->
-		    class_info.resolved_methods <-
-		      MethodMap.add msi (cni,msi) class_info.resolved_methods;
-		    (cni,msi)
-	  with Method_not_found ->
-	    try
-	      resolve_method p (List.hd super_classes) msi
-	    with _ ->
-	      failwith ("Failing resolving (" ^ (string_of_int cni) ^ ","
-			^ (string_of_int msi) ^ ")")
+  let resolve_method p cni msi =
+    let ioc = (get_class_info p cni).class_data in
+      match ioc with
+	| `Class c ->
+	    let rioc = JControlFlow.resolve_method msi c in
+	      (match rioc with
+		 | `Class rc ->
+		     c.c_resolve_methods <-
+		       MethodMap.add msi (rc, get_method p rc.c_index msi)
+		       c.c_resolve_methods;
+		     rc.c_index
+		 | `Interface _ ->
+		     failwith "Method Resolution found an Interface !"
+	      )
+	| `Interface _ -> failwith "Can't resolve an Interface Method"
 
-  (* Field resolution *)
-  let rec resolve_field' result p cni fsi : unit =
-    let get_interfaces = function
-      | `Interface i ->
-	  List.map (fun cn -> p.dic.get_cn_index cn) i.JClass.i_interfaces
-      | `Class c ->
-	  List.map (fun cn -> p.dic.get_cn_index cn) c.JClass.c_interfaces
-    in
-    let ioc_info = get_class_info p cni in
-    let ioc = !(ioc_info.class_data) in
-      if FieldMap.mem fsi ioc_info.fields
-      then
-	(if not( List.mem cni !result ) then result := cni :: !result)
-      else
-	begin
-	  List.iter
-	    (fun i -> resolve_field' result p i fsi)
-	    (get_interfaces ioc);
-	  if !result = []
-	  then
-	    begin
-	      let super_class = function
-		| `Interface _ ->
-		    Some java_lang_object
-		| `Class c ->
-		    c.JClass.c_super_class in
-		(match super_class ioc with
-		   | Some super ->
-		       resolve_field' result p (p.dic.get_cn_index super) fsi
-		   | None -> ()
-		)
-	    end
-	end
-	  
-  let resolve_field p cni fsi : class_name_index list =
-    let result = ref [] in
-      resolve_field' result p cni fsi;
-      !result
+  let resolve_field p cni fsi =
+    let ioc = (get_class_info p cni).class_data in
+    let rioc_list = JControlFlow.resolve_field fsi ioc in
+      List.map
+	(fun rioc ->
+	   match rioc with
+	     | `Class rc -> rc.c_index
+	     | `Interface ri -> ri.i_index) rioc_list
 
   let update_virtual_lookup_set p (cni,msi) new_cni =
-    let (rcni,_) = resolve_method p new_cni msi in
+    let rcni = resolve_method p new_cni msi in
       add_to_workset p (rcni,msi);
       let s = ClassMethMap.find (cni,msi) p.static_virtual_lookup in
 	p.static_virtual_lookup <-
@@ -549,6 +652,7 @@ struct
     let cl_info = get_class_info p cni in
       if not( cl_info.is_instantiated ) then
 	(cl_info.is_instantiated <- true;
+	 (to_class_file cl_info.class_data).c_may_be_instanciated <- true;
 	 (* Now we need to update the static_lookup_virtual map *)
 	 (* for each virtual call that already occurred on A and *)
 	 (* its super classes. *)
@@ -590,7 +694,7 @@ struct
 
   let rec invoke_special_lookup p current_class_index cni msi =
     let current_class_info = get_class_info p current_class_index in
-    let (rcni,msi) = resolve_method p cni msi in
+    let rcni = resolve_method p cni msi in
       if ( msi = init_index
 	  || not(List.mem rcni current_class_info.super_classes) ) then
 	(let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
@@ -599,7 +703,7 @@ struct
 	   add_to_workset p (rcni,msi)
 	)
       else
-	let (rcni,msi) = resolve_method p
+	let rcni = resolve_method p
 	  (List.hd current_class_info.super_classes) msi in
 	  (let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
 	     update_special_lookup_set p current_class_index cni msi s;
@@ -608,7 +712,7 @@ struct
 	  )
 
   let rec invoke_static_lookup p cni msi =
-    let (rcni,msi) = resolve_method p cni msi in
+    let rcni = resolve_method p cni msi in
       (if not( ClassMethMap.mem (cni,msi) p.static_static_lookup ) then
        	 let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
        	   p.static_static_lookup <-
@@ -631,7 +735,7 @@ struct
 	    List.iter
 	      (fun rcni ->
 		 let ioc_info = get_class_info p rcni in
-		   (match !(ioc_info.class_data) with
+		   (match ioc_info.class_data with
 		      | `Class _ -> add_class_clinits p rcni
 		      | `Interface _ -> add_clinit p rcni
 		   )
@@ -678,7 +782,6 @@ struct
     let p =
       { classes = ClassMap.empty;
 	interfaces = ClassMap.empty;
-	direct_interfaces = ClassMap.empty;
 	dic = dic;
 	static_virtual_lookup = ClassMethMap.empty;
 	static_interface_lookup = ClassMethMap.empty;
@@ -806,218 +909,25 @@ let static_lookup dic virtual_lookup_map interface_lookup_map
 		     | Not_found -> failwith "Invalid program point"
 		     | e -> raise e
 	  )
-	    
-module JProgramConverter =
-struct
-  let iocfmap2cfmap fmap =
-    FieldMap.map
-      (fun iocf ->
-	 match iocf with
-	   | `CField cf -> cf
-	   | `IField _ ->
-	       failwith "Trying to convert an interface field to a class field")
-      fmap
 
-  let iocfmap2ifmap fmap =
-    FieldMap.map
-      (fun iocf ->
-	 match iocf with
-	   | `CField _ ->
-	       failwith "Trying to convert a class field to an interface field"
-	   | `IField ifield -> ifield)
-      fmap
+  let pcache2jprogram p =
+    { classes =
+	ClassMap.mapi
+	  (fun i _ -> (Program.get_class_info p i).Program.class_data)
+	  p.Program.classes;
+      static_lookup =
+	static_lookup p.Program.dic
+	  p.Program.static_virtual_lookup
+	  p.Program.static_interface_lookup
+	  p.Program.static_special_lookup
+	  p.Program.static_static_lookup
+	  p.Program.interfaces
+	  p.Program.classes;
+      dictionary = p.Program.dic }
       
-  let rec get_class_file p ioc_index class_file_map =
-    try
-      ClassMap.find ioc_index !class_file_map
-    with _ ->
-      let class_file =  ioc2iocfile p ioc_index class_file_map in
-	class_file_map := ClassMap.add ioc_index class_file !class_file_map;
-	class_file
-  and to_class_file ioc =
-    match ioc with
-      | `Class c -> c
-      | `Interface _ -> failwith "to_class_file applied on interface !"
-  and to_interface_file ioc =
-    match ioc with
-      | `Class _ -> failwith "to_interface_file applied on class !"
-      | `Interface i -> i
-
-  and ioc2iocfile p ioc_index class_file_map =
-    let dic = p.Program.dic in
-    let ioc_name = dic.retrieve_cn ioc_index in
-    let ioc_info = Program.get_class_info p ioc_index in
-    let ioc = !(ioc_info.Program.class_data)
-    and methods = ioc_info.Program.methods in
-      match ioc with
-	| `Class c ->
-	    let c_struct =
-	      {c_index = ioc_index;
-	       c_name = ioc_name;
-	       c_version = c.JClass.c_version;
-	       c_access = c.JClass.c_access;
-	       c_generic_signature = c.JClass.c_generic_signature;
-	       c_final = c.JClass.c_final;
-	       c_abstract = c.JClass.c_abstract;
-	       c_synthetic = c.JClass.c_synthetic;
-	       c_enum = c.JClass.c_enum;
-	       c_other_flags = c.JClass.c_other_flags;
-	       c_super_class =
-		  (match c.JClass.c_super_class with
-		     | None -> None
-		     | Some cn ->
-			 let cni = dic.get_cn_index cn in
-			   Some(to_class_file
-				  (get_class_file p cni class_file_map)));
-	       c_consts = c.JClass.c_consts;
-	       c_interfaces =
-		  (let c_interfaces = ref ClassMap.empty in
-		     List.iter
-		       (fun x ->
-			  let i_index = dic.get_cn_index x in
-			    c_interfaces := ClassMap.add i_index
-			      (to_interface_file
-				 (get_class_file p i_index class_file_map))
-			      !c_interfaces)
-		       c.JClass.c_interfaces;
-		     !c_interfaces);
-	       c_sourcefile = c.JClass.c_sourcefile;
-	       c_deprecated = c.JClass.c_deprecated;
-	       c_enclosing_method = c.JClass.c_enclosing_method;
-	       c_source_debug_extention =c.JClass.c_source_debug_extention;
-	       c_inner_classes = c.JClass.c_inner_classes;
-	       c_other_attributes = c.JClass.c_other_attributes;
-	       c_fields = iocfmap2cfmap ioc_info.Program.fields;
-	       c_methods = methods;
-	       c_resolve_methods = MethodMap.empty;
-	       c_may_be_instanciated = ioc_info.Program.is_instantiated;
-	       c_children = ClassMap.empty} in
-
-	      class_file_map := ClassMap.add ioc_index (`Class c_struct)
-		!class_file_map;
-	      c_struct.c_resolve_methods <-
-		(MethodMap.map
-		   (fun (cni,msi) ->
-		      let m = Program.get_method p cni msi in
-			(to_class_file (get_class_file p cni class_file_map),
-			 m)
-		   )
-		   ioc_info.Program.resolved_methods
-		);
-	      (List.iter
-		 (fun cni ->
-		    c_struct.c_children <-
-		      ClassMap.add cni (to_class_file
-					  (get_class_file p cni class_file_map))
-		      c_struct.c_children
-		 )
-		 ioc_info.Program.children
-	      );
-	      `Class c_struct
-	| `Interface i ->
-	    let i_struct =
-	      {i_index = ioc_index;
-	       i_name = ioc_name;
-	       i_version = i.JClass.i_version;
-	       i_access = i.JClass.i_access;
-	       i_generic_signature = i.JClass.i_generic_signature;
-	       i_consts = i.JClass.i_consts;
-	       i_annotation = i.JClass.i_annotation;
-	       i_other_flags = i.JClass.i_other_flags;
-	       i_interfaces =
-		  (let i_interfaces = ref ClassMap.empty in
-		     List.iter
-		       (fun x ->
-			  let i_index = dic.get_cn_index x in
-			    i_interfaces := ClassMap.add i_index
-			      (to_interface_file
-				 (get_class_file p i_index class_file_map))
-			      !i_interfaces)
-		       i.JClass.i_interfaces;
-		     !i_interfaces);
-	       i_sourcefile = i.JClass.i_sourcefile;
-	       i_deprecated = i.JClass.i_deprecated;
-	       i_source_debug_extention = i.JClass.i_source_debug_extention;
-	       i_inner_classes = i.JClass.i_inner_classes;
-	       i_other_attributes = i.JClass.i_other_attributes;
-	       i_children_interface = ClassMap.empty;
-	       i_children_class = ClassMap.empty;
-	       i_super =
-		  (let object_file = get_class_file p java_lang_object_index
-		     class_file_map in
-		     match object_file with
-		       | `Class c -> c
-		       | `Interface _ ->
-			   failwith "java.lang.object is an interface !");
-	       i_initializer =
-		  (try
-		     let clinit_method = MethodMap.find clinit_index methods in
-		       match clinit_method with
-			 | ConcreteMethod cm -> Some cm
-			 | _ -> None (* Impossible case *)
-		   with
-		       _ -> None);
-	       i_fields = iocfmap2ifmap ioc_info.Program.fields;
-	       i_methods =
-		  (let i_methods = ref MethodMap.empty in
-		     MethodMap.iter
-		       (fun i m ->
-			  match m with
-			    | ConcreteMethod _ -> ()
-			    | AbstractMethod am ->
-				i_methods :=
-				  MethodMap.add i am !i_methods
-		       )
-		       methods;
-		     !i_methods
-		  )
-	      } in
-
-	      class_file_map := ClassMap.add ioc_index (`Interface i_struct)
-		!class_file_map;
-	      (List.iter
-		 (fun cni ->
-		    i_struct.i_children_interface <-
-		      ClassMap.add cni (to_interface_file
-					  (get_class_file p cni class_file_map))
-		      i_struct.i_children_interface
-		 )
-		 ioc_info.Program.children
-	      );
-	      (try
-	      	 let l = ClassMap.find ioc_index p.Program.direct_interfaces in
-	      	   List.iter
-	      	     (fun cni ->
-	      		i_struct.i_children_class <-
-	      		  ClassMap.add cni
-	      		  (to_class_file
-	      		     (get_class_file p cni class_file_map))
-	      		  i_struct.i_children_class)
-	      	     l
-	       with _ -> ()
-	      );
-	      `Interface i_struct
-
-  let pcache2jprogram p_cache =
-    let class_file_map = ref ClassMap.empty in
-      { classes =
-	  ClassMap.mapi
-	    (fun i _ -> get_class_file p_cache i class_file_map)
-	    p_cache.Program.classes;
-	static_lookup =
-	  static_lookup p_cache.Program.dic
-	    p_cache.Program.static_virtual_lookup
-	    p_cache.Program.static_interface_lookup
-	    p_cache.Program.static_special_lookup
-	    p_cache.Program.static_static_lookup
-	    p_cache.Program.interfaces
-	    p_cache.Program.classes;
-	dictionary = p_cache.Program.dic }
-end
-
 let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
   let p_cache = (Program.parse_program ~debug ~entrypoints classpath cn) in
-    JProgramConverter.pcache2jprogram p_cache
+    pcache2jprogram p_cache
 
 let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
   let time_start = Sys.time() in
