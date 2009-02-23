@@ -26,7 +26,7 @@ open Format
 
 type info = {
   (* printing functions *)
-  (* those printing function must print a cut at the begining of their
+  (* those printing function must print a cut at the end of their
      output*)
   p_global : formatter -> unit;
   p_class: class_name -> formatter -> unit;
@@ -344,7 +344,8 @@ let pp_code cn ms info fmt code =
       (fun i -> function
  	| OpInvalid -> ()
  	| op ->
-	    fprintf fmt "    @[%t@]@," (pp_inst i);
+	    if info.has_pp cn ms i
+	    then fprintf fmt "    @[%t@]@," (pp_inst i);
 	    pp_open_box fmt 4;
 	    fprintf fmt "%3d" i;
 	    pp_print_string fmt ": ";
