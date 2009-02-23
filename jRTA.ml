@@ -571,11 +571,7 @@ struct
 	| `Class c ->
 	    let rioc = JControlFlow.resolve_method msi c in
 	      (match rioc with
-		 | `Class rc ->
-		     c.c_resolve_methods <-
-		       MethodMap.add msi (rc, get_method p rc.c_index msi)
-		       c.c_resolve_methods;
-		     rc.c_index
+		 | `Class rc -> rc.c_index
 		 | `Interface _ ->
 		     failwith "Method Resolution found an Interface !"
 	      )
