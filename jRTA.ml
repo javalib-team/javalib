@@ -729,15 +729,12 @@ struct
 	     Array.iter (parse_instruction p cni) code)
 	tail
 
-  let new_program_cache debug cn entrypoints classpath =
+  let new_program_cache entrypoints classpath =
     let dic = make_dictionary () in
-    let cni = dic.get_cn_index cn
-    and msil = List.map dic.get_ms_index entrypoints
-    and initializeSystemClass : class_name * method_signature =
-      (["java";"lang";"System"],
-       {ms_name = "initializeSystemClass";
-	ms_parameters = [];
-	ms_return_type = None})
+    let entrypoints =
+      List.map
+	(fun (cn,ms) -> (dic.get_cn_index cn, dic.get_ms_index ms))
+	entrypoints
     and workset = Dllist.create () in
     let p =
       { classes = ClassMap.empty;
@@ -748,49 +745,26 @@ struct
 	static_special_lookup = ClassMap.empty;
 	clinits = ClassSet.empty;
 	workset = workset;
-	classpath = classpath } in
-    let class_info = get_class_info p cni in
-    let cn_defines_msil =
-      List.for_all (fun msi -> MethodMap.mem msi class_info.methods) msil
+	classpath = classpath }
     in
-      begin
-	if not cn_defines_msil then
-	  let faulty_ms_string =
-	    let faulty_msi =
-	      List.find
-		(fun msi -> not (MethodMap.mem msi class_info.methods))
-		msil
-	    in
-	    let faulty_ms = dic.retrieve_ms faulty_msi
-	    in
-	      JDumpBasics.method_signature
-		faulty_ms.ms_name
-		(faulty_ms.ms_parameters,faulty_ms.ms_return_type)
-	  in
-	    failwith ("The method "
-		      ^ faulty_ms_string
-		      ^ " given as entry point is not defined in class "
-		      ^ (JDumpBasics.class_name cn))
-      end;
-      add_class_clinits p cni;
-      List.iter (fun msi -> add_to_workset p (cni,msi)) msil;
-      (if not( debug ) then
-	 add_to_workset p
-	   (dic.get_cn_index (fst initializeSystemClass),
-      	    dic.get_ms_index (snd initializeSystemClass))
-      );
+      List.iter
+	(fun (cni,msi) ->
+	   add_class_clinits p cni;
+	   if MethodMap.mem msi (get_class_info p cni).methods
+	   then add_to_workset p (cni,msi))
+	entrypoints;
       p
 
-  let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
+  let parse_program entrypoints classpath =
     let classpath = JFile.class_path classpath in
-    let p = new_program_cache debug cn entrypoints classpath in
+    let p = new_program_cache entrypoints classpath in
       iter_workset p;
       JFile.close_class_path classpath;
       p
 
-  let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
+  let parse_program_bench entrypoints classpath =
     let time_start = Sys.time() in
-    let p = parse_program ~debug ~entrypoints classpath cn in
+    let p = parse_program entrypoints classpath in
     let s = Dllist.size p.workset in
       Printf.printf "Workset of size %d\n" s;
       let time_stop = Sys.time() in
@@ -862,27 +836,52 @@ let static_lookup dic virtual_lookup_map special_lookup_map static_lookup_map
 		     | e -> raise e
 	  )
 
-  let pcache2jprogram p =
-    { classes =
-	ClassMap.mapi
-	  (fun i _ -> (Program.get_class_info p i).Program.class_data)
-	  p.Program.classes;
-      static_lookup =
-	static_lookup p.Program.dic
-	  p.Program.static_virtual_lookup
-	  p.Program.static_special_lookup
-	  p.Program.static_static_lookup
-	  p.Program.interfaces
-	  p.Program.classes;
-      dictionary = p.Program.dic }
-      
-let parse_program ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
-  let p_cache = (Program.parse_program ~debug ~entrypoints classpath cn) in
+let pcache2jprogram p =
+  { classes =
+      ClassMap.mapi
+	(fun i _ -> (Program.get_class_info p i).Program.class_data)
+	p.Program.classes;
+    static_lookup =
+      static_lookup p.Program.dic
+	p.Program.static_virtual_lookup
+	p.Program.static_special_lookup
+	p.Program.static_static_lookup
+	p.Program.interfaces
+	p.Program.classes;
+    dictionary = p.Program.dic }
+
+let default_entrypoints =
+  let initializeSystemClass : class_name * method_signature =
+    (["java";"lang";"System"],
+     {ms_name = "initializeSystemClass";
+      ms_parameters = [];
+      ms_return_type = None})
+  in
+    initializeSystemClass::
+      (["java";"lang";"Class"],clinit_signature)::
+      (["java";"lang";"System"],clinit_signature)::
+      (["java";"lang";"String"],clinit_signature)::
+      (["java";"lang";"Thread"],clinit_signature)::
+      (["java";"lang";"ThreadGroup"],clinit_signature)::
+      (["java";"lang";"ref";"Finalizer"],clinit_signature)::
+      (["java";"lang";"OutOfMemoryError"],clinit_signature)::
+      (["java";"lang";"NullPointerException"],clinit_signature)::
+      (["java";"lang";"ArrayStoreException"],clinit_signature)::
+      (["java";"lang";"ArithmeticException"],clinit_signature)::
+      (["java";"lang";"StackOverflowError"],clinit_signature)::
+      (["java";"lang";"IllegalMonitorError"],clinit_signature)::
+      (["java";"lang";"Compiler"],clinit_signature)::
+      (["java";"lang";"reflect";"Method"],clinit_signature)::
+      (["java";"lang";"reflect";"Field"],clinit_signature)::
+      []
+
+let parse_program ?(other_entrypoints=default_entrypoints) classpath cnms =
+  let p_cache = (Program.parse_program (cnms::other_entrypoints) classpath) in
     pcache2jprogram p_cache
 
-let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpath cn =
+let parse_program_bench ?(other_entrypoints=default_entrypoints) classpath cnms =
   let time_start = Sys.time() in
-    ignore(parse_program ~debug ~entrypoints classpath cn);
+    ignore(Program.parse_program_bench (cnms::other_entrypoints) classpath);
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
 

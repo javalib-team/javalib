@@ -41,7 +41,7 @@ endif
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jCRA jPrint jControlFlow jPrintHierarchy jRTA
+jParse jFile jProgram jControlFlow jCRA jPrint jPrintHierarchy jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
 jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\

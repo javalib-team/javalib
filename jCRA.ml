@@ -517,10 +517,22 @@ let static_lookup dic classes_map interfaces cni msi pp =
 		     | e -> raise e
 	  )
 
-let parse_program class_path names =
+
+let default_classes =
+  ["java.lang.Class"; "java.lang.System"; "java.lang.String"; "java.lang.Thread";
+   "java.lang.ThreadGroup"; "java.lang.ref.Finalizer"; "java.lang.OutOfMemoryError";
+   "java.lang.NullPointerException"; "java.lang.ArrayStoreException";
+   "java.lang.ArithmeticException"; "java.lang.StackOverflowError";
+   "java.lang.IllegalMonitorError"; "java.lang.Compiler";
+   "java.lang.reflect.Method"; "java.lang.reflect.Field"]
+
+let parse_program ?(other_classes=default_classes) class_path names =
   (* build a map of all the JClass.class_file that are going to be
      translated to build the new hierarchy.*)
-  let (jars,others) = List.partition (fun f -> Filename.check_suffix f ".jar") names in
+  let (jars,others) =
+    List.partition
+      (fun f -> Filename.check_suffix f ".jar")
+      (names @ other_classes) in
   let p_dic = make_dictionary () in
   let class_map =
     JFile.read
@@ -552,8 +564,8 @@ let parse_program class_path names =
       static_lookup = static_lookup p_dic p_classes !interfaces;
       dictionary = p_dic }
 
-let parse_program_bench class_path names =
+let parse_program_bench ?(other_classes=default_classes) class_path names =
   let time_start = Sys.time() in
-    ignore(parse_program class_path names);
+    ignore(parse_program ~other_classes class_path names);
     let time_stop = Sys.time() in
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
