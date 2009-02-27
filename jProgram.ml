@@ -52,6 +52,18 @@ type class_name_index_table =
       mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
 
+module ClassSet = Set.Make(
+  struct
+    type t = class_name_index
+    let compare = compare
+  end)
+
+module MethodSet = Set.Make(
+  struct
+    type t = method_signature_index
+    let compare = compare
+  end)
+
 let get_ms_index tab ms =
   try
     MethodIndexMap.find ms tab.msi_map
@@ -169,7 +181,7 @@ module ClassnameSet = Set.Make(
     let compare = compare
   end)
 
-module MethodSet = Set.Make(
+module MethodsignatureSet = Set.Make(
   struct
     type t = JClass.method_signature
     let compare = compare
@@ -656,9 +668,9 @@ let get_loaded_classes p =
 let get_loaded_methods p =
   let dic = (p.dictionary) in
   let max_methods = dic.msi_table.msi_next - 1 in
-  let s = ref MethodSet.empty in
+  let s = ref MethodsignatureSet.empty in
     for i = 0 to max_methods do
-      s := MethodSet.add (dic.retrieve_ms i) !s
+      s := MethodsignatureSet.add (dic.retrieve_ms i) !s
     done;
     !s
 
@@ -674,3 +686,98 @@ let get_instantiated_classes p =
 		 s := ClassnameSet.add (dic.retrieve_cn cni) !s)
       p.classes;
     !s
+
+exception Invoke_not_found of (class_name * method_signature
+			       * class_name * method_signature)
+
+let get_method_calls p cni m =
+  let l = ref [] in
+  let f_lookup = p.static_lookup in
+  let dic = p.dictionary in
+  let method2callsite cni msi pp (ccni,cmsi) =
+    ((dic.retrieve_cn cni,dic.retrieve_ms msi,pp),
+     (dic.retrieve_cn ccni,dic.retrieve_ms cmsi))
+  in
+    begin
+      match m with
+	| ConcreteMethod ({cm_implementation = Java code} as cm)
+	    when cm.cm_has_been_parsed ->
+	    let msi = cm.cm_index in
+	      Array.iteri
+		(fun pp op ->
+		   match op with
+		     | OpInvoke _ ->
+			 let callsites = (f_lookup cni msi pp) in
+			 let callsites_list =
+			   ClassMethSet.elements callsites
+			 in
+			   l :=
+			     List.rev_append
+			       (List.map (method2callsite cni msi pp) callsites_list)
+			       !l
+		     | _ -> ())
+		(Lazy.force code).c_code
+	| _ -> ()
+    end;
+    !l
+
+let retrieve_invoke_index dic op =
+  match op with
+    | OpInvoke (`Virtual t, ms) ->
+	let cni = match t with
+	  | TClass cn -> dic.get_cn_index cn
+	  | TArray _ -> (* should only happen with [clone()] *)
+	      java_lang_object_index
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Special cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Static cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | OpInvoke(`Interface cn, ms) ->
+	let cni = dic.get_cn_index cn
+	and msi = dic.get_ms_index ms in (cni,msi)
+    | _ -> failwith "Bad opcode"
+
+type callgraph = ((JBasics.class_name * JClass.method_signature * int)
+		  * (JBasics.class_name * JClass.method_signature)) list
+
+let get_callgraph p =
+  let classes = p.classes in
+  let calls = ref [] in
+    ClassMap.iter
+      (fun _ ioc ->
+	 match ioc with
+	   | `Interface i ->
+	       (match i.i_initializer with
+		  | None -> ()
+		  | Some m -> calls := (get_method_calls p i.i_index
+						   (ConcreteMethod m)) @ !calls)
+	   | `Class c ->
+	       let l = ref [] in
+		 MethodMap.iter
+		   (fun _ m ->
+		      l :=
+			!l @ (get_method_calls p c.c_index m)) c.c_methods;
+		 calls := !l @ !calls
+      ) classes;
+    !calls
+
+let store_callgraph callgraph file =
+  let out = IO.output_channel (open_out file) in
+    List.iter
+      (fun ((cn,ms,pp),(ccn,cms)) ->
+	 IO.nwrite out
+	   ((JDumpBasics.class_name cn) ^ ","
+	    ^ ms.ms_name ^ ":"
+	    ^ (JUnparseSignature.unparse_method_descriptor
+		 (ms.ms_parameters, ms.ms_return_type)) ^ ","
+	    ^ (string_of_int pp) ^ " -> "
+	    ^ (JDumpBasics.class_name ccn) ^ ","
+	    ^ cms.ms_name
+	    ^ (JUnparseSignature.unparse_method_descriptor
+		 (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
+      )
+      callgraph;
+    IO.close_out out

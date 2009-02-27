@@ -150,37 +150,6 @@ struct
       !lm
 end
 
-let retrieve_invoke_index dic op =
-  match op with
-    | OpInvoke (`Virtual t, ms) ->
-	let cni = match t with
-	  | TClass cn -> dic.get_cn_index cn
-	  | TArray _ -> (* should only happen with [clone()] *)
-	      java_lang_object_index
-	and msi = dic.get_ms_index ms in (cni,msi)
-    | OpInvoke(`Special cn, ms) ->
-	let cni = dic.get_cn_index cn
-	and msi = dic.get_ms_index ms in (cni,msi)
-    | OpInvoke(`Static cn, ms) ->
-	let cni = dic.get_cn_index cn
-	and msi = dic.get_ms_index ms in (cni,msi)
-    | OpInvoke(`Interface cn, ms) ->
-	let cni = dic.get_cn_index cn
-	and msi = dic.get_ms_index ms in (cni,msi)
-    | _ -> failwith "Bad opcode"
-
-module ClassSet = Set.Make(
-  struct
-    type t = class_name_index
-    let compare = compare
-  end)
-
-module MethodSet = Set.Make(
-  struct
-    type t = method_signature_index
-    let compare = compare
-  end)
-
 type ioc_field = [ `CField of class_field | `IField of interface_field ]
 
 module Program =
@@ -200,11 +169,8 @@ struct
       { mutable classes : class_info ClassMap.t;
 	(* for each interface, interfaces maps a list of classes
 	   that implements this interface or one of its subinterfaces *)
-	mutable interfaces : class_name_index list ClassMap.t;
+	mutable interfaces : ClassSet.t ClassMap.t;
 	mutable static_virtual_lookup : ClassMethSet.t ClassMethMap.t;
-	(* static_interface_lookup maps a couple (class,method) to a set of
-	   equivalents invoke_virtual calls *)
-	mutable static_interface_lookup : ClassMethSet.t ClassMethMap.t;
 	mutable static_static_lookup : ClassMethSet.t ClassMethMap.t;
 	mutable static_special_lookup : (ClassMethSet.t
 					   ClassMethMap.t) ClassMap.t;
@@ -449,9 +415,11 @@ struct
 		(fun i ->
 		   if ( ClassMap.mem i p.interfaces ) then
 		     p.interfaces <- ClassMap.add i
-		       (ioc_index ::(ClassMap.find i p.interfaces)) p.interfaces
+		       (ClassSet.add ioc_index (ClassMap.find i p.interfaces))
+		       p.interfaces
 		   else
-		     p.interfaces <- ClassMap.add i [ioc_index] p.interfaces
+		     p.interfaces <- ClassMap.add i
+		       (ClassSet.add ioc_index ClassSet.empty) p.interfaces
 		) super_implemented_interfaces;
 	      
 	      let methods = mmap2pmap p c.JClass.c_methods in
@@ -569,12 +537,8 @@ struct
     let ioc = (get_class_info p cni).class_data in
       match ioc with
 	| `Class c ->
-	    let rioc = JControlFlow.resolve_method msi c in
-	      (match rioc with
-		 | `Class rc -> rc.c_index
-		 | `Interface _ ->
-		     failwith "Method Resolution found an Interface !"
-	      )
+	    let rc = JControlFlow.resolve_method' msi c in
+	      rc.c_index
 	| `Interface _ -> failwith "Can't resolve an Interface Method"
 
   let resolve_field p cni fsi =
@@ -618,7 +582,7 @@ struct
 
   let interface_lookup_action interfaces cni f =
     if ( ClassMap.mem cni interfaces ) then
-      (List.iter
+      (ClassSet.iter
 	 f (ClassMap.find cni interfaces))
     else ()
       (* otherwise, the classes implementing the interface have not
@@ -780,7 +744,6 @@ struct
 	interfaces = ClassMap.empty;
 	dic = dic;
 	static_virtual_lookup = ClassMethMap.empty;
-	static_interface_lookup = ClassMethMap.empty;
 	static_static_lookup = ClassMethMap.empty;
 	static_special_lookup = ClassMap.empty;
 	clinits = ClassSet.empty;
@@ -837,9 +800,6 @@ struct
 
 end
 
-exception Invoke_not_found of (class_name * method_signature
-			       * class_name * method_signature)
-
 let static_virtual_lookup virtual_lookup_map cni msi =
   try
     ClassMethMap.find (cni,msi) virtual_lookup_map
@@ -853,7 +813,7 @@ let static_static_lookup static_lookup_map cni msi =
 let static_interface_lookup interface_lookup_map virtual_lookup_map
     interfaces_map cni msi =
   try
-    ClassMethMap.find (cni,msi) interface_lookup_map
+    ClassMethMap.find (cni,msi) !interface_lookup_map
   with
     | _ ->
 	let s = ref ClassMethSet.empty in
@@ -863,15 +823,18 @@ let static_interface_lookup interface_lookup_map virtual_lookup_map
 	       static_virtual_lookup virtual_lookup_map x msi in
 	       s := ClassMethSet.union !s calls) in
 	  Program.interface_lookup_action interfaces_map cni f;
+	  interface_lookup_map :=
+	    ClassMethMap.add (cni,msi) !s !interface_lookup_map;
 	  !s
 
 let static_special_lookup special_lookup_map cni ccni cmsi =
   ClassMethMap.find (ccni,cmsi) (ClassMap.find cni special_lookup_map)
 
-let static_lookup dic virtual_lookup_map interface_lookup_map
-    special_lookup_map static_lookup_map interfaces_map classes_map cni msi pp =
+let static_lookup dic virtual_lookup_map special_lookup_map static_lookup_map
+    interfaces_map classes_map cni msi pp =
   let m = MethodMap.find msi
     (ClassMap.find cni classes_map).Program.methods in
+  let interface_lookup_map = ref ClassMethMap.empty in
     match m with
       | AbstractMethod _ -> failwith "Can't call static_lookup on Abstract Methods"
       | ConcreteMethod cm ->
@@ -882,25 +845,18 @@ let static_lookup dic virtual_lookup_map interface_lookup_map
 		   try
 		     let op = c.(pp) in
 		     let (ccni,cmsi) = retrieve_invoke_index dic op in
-		       try
-			 match op with
-			   | OpInvoke(`Interface _,_) ->
-			       static_interface_lookup interface_lookup_map
-				 virtual_lookup_map interfaces_map ccni cmsi
-			   | OpInvoke (`Virtual _,_) ->
-			       static_virtual_lookup virtual_lookup_map ccni cmsi
-			   | OpInvoke (`Static _,_) ->
-			       static_static_lookup static_lookup_map ccni cmsi
-			   | OpInvoke (`Special _,_) ->
-			       static_special_lookup special_lookup_map cni ccni cmsi
-			   | _ ->
-			       failwith "Invalid opcode found at specified program point"
-		       with _ ->
-			 let cn = dic.retrieve_cn cni
-			 and ms = dic.retrieve_ms msi
-			 and ccn = dic.retrieve_cn ccni
-			 and cms = dic.retrieve_ms cmsi in
-				  raise (Invoke_not_found (cn,ms,ccn,cms))
+		       match op with
+			 | OpInvoke(`Interface _,_) ->
+			     static_interface_lookup interface_lookup_map
+			       virtual_lookup_map interfaces_map ccni cmsi
+			 | OpInvoke (`Virtual _,_) ->
+			     static_virtual_lookup virtual_lookup_map ccni cmsi
+			 | OpInvoke (`Static _,_) ->
+			     static_static_lookup static_lookup_map ccni cmsi
+			 | OpInvoke (`Special _,_) ->
+			     static_special_lookup special_lookup_map cni ccni cmsi
+			 | _ ->
+			     failwith "Invalid opcode found at specified program point"
 		   with
 		     | Not_found -> failwith "Invalid program point"
 		     | e -> raise e
@@ -914,7 +870,6 @@ let static_lookup dic virtual_lookup_map interface_lookup_map
       static_lookup =
 	static_lookup p.Program.dic
 	  p.Program.static_virtual_lookup
-	  p.Program.static_interface_lookup
 	  p.Program.static_special_lookup
 	  p.Program.static_static_lookup
 	  p.Program.interfaces
@@ -932,99 +887,4 @@ let parse_program_bench ?(debug = false) ?(entrypoints=[main_signature]) classpa
       Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
 
 
-let get_method_calls p cni m =
-  let l = ref [] in
-  let f_lookup = p.static_lookup in
-  let dic = p.dictionary in
-  let method2callsite cni msi pp (ccni,cmsi) =
-    ((dic.retrieve_cn cni,dic.retrieve_ms msi,pp),
-     (dic.retrieve_cn ccni,dic.retrieve_ms cmsi))
-  in
-    begin
-      match m with
-	| ConcreteMethod ({cm_implementation = Java code} as cm)
-	    when cm.cm_has_been_parsed ->
-	    let msi = cm.cm_index in
-	      Array.iteri
-		(fun pp op ->
-		   match op with
-		     | OpInvoke _ ->
-			 let callsites = (f_lookup cni msi pp) in
-			 let callsites_list =
-			   ClassMethSet.elements callsites
-			 in
-			   l :=
-			     List.rev_append
-			       (List.map (method2callsite cni msi pp) callsites_list)
-			       !l
-		     | _ -> ())
-		(Lazy.force code).c_code
-	| _ -> ()
-    end;
-    !l
-
-type callgraph = ((JBasics.class_name * JClass.method_signature * int)
-		  * (JBasics.class_name * JClass.method_signature)) list
-
-let get_callgraph p =
-  let classes = p.classes in
-  let calls = ref [] in
-    ClassMap.iter
-      (fun _ ioc ->
-	 match ioc with
-	   | `Interface i ->
-	       (match i.i_initializer with
-		  | None -> ()
-		  | Some m -> calls := (get_method_calls p i.i_index
-						   (ConcreteMethod m)) @ !calls)
-	   | `Class c ->
-	       let l = ref [] in
-		 MethodMap.iter
-		   (fun _ m ->
-		      l :=
-			!l @ (get_method_calls p c.c_index m)) c.c_methods;
-		 calls := !l @ !calls
-      ) classes;
-    !calls
-
-let store_callgraph callgraph file =
-  let out = IO.output_channel (open_out file) in
-    List.iter
-      (fun ((cn,ms,pp),(ccn,cms)) ->
-	 IO.nwrite out
-	   ((JDumpBasics.class_name cn) ^ ","
-	    ^ ms.ms_name ^ ":"
-	    ^ (JUnparseSignature.unparse_method_descriptor
-		 (ms.ms_parameters, ms.ms_return_type)) ^ ","
-	    ^ (string_of_int pp) ^ " -> "
-	    ^ (JDumpBasics.class_name ccn) ^ ","
-	    ^ cms.ms_name
-	    ^ (JUnparseSignature.unparse_method_descriptor
-		 (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
-      )
-      callgraph;
-    IO.close_out out
-
-let store_simplified_callgraph callgraph file =
-  let simple_callgraph = ref [] in
-    List.iter (fun ((cn,ms,_),k) ->
-		 if not( List.mem ((cn,ms),k) !simple_callgraph) then
-		   simple_callgraph := ((cn,ms),k) :: !simple_callgraph
-	      ) callgraph;
-    let out = IO.output_channel (open_out file) in
-      List.iter
-	(fun ((cn,ms),(ccn,cms)) ->
-	   IO.nwrite out
-	     ((JDumpBasics.class_name cn) ^ ","
-	      ^ ms.ms_name ^ ":"
-	      ^ (JUnparseSignature.unparse_method_descriptor
-		   (ms.ms_parameters, ms.ms_return_type))
-	      ^ " -> "
-	      ^ (JDumpBasics.class_name ccn) ^ ","
-	      ^ cms.ms_name
-	      ^ (JUnparseSignature.unparse_method_descriptor
-		   (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
-	)
-	(List.rev !simple_callgraph);
-      IO.close_out out
 

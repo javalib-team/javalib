@@ -76,6 +76,9 @@ val make_dictionary : unit -> dictionary
 module ClassMethSet : Set.S with type elt = int * int
 module ClassMethMap : Map.S with type key = int * int
 
+module ClassSet : Set.S with type elt = class_name_index
+module MethodSet : Set.S with type elt = method_signature_index
+
 type concrete_method = {
   mutable cm_has_been_parsed : bool;
   cm_index : method_signature_index;
@@ -311,10 +314,24 @@ val firstCommonSuperClass : class_file -> class_file -> class_file
 
 (* Mainly for test purposes... *)
 module ClassnameSet : Set.S with type elt = JBasics.class_name
-module MethodSet : Set.S with type elt = JClass.method_signature
+module MethodsignatureSet : Set.S with type elt = JClass.method_signature
 
 val get_loaded_classes : program -> ClassnameSet.t
 
-val get_loaded_methods : program -> MethodSet.t
+val get_loaded_methods : program -> MethodsignatureSet.t
 
 val get_instantiated_classes : program -> ClassnameSet.t
+
+(* Building the callgraph *)
+val retrieve_invoke_index : dictionary -> JClass.opcode ->
+  (class_name_index * method_signature_index)
+    
+type callgraph = ((JBasics.class_name * JClass.method_signature * int)
+		  * (JBasics.class_name * JClass.method_signature)) list
+
+val get_callgraph : program -> callgraph
+
+val store_callgraph : callgraph -> string -> unit
+
+exception Invoke_not_found of (JBasics.class_name * JClass.method_signature
+			       * JBasics.class_name * JClass.method_signature)

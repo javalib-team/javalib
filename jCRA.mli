@@ -26,7 +26,4 @@
     [.class] files, looking for them in the classpath (a list of
     directories and [.jar] files separated with ':') . *)
 val parse_program : string -> string list -> JProgram.program
-val add_file :
-  JFile.class_path -> JClass.interface_or_class
-  -> JProgram.interface_or_class JProgram.ClassMap.t
-  -> JProgram.dictionary -> JProgram.interface_or_class JProgram.ClassMap.t
+val parse_program_bench : string -> string list -> unit
