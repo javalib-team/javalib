@@ -261,7 +261,6 @@ let lookup_virtual_method msi (c:class_file) : class_file =
 
 let lookup_interface_method = lookup_virtual_method
 
-
 let overrides_methods msi c =
   let result = ref [] in
     match c.c_super_class with
@@ -282,48 +281,6 @@ let overrides_methods msi c =
 	    with NoSuchMethodError ->
 	      !result
 
-module CSet = Set.Make (
-  struct
-    type t = class_file
-    let compare c1 c2 =
-      Pervasives.compare
-	(c1.c_name)
-	(c2.c_name)
-  end)
-
-let overridden_by_methods msi c =
-  if msi = clinit_index or msi = init_index
-  then raise (Invalid_argument "overridden_by_methods");
-  let result = ref CSet.empty in
-  let rec overridden_by_methods' msi c =
-    match get_method c msi with
-      | AbstractMethod am ->
-	  List.iter
-	    (fun ioc -> overridden_by_methods' msi ioc)
-	    am.am_overridden_in
-      | ConcreteMethod cm ->
-	  begin
-	    match c with
-	      | `Class c -> result := CSet.add c !result
-	      | `Interface _ -> assert false
-	  end;
-	  List.iter
-	    (fun c -> overridden_by_methods' msi (`Class c))
-	    cm.cm_overridden_in
-  in
-    begin
-      match get_method c msi with
-	| AbstractMethod am ->
-	    List.iter
-	      (fun ioc -> overridden_by_methods' msi ioc)
-	      am.am_overridden_in
-	| ConcreteMethod cm ->
-	    List.iter
-	      (fun c -> overridden_by_methods' msi (`Class c))
-	      cm.cm_overridden_in
-    end;
-    CSet.fold (fun ioc l -> ioc::l) !result []
-
 let implements_method c msi =
   try
     match MethodMap.find msi c.c_methods with
@@ -336,64 +293,6 @@ let implements_methods msi c =
     (fun _ i l -> resolve_all_interface_methods msi i @ l)
     c.c_interfaces
     []
-
-let static_lookup_interface prog cn ms : interface_or_class list =
-  let msi = prog.dictionary.get_ms_index ms in
-    match resolve_class prog cn with
-      | `Class _ -> raise IncompatibleClassChangeError
-      | `Interface i ->
-	  let il =
-	    List.map
-	      (fun i -> `Interface i)
-	      (resolve_all_interface_methods msi i)
-	  in
-	    try
-	      let c = `Class (resolve_method' msi i.i_super)
-	      in c::il
-	    with _ -> il
-
-let static_lookup_special prog pp cn ms =
-  let msi = prog.dictionary.get_ms_index ms in
-    match resolve_class prog cn with
-      | `Interface _ -> raise IncompatibleClassChangeError
-      | `Class c ->
-	  let c' = resolve_method msi c in
-	    match pp.cl,c' with
-	      | _, `Class c2 when msi = init_index -> c2
-	      | `Class c1, `Class c2 when c1 == c2 || not (extends_class c1 c2) -> c2
-	      | _ ->
-		  match super_class pp.cl with
-		    | None -> raise AbstractMethodError
-		    | Some c -> lookup_virtual_method msi c
-
-let static_lookup_virtual prog obj ms =
-  let msi = prog.dictionary.get_ms_index ms in
-    match obj with
-      | TArray _ ->
-	  begin
-	    match resolve_class prog java_lang_object with
-	      | `Class c ->
-		  if implements_method c msi
-		  then [`Class c]
-		  else
-		    let ms =
-		      ignore (Format.flush_str_formatter ());
-		      JPrint.pp_method_signature Format.str_formatter ms;
-		      Format.flush_str_formatter ()
-		    in
-		      raise (Failure ("invokevirtual on an array : "^ms))
-	      | `Interface _ -> raise IncompatibleClassChangeError
-	  end
-      | TClass cn ->
-	  match resolve_class prog cn with
-	    | `Interface _ -> raise IncompatibleClassChangeError
-	    | `Class c ->
-		try [`Class (resolve_method' msi c)]
-		with NoSuchMethodError ->
-		  List.map
-		    (fun i -> `Interface i)
-		    (resolve_interface_method' msi (`Class c))
-
 
 let handlers program pp =
   let ioc2c = function
@@ -429,43 +328,34 @@ let handlers program pp =
 			    || JProgram.extends_class javalangruntimeexception exn_class
 			  then false
 			  else
-			    match get_opcode pp with
-			      | OpInvoke (typ,ms) ->
-				  let msi = program.dictionary.get_ms_index ms in
-				  let cl =
-				    match typ with
-				      | `Special cn -> [`Class (static_lookup_special program pp cn ms)]
-				      | `Virtual obj -> static_lookup_virtual program obj ms
-				      | `Static cn ->
-					  let c =
-					    match resolve_class program cn with
-					      | `Class c -> resolve_method msi c
-					      | `Interface _ -> raise IncompatibleClassChangeError
-					  in
-					  let c =
-					    match c with
-					      | `Class c' when implements_method c' msi -> c
-					      | _ -> raise AbstractMethodError
-					  in [c]
-				      | `Interface cn -> static_lookup_interface program cn ms
-				  and throws_instance_of m exn =
-				    (* return true if the method m is
-				       declared to throw exceptions of a
-				       subtype of exn *)
-				    List.exists
-				      (fun e ->
-					 let e = JProgram.get_interface_or_class program e
-					 in JProgram.extends_class (ioc2c e) exn)
-				      (match m with
-					 | AbstractMethod {am_exceptions=exn_list}
-					 | ConcreteMethod {cm_exceptions=exn_list} -> exn_list)
-				  in
-				    not (List.exists
-					   (fun c ->
-					      let m = JProgram.get_method c msi
-					      in throws_instance_of m exn_class)
-					   cl)
-			      | _ -> true
+			    let op = get_opcode pp in
+			      try
+				let (cni,msi) = retrieve_invoke_index
+				  program.dictionary op in
+				let cml = ClassMethSet.elements
+				  (program.static_lookup cni msi (get_pc pp)) in
+				let cl = List.map
+				  (fun (cni,_) ->
+				     ClassMap.find cni program.classes
+				  ) cml
+				and throws_instance_of m exn =
+				  (* return true if the method m is
+				     declared to throw exceptions of a
+				     subtype of exn *)
+				  List.exists
+				    (fun e ->
+				       let e = JProgram.get_interface_or_class program e
+				       in JProgram.extends_class (ioc2c e) exn)
+				    (match m with
+				       | AbstractMethod {am_exceptions=exn_list}
+				       | ConcreteMethod {cm_exceptions=exn_list} -> exn_list)
+				in
+				  not (List.exists
+					 (fun c ->
+					    let m = JProgram.get_method c msi
+					    in throws_instance_of m exn_class)
+					 cl)
+			      with _ -> true
 		  with Not_found -> false
 		    (* false is safe, but it would be stange to end up
 		       here as it would mean that some classes have not
@@ -476,6 +366,6 @@ let handlers program pp =
 	      (Lazy.force code).c_exc_tbl
       | Native ->
 	  raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
-
+	    
 let exceptional_successors program pp =
   List.map (fun e -> goto_absolute pp e.e_handler) (handlers program pp)

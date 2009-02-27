@@ -67,7 +67,6 @@ val handlers : program -> pp -> JBasics.exception_handler list
 val exceptional_successors : program -> pp -> pp list
 
 
-
 (** {2 Lookup and resolve procedure} *)
 
 (** {b Warning : lookup and resolve functions do not take in account
@@ -152,17 +151,7 @@ val lookup_virtual_method : method_signature_index -> class_file -> class_file
 *)
 val lookup_interface_method : method_signature_index -> class_file -> class_file
 
-
-(** [overriding_methods ms c] looks for the methods that overrides and
-    implements [ms] in the children of [c].
-
-    @raise Not_found if [ms] cannot be found in [c]
-    @raise Invalid_argument if [ms] is an initialization method
-*)
-val overridden_by_methods : method_signature_index -> interface_or_class -> class_file list
-
-
-(** [overridden_methods ms c] looks for the classes that define
+(** [overrides_methods ms c] looks for the classes that define
     methods that are overridden by [(c,ms)] (in the parents of
     [c]). The result list is ordered such that [c1] is before [c2] iff
     [c1] extends [c2].
@@ -179,15 +168,3 @@ val overrides_methods : method_signature_index -> class_file -> class_file list
     @raise Not_found if [ms] cannot be found in [c]
 *)
 val implements_methods : method_signature_index -> class_file -> interface_file list
-
-
-
-(** static_lookup_* functions return the highest methods that can be
-    called, i.e. the method actually called is known to implement or
-    override the result.*)
-val static_lookup_interface :
-  program -> class_name -> method_signature -> interface_or_class list
-val static_lookup_special :
-  program -> PP.t -> class_name -> method_signature -> class_file
-val static_lookup_virtual :
-  program -> object_type -> method_signature -> interface_or_class list

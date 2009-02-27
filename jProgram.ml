@@ -204,7 +204,6 @@ type concrete_method = {
   cm_exceptions : class_name list;
   cm_attributes : attributes;
   cm_implementation : implementation;
-  mutable cm_overridden_in : class_file list;
 }
 
 and abstract_method = {
@@ -218,7 +217,6 @@ and abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  mutable am_overridden_in : interface_or_class list;
 }
 
 and jmethod =
@@ -400,7 +398,6 @@ let ccm2pcm p_dic m = {
   cm_exceptions = m.JClass.cm_exceptions;
   cm_attributes = m.JClass.cm_attributes;
   cm_implementation = m.JClass.cm_implementation;
-  cm_overridden_in = [];
 }
 
 let pcm2ccm m = {
@@ -431,7 +428,6 @@ let cam2pam p_dic m = {
   am_other_flags = m.JClass.am_other_flags;
   am_exceptions = m.JClass.am_exceptions;
   am_attributes = m.JClass.am_attributes;
-  am_overridden_in = [];
 }
 
 let pam2cam m = {
@@ -625,36 +621,6 @@ let rec resolve_implemented_method ?(acc=[]) msi (c:class_file) : (class_file op
 	if defines_method msi (`Class sc)
 	then (Some sc,resolve_interface_method ~acc msi (`Class c))
 	else resolve_implemented_method ~acc:(resolve_interface_method ~acc msi (`Class c)) msi sc
-
-let declare_method ioc msi =
-  if msi = init_index || msi = clinit_index then ()
-  else
-    let ioc2c  = function
-      | `Class c -> c
-      | `Interface _ -> raise (Invalid_argument "ioc2c")
-    in
-    let add c' c msi =
-      match get_method c msi with
-	| ConcreteMethod m -> m.cm_overridden_in <- (ioc2c c')::m.cm_overridden_in
-	| AbstractMethod m ->
-	    match c' with
-	      | `Interface _ -> m.am_overridden_in <- c'::m.am_overridden_in
-	      | `Class _ -> m.am_overridden_in <- c'::m.am_overridden_in
-    in
-      try
-	match ioc with
-	  | `Interface _ ->
-	      List.iter
-		(fun i -> add ioc (`Interface i) msi)
-		(rem_dbl (resolve_interface_method msi ioc));
-	  | `Class c ->
-	      let (super,il) = resolve_implemented_method msi c in
-		List.iter (fun i -> add ioc (`Interface i) msi) (rem_dbl il);
-		match super with
-		  | Some c -> add ioc (`Class c) msi
-		  | None -> ()
-      with Invalid_argument "ioc2c" ->
-	raise (Failure "bug in JavaLib: jProgram.add_method")
 
 let get_loaded_classes p =
   let dic = (p.dictionary) in

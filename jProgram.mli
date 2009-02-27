@@ -96,7 +96,6 @@ type concrete_method = {
   cm_exceptions : class_name list;
   cm_attributes : attributes;
   cm_implementation : implementation;
-  mutable cm_overridden_in : class_file list; (* TODO: is useful ? *)
 }
 
 and abstract_method = {
@@ -110,7 +109,6 @@ and abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
-  mutable am_overridden_in : interface_or_class list; (* TODO: is useful ? *)
 }
 
 and jmethod =
@@ -214,7 +212,6 @@ type program = { classes : interface_or_class ClassMap.t;
 
 val ccm2pcm : dictionary -> JClass.concrete_method -> concrete_method
 val cam2pam : dictionary -> JClass.abstract_method -> abstract_method
-val declare_method : interface_or_class -> method_signature_index -> unit
 
 (** [Class_not_found c] is raised when trying to add a class when its
     super class or one of its implemented interfaces is not in the

@@ -64,9 +64,7 @@ let get_hierachy prog info : info =
         let msi = prog.dictionary.get_ms_index ms in
 	let ioc = get_interface_or_class prog cn in
 	let m = get_method ioc msi in
-	let get_overridden_in = function
-	  | AbstractMethod am -> List.map JProgram.get_name am.am_overridden_in
-	  | ConcreteMethod cm -> List.map (fun c -> c.c_name) cm.cm_overridden_in
+	let get_overridden_in = fun _ -> [] (* TODO ! *)
 	and ppcnl fmt cnl =
 	  pp_concat
 	    (fun cn -> ms2link (cn,ms) fmt (class_name cn))

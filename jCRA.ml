@@ -225,9 +225,6 @@ let add_classFile c classes_map interfaces dictionary =
      c_children = ClassMap.empty;}
   in
   let c_index' = c'.c_index in
-    MethodMap.iter
-      (fun ms _ -> declare_method (`Class c') ms)
-      c'.c_methods;
     ClassMap.iter
       (fun _ i ->
 	 i.i_children_class <- ClassMap.add c_index' c' i.i_children_class)
@@ -300,12 +297,9 @@ let add_interfaceFile c classes_map dictionary =
     }
   in
   let c_index' = c'.i_index in
-    MethodMap.iter
-      (fun ms _ -> declare_method (`Interface c') ms)
-      c'.i_methods;
     ClassMap.iter
       (fun _ i ->
-	i.i_children_interface <- ClassMap.add c_index' c' i.i_children_interface)
+	 i.i_children_interface <- ClassMap.add c_index' c' i.i_children_interface)
       c'.i_interfaces;
     (match c'.i_initializer with
        | None -> ()
