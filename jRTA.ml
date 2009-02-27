@@ -869,7 +869,7 @@ let default_entrypoints =
       (["java";"lang";"ArrayStoreException"],clinit_signature)::
       (["java";"lang";"ArithmeticException"],clinit_signature)::
       (["java";"lang";"StackOverflowError"],clinit_signature)::
-      (["java";"lang";"IllegalMonitorError"],clinit_signature)::
+      (["java";"lang";"IllegalMonitorStateException"],clinit_signature)::
       (["java";"lang";"Compiler"],clinit_signature)::
       (["java";"lang";"reflect";"Method"],clinit_signature)::
       (["java";"lang";"reflect";"Field"],clinit_signature)::

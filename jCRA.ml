@@ -523,7 +523,7 @@ let default_classes =
    "java.lang.ThreadGroup"; "java.lang.ref.Finalizer"; "java.lang.OutOfMemoryError";
    "java.lang.NullPointerException"; "java.lang.ArrayStoreException";
    "java.lang.ArithmeticException"; "java.lang.StackOverflowError";
-   "java.lang.IllegalMonitorError"; "java.lang.Compiler";
+   "java.lang.IllegalMonitorStateException"; "java.lang.Compiler";
    "java.lang.reflect.Method"; "java.lang.reflect.Field"]
 
 let parse_program ?(other_classes=default_classes) class_path names =
