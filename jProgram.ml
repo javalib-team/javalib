@@ -735,12 +735,12 @@ let store_callgraph callgraph file =
     List.iter
       (fun ((cn,ms,pp),(ccn,cms)) ->
 	 IO.nwrite out
-	   ((JDumpBasics.class_name cn) ^ ","
-	    ^ ms.ms_name ^ ":"
+	   ((JDumpBasics.class_name cn) ^ "."
+	    ^ ms.ms_name
 	    ^ (JUnparseSignature.unparse_method_descriptor
 		 (ms.ms_parameters, ms.ms_return_type)) ^ ","
 	    ^ (string_of_int pp) ^ " -> "
-	    ^ (JDumpBasics.class_name ccn) ^ ","
+	    ^ (JDumpBasics.class_name ccn) ^ "."
 	    ^ cms.ms_name
 	    ^ (JUnparseSignature.unparse_method_descriptor
 		 (cms.ms_parameters, cms.ms_return_type)) ^ "\n")
