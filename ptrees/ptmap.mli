@@ -61,6 +61,12 @@ module type S = sig
       same [k] to [d1] and [d2], respectively. *)
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
 
+  (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to
+      [remove i t] and [d] equals to [find i t].
+
+      @raise Not_found if [t] is empty. *)
+  val choose_and_remove : 'a t -> int * 'a * ('a t)
+
 end
 
 include S

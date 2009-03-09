@@ -84,6 +84,11 @@ module type S = sig
      intersection. *) 
 
   val intersect : t -> t -> bool
+
+  (* [choose_and_remove t] is equivalent (but more efficient) to
+     [(fun t -> let i = choose t in (i,remove i t)) t]*)
+  val choose_and_remove : t -> int*t
+
 end
 
 include S

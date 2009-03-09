@@ -39,6 +39,7 @@ module type S = sig
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+  val choose_and_remove : 'a t -> int * 'a * ('a t)
 end
 
 type key = int
@@ -137,6 +138,14 @@ let remove k t =
 	else
 	  t
   in rmv t
+
+
+let rec choose_and_remove = function
+  | Empty -> raise Not_found
+  | Leaf (j,d) -> (j,d,Empty)
+  | Branch (p,m,t0,t1) ->
+      let (j,d,t0') = choose_and_remove t0
+      in (j,d,branch (p,m,t0',t1))
 
 let rec iter f = function
   | Empty -> ()

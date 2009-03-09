@@ -65,6 +65,7 @@ module type S = sig
   val min_elt : t -> int
   val max_elt : t -> int
   val intersect : t -> t -> bool
+  val choose_and_remove : t -> int*t
 end
 
 
@@ -176,6 +177,13 @@ let remove k t =
 	  t
   in
   rmv t
+
+let rec choose_and_remove = function
+  | Empty -> raise Not_found
+  | Leaf j -> (j,Empty)
+  | Branch (p,m,t0,t1) ->
+      let (j,t0') = choose_and_remove t0
+      in (j, branch (p,m,t0',t1))
 
 (*s One nice property of Patricia trees is to support a fast union
     operation (and also fast subset, difference and intersection
@@ -572,6 +580,7 @@ module Big = struct
     part (Empty, Empty) s
 
   let choose = choose
+  let choose_and_remove = choose_and_remove
 
   let elements s =
     let rec elements_aux acc = function
