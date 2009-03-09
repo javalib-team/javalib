@@ -18,5 +18,7 @@ val parse_program_bench :
 
 (** Sun's JVM calls some methods natively during the JVM
     initialization.  We have included the list (that we suppose
-    complete but without garantee). *)
+    complete but without garantee). Some of the method listed may not
+    exists (as <clinit> method are optionals) but there should be
+    executed in this order. *)
 val default_entrypoints : (JBasics.class_name * JClass.method_signature) list

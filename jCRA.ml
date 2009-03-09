@@ -221,7 +221,7 @@ let add_classFile c classes_map interfaces dictionary =
      c_fields = add_fields dictionary c.JClass.c_fields;
      c_methods = add_methods dictionary c.JClass.c_methods;
      c_resolve_methods = MethodMap.empty;
-     c_may_be_instanciated = true;
+     c_may_be_instantiated = true;
      c_children = ClassMap.empty;}
   in
   let c_index' = c'.c_index in

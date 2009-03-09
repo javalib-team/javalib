@@ -246,7 +246,7 @@ and class_file = {
   c_other_attributes : (string * string) list;
   c_methods : jmethod MethodMap.t;
   mutable c_resolve_methods : (class_file * jmethod) MethodMap.t;
-  mutable c_may_be_instanciated : bool;
+  mutable c_may_be_instantiated : bool;
   mutable c_children : class_file ClassMap.t;
 }
 
@@ -648,7 +648,7 @@ let get_instantiated_classes p =
 	 match ioc with
 	   | `Interface _ -> ()
 	   | `Class c ->
-	       if ( c.c_may_be_instanciated = true ) then
+	       if ( c.c_may_be_instantiated = true ) then
 		 s := ClassnameSet.add (dic.retrieve_cn cni) !s)
       p.classes;
     !s

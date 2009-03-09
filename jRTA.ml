@@ -300,7 +300,7 @@ struct
 		c_fields = iocfmap2cfmap fields;
 		c_methods = methods;
 		c_resolve_methods = MethodMap.empty;
-		c_may_be_instanciated = false;
+		c_may_be_instantiated = false;
 		c_children = ClassMap.empty }
 
 	| `Interface i ->
@@ -612,7 +612,7 @@ struct
     let cl_info = get_class_info p cni in
       if not( cl_info.is_instantiated ) then
 	(cl_info.is_instantiated <- true;
-	 (to_class_file cl_info.class_data).c_may_be_instanciated <- true;
+	 (to_class_file cl_info.class_data).c_may_be_instantiated <- true;
 	 (* Now we need to update the static_lookup_virtual map *)
 	 (* for each virtual call that already occurred on A and *)
 	 (* its super classes. *)
@@ -850,6 +850,7 @@ let pcache2jprogram p =
 	p.Program.classes;
     dictionary = p.Program.dic }
 
+(* cf. openjdk6/hotspot/src/share/vm/runtime/thread.cpp *)
 let default_entrypoints =
   let initializeSystemClass : class_name * method_signature =
     (["java";"lang";"System"],
@@ -857,21 +858,23 @@ let default_entrypoints =
       ms_parameters = [];
       ms_return_type = None})
   in
-    initializeSystemClass::
-      (["java";"lang";"Class"],clinit_signature)::
-      (["java";"lang";"System"],clinit_signature)::
+    (["java";"lang";"Object"],clinit_signature)::
       (["java";"lang";"String"],clinit_signature)::
-      (["java";"lang";"Thread"],clinit_signature)::
+      (["java";"lang";"System"],clinit_signature)::
+      initializeSystemClass::
       (["java";"lang";"ThreadGroup"],clinit_signature)::
+      (["java";"lang";"Thread"],clinit_signature)::
+      (["java";"lang";"reflect";"Method"],clinit_signature)::
       (["java";"lang";"ref";"Finalizer"],clinit_signature)::
+      (["java";"lang";"Class"],clinit_signature)::
       (["java";"lang";"OutOfMemoryError"],clinit_signature)::
       (["java";"lang";"NullPointerException"],clinit_signature)::
+      (["java";"lang";"ClassCastException"],clinit_signature)::
       (["java";"lang";"ArrayStoreException"],clinit_signature)::
       (["java";"lang";"ArithmeticException"],clinit_signature)::
       (["java";"lang";"StackOverflowError"],clinit_signature)::
       (["java";"lang";"IllegalMonitorStateException"],clinit_signature)::
       (["java";"lang";"Compiler"],clinit_signature)::
-      (["java";"lang";"reflect";"Method"],clinit_signature)::
       (["java";"lang";"reflect";"Field"],clinit_signature)::
       []
 
