@@ -1,19 +1,17 @@
-(**************************************************************************)
-(*                                                                        *)
-(*  Copyright (C) Jean-Christophe Filliatre                               *)
-(*                                                                        *)
-(*  This software is free software; you can redistribute it and/or        *)
-(*  modify it under the terms of the GNU Library General Public           *)
-(*  License version 2.1, with the special exception on linking            *)
-(*  described in file LICENSE.                                            *)
-(*                                                                        *)
-(*  This software is distributed in the hope that it will be useful,      *)
-(*  but WITHOUT ANY WARRANTY; without even the implied warranty of        *)
-(*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.                  *)
-(*                                                                        *)
-(**************************************************************************)
+(*
+ * Copyright (C) 2008 Jean-Christophe Filliatre
+ * Copyright (C) 2008, 2009 Laurent Hubert (CNRS)
+ * 
+ * This software is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1, with the special exception on linking described in file
+ * LICENSE.
 
-(*i $Id: ptset.mli,v 1.10 2008-07-21 14:53:06 filliatr Exp $ i*)
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *)
+
 
 (*s Sets of integers implemented as Patricia trees.  The following
     signature is exactly [Set.S with type elt = int], with the same

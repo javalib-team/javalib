@@ -1,4 +1,15 @@
-From 1.6 to 1.7 (on going work : this need to be cleaned up) 
+From 1.7 to
+---------------
+* efficient RTA implementation for program loading and callgraph computation
+* bugfixes
+* optimizations
+* ptrees needed
+* numbering of class names, field signature and method signature
+* taking in account method nativelly called by SUN's JVM
+
+
+
+From 1.6 to 1.7
 ---------------
 New features:
 * add lazy code parsing: the compiled code attribute is copied into
