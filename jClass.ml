@@ -410,3 +410,42 @@ let iter_fields f = function
       FieldMap.iter
 	(fun s fi -> f s (`ClassField fi ))
 	c.c_fields
+
+let get_local_variable_table_and_code m =
+  match m with
+    | AbstractMethod _ -> (None,None)
+    | ConcreteMethod cm ->
+	(match cm.cm_implementation with
+	   | Native -> (None, None)
+	   | Java code ->
+	       let c = Lazy.force code in
+		 (c.c_local_variable_table, Some c)
+	)
+
+let get_local_variable_info i pp m =
+  let (lvt,code) = get_local_variable_table_and_code m in
+  let isstore =
+    match code with
+      | None -> false
+      | Some c ->
+	  (match c.c_code.(pp) with
+	     | OpStore(_,_) -> true
+	     | OpRet(_) -> true
+	     | _ -> false
+	  ) in
+    match lvt with
+      | None -> None
+      | Some lvt ->
+	  try
+	    let (_,_,s,sign,_) =
+	      List.find
+		(fun (start,len,_,_,index) ->
+		   if isstore then
+		     if ( pp >= start - 1 && pp < start + len && index = i ) then true
+		     else false
+		   else
+		     if ( pp >= start && pp < start + len && index = i ) then true
+		     else false		
+		) lvt in
+	      Some (s,sign)
+	  with _ -> None

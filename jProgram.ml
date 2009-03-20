@@ -371,6 +371,21 @@ let get_methods = function
   | `Class {c_methods = mm;} ->
       MethodMap.fold (fun ms _ l -> ms::l) mm []
 
+let get_reachable_methods ioc =
+  match ioc with
+    | `Interface _ -> []
+    | `Class c ->
+	MethodMap.fold
+	  (fun _ m l ->
+	     match m with
+	       | AbstractMethod _ -> l
+	       | ConcreteMethod cm ->
+		   if cm.cm_has_been_parsed then
+		     m :: l
+		   else l
+	  )
+	  c.c_methods []
+
 let get_field c fsi = match c with
   | `Interface i -> InterfaceField (FieldMap.find fsi i.i_fields)
   | `Class c -> ClassField (FieldMap.find fsi c.c_fields)
@@ -747,3 +762,42 @@ let store_callgraph callgraph file =
       )
       callgraph;
     IO.close_out out
+
+let get_local_variable_table_and_code m =
+  match m with
+    | AbstractMethod _ -> (None,None)
+    | ConcreteMethod cm ->
+	(match cm.cm_implementation with
+	   | Native -> (None, None)
+	   | Java code ->
+	       let c = Lazy.force code in
+		 (c.c_local_variable_table, Some c)
+	)
+
+let get_local_variable_info i pp m =
+  let (lvt,code) = get_local_variable_table_and_code m in
+  let isstore =
+    match code with
+      | None -> false
+      | Some c ->
+	  (match c.c_code.(pp) with
+	     | OpStore(_,_) -> true
+	     | OpRet(_) -> true
+	     | _ -> false
+	  ) in
+    match lvt with
+      | None -> None
+      | Some lvt ->
+	  try
+	    let (_,_,s,sign,_) =
+	      List.find
+		(fun (start,len,_,_,index) ->
+		   if isstore then
+		     if ( pp >= start - 1 && pp < start + len && index = i ) then true
+		     else false
+		   else
+		     if ( pp >= start && pp < start + len && index = i ) then true
+		     else false		
+		) lvt in
+	      Some (s,sign)
+	  with _ -> None

@@ -84,17 +84,18 @@ val ms2link : (class_name*method_signature) -> Format.formatter -> string -> uni
 (** {2 HTML printing functions} *)
 
 val pprint_class_to_html_file :
-  string -> info -> string -> interface_or_class -> unit
+  ?intro:string -> info -> string -> interface_or_class -> unit
   (** [pprint_class_to_html_file intro info output c] prints the class
       [c] to the HTML file [output]. It prints [intro]
       at the beginning of [output]. This string must at least open the
       tags [<html>] and [<body>] and it should defines the JavaScript
       functions to switch the visibility of the data. *)
-val pprint_program_to_html_file :
-  string -> info -> string -> JProgram.program -> unit
-  (** [pprint_program_to_html_file] is similar to
-      [pprint_class_to_html_file].  The only difference is that it prints
-      a program.  *)
+val pprint_program_to_html_files :
+  ?intro:string -> info -> string -> JProgram.program -> unit
+  (** [pprint_program_to_html_files] is similar to
+      [pprint_class_to_html_file].  The only differences is that it prints
+      a program and it takes a directory instead of a filename as parameter. *)
+
 
 (** {2 Text printing functions} *)
 
@@ -119,5 +120,6 @@ val pp_concat :
 
 val pp_field_signature : Format.formatter -> field_signature -> unit
   (** pretty prints a field signature.*)
-val pp_method_signature : Format.formatter -> method_signature -> unit
+val pp_method_signature : ?m:(jmethod option) ->
+  Format.formatter -> method_signature -> unit
   (** pretty prints a method signature.*)

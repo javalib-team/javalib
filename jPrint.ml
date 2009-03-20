@@ -46,6 +46,18 @@ type info = {
 
 }
 
+let get_local_variable_ident i pp m =
+  match m with
+    | None -> (string_of_int i, "")
+    | Some m ->
+	let v = get_local_variable_info i pp m in
+	  match v with
+	    | None -> (string_of_int i, "")
+	    | Some (name,sign) -> (name, type2shortstring sign)
+
+let cn2htmlfilename cn =
+  (String.concat "_" cn) ^ ".html"
+
 let void_info = {
   p_global = (fun _fmt -> ());
   p_class= (fun _cn _fmt -> ());
@@ -113,9 +125,9 @@ let ms2anchor (cn,ms) = ss2anchor (ms2anchortext (cn,ms))
 
 let ss2link s fmt text =
   fprintf fmt "@{<html>@<0>%s@}%s@{<html>@<0>%s@}" ("<a href=\"" ^ s ^ "\">") text "</a>"
-let cn2link cn = ss2link ("#"^JDumpBasics.class_name cn)
-let fs2link (cn,fs) = ss2link ("#"^fs2anchortext (cn,fs))
-let ms2link (cn,ms) = ss2link ("#"^ms2anchortext (cn,ms))
+let cn2link cn = ss2link (cn2htmlfilename cn)
+let fs2link (cn,fs) = ss2link ((cn2htmlfilename cn)^"#"^fs2anchortext (cn,fs))
+let ms2link (cn,ms) = ss2link ((cn2htmlfilename cn)^"#"^ms2anchortext (cn,ms))
 
 let access2string = function
   | `Public -> "public "
@@ -247,7 +259,7 @@ let pp_field_signature fmt fs =
   pp_print_space fmt ();
   pp_print_string fmt fs.fs_name
 
-let pp_method_signature fmt ms =
+let pp_method_signature ?(m=None) fmt ms =
   begin
     match ms.ms_return_type with
       | None -> pp_print_string fmt "void"; pp_print_space fmt ()
@@ -258,10 +270,24 @@ let pp_method_signature fmt ms =
   begin
     match ms.ms_parameters with
       | [] -> ()
-      | p::[] -> pp_value_type fmt p
+      | p::[] -> pp_value_type fmt p;
+	  let s = (fst (get_local_variable_ident 0 0 m)) in
+	    if s <> "" then
+	      (pp_print_space fmt ();
+	       fprintf fmt "%s" s)
       | p::pl ->
 	  pp_value_type fmt p;
-	  List.iter  (fun p -> fprintf fmt ",@ "; pp_value_type fmt p) pl
+	  let s = (fst (get_local_variable_ident 0 0 m)) in
+	    if s <> "" then
+	      (pp_print_space fmt ();
+	       fprintf fmt "%s" s);
+	    ExtLib.List.iteri 
+	      (fun i p -> fprintf fmt ",@ ";
+		 pp_value_type fmt p;
+		 let s = (fst (get_local_variable_ident (i+1) 0 m)) in
+		   if s <> "" then
+		     (pp_print_space fmt ();
+		      fprintf fmt "%s" s)) pl
   end;
   fprintf fmt "@])"
 
@@ -283,7 +309,7 @@ let pp_exceptions fmt = function
       List.iter (fun e -> fprintf fmt ",@ %s" (class_name e)) el;
       fprintf fmt "@]@ "
 
-let pp_opcode fmt =
+let pp_opcode fmt pp m =
   let ppfs fmt (cn,fs) =
     fs2link
       (cn,fs) fmt
@@ -325,10 +351,32 @@ let pp_opcode fmt =
 	  | `Interface c ->
 	      fprintf fmt "invokeinterface ";
 	      ppms fmt (c,ms))
+    | OpLoad (k,n) ->
+	let (id,sign) = get_local_variable_ident n pp (Some m) in
+	let s =
+	  (match k with
+	     | `Object -> "aload "
+	     | `Int2Bool | `Long | `Float | `Double as k ->
+		 sprintf "%cload " (jvm_basic_type k)) in
+	  pp_print_string fmt (s ^ id ^
+				 if sign <> "" then " : " ^ sign else "")
+    | OpStore (k,n) ->
+	let (id,sign) = get_local_variable_ident n pp (Some m) in
+	let s =
+	  (match k with
+	     | `Object -> "astore "
+	     | `Int2Bool | `Long | `Float | `Double as k ->
+		 sprintf "%cstore " (jvm_basic_type k)) in
+	  pp_print_string fmt (s ^ id ^
+			       	 if sign <> "" then " : " ^ sign else "")
+    | OpRet n ->
+	let (id,sign) = get_local_variable_ident n pp (Some m) in
+	  pp_print_string fmt ("ret" ^ id ^
+			       	 if sign <> "" then " : " ^ sign else "")
     | other -> pp_print_string fmt (JDump.opcode other)
 
 
-let pp_code cn ms info fmt code =
+let pp_code cn m ms info fmt code =
   (* TODO : hasinfo is very expensive, find another way to do the same.*)
   (* use pp_get_all_formatter_output_functions, make_formatter and
      pp_set_all_formatter_output_functions to make a special formatter
@@ -349,7 +397,7 @@ let pp_code cn ms info fmt code =
 	    pp_open_box fmt 4;
 	    fprintf fmt "%3d" i;
 	    pp_print_string fmt ": ";
-	    pp_opcode fmt op;
+	    pp_opcode fmt i m op;
 	    pp_close_box fmt ();
 	    pp_print_cut fmt ()
       )
@@ -440,10 +488,10 @@ let pp_exc_tbl fmt exc_tbl =
     (fun _ -> pp_print_cut fmt ())
     exc_tbl
 
-let pp_implementation cn ms info fmt c =
+let pp_implementation cn m ms info fmt c =
   let nb_loc fmt = pp_print_string fmt ("Locals="^ string_of_int c.c_max_locals)
   and nb_stack fmt = pp_print_string  fmt ("Stack=" ^ string_of_int c.c_max_stack)
-  and code fmt = pp_code cn ms info fmt c.c_code
+  and code fmt = pp_code cn m ms info fmt c.c_code
   and exc_tbl fmt = pp_exc_tbl fmt c.c_exc_tbl
   and lnt fmt = pp_line_number_table fmt c.c_line_number_table
   and lvt fmt = pp_local_variable_table fmt c.c_local_variable_table
@@ -456,7 +504,7 @@ let pp_implementation cn ms info fmt c =
 
 let pp_cmethod cn info fmt m =
   if info.f_method cn m.cm_signature then
-  let sign fmt = pp_method_signature fmt m.cm_signature
+  let sign fmt = pp_method_signature ~m:(Some (ConcreteMethod m)) fmt m.cm_signature      
   and anchor fmt = ms2anchor (cn,m.cm_signature) fmt
   and static = static2string m.cm_static
   and final = final2string m.cm_final
@@ -478,7 +526,8 @@ let pp_cmethod cn info fmt m =
 	    anchor access static final synchro strict sign exceptions
 	    (info.p_method cn m.cm_signature) att generic_signature
       | Java code ->
-	  let implem fmt = pp_implementation cn m.cm_signature info fmt (Lazy.force code)
+	  let implem fmt = pp_implementation cn (ConcreteMethod m)
+	    m.cm_signature info fmt (Lazy.force code)
 	  in
 	    fprintf fmt "@[<v 2>%t@[<3>%s@,%s@,%s@,%s@,%s@,%t@ %t@]{@{<method>@,%t%t%t%t@}}@]"
 	      anchor access static final synchro strict sign exceptions
@@ -486,7 +535,7 @@ let pp_cmethod cn info fmt m =
 
 let pp_amethod cn info fmt m =
   if info.f_method cn m.am_signature then
-  let sign fmt = pp_method_signature fmt m.am_signature
+  let sign fmt = pp_method_signature ~m:(Some (AbstractMethod m)) fmt m.am_signature
   and anchor fmt = ms2anchor (cn,m.am_signature) fmt
   and access = access2string m.am_access
   and exceptions fmt = pp_exceptions fmt m.am_exceptions
@@ -815,6 +864,49 @@ let pprint_program'' info fmt prog =
 let pprint_class info fmt = pprint_class'' info (to_text fmt)
 let pprint_program info fmt = pprint_program'' info (to_text fmt)
 
-let pprint_class_to_html_file args = pprint_to_html_file pprint_class'' args
-let pprint_program_to_html_file args = pprint_to_html_file pprint_program'' args
+let intro =
+  "<html>
+  <head>
+    <title>Null-ability Inference Tool's Results</title>
+    <style type=\"text/css\">
+      .code{font-family:courier}
+      .nullness{color:darkgreen}
+      div{display:inline}
+    </style>
+    <script type=\"text/javascript\">
+      function set_display(objlist,disp){
+      for(x=0;x<objlist.length;x++){
+          att = objlist.item(x).attributes;
+          for(j=0;att != null && j<att.length;j++){
+          if(att.item(j).name==\"class\" && att.item(j).value==\"hideable\"){
+              objlist.item(x).style.display=disp;
+          }
+          }
+      }
+      }
 
+      function hbrothers(obj){
+      brothers = obj.parentNode.childNodes;
+      set_display(brothers,'none');
+      obj.replaceChild(document.createTextNode(\"+\"),obj.firstChild);
+      obj.onclick=function(event){sbrothers(obj)};
+      }
+
+      function sbrothers(obj){
+      brothers = obj.parentNode.childNodes;
+      set_display(brothers,'inline');
+      obj.replaceChild(document.createTextNode(\"-\"),obj.firstChild);
+      obj.onclick=function(event){hbrothers(obj)};
+      }
+    </script>
+  </head>
+  <body style=\"font-family:courier\">"
+
+let pprint_class_to_html_file ?(intro=intro) = pprint_to_html_file pprint_class'' intro
+
+let pprint_program_to_html_files ?(intro=intro) info file_root prog =
+  JProgram.ClassMap.iter
+    (fun _ ioc ->
+       let file = file_root ^ "/" ^ (cn2htmlfilename (JProgram.get_name ioc)) in
+	 pprint_class_to_html_file (~intro:intro) info file (JProgram.to_class ioc)
+    ) prog.JProgram.classes

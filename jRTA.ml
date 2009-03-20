@@ -883,10 +883,7 @@ let parse_program ?(other_entrypoints=default_entrypoints) classpath cnms =
     pcache2jprogram p_cache
 
 let parse_program_bench ?(other_entrypoints=default_entrypoints) classpath cnms =
-  let time_start = Sys.time() in
-    ignore(Program.parse_program_bench (cnms::other_entrypoints) classpath);
-    let time_stop = Sys.time() in
-      Printf.printf "program parsed in %fs.\n" (time_stop-.time_start)
+    Program.parse_program_bench (cnms::other_entrypoints) classpath
 
 
 
