@@ -193,6 +193,7 @@ let rec choose_and_remove = function
     branching. *)
 
 let rec merge = function
+  | t1,t2 when t1==t2 -> t1
   | Empty, t  -> t
   | t, Empty  -> t
   | Leaf k, t -> add k t
@@ -245,6 +246,7 @@ let rec subset s1 s2 = match (s1,s2) with
     then obvious. *)
 
 let rec inter s1 s2 = match (s1,s2) with
+  | t1, t2 when t1==t2 -> t1
   | Empty, _ -> Empty
   | _, Empty -> Empty
   | Leaf k1, _ -> if mem k1 s2 then s1 else Empty
@@ -364,7 +366,7 @@ let rec max_elt = function
     order of insertion. As a consequence, two Patricia trees have the
     same elements if and only if they are structurally equal. *)
 
-let equal = (=)
+let equal v1 v2 = 0 == (compare v1 v2)
 
 let compare = compare
 

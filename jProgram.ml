@@ -52,17 +52,8 @@ type class_name_index_table =
       mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
 
-module ClassSet = Set.Make(
-  struct
-    type t = class_name_index
-    let compare = compare
-  end)
-
-module MethodSet = Set.Make(
-  struct
-    type t = method_signature_index
-    let compare = compare
-  end)
+module ClassSet : (Ptset.S with type elt = class_name_index) = Ptset
+module MethodSet : (Ptset.S with type elt = method_signature_index) = Ptset
 
 let get_ms_index tab ms =
   try
@@ -123,9 +114,9 @@ let retrieve_fs tab fsi =
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
 		    fsi_table : field_signature_index_table;
-		    get_fs_index : FieldIndexMap.key -> field_signature_index;
-		    get_ms_index : MethodIndexMap.key -> method_signature_index;
-		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    get_fs_index : field_signature -> field_signature_index;
+		    get_ms_index : method_signature -> method_signature_index;
+		    get_cn_index : class_name -> class_name_index;
 		    retrieve_fs : field_signature_index -> field_signature;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }

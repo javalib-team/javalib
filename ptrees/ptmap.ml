@@ -97,7 +97,7 @@ let modify k f t =
   in
   ins t
 
-let add ?(merge=fun a b -> b) k x t =
+let add ?(merge=fun _a b -> b) k x t =
   let rec ins = function
     | Empty -> Leaf (k,x)
     | Leaf (j,x') as t -> 
@@ -168,6 +168,7 @@ let rec fold f s accu = match s with
 (* we order constructors as Empty < Leaf < Branch *)
 let compare cmp t1 t2 =
   let rec compare_aux t1 t2 = match t1,t2 with
+    | t1,t2 when t1 == t2 -> 0
     | Empty, Empty -> 0
     | Empty, _ -> -1
     | _, Empty -> 1
@@ -198,7 +199,7 @@ let equal eq t1 t2 =
 	    (equal_aux r1 r2))
     | _ -> false
   in
-  t1 == t2 || equal_aux t1 t2
+  equal_aux t1 t2
 
 (* mostly taken from ptset.merge *)
 let merge data_join t1 t2 =
