@@ -41,10 +41,12 @@ let replace_dot s =
 
 (* [mkdir -p] *)
 let rec mkdir d perms =
-  if d <> Filename.current_dir_name
+  if not (Sys.file_exists d)
   then (
     mkdir (Filename.dirname d) perms;
     try
+      (* there may be an error as the recursive call may have already
+         build d if d was equal to "foo/bar/." *)
       Unix.mkdir d perms
     with Unix.Unix_error _ -> ()
   )
