@@ -124,8 +124,8 @@ type opcode =
   | OpGoto of int
   | OpJsr of int
   | OpRet of int
-  | OpTableSwitch of int * int32 * int32 * int array
-  | OpLookupSwitch of int * (int32 * int) list
+  | OpTableSwitch of int * int32 * int32 * int array (* (default,low,high,jump offsets) *)
+  | OpLookupSwitch of int * (int32 * int) list       (* (default, (match,offset) list) *)
 
   (* Heap and static fields *)
   | OpNew of class_name
@@ -175,6 +175,8 @@ type access = [
 (** Generic attributes common to classes, fields and methods. *)
 type attributes = {
   synthetic : bool;
+  (** correspond to the attribute, not to the flag (cf. JVM Spec 1.5
+      §4.2, §4.6, §4.7 and §4.8.7) *)
   deprecated : bool;
   other : (string * string) list
 }
@@ -193,6 +195,8 @@ type class_field = {
   cf_access: access;
   cf_static : bool;
   cf_synthetic : bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
   cf_enum : bool;
   cf_kind : field_kind;
   cf_value : constant_value option; (** Only if the field is static final. *)
@@ -207,7 +211,11 @@ type interface_field = {
   if_signature : field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
-  if_value : constant_value option; (** a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
+  if_value : constant_value option;
+  (** a constant_value is not mandatory, especially as it can be
+      initialized by the class initializer <clinit>. *)
   if_other_flags : int list;
   if_attributes : attributes
 }
@@ -244,6 +252,8 @@ type concrete_method = {
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
@@ -257,6 +267,8 @@ type abstract_method = {
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
@@ -312,6 +324,8 @@ type jclass = {
       ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
   c_inner_classes : inner_class list;
   c_synthetic: bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.2 and §4.8.7) *)
   c_enum: bool;
   c_other_flags : int list;
   c_other_attributes : (string * string) list;

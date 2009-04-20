@@ -92,6 +92,8 @@ type concrete_method = {
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
@@ -106,6 +108,8 @@ and abstract_method = {
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
@@ -124,6 +128,8 @@ and class_file = {
   c_final : bool;
   c_abstract : bool;
   c_synthetic: bool;
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.2 and §4.8.7) *)
   c_enum: bool;
   c_other_flags : int list;
   c_super_class : class_file option;

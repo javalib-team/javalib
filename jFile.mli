@@ -42,8 +42,10 @@ val class_path : string -> class_path
 (** Close a class path. *)
 val close_class_path : class_path -> unit
 
-(** Parse a single class. This function does not check that the name of the parsed
-    class is the same as the argument class name. *)
+(** Parse a single class. It takes as argument the class name in its
+    Java form (eg. java.lang.Object).  This function does not check
+    that the name of the parsed class is the same as the argument
+    class name. *)
 val get_class : class_path -> string -> JClass.interface_or_class
 
 (** Same as {! get_class} with low level class files. *)

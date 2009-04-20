@@ -51,7 +51,10 @@ jControlFlow jPrint jPrintHierarchy jRTA
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc
 
-all: javaLib.cma javaLib.cmxa ocaml #tests tests.opt
+all: ptrees/ptrees.cma ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa ocaml #tests tests.opt
+
+ptrees/ptrees.cma ptrees/ptrees.cmxa:$(wildcard ptrees/*.ml ptrees/*.mli)
+	$(MAKE) -C $(@D) $(@F)
 
 install: javaLib.cma javaLib.cmxa
 	mkdir -p $(INSTALL_DIR)
@@ -60,8 +63,6 @@ install: javaLib.cma javaLib.cmxa
 
 ocaml:
 	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma
-ptrees.cma ptrees.cmxa:
-	$(MAKE) -C ptrees
 
 tests:javaLib.cma tests.ml
 	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma javaLib.cma tests.ml
