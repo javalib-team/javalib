@@ -112,7 +112,15 @@ let h2l_code2attribute consts = function
 		   | None -> [])
 	      @ h2l_other_attributes code.c_attributes;
 	  }
-      in [AttributeCode (Lazy.lazy_from_fun h2l)]
+      in
+      let code = Lazy.lazy_from_fun h2l
+      in
+        (* bugfix : if h2l is not evaluated before the end of the main
+           function (high2low), then consts is updated after c_const
+           has been defined and updates of the constant pool are
+           lost *)
+        ignore (Lazy.force code);
+        [AttributeCode (code)]
 
 let h2l_cfield _consts f =
   {f_name = f.cf_signature.fs_name;
