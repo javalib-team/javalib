@@ -54,7 +54,7 @@ module PP = struct
 	    end
 	| n -> n
 
-  exception NoCode of (class_name * method_signature)
+  exception NoCode of (class_name_index * method_signature_index)
 
   let to_string (pp:t) : string =
     let s = pp.meth.cm_signature in
@@ -77,32 +77,25 @@ module PP = struct
 
   let get_pp cl' meth' pc' : t = {cl=cl';meth=meth';pc=pc';}
 
-  let get_first_pp prog cn ms : t =
-    match get_interface_or_class prog cn with
-      | `Interface {i_initializer = Some m} as c when m.cm_signature = ms ->
+  let get_first_pp prog cni msi : t =
+    match get_interface_or_class prog cni with
+      | `Interface {i_initializer = Some m} as c when m.cm_index = msi ->
 	  {cl=c;meth=m;pc=0;}
-      | `Class c as cl' when
-	  let msi = prog.dictionary.get_ms_index ms in
-	    MethodMap.mem msi c.c_methods ->
+      | `Class c as cl' when MethodMap.mem msi c.c_methods ->
 	  begin
-	    let msi = prog.dictionary.get_ms_index ms in
-	      match MethodMap.find msi c.c_methods with
-		| ConcreteMethod m->
-		    {cl=cl';
-		     meth=m;
-		     pc=0;}
-		| _ -> raise (NoCode (cn,ms))
+	    match MethodMap.find msi c.c_methods with
+	      | ConcreteMethod m->
+		  {cl=cl'; meth=m; pc=0;}
+	      | _ -> raise (NoCode (cni,msi))
 	  end
-      | _ -> raise (NoCode (cn,ms))
+      | _ -> raise (NoCode (cni,msi))
 
   let get_first_pp_wp c msi : t =
     match get_method c msi with
-      | ConcreteMethod ({cm_implementation = Java _} as m) ->
+      | ConcreteMethod m ->
 	  {cl=c;meth=m;pc=0;}
-      | ConcreteMethod ({cm_implementation = Native} as m) ->
-	  raise (NoCode (get_name c,m.cm_signature))
       | AbstractMethod m ->
-	  raise (NoCode (get_name c,m.am_signature))
+	  raise (NoCode (get_index c,m.am_index))
 
   let goto_absolute pp i : t = {pp with pc=i;}
 
@@ -116,7 +109,7 @@ type pp = PP.t
 let get_code (pp:pp): opcodes =
   match pp.meth.cm_implementation with
     | Java c -> (Lazy.force c).c_code
-    | Native -> raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
+    | Native -> raise (NoCode (get_index pp.cl,pp.meth.cm_index))
 
 let get_opcode (pp:pp) :opcode = (get_code pp).(pp.pc)
 
@@ -169,8 +162,9 @@ let normal_successors pp =
 
 
 
-let resolve_class program cn =
-  try get_interface_or_class program cn with Not_found -> raise NoClassDefFoundError
+let resolve_class program cni =
+  try get_interface_or_class program cni
+  with Not_found -> raise NoClassDefFoundError
 
 let rec resolve_field' result fsi c : unit =
   let get_interfaces = function
@@ -281,6 +275,49 @@ let overrides_methods msi c =
 	    with NoSuchMethodError ->
 	      !result
 
+module CSet = Set.Make (
+  struct
+    type t = class_file
+    let compare c1 c2 =
+      Pervasives.compare
+	(c1.c_name)
+	(c2.c_name)
+  end)
+
+(* TODO : need to be re-implemented *)
+(* let overridden_by_methods msi c = *)
+(*   if msi = clinit_index or msi = init_index *)
+(*   then raise (Invalid_argument "overridden_by_methods"); *)
+(*   let result = ref CSet.empty in *)
+(*   let rec overridden_by_methods' msi c = *)
+(*     match get_method c msi with *)
+(*       | AbstractMethod am -> *)
+(* 	  List.iter *)
+(* 	    (fun ioc -> overridden_by_methods' msi ioc) *)
+(* 	    am.am_overridden_in *)
+(*       | ConcreteMethod cm -> *)
+(* 	  begin *)
+(* 	    match c with *)
+(* 	      | `Class c -> result := CSet.add c !result *)
+(* 	      | `Interface _ -> assert false *)
+(* 	  end; *)
+(* 	  List.iter *)
+(* 	    (fun c -> overridden_by_methods' msi (`Class c)) *)
+(* 	    cm.cm_overridden_in *)
+(*   in *)
+(*     begin *)
+(*       match get_method c msi with *)
+(* 	| AbstractMethod am -> *)
+(* 	    List.iter *)
+(* 	      (fun ioc -> overridden_by_methods' msi ioc) *)
+(* 	      am.am_overridden_in *)
+(* 	| ConcreteMethod cm -> *)
+(* 	    List.iter *)
+(* 	      (fun c -> overridden_by_methods' msi (`Class c)) *)
+(* 	      cm.cm_overridden_in *)
+(*     end; *)
+(*     CSet.fold (fun ioc l -> ioc::l) !result [] *)
+
 let implements_method c msi =
   try
     match MethodMap.find msi c.c_methods with
@@ -293,6 +330,104 @@ let implements_methods msi c =
     (fun _ i l -> resolve_all_interface_methods msi i @ l)
     c.c_interfaces
     []
+
+let static_lookup_interface prog cni msi : interface_or_class list =
+  match resolve_class prog cni with
+    | `Class _ -> raise IncompatibleClassChangeError
+    | `Interface i ->
+	let il =
+	  List.map
+	    (fun i -> `Interface i)
+	    (resolve_all_interface_methods msi i)
+	in
+	  try
+	    let c = `Class (resolve_method' msi i.i_super)
+	    in c::il
+	  with _ -> il
+
+let static_lookup_special prog pp cni cms msi =
+  match resolve_class prog cni with
+    | `Interface _ -> raise IncompatibleClassChangeError
+    | `Class c ->
+	let c' = resolve_method msi c in
+	  match pp.cl,c' with
+	    | _, `Class c2 when cms.ms_name = "<init>" -> c2
+	    | `Class c1, `Class c2 when c1 == c2 || not (extends_class c1 c2) -> c2
+	    | _ ->
+		match super_class pp.cl with
+		  | None -> raise AbstractMethodError
+		  | Some c -> lookup_virtual_method msi c
+
+let static_lookup_virtual prog obj msi =
+  match obj with
+    | TArray _ ->
+	begin
+	  match resolve_class prog java_lang_object_index with
+	    | `Class c ->
+		if implements_method c msi
+		then [`Class c]
+		else
+		  let ms =
+                    let ms = prog.dictionary.retrieve_ms msi in
+		      ignore (Format.flush_str_formatter ());
+		      JPrint.pp_method_signature Format.str_formatter ms;
+		      Format.flush_str_formatter ()
+		  in
+		    raise (Failure ("invokevirtual on an array : "^ms))
+	    | `Interface _ -> raise IncompatibleClassChangeError
+	end
+    | TClass cn ->
+        let cni = prog.dictionary.get_cn_index cn
+        in
+	  match resolve_class prog cni with
+	    | `Interface _ -> raise IncompatibleClassChangeError
+	    | `Class c ->
+		try [`Class (resolve_method' msi c)]
+		with NoSuchMethodError ->
+		  List.map
+		    (fun i -> `Interface i)
+		    (resolve_interface_method' msi (`Class c))
+
+let static_lookup program pp =
+  let cmsil = 
+    match get_opcode pp with
+      | OpInvoke (`Virtual obj, ms) ->
+          let msi = program.dictionary.get_ms_index ms
+          in
+            List.map
+              (fun c -> (c,msi))
+              (static_lookup_virtual program obj msi)
+      | OpInvoke (`Static cn, ms) ->
+          let msi = program.dictionary.get_ms_index ms
+          and cni = program.dictionary.get_cn_index cn
+          in
+          let c =
+	    match resolve_class program cni with
+	      | `Class c -> resolve_method msi c
+	      | `Interface _ -> raise IncompatibleClassChangeError
+	  in
+	  let c =
+	    match c with
+	      | `Class c' when implements_method c' msi -> c
+	      | _ -> raise AbstractMethodError
+	  in [c,msi]
+      | OpInvoke (`Special cn, ms) ->
+          let msi = program.dictionary.get_ms_index ms
+          and cni = program.dictionary.get_cn_index cn
+          in
+            [`Class (static_lookup_special program pp cni ms msi),msi]
+      | OpInvoke (`Interface cn, ms) ->
+          let msi = program.dictionary.get_ms_index ms
+          and cni = program.dictionary.get_cn_index cn
+          in
+            List.map
+              (fun c -> (c,msi))
+              (static_lookup_interface program cni msi)
+      | _ -> []
+  in
+    List.map
+      (fun (c,msi) -> PP.get_first_pp_wp c msi)
+      cmsil
 
 let handlers program pp =
   let ioc2c = function
@@ -314,58 +449,68 @@ let handlers program pp =
 		  *)
 		  try
 		    let exn_class =
-		      ioc2c (JProgram.get_interface_or_class program exn_name)
-		    and javalangexception =
-		      ioc2c (JProgram.get_interface_or_class program ["java";"lang";"Exception"])
+                      let cni = program.dictionary.get_cn_index exn_name
+                      in
+		        ioc2c (JProgram.get_interface_or_class program cni)
+		    and javalangexception = 
+                      let cni = program.dictionary.get_cn_index ["java";"lang";"Exception"]
+                      in
+		        ioc2c (JProgram.get_interface_or_class program cni)
 		    in
 		      if not (JProgram.extends_class exn_class javalangexception)
 		      then false
 		      else
 			let javalangruntimeexception =
-			  ioc2c (JProgram.get_interface_or_class program ["java";"lang";"RuntimeException"])
+                          let cni = program.dictionary.get_cn_index ["java";"lang";"RuntimeException"]
+			  in
+                            ioc2c (JProgram.get_interface_or_class program cni)
 			in
 			  if JProgram.extends_class exn_class javalangruntimeexception
 			    || JProgram.extends_class javalangruntimeexception exn_class
 			  then false
 			  else
-			    let op = get_opcode pp in
-			      try
-				let (cni,msi) = retrieve_invoke_index
-				  program.dictionary op in
-				let cml = ClassMethSet.elements
-				  (program.static_lookup cni msi (get_pc pp)) in
-				let cl = List.map
-				  (fun (cni,_) ->
-				     ClassMap.find cni program.classes
-				  ) cml
-				and throws_instance_of m exn =
-				  (* return true if the method m is
-				     declared to throw exceptions of a
-				     subtype of exn *)
-				  List.exists
-				    (fun e ->
-				       let e = JProgram.get_interface_or_class program e
-				       in JProgram.extends_class (ioc2c e) exn)
-				    (match m with
-				       | AbstractMethod {am_exceptions=exn_list}
-				       | ConcreteMethod {cm_exceptions=exn_list} -> exn_list)
-				in
-				  not (List.exists
-					 (fun c ->
-					    let m = JProgram.get_method c msi
-					    in throws_instance_of m exn_class)
-					 cl)
-			      with _ -> true
-		  with Not_found -> false
-		    (* false is safe, but it would be stange to end up
-		       here as it would mean that some classes have not
-		       been loaded.*)
+                            match get_opcode pp with
+                              | OpInvoke _ ->
+                                  let cl =
+                                    (* static_lookup program pp  (* safe, but using RTA is more precise *) *)
+                                    let cni = get_index (get_class pp)
+                                    and msi = (get_meth pp).cm_index
+                                    and pc = get_pc pp
+                                    in
+                                      ClassMethSet.elements
+                                        (program.static_lookup cni msi pc)
+				  and throws_instance_of m exn =
+				    (* return true if the method m is
+				       declared to throw exceptions of
+				       a subtype of exn *)
+				    List.exists
+				      (fun e ->
+                                         let ei = program.dictionary.get_cn_index e in
+				         let e = JProgram.get_interface_or_class program ei
+				         in JProgram.extends_class (ioc2c e) exn)
+				      (match m with
+				         | AbstractMethod {am_exceptions=exn_list}
+				         | ConcreteMethod {cm_exceptions=exn_list} -> exn_list)
+				  in
+				    not (List.exists
+					   (fun (cni,msi) ->
+					      let m =
+                                                JProgram.get_method
+                                                  (JProgram.get_interface_or_class program cni)
+                                                  msi
+					      in throws_instance_of m exn_class)
+					   cl)
+		              | _ -> true
+                  with Not_found -> false
+                    (* false is safe, but it would be stange to end up
+                       here as it would mean that some classes have not
+                       been loaded.*)
 	  in
 	    List.filter
 	      (fun e -> e.e_start <= pp.pc && pp.pc < e.e_end && not (is_prunable e pp))
 	      (Lazy.force code).c_exc_tbl
       | Native ->
-	  raise (NoCode (get_name pp.cl,pp.meth.cm_signature))
+	  raise (NoCode (get_index pp.cl,pp.meth.cm_index))
 	    
 let exceptional_successors program pp =
   List.map (fun e -> goto_absolute pp e.e_handler) (handlers program pp)

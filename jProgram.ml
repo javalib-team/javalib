@@ -27,28 +27,28 @@ module ClassMap = Ptmap
 module MethodMap = Ptmap
 module FieldMap = Ptmap
 
-module ClassIndexMap = Map.Make(
+module ClassNameMap = Map.Make(
   struct
     type t = class_name
     let compare = compare
   end)
 
-module MethodIndexMap = JClass.MethodMap
-module FieldIndexMap = JClass.FieldMap
+module MethodSignatureMap = JClass.MethodMap
+module FieldSignatureMap = JClass.FieldMap
 
 type field_signature_index = int
 type field_signature_index_table =
-    { mutable fsi_map : field_signature_index FieldIndexMap.t;
+    { mutable fsi_map : field_signature_index FieldSignatureMap.t;
       mutable fs_map : field_signature FieldMap.t;
       mutable fsi_next : field_signature_index }
 type method_signature_index = int
 type method_signature_index_table =
-    { mutable msi_map : method_signature_index MethodIndexMap.t;
+    { mutable msi_map : method_signature_index MethodSignatureMap.t;
       mutable ms_map : method_signature MethodMap.t;
       mutable msi_next : method_signature_index }
 type class_name_index = int
 type class_name_index_table =
-    { mutable cni_map : class_name_index ClassIndexMap.t;
+    { mutable cni_map : class_name_index ClassNameMap.t;
       mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
 
@@ -57,12 +57,12 @@ module MethodSet : (Ptset.S with type elt = method_signature_index) = Ptset
 
 let get_ms_index tab ms =
   try
-    MethodIndexMap.find ms tab.msi_map
+    MethodSignatureMap.find ms tab.msi_map
   with Not_found ->
     begin
       let current = tab.msi_next
       in
-	tab.msi_map <- MethodIndexMap.add ms current tab.msi_map;
+	tab.msi_map <- MethodSignatureMap.add ms current tab.msi_map;
 	tab.ms_map <- MethodMap.add current ms tab.ms_map;
 	tab.msi_next <- succ current;
 	current
@@ -70,12 +70,12 @@ let get_ms_index tab ms =
 
 let get_cn_index tab cn =
   try
-    ClassIndexMap.find cn tab.cni_map
+    ClassNameMap.find cn tab.cni_map
   with Not_found ->
     begin
       let current = tab.cni_next
       in
-	tab.cni_map <- ClassIndexMap.add cn current tab.cni_map;
+	tab.cni_map <- ClassNameMap.add cn current tab.cni_map;
 	tab.cn_map <- ClassMap.add current cn tab.cn_map;
 	tab.cni_next <- succ current;
 	current
@@ -83,12 +83,12 @@ let get_cn_index tab cn =
 
 let get_fs_index tab fs =
   try
-    FieldIndexMap.find fs tab.fsi_map
+    FieldSignatureMap.find fs tab.fsi_map
   with Not_found ->
     begin
       let current = tab.fsi_next
       in
-	tab.fsi_map <- FieldIndexMap.add fs current tab.fsi_map;
+	tab.fsi_map <- FieldSignatureMap.add fs current tab.fsi_map;
 	tab.fs_map <- FieldMap.add current fs tab.fs_map;
 	tab.fsi_next <- succ current;
 	current
@@ -111,6 +111,7 @@ let retrieve_fs tab fsi =
     FieldMap.find fsi tab.fs_map
   with _ -> raise RetrieveError
 
+(* TODO : add cache memories in lookup functions *)
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
 		    fsi_table : field_signature_index_table;
@@ -122,26 +123,22 @@ type dictionary = { msi_table : method_signature_index_table;
 		    retrieve_cn : class_name_index -> class_name }
 
 let clinit_index = 0
-let init_index = 1
 
 let java_lang_object_index = 0
 
 let make_dictionary () =
   let msi_table =
     { msi_map =
-	MethodIndexMap.add init_signature init_index
-	  (MethodIndexMap.add clinit_signature clinit_index MethodIndexMap.empty);
-      ms_map =
-	MethodMap.add init_index init_signature
-	  (MethodMap.add clinit_index clinit_signature MethodMap.empty);
-      msi_next = 2 }
+	MethodSignatureMap.add clinit_signature clinit_index MethodSignatureMap.empty;
+      ms_map = MethodMap.add clinit_index clinit_signature MethodMap.empty;
+      msi_next = 1 }
   and cni_table =
     { cni_map =
-	ClassIndexMap.add java_lang_object java_lang_object_index ClassIndexMap.empty;
+	ClassNameMap.add java_lang_object java_lang_object_index ClassNameMap.empty;
       cn_map = ClassMap.add java_lang_object_index java_lang_object ClassMap.empty;
       cni_next = 1 }
   and fsi_table =
-    { fsi_map = FieldIndexMap.empty;
+    { fsi_map = FieldSignatureMap.empty;
       fs_map = FieldMap.empty;
       fsi_next = 0 } in
     { msi_table = msi_table;
@@ -314,6 +311,11 @@ type any_field =
     | InterfaceField of interface_field
     | ClassField of class_field
 
+let get_field_signature = function
+  | InterfaceField {if_signature = fs}
+  | ClassField {cf_signature = fs}
+    -> fs
+
 exception IncompatibleClassChangeError
 exception NoSuchMethodError
 exception NoSuchFieldError
@@ -336,9 +338,8 @@ let defines_field fsi = function
   | `Class {c_fields=fm;} -> FieldMap.mem fsi fm
 
 
-let get_interface_or_class program cn =
-  let cni = program.dictionary.get_cn_index cn in
-    ClassMap.find cni program.classes
+let get_interface_or_class program cni =
+  ClassMap.find cni program.classes
 
 let super_class c : class_file option = super c
 
@@ -381,11 +382,13 @@ let get_field c fsi = match c with
   | `Interface i -> InterfaceField (FieldMap.find fsi i.i_fields)
   | `Class c -> ClassField (FieldMap.find fsi c.c_fields)
 
-let get_fields c =
-  let to_list fs _f l = fs::l in
-    match c with
-      | `Interface i -> FieldMap.fold to_list i.i_fields []
-      | `Class c -> FieldMap.fold to_list c.c_fields []
+let get_fields = function
+  | `Interface i ->
+      FieldMap.fold (fun _fs f l -> (InterfaceField f)::l) i.i_fields []
+  | `Class c ->
+      FieldMap.fold (fun _fs f l -> (ClassField f)::l) c.c_fields []
+
+
 
 let ccm2pcm p_dic m = {
   cm_has_been_parsed = false;
@@ -716,24 +719,20 @@ type callgraph = ((JBasics.class_name * JClass.method_signature * int)
 		  * (JBasics.class_name * JClass.method_signature)) list
 
 let get_callgraph p =
-  let classes = p.classes in
   let calls = ref [] in
-    ClassMap.iter
-      (fun _ ioc ->
+    iter
+      (fun ioc ->
 	 match ioc with
-	   | `Interface i ->
-	       (match i.i_initializer with
-		  | None -> ()
-		  | Some m -> calls := (get_method_calls p i.i_index
-						   (ConcreteMethod m)) @ !calls)
+	   | `Interface {i_index = cni; i_initializer = Some m} ->
+               calls :=
+                 (get_method_calls p cni (ConcreteMethod m)) @ !calls
+           | `Interface _ -> ()
 	   | `Class c ->
-	       let l = ref [] in
-		 MethodMap.iter
-		   (fun _ m ->
-		      l :=
-			!l @ (get_method_calls p c.c_index m)) c.c_methods;
-		 calls := !l @ !calls
-      ) classes;
+	       MethodMap.iter
+		 (fun _ m ->
+		    calls := (get_method_calls p c.c_index m) @ !calls)
+                 c.c_methods
+      ) p;
     !calls
 
 let store_callgraph callgraph file =

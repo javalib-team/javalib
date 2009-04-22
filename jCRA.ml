@@ -440,7 +440,7 @@ let static_interface_lookup interface_lookup_map virtual_lookup_map classes_map
 	    ClassMethMap.add (cni,msi) cmset !interface_lookup_map;
 	  cmset
 
-let static_special_lookup special_lookup_map classes_map cni ccni cmsi =
+let static_special_lookup special_lookup_map classes_map cni ccni cms cmsi =
   try
     ClassMethMap.find (ccni,cmsi) (ClassMap.find cni !special_lookup_map)
   with
@@ -467,7 +467,7 @@ let static_special_lookup special_lookup_map classes_map cni ccni cmsi =
 	    | `Interface _ ->
 		update_special_lookup_map cni rcni ccni cmsi
 	    | `Class cc ->
-		if ( cmsi = init_index
+		if (cms.ms_name = "<init>"
 		    || not( (fun c1 c2 ->
 			       if ( c1.c_index = c2.c_index ) then false
 			       else extends_class c1 c2) cc rc )
@@ -507,9 +507,9 @@ let static_lookup dic classes_map interfaces cni msi pp =
 			 | OpInvoke (`Static _,_) ->
 			     static_static_lookup static_lookup_map
 			       classes_map ccni cmsi
-			 | OpInvoke (`Special _,_) ->
+			 | OpInvoke (`Special _,cms) ->
 			     static_special_lookup special_lookup_map
-			       classes_map cni ccni cmsi
+			       classes_map cni ccni cms cmsi
 			 | _ ->
 			     failwith "Invalid opcode found at specified program point"
 		   with

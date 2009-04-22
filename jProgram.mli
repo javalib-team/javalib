@@ -32,9 +32,9 @@ open JClass
     sub-interfaces).
 *)
 
-module ClassIndexMap : Map.S with type key = class_name
-module MethodIndexMap : Map.S with type key = method_signature
-module FieldIndexMap : Map.S with type key = field_signature
+module ClassNameMap : Map.S with type key = class_name
+module MethodSignatureMap : Map.S with type key = method_signature
+module FieldSignatureMap : Map.S with type key = field_signature
 
 module ClassMap : Ptmap.S
 module MethodMap : Ptmap.S
@@ -42,32 +42,31 @@ module FieldMap : Ptmap.S
 
 type field_signature_index = int
 type field_signature_index_table =
-    { mutable fsi_map : field_signature_index FieldIndexMap.t;
+    { mutable fsi_map : field_signature_index FieldSignatureMap.t;
       mutable fs_map : field_signature FieldMap.t;
       mutable fsi_next : field_signature_index }
 type method_signature_index = int
 type method_signature_index_table =
-    { mutable msi_map : method_signature_index MethodIndexMap.t;
+    { mutable msi_map : method_signature_index MethodSignatureMap.t;
       mutable ms_map : method_signature MethodMap.t;
       mutable msi_next : method_signature_index }
 type class_name_index = int
 type class_name_index_table =
-    { mutable cni_map : class_name_index ClassIndexMap.t;
+    { mutable cni_map : class_name_index ClassNameMap.t;
       mutable cn_map : class_name ClassMap.t;
       mutable cni_next : class_name_index }
 
 type dictionary = { msi_table : method_signature_index_table;
 		    cni_table : class_name_index_table;
 		    fsi_table : field_signature_index_table;
-		    get_fs_index : FieldIndexMap.key -> field_signature_index;
-		    get_ms_index : MethodIndexMap.key -> method_signature_index;
-		    get_cn_index : ClassIndexMap.key -> class_name_index;
+		    get_fs_index : FieldSignatureMap.key -> field_signature_index;
+		    get_ms_index : MethodSignatureMap.key -> method_signature_index;
+		    get_cn_index : ClassNameMap.key -> class_name_index;
 		    retrieve_fs : field_signature_index -> field_signature;
 		    retrieve_ms : method_signature_index -> method_signature;
 		    retrieve_cn : class_name_index -> class_name }
 
 val clinit_index : int
-val init_index : int
 
 val java_lang_object_index : int
 
@@ -212,6 +211,9 @@ val to_class : interface_or_class -> JClass.interface_or_class
     an id, and a dictionary containing functions to retrieve classes and
     methods ids from their names. *)
 type program = { classes : interface_or_class ClassMap.t;
+                 (** [static_lookup cni msi pc] returns the set of
+                     methods that may be called from the program point
+                     identified by [(cni,msi,pc)]. *)
 		 static_lookup : class_name_index -> method_signature_index ->
 							  int -> ClassMethSet.t;
 		 dictionary : dictionary }
@@ -237,6 +239,7 @@ val fold : ('b -> interface_or_class -> 'b) -> 'b -> program -> 'b
 (** {2 Access functions to fields and methods}*)
 
 type any_field = | InterfaceField of interface_field | ClassField of class_field
+val get_field_signature : any_field -> JClass.field_signature
 
 (** @see <http://java.sun.com/docs/books/jvms/second_edition/html/VMSpecTOC.doc.html> The JVM Specification *)
 exception IncompatibleClassChangeError
@@ -261,7 +264,7 @@ exception IllegalAccessError
     program [p], if any.
     @raise Not_found if [p] does not contain a class named [cn].
 *)
-val get_interface_or_class : program -> class_name -> interface_or_class
+val get_interface_or_class : program -> class_name_index -> interface_or_class
 (* val get_class : t -> class_name -> class_file *)
 (* val get_interface : t -> class_name -> interface_file *)
 
@@ -280,7 +283,7 @@ val get_reachable_methods : interface_or_class -> jmethod list
     @raise Not_found if [c] does not contain a field with signature [fs].
 *)
 val get_field : interface_or_class -> field_signature_index -> any_field
-val get_fields : interface_or_class -> field_signature_index list
+val get_fields : interface_or_class -> any_field list
 val defines_field : field_signature_index -> interface_or_class -> bool
 
 (** [get_local_variable_info i pp m] returns the name and signature of
@@ -335,6 +338,13 @@ val get_loaded_methods : program -> MethodsignatureSet.t
 val get_instantiated_classes : program -> ClassnameSet.t
 
 (* Building the callgraph *)
+
+(** [retrieve_invoke_index dic opcode] returns the class name index
+    and method signature index used in [opcode] if [opcode] is an
+    [Invoke] instruction.
+
+    @raise (Failure "Bad opcode") if [opcode] is different from [OpInvoke _]
+*)
 val retrieve_invoke_index : dictionary -> JClass.opcode ->
   (class_name_index * method_signature_index)
     

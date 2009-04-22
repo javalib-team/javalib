@@ -258,7 +258,7 @@ let pp_field_signature fmt fs =
   pp_print_space fmt ();
   pp_print_string fmt fs.fs_name
 
-let pp_method_signature ?(m=None) fmt ms =
+let pp_method_signature ?(print_var_name=true) ?(m=None) fmt ms =
   begin
     match ms.ms_return_type with
       | None -> pp_print_string fmt "void"; pp_print_space fmt ()
@@ -270,20 +270,28 @@ let pp_method_signature ?(m=None) fmt ms =
     match ms.ms_parameters with
       | [] -> ()
       | p::[] -> pp_value_type fmt p;
-	  let s = (fst (get_local_variable_ident 0 0 m)) in
-	    if s <> "" then
-	      (pp_print_space fmt ();
-	       fprintf fmt "%s" s)
+          if print_var_name
+          then
+	    let s = (fst (get_local_variable_ident 0 0 m)) in
+	      if s <> "" then
+	        (pp_print_space fmt ();
+	         fprintf fmt "%s" s)
       | p::pl ->
 	  pp_value_type fmt p;
-	  let s = (fst (get_local_variable_ident 0 0 m)) in
-	    if s <> "" then
-	      (pp_print_space fmt ();
-	       fprintf fmt "%s" s);
-	    ExtLib.List.iteri 
-	      (fun i p -> fprintf fmt ",@ ";
-		 pp_value_type fmt p;
-		 let s = (fst (get_local_variable_ident (i+1) 0 m)) in
+          if print_var_name
+          then
+            begin
+	      let s = (fst (get_local_variable_ident 0 0 m)) in
+	        if s <> "" then
+	          (pp_print_space fmt ();
+	           fprintf fmt "%s" s)
+            end;
+	  ExtLib.List.iteri 
+	    (fun i p -> fprintf fmt ",@ ";
+	       pp_value_type fmt p;
+	       if print_var_name
+               then
+                 let s = (fst (get_local_variable_ident (i+1) 0 m)) in
 		   if s <> "" then
 		     (pp_print_space fmt ();
 		      fprintf fmt "%s" s)) pl
@@ -501,9 +509,9 @@ let pp_implementation cn m ms info fmt c =
       "@[<v>@[%t,@ %t@]@,%t{@[<v>%t@]}%t%t%t%t@]@,"
       nb_stack nb_loc att code exc_tbl lvt lnt sm
 
-let pp_cmethod cn info fmt m =
+let pp_cmethod ?(print_var_name=true) cn info fmt m =
   if info.f_method cn m.cm_signature then
-  let sign fmt = pp_method_signature ~m:(Some (ConcreteMethod m)) fmt m.cm_signature      
+  let sign fmt = pp_method_signature ~print_var_name ~m:(Some (ConcreteMethod m)) fmt m.cm_signature      
   and anchor fmt = ms2anchor (cn,m.cm_signature) fmt
   and static = static2string m.cm_static
   and final = final2string m.cm_final
@@ -532,9 +540,9 @@ let pp_cmethod cn info fmt m =
 	      anchor access static final synchro strict sign exceptions
 	      (info.p_method cn m.cm_signature) att generic_signature implem
 
-let pp_amethod cn info fmt m =
+let pp_amethod ?(print_var_name=true) cn info fmt m =
   if info.f_method cn m.am_signature then
-  let sign fmt = pp_method_signature ~m:(Some (AbstractMethod m)) fmt m.am_signature
+  let sign fmt = pp_method_signature ~print_var_name ~m:(Some (AbstractMethod m)) fmt m.am_signature
   and anchor fmt = ms2anchor (cn,m.am_signature) fmt
   and access = access2string m.am_access
   and exceptions fmt = pp_exceptions fmt m.am_exceptions
@@ -549,11 +557,11 @@ let pp_amethod cn info fmt m =
     fprintf fmt "@[<v 2>%t@[<3>%s@,abstract@ %t@ %t@]@,%t%t%t@]"
       anchor access sign exceptions (info.p_method cn m.am_signature) att generic_signature
 
-let pp_methods cn info fmt mm =
+let pp_methods ?(print_var_name=true) cn info fmt mm =
   pp_concat
     (function
-      | AbstractMethod m -> pp_amethod cn info fmt m
-      | ConcreteMethod m -> pp_cmethod cn info fmt m)
+      | AbstractMethod m -> pp_amethod ~print_var_name cn info fmt m
+      | ConcreteMethod m -> pp_cmethod ~print_var_name cn info fmt m)
     (fun _ -> fprintf fmt "@,@[<v>")
     (fun _ -> pp_close_box fmt ())
     (fun _ -> fprintf fmt "@,@,")
@@ -623,7 +631,7 @@ let pp_ifields cn info fmt fm =
 	  [])
 
 
-let pprint_class' info fmt (c:jclass) =
+let pprint_class' ?(print_var_name=true) info fmt (c:jclass) =
   if info.f_class c.c_name then
     (* the constant pool is not printed *)
     let cn = JDumpBasics.class_name c.c_name
@@ -649,7 +657,7 @@ let pprint_class' info fmt (c:jclass) =
 	    pp_print_string fmt ("AttributeEnclosingMethod (" ^ JDumpBasics.class_name cn);
 	    (match mso with
 	       | None -> pp_print_string fmt "_"
-	       | Some ms -> pp_method_signature fmt ms);
+	       | Some ms -> pp_method_signature ~print_var_name fmt ms);
 	    pp_print_string fmt ")";
 	    pp_print_cut fmt ()
     and source_debug_extension fmt =
@@ -664,7 +672,7 @@ let pprint_class' info fmt (c:jclass) =
       pp_other_attr fmt ignore (fun _ -> pp_print_cut fmt ())
 	(fun _ -> pp_print_cut fmt ()) c.c_other_attributes
     and fields fmt = pp_cfields c.c_name info fmt c.c_fields
-    and meths fmt = pp_methods c.c_name info fmt c.c_methods
+    and meths fmt = pp_methods ~print_var_name c.c_name info fmt c.c_methods
     in
       fprintf fmt "@[<v>%t@[%s%s%sclass %s %t%t@]{@{<class>@;<0 2>@[<v>"
 	anchor abstract access final cn super interfaces;
@@ -673,7 +681,7 @@ let pprint_class' info fmt (c:jclass) =
       fprintf fmt "@[@ @ @[<v>%t%t@]@]" fields meths;
       fprintf fmt "@]@}@,}@,@]@?"
 
-let pprint_interface' info fmt (c:jinterface) =
+let pprint_interface' ?(print_var_name=true) info fmt (c:jinterface) =
   if info.f_class c.i_name then
     let cn = JDumpBasics.class_name c.i_name in
     let anchor fmt = cn2anchor c.i_name fmt
@@ -700,10 +708,10 @@ let pprint_interface' info fmt (c:jinterface) =
       | None -> ()
       | Some m ->
 	  if info.f_method c.i_name m.cm_signature
-	  then fprintf fmt "@[<v>%a@,@,@]" (pp_cmethod c.i_name info) m
+	  then fprintf fmt "@[<v>%a@,@,@]" (pp_cmethod ~print_var_name c.i_name info) m
     and meths fmt =
       pp_concat
-	(pp_amethod c.i_name info fmt)
+	(pp_amethod ~print_var_name c.i_name info fmt)
 	(fun _ -> fprintf fmt "@[<v>")
 	(fun _ -> pp_close_box fmt ())
 	(fun _ -> fprintf fmt "@,@,")
@@ -842,17 +850,17 @@ let pprint_to_html_file pprint intro info file c =
     output_string oc "\n</body></html>\n";
     close_out oc
 
-let pprint_class'' (info:info) fmt = function
-  | `Class c -> pprint_class' info fmt c
-  | `Interface c -> pprint_interface' info fmt c
+let pprint_class'' ?(print_var_name=true) (info:info) fmt = function
+  | `Class c -> pprint_class' ~print_var_name info fmt c
+  | `Interface c -> pprint_interface' ~print_var_name info fmt c
 
 
-let pprint_program'' info fmt prog =
+let pprint_program'' ?(print_var_name=true) info fmt prog =
   info.p_global fmt;
   pp_concat
     (fun c -> match (JProgram.to_class c) with
-      | `Class c -> pprint_class' info fmt c
-      | `Interface c -> pprint_interface' info fmt c)
+      | `Class c -> pprint_class' ~print_var_name info fmt c
+      | `Interface c -> pprint_interface' ~print_var_name info fmt c)
     (fun _ -> fprintf fmt "@[<v>")
     (fun _ -> pp_close_box fmt ())
     (fun _ -> pp_print_cut fmt ())
@@ -860,8 +868,8 @@ let pprint_program'' info fmt prog =
 	(fun l c -> if info.f_class (JProgram.get_name c) then c::l else l)
 	[] prog)
 
-let pprint_class info fmt = pprint_class'' info (to_text fmt)
-let pprint_program info fmt = pprint_program'' info (to_text fmt)
+let pprint_class ?(print_var_name=true) info fmt = pprint_class'' ~print_var_name info (to_text fmt)
+let pprint_program ?(print_var_name=true) info fmt = pprint_program'' ~print_var_name info (to_text fmt)
 
 let intro =
   "<html>
@@ -901,11 +909,11 @@ let intro =
   </head>
   <body style=\"font-family:courier\">"
 
-let pprint_class_to_html_file ?(intro=intro) = pprint_to_html_file pprint_class'' intro
+let pprint_class_to_html_file ?(print_var_name=true) ?(intro=intro) = pprint_to_html_file (pprint_class'' ~print_var_name)intro
 
-let pprint_program_to_html_files ?(intro=intro) info file_root prog =
-  JProgram.ClassMap.iter
-    (fun _ ioc ->
+let pprint_program_to_html_files ?(print_var_name=true) ?(intro=intro) info file_root prog =
+  JProgram.iter
+    (fun ioc ->
        let file = file_root ^ "/" ^ (cn2htmlfilename (JProgram.get_name ioc)) in
-	 pprint_class_to_html_file (~intro:intro) info file (JProgram.to_class ioc)
-    ) prog.JProgram.classes
+	 pprint_class_to_html_file ~print_var_name ~intro info file (JProgram.to_class ioc)
+    ) prog

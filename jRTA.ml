@@ -651,10 +651,10 @@ struct
 	   (ClassMethMap.add (cni,msi)
 	      (ClassMethSet.union cmset s) cmmap) p.static_special_lookup)
 
-  let rec invoke_special_lookup p current_class_index cni msi =
+  let rec invoke_special_lookup p current_class_index cni ms msi =
     let current_class_info = get_class_info p current_class_index in
     let rcni = resolve_method p cni msi in
-      if ( msi = init_index
+      if ( ms.ms_name = "<init>"
 	  || not(List.mem rcni current_class_info.super_classes) ) then
 	(let s = ClassMethSet.add (rcni,msi) ClassMethSet.empty in
 	   update_special_lookup_set p current_class_index cni msi s;
@@ -705,9 +705,9 @@ struct
       | OpInvoke(`Interface _,_) ->
 	  let (cni,msi) = retrieve_invoke_index p.dic op in
 	    invoke_interface_lookup p cni msi
-      | OpInvoke(`Special _,_) ->
+      | OpInvoke(`Special _,ms) ->
 	  let (cni,msi) = retrieve_invoke_index p.dic op in
-      	    invoke_special_lookup p current_class_index cni msi
+      	    invoke_special_lookup p current_class_index cni ms msi
       | OpInvoke(`Static _,_) ->
 	  let (cni,msi) = retrieve_invoke_index p.dic op in
       	  let rcni = invoke_static_lookup p cni msi in
@@ -827,7 +827,7 @@ let static_lookup dic virtual_lookup_map special_lookup_map static_lookup_map
 			 | OpInvoke (`Static _,_) ->
 			     static_static_lookup static_lookup_map ccni cmsi
 			 | OpInvoke (`Special _,_) ->
-			     static_special_lookup special_lookup_map cni ccni cmsi
+                             static_special_lookup special_lookup_map cni ccni cmsi
 			 | _ ->
 			     failwith "Invalid opcode found at specified program point"
 		   with

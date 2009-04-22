@@ -34,7 +34,7 @@ let get_hierachy prog info : info =
       ClassMap.iter
 	(fun cni _ ->
 	   try
-	     let cn = get_name (ClassMap.find cni prog.classes) in
+	     let cn = get_name (get_interface_or_class prog cni) in
 	       if !first && info.f_class cn then
 		 (ppcn fmt cn; first := false)
 	       else if info.f_class cn then
@@ -47,63 +47,67 @@ let get_hierachy prog info : info =
 	cm
   in
     {info with
-      p_class = (fun cn fmt ->
-	let c = get_interface_or_class prog cn in
-	  match c with
-	    | `Class c ->
-		fprintf fmt "@[%t@[<hv 2>Direct subclasses: {@{<hierarchy>@,%a@}}@]@]@,"
-		  (info.p_class cn) (ppclassmap cn2link) c.c_children
-	    | `Interface c ->
-		fprintf fmt "@[%t@[<hv 2>Direct implementations:@ {@{<hierarchy>%a@}}@],"
-		  (info.p_class cn) (ppclassmap cn2link) c.i_children_class ;
-		fprintf fmt "@ @[<hv 2>Direct subinterfaces: {@{<hierarchy>@,%a@}}@]@]@,"
-		  (ppclassmap cn2link) c.i_children_interface);
+       p_class =
+        (fun cn fmt ->
+           let cni = prog.dictionary.get_cn_index cn in
+	   let c = get_interface_or_class prog cni in
+	     match c with
+	       | `Class c ->
+		   fprintf fmt "@[%t@[<hv 2>Direct subclasses: {@{<hierarchy>@,%a@}}@]@]@,"
+		     (info.p_class cn) (ppclassmap cn2link) c.c_children
+	       | `Interface c ->
+		   fprintf fmt "@[%t@[<hv 2>Direct implementations:@ {@{<hierarchy>%a@}}@],"
+		     (info.p_class cn) (ppclassmap cn2link) c.i_children_class ;
+		   fprintf fmt "@ @[<hv 2>Direct subinterfaces: {@{<hierarchy>@,%a@}}@]@]@,"
+		     (ppclassmap cn2link) c.i_children_interface);
 
-      p_method = (fun cn ms fmt ->
-        let msi = prog.dictionary.get_ms_index ms in
-	let ioc = get_interface_or_class prog cn in
-	let m = get_method ioc msi in
-	let get_overridden_in = fun _ -> [] (* TODO ! *)
-	and ppcnl fmt cnl =
-	  pp_concat
-	    (fun cn -> ms2link (cn,ms) fmt (class_name cn))
-	    (fun _ -> pp_open_tag fmt "hierarchy"; pp_print_cut fmt ())
-	    (fun _ -> pp_close_tag fmt ())
-	    (fun _ -> pp_print_string fmt ";"; pp_print_space fmt ())
-	    cnl
-	in
-	let pp_overrides fmt =
-	  if msi = clinit_index or msi = init_index
-	  then ()
-	  else
-	    match ioc with
-	      | `Interface _ -> ()
-	      | `Class c ->
-		  try
-		    match c.c_super_class with
-		      | None -> ()
-		      | Some c ->
-			  let c' = JControlFlow.resolve_method' msi c in
-			    fprintf fmt "@[<hv 2>Overrides the method in: {@{<hierarchy>@,%a@}}@]@,"
-			      (fun fmt cn -> ms2link (cn,ms) fmt (class_name cn)) (c'.c_name)
-		  with NoSuchMethodError -> ()
-	in
-	let pp_implements fmt =
-	  let s =
-	    match ioc with
-	      | `Class _ -> "Implements"
-	      | `Interface _ -> "Overrides"
-	  in
-	    fprintf fmt "@[<hv 2>%s the methods in: {%a}@]@,"
-	      s ppcnl (List.map (fun i -> i.i_name) (JControlFlow.resolve_interface_method' msi ioc))
-	in
-	let pp_overridden_in fmt =
-	  fprintf fmt "@[<hv 2>Overridden in: {@{<hierarchy>@,%a@}}@]@,"
-	    ppcnl (get_overridden_in m)
-	in
-	  info.p_method cn ms fmt;
-	  pp_implements fmt;
-	  pp_overrides fmt;
-	  pp_overridden_in fmt
-      )
+       p_method =
+        (fun cn ms fmt ->
+           let msi = prog.dictionary.get_ms_index ms
+           and cni = prog.dictionary.get_cn_index cn in
+	   let ioc = get_interface_or_class prog cni in
+	   let m = get_method ioc msi in
+	   let get_overridden_in = fun _ -> [] (* TODO ! *)
+	   and ppcnl fmt cnl =
+	     pp_concat
+	       (fun cn -> ms2link (cn,ms) fmt (class_name cn))
+	       (fun _ -> pp_open_tag fmt "hierarchy"; pp_print_cut fmt ())
+	       (fun _ -> pp_close_tag fmt ())
+	       (fun _ -> pp_print_string fmt ";"; pp_print_space fmt ())
+	       cnl
+	   in
+	   let pp_overrides fmt =
+	     if msi = clinit_index or ms.ms_name = "<init>"
+	     then ()
+	     else
+	       match ioc with
+	         | `Interface _ -> ()
+	         | `Class c ->
+		     try
+		       match c.c_super_class with
+		         | None -> ()
+		         | Some c ->
+			     let c' = JControlFlow.resolve_method' msi c in
+			       fprintf fmt "@[<hv 2>Overrides the method in: {@{<hierarchy>@,%a@}}@]@,"
+			         (fun fmt cn -> ms2link (cn,ms) fmt (class_name cn)) (c'.c_name)
+		     with NoSuchMethodError -> ()
+	   in
+	   let pp_implements fmt =
+	     let s =
+	       match ioc with
+	         | `Class _ -> "Implements"
+	         | `Interface _ -> "Overrides"
+	     in
+	       fprintf fmt "@[<hv 2>%s the methods in: {%a}@]@,"
+	         s ppcnl (List.map (fun i -> i.i_name) (JControlFlow.resolve_interface_method' msi ioc))
+	   in
+	   let pp_overridden_in fmt =
+	     fprintf fmt "@[<hv 2>Overridden in: {@{<hierarchy>@,%a@}}@]@,"
+	       ppcnl (get_overridden_in m)
+	   in
+	     info.p_method cn ms fmt;
+	     pp_implements fmt;
+	     pp_overrides fmt;
+	     pp_overridden_in fmt
+        )
     }

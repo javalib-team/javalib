@@ -83,14 +83,16 @@ val ms2link : (class_name*method_signature) -> Format.formatter -> string -> uni
 (** {2 HTML printing functions} *)
 
 val pprint_class_to_html_file :
-  ?intro:string -> info -> string -> interface_or_class -> unit
-  (** [pprint_class_to_html_file intro info output c] prints the class
-      [c] to the HTML file [output]. It prints [intro]
-      at the beginning of [output]. This string must at least open the
-      tags [<html>] and [<body>] and it should defines the JavaScript
-      functions to switch the visibility of the data. *)
+  ?print_var_name:bool -> ?intro:string -> info -> string -> interface_or_class -> unit
+  (** [pprint_class_to_html_file ~print_var_name ~intro info output c]
+      prints the class [c] to the HTML file [output]. It prints
+      [intro] at the beginning of [output]. This string must at least
+      open the tags [<html>] and [<body>] and it should defines the
+      JavaScript functions to switch the visibility of the data.  If
+      [print_var_name] is true, variable name are also printed (when
+      available). *)
 val pprint_program_to_html_files :
-  ?intro:string -> info -> string -> JProgram.program -> unit
+  ?print_var_name:bool -> ?intro:string -> info -> string -> JProgram.program -> unit
   (** [pprint_program_to_html_files] is similar to
       [pprint_class_to_html_file].  The only differences is that it prints
       a program and it takes a directory instead of a filename as parameter. *)
@@ -98,11 +100,11 @@ val pprint_program_to_html_files :
 
 (** {2 Text printing functions} *)
 
-val pprint_class : info -> Format.formatter -> interface_or_class -> unit
+val pprint_class : ?print_var_name:bool -> info -> Format.formatter -> interface_or_class -> unit
   (** [pprint_class info fmt c] prints the class [c] in the formatter
       [fmt] with the filtering and the additional information given in
       [info]. *)
-val pprint_program : info -> Format.formatter -> JProgram.program -> unit
+val pprint_program : ?print_var_name:bool -> info -> Format.formatter -> JProgram.program -> unit
   (** [pprint_program info fmt p] prints the class [p] in the formatter
       [fmt] with the filtering and the additional information given in
       [info]. *)
@@ -119,6 +121,6 @@ val pp_concat :
 
 val pp_field_signature : Format.formatter -> field_signature -> unit
   (** pretty prints a field signature.*)
-val pp_method_signature : ?m:(jmethod option) ->
+val pp_method_signature : ?print_var_name:bool -> ?m:jmethod option ->
   Format.formatter -> method_signature -> unit
   (** pretty prints a method signature.*)

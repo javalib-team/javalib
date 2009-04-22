@@ -19,6 +19,10 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+
+(* TODO: static_lookup_* function have been removed. this was a bad
+   idea.*)
+
 (** Allows some navigation in the control flow graph of a program. *)
 
 open JBasics
@@ -30,7 +34,7 @@ open JProgram
 (** Manipulation of program pointers *)
 module PP : sig
   type t
-  exception NoCode of (class_name * method_signature)
+  exception NoCode of (class_name_index * method_signature_index)
   val get_class : t -> interface_or_class
   val get_meth : t -> concrete_method
   val get_pc : t -> int
@@ -44,7 +48,7 @@ module PP : sig
       method of [cn].
 
       @raise NoCode if the method [ms] has no associated code.*)
-  val get_first_pp : program -> class_name -> method_signature -> t
+  val get_first_pp : program -> class_name_index -> method_signature_index -> t
   val get_first_pp_wp : interface_or_class -> method_signature_index -> t
   val goto_absolute : t -> int -> t
   val goto_relative : t -> int -> t
@@ -78,7 +82,7 @@ val exceptional_successors : program -> pp -> pp list
     @raise NoClassDefFoundError if [p] does not contain a class named
     [cn].
 *)
-val resolve_class : program -> class_name -> interface_or_class
+val resolve_class : program -> class_name_index -> interface_or_class
 
 (** [resolve_method ms c] returns the class or interface that defines
     the method [ms], if any.  The caller is responsible to check that
@@ -168,3 +172,9 @@ val overrides_methods : method_signature_index -> class_file -> class_file list
     @raise Not_found if [ms] cannot be found in [c]
 *)
 val implements_methods : method_signature_index -> class_file -> interface_file list
+
+(** [static_lookup program pp] returns the highest functions in the hierarchy
+    that may be called from program [pp]. All methods that may be
+    called at execution time are known to implement or extend one of
+    the class that this function returns. *)
+val static_lookup : program -> pp -> pp list
