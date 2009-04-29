@@ -214,6 +214,9 @@ type program = { classes : interface_or_class ClassMap.t;
                  (** [static_lookup cni msi pc] returns the set of
                      methods that may be called from the program point
                      identified by [(cni,msi,pc)]. *)
+                 (* TODO : should only return a class set (msi are all
+                    the same) maybe directly pointing to the
+                    class_file *)
 		 static_lookup : class_name_index -> method_signature_index ->
 							  int -> ClassMethSet.t;
 		 dictionary : dictionary }

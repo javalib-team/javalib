@@ -722,7 +722,7 @@ let pprint_interface' ?(print_var_name=true) info fmt (c:jinterface) =
       pp_open_vbox fmt 0;
       anchor fmt;
       pp_open_box fmt 0;
-      pp_print_string fmt ("abstract "^access^"interface "^cn^" ");
+      pp_print_string fmt (access^"interface "^cn^" ");
       interfaces fmt;
       pp_close_box fmt ();
       pp_print_string fmt "{";

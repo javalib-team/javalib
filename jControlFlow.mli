@@ -164,6 +164,14 @@ val lookup_interface_method : method_signature_index -> class_file -> class_file
 *)
 val overrides_methods : method_signature_index -> class_file -> class_file list
 
+(** [overridden_by_methods ms c] looks for the classes that define
+    methods that overrides (or implements) [(c,ms)] (in the children
+    of [c]).
+
+    @Raise Invalid_argument("overridden_by_methods") if the method is
+    a class or instance initialization method.*)
+val overridden_by_methods : method_signature_index -> interface_or_class -> class_file list
+
 (** [implements_methods ms c] looks for the interfaces that defines
     methods [ms] in the direct interfaces of [c] and recursively in
     their super-interfaces. If [i1] and [i2] defines [ms] and [i1]
@@ -173,8 +181,14 @@ val overrides_methods : method_signature_index -> class_file -> class_file list
 *)
 val implements_methods : method_signature_index -> class_file -> interface_file list
 
-(** [static_lookup program pp] returns the highest functions in the hierarchy
-    that may be called from program [pp]. All methods that may be
+(** [static_lookup program pp] returns the highest methods in the hierarchy
+    that may be called from program point [pp]. All methods that may be
     called at execution time are known to implement or extend one of
     the class that this function returns. *)
-val static_lookup : program -> pp -> pp list
+val static_lookup : program -> pp
+  -> (interface_or_class list * method_signature_index) option
+
+(** [static_lookup' program pp] returns a list of methods that may be
+    called from program point [pp].  The computation is base on RTA or
+    CHA, depending on the function used to build the program. *)
+val static_lookup' : program -> pp -> pp list

@@ -67,7 +67,13 @@ let get_hierachy prog info : info =
            and cni = prog.dictionary.get_cn_index cn in
 	   let ioc = get_interface_or_class prog cni in
 	   let m = get_method ioc msi in
-	   let get_overridden_in = fun _ -> [] (* TODO ! *)
+	   let get_overridden_in _ =
+             if ms.ms_name = "<init>" || ms.ms_name = "<clinit>"
+             then []
+             else
+               List.map
+                 (fun c -> c.c_name)
+                 (JControlFlow.overridden_by_methods msi ioc)
 	   and ppcnl fmt cnl =
 	     pp_concat
 	       (fun cn -> ms2link (cn,ms) fmt (class_name cn))

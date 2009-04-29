@@ -284,39 +284,38 @@ module CSet = Set.Make (
 	(c2.c_name)
   end)
 
-(* TODO : need to be re-implemented *)
-(* let overridden_by_methods msi c = *)
-(*   if msi = clinit_index or msi = init_index *)
-(*   then raise (Invalid_argument "overridden_by_methods"); *)
-(*   let result = ref CSet.empty in *)
-(*   let rec overridden_by_methods' msi c = *)
-(*     match get_method c msi with *)
-(*       | AbstractMethod am -> *)
-(* 	  List.iter *)
-(* 	    (fun ioc -> overridden_by_methods' msi ioc) *)
-(* 	    am.am_overridden_in *)
-(*       | ConcreteMethod cm -> *)
-(* 	  begin *)
-(* 	    match c with *)
-(* 	      | `Class c -> result := CSet.add c !result *)
-(* 	      | `Interface _ -> assert false *)
-(* 	  end; *)
-(* 	  List.iter *)
-(* 	    (fun c -> overridden_by_methods' msi (`Class c)) *)
-(* 	    cm.cm_overridden_in *)
-(*   in *)
-(*     begin *)
-(*       match get_method c msi with *)
-(* 	| AbstractMethod am -> *)
-(* 	    List.iter *)
-(* 	      (fun ioc -> overridden_by_methods' msi ioc) *)
-(* 	      am.am_overridden_in *)
-(* 	| ConcreteMethod cm -> *)
-(* 	    List.iter *)
-(* 	      (fun c -> overridden_by_methods' msi (`Class c)) *)
-(* 	      cm.cm_overridden_in *)
-(*     end; *)
-(*     CSet.fold (fun ioc l -> ioc::l) !result [] *)
+(* TODO : need to be accelerated (store intermediate result for future
+   use) *)
+let overridden_by_methods msi c : class_file list=
+  let result = ref CSet.empty
+  and not_first = ref false in
+  let rec overridden_by_methods' = function
+    | `Class cc as c ->
+        if !not_first && defines_method msi c
+        then result := CSet.add cc !result;
+        not_first:=true;
+        ClassMap.iter
+          (fun _ c -> overridden_by_methods' (`Class c))
+          cc.c_children;
+    | `Interface i ->
+        not_first:=true;
+        ClassMap.iter
+          (fun _ i -> overridden_by_methods' (`Interface i))
+          i.i_children_interface;
+        ClassMap.iter
+          (fun _ c -> overridden_by_methods' (`Class c))
+          i.i_children_class
+  in
+    begin
+      match get_method c msi with
+	| AbstractMethod {am_signature = signature}
+        | ConcreteMethod {cm_signature = signature} ->
+            if (signature.ms_name = "<clinit>"
+                || signature.ms_name = "<init>")
+            then raise (Invalid_argument "overridden_by_methods")
+    end;
+    overridden_by_methods' c;
+    CSet.fold (fun ioc l -> ioc::l) !result []
 
 let implements_method c msi =
   try
@@ -389,45 +388,53 @@ let static_lookup_virtual prog obj msi =
 		    (resolve_interface_method' msi (`Class c))
 
 let static_lookup program pp =
-  let cmsil = 
-    match get_opcode pp with
-      | OpInvoke (`Virtual obj, ms) ->
-          let msi = program.dictionary.get_ms_index ms
-          in
-            List.map
-              (fun c -> (c,msi))
-              (static_lookup_virtual program obj msi)
-      | OpInvoke (`Static cn, ms) ->
-          let msi = program.dictionary.get_ms_index ms
-          and cni = program.dictionary.get_cn_index cn
-          in
-          let c =
-	    match resolve_class program cni with
-	      | `Class c -> resolve_method msi c
-	      | `Interface _ -> raise IncompatibleClassChangeError
-	  in
-	  let c =
-	    match c with
-	      | `Class c' when implements_method c' msi -> c
-	      | _ -> raise AbstractMethodError
-	  in [c,msi]
-      | OpInvoke (`Special cn, ms) ->
-          let msi = program.dictionary.get_ms_index ms
-          and cni = program.dictionary.get_cn_index cn
-          in
-            [`Class (static_lookup_special program pp cni ms msi),msi]
-      | OpInvoke (`Interface cn, ms) ->
-          let msi = program.dictionary.get_ms_index ms
-          and cni = program.dictionary.get_cn_index cn
-          in
-            List.map
-              (fun c -> (c,msi))
-              (static_lookup_interface program cni msi)
-      | _ -> []
-  in
-    List.map
-      (fun (c,msi) -> PP.get_first_pp_wp c msi)
-      cmsil
+  match get_opcode pp with
+    | OpInvoke (`Virtual obj, ms) ->
+        let msi = program.dictionary.get_ms_index ms
+        in Some (static_lookup_virtual program obj msi,msi)
+    | OpInvoke (`Static cn, ms) ->
+        let msi = program.dictionary.get_ms_index ms
+        and cni = program.dictionary.get_cn_index cn
+        in
+        let c =
+	  match resolve_class program cni with
+	    | `Class c -> resolve_method msi c
+	    | `Interface _ -> raise IncompatibleClassChangeError
+	in
+	let c =
+	  match c with
+	    | `Class c' when implements_method c' msi -> c
+	    | _ -> raise AbstractMethodError
+	in Some ([c],msi)
+    | OpInvoke (`Special cn, ms) ->
+        let msi = program.dictionary.get_ms_index ms
+        and cni = program.dictionary.get_cn_index cn
+        in
+          Some ([`Class (static_lookup_special program pp cni ms msi)],msi)
+    | OpInvoke (`Interface cn, ms) ->
+        let msi = program.dictionary.get_ms_index ms
+        and cni = program.dictionary.get_cn_index cn
+        in Some (static_lookup_interface program cni msi,msi)
+    | _ -> None
+
+let static_lookup' program pp =
+  match get_opcode pp with
+    | OpInvoke _ ->
+        let cni = get_index (get_class pp)
+        and msi = (get_meth pp).cm_index
+        and pc = get_pc pp
+        in
+          List.map
+            (fun (cni,msi) -> get_first_pp program cni msi)
+            (List.map
+               (fun (cni,msi) -> 
+                  let c = get_interface_or_class program cni
+                  in match get_method c msi with
+                    | AbstractMethod _ -> assert false;
+                    | ConcreteMethod _ -> (cni,msi))
+               (ClassMethSet.elements
+                  (program.static_lookup cni msi pc)))
+    | _ -> []
 
 let handlers program pp =
   let ioc2c = function
