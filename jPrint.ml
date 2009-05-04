@@ -47,12 +47,16 @@ type info = {
 
 let get_local_variable_ident i pp m =
   match m with
-    | None -> (string_of_int i, "")
-    | Some m ->
-	let v = get_local_variable_info i pp m in
-	  match v with
-	    | None -> (string_of_int i, "")
-	    | Some (name,sign) -> (name, type2shortstring sign)
+    | None
+    | Some (AbstractMethod _)
+    | Some (ConcreteMethod {cm_implementation = Native})
+      -> (string_of_int i, "")
+    | Some (ConcreteMethod {cm_implementation = Java code})
+      ->
+        let v = get_local_variable_info i pp (Lazy.force code) in
+        match v with
+          | None -> (string_of_int i, "")
+          | Some (name,sign) -> (name, type2shortstring sign)
 
 let cn2htmlfilename cn =
   (String.concat "_" cn) ^ ".html"

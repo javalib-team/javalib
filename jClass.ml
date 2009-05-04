@@ -409,41 +409,35 @@ let iter_fields f = function
 	(fun s fi -> f s (`ClassField fi ))
 	c.c_fields
 
-let get_local_variable_table_and_code m =
-  match m with
-    | AbstractMethod _ -> (None,None)
-    | ConcreteMethod cm ->
-	(match cm.cm_implementation with
-	   | Native -> (None, None)
-	   | Java code ->
-	       let c = Lazy.force code in
-		 (c.c_local_variable_table, Some c)
-	)
-
-let get_local_variable_info i pp m =
-  let (lvt,code) = get_local_variable_table_and_code m in
-  let isstore =
-    match code with
-      | None -> false
-      | Some c ->
-	  (match c.c_code.(pp) with
-	     | OpStore(_,_) -> true
-	     | OpRet(_) -> true
-	     | _ -> false
-	  ) in
-    match lvt with
-      | None -> None
-      | Some lvt ->
+let get_local_variable_info i pp code =
+  match code.c_local_variable_table with
+    | None -> None
+    | Some lvt ->
+        let offset =
+	  match code.c_code.(pp) with
+	    | OpStore(_,_) -> -1
+	    | OpRet(_) -> -1
+	    | _ -> 0
+        in
 	  try
 	    let (_,_,s,sign,_) =
 	      List.find
 		(fun (start,len,_,_,index) ->
-		   if isstore then
-		     if ( pp >= start - 1 && pp < start + len && index = i ) then true
-		     else false
-		   else
-		     if ( pp >= start && pp < start + len && index = i ) then true
-		     else false		
-		) lvt in
-	      Some (s,sign)
-	  with _ -> None
+		   pp >= start + offset
+                   && pp < start + len
+                   && index = i
+                ) lvt
+            in
+              Some (s,sign)
+          with _ -> None
+
+let get_source_line_number pp code =
+  match code.c_line_number_table with
+    | None -> None
+    | Some lnt ->
+        let rec find_line prev = function
+          | (start_pc,_)::_ when (start_pc > pp) -> Some prev
+          | (_,line_number)::r -> find_line line_number r
+          | [] -> None
+        in find_line (fst (List.hd lnt)) lnt
+              

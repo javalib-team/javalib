@@ -376,12 +376,19 @@ val get_other_flags : interface_or_class -> int list
 
 
 (** [get_local_variable_info i pp m] returns the name and signature of
-    the local variable [i] at program point [pp] in the method [m], if
-    they are defined in the local variable table (The bytecode needs to
-    be compiled with the -g option). Otherwise the value [None] is returned.
+    the local variable [i] at program point [pp] in the method code
+    [m], if they are defined in the local variable table (The bytecode
+    needs to be compiled with the -g option). Otherwise the value
+    [None] is returned.
 *)
 val get_local_variable_info :
-  int -> int -> jmethod -> (string * JBasics.value_type) option
+  int -> int -> code -> (string * JBasics.value_type) option
+
+(** [get_source_line_number pp m] returns the source line number
+    corresponding the program point [pp] of the method code [m].  The
+    line number give a rough idea and may be wrong.  It uses the
+    attribute LineNumberTable (cf. JVMS §4.7.8). *)
+val get_source_line_number : int -> code -> int option
 
 (** The following functions iterate over all methods of a class or interface
     (including the static initializer, if any). *)

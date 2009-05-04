@@ -110,7 +110,13 @@ let low2high_code consts = function c ->
       begin
 	let lvt =
 	  combine_LocalVariableTable
-	    (List.fold_left (fun lvts -> (function AttributeLocalVariableTable lvt -> lvt::lvts | _ -> lvts)) [] c.JClassLow.c_attributes)
+	    (List.fold_left
+               (fun lvts ->
+                  (function
+                     | AttributeLocalVariableTable lvt -> lvt::lvts
+                     | _ -> lvts))
+               []
+               c.JClassLow.c_attributes)
 	in match lvt with
 	  | [] -> None
 	  | _ -> Some lvt

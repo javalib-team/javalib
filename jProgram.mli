@@ -289,14 +289,6 @@ val get_field : interface_or_class -> field_signature_index -> any_field
 val get_fields : interface_or_class -> any_field list
 val defines_field : field_signature_index -> interface_or_class -> bool
 
-(** [get_local_variable_info i pp m] returns the name and signature of
-    the local variable [i] at program point [pp] in the method [m], if
-    they are defined in the local variable table (The bytecode needs to
-    be compiled with the -g option). Otherwise the value [None] is returned.
-*)
-val get_local_variable_info :
-  int -> int -> jmethod -> (string * JBasics.value_type) option
-
 (** {2 Access to the hierarchy} *)
 
 (** [extends_class p cn1 cn2] returns [true] if [cn2] is a super-class
