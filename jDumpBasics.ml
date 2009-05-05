@@ -67,6 +67,16 @@ let rettype2shortstring = function
   | None -> "V"
   | Some t -> type2shortstring t
 
+let arraytype2shortstring = function
+  | `Long -> "J"
+  | `Float -> "F"
+  | `Double -> "D"
+  | `Int -> "I"
+  | `Short -> "S"
+  | `Char -> "C"
+  | `ByteBool -> "B"
+  | `Object -> "A"
+
 let method_signature name (sl,sr) =
 		(match sr with
 		| None -> "void"

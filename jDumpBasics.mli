@@ -44,6 +44,10 @@ val rettype2shortstring : value_type option -> string
   (** [rettype2shortstring t] return the JVM representation of the
       return type [t] ({i e.g.} [rettype2shortstring None] returns
       "V"). *)
+val arraytype2shortstring : jvm_array_type -> string
+  (** [arraytype2shortstring t] return the JVM representation of the
+      array type [t] ({i e.g.} [arraytype2shortstring `Object] returns
+      "A"). *)
 val method_signature : string -> method_descriptor -> string
   (** [method_signature mn md], where [mn] is a method name and [md] a
       method descriptor, returns the method signature as in Java ({i
