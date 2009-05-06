@@ -386,7 +386,12 @@ let static_virtual_lookup virtual_lookup_map classes_map cni msi =
 	     | `Class c ->
 		 try
 		   let rc = JControlFlow.resolve_method' msi c in
-		     cmset := ClassMethSet.add (rc.c_index,msi) !cmset
+		   let rmeth = get_method (`Class rc) msi in
+		     (match rmeth with
+			| AbstractMethod _ -> ()
+			| ConcreteMethod _ ->
+			    cmset := ClassMethSet.add (rc.c_index,msi) !cmset
+		     )
 		 with _ -> ()
 	  );
 	  (try
