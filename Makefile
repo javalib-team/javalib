@@ -20,7 +20,7 @@
 
 
 
-include Makefile.config
+-include Makefile.config
 DEBUG=no
 
 OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
