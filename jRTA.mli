@@ -32,10 +32,6 @@ val parse_program :
   ?other_entrypoints:(JBasics.class_name * JClass.method_signature) list ->
   string -> JBasics.class_name * JClass.method_signature-> JProgram.program
 
-val parse_program_bench :
-  ?other_entrypoints:(JBasics.class_name * JClass.method_signature) list ->
-  string -> JBasics.class_name * JClass.method_signature-> unit
-
 (** Sun's JVM calls some methods natively during the JVM
     initialization.  We have included the list (that we suppose
     complete but without garantee). Some of the method listed may not

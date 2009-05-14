@@ -338,7 +338,7 @@ val get_instantiated_classes : program -> ClassnameSet.t
     and method signature index used in [opcode] if [opcode] is an
     [Invoke] instruction.
 
-    @raise (Failure "Bad opcode") if [opcode] is different from [OpInvoke _]
+    @raise Failure "Bad opcode" if [opcode] is different from [OpInvoke _]
 *)
 val retrieve_invoke_index : dictionary -> JClass.opcode ->
   (class_name_index * method_signature_index)

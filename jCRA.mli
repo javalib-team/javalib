@@ -28,8 +28,6 @@
     is set to [default_classes] if not given. *)
 val parse_program :
   ?other_classes:string list -> string -> string list -> JProgram.program
-val parse_program_bench :
-  ?other_classes:string list ->  string -> string list -> unit
 
 (** classes always loaded (natively) by the JVM. *)
 val default_classes : string list

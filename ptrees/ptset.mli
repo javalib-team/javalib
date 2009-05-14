@@ -12,13 +12,32 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *)
 
+(** Sets of integers implemented as Patricia trees.
 
-(*s Sets of integers implemented as Patricia trees.  The following
-    signature is exactly [Set.S with type elt = int], with the same
-    specifications. This is a purely functional data-structure. The
-    performances are similar to those of the standard library's module
-    [Set]. The representation is unique and thus structural comparison
-    can be performed on Patricia trees. *)
+    This implementation follows Chris Okasaki and Andrew Gill's paper
+    {e Fast Mergeable Integer Maps}.
+
+    Patricia trees provide faster operations than standard library's
+    module [Set], and especially very fast [union], [subset], [inter]
+    and [diff] operations. *)
+
+(** The idea behind Patricia trees is to build a {e trie} on the
+    binary digits of the elements, and to compact the representation
+    by branching only one the relevant bits (i.e. the ones for which
+    there is at least on element in each subtree). We implement here
+    {e little-endian} Patricia trees: bits are processed from
+    least-significant to most-significant. The trie is implemented by
+    the following type [t]. [Empty] stands for the empty trie, and
+    [Leaf k] for the singleton [k]. (Note that [k] is the actual
+    element.) [Branch (m,p,l,r)] represents a branching, where [p] is
+    the prefix (from the root of the trie) and [m] is the branching
+    bit (a power of 2). [l] and [r] contain the subsets for which the
+    branching bit is respectively 0 and 1. Invariant: the trees [l]
+    and [r] are not empty. *)
+
+(** The docuemntation is given for function that differs from [Set.S
+    with type elt = int]. *)
+
 module type S = sig
   type t
 
@@ -68,34 +87,35 @@ module type S = sig
 
   val split : int -> t -> t * bool * t
 
-  (*s Warning: [min_elt] and [max_elt] are linear w.r.t. the size of the
-    set. In other words, [min_elt t] is barely more efficient than [fold
-    min t (choose t)]. *)
+  (** Warning: [min_elt] and [max_elt] are linear w.r.t. the size of the
+      set. In other words, [min_elt t] is barely more efficient than [fold
+      min t (choose t)]. *)
 
   val min_elt : t -> int
   val max_elt : t -> int
 
-  (*s Additional functions not appearing in the signature [Set.S] from ocaml
-    standard library. *)
+  (** Additional functions not appearing in the signature [Set.S] from
+      ocaml standard library. *)
 
-  (* [intersect u v] determines if sets [u] and [v] have a non-empty 
-     intersection. *) 
+  (** [intersect u v] determines if sets [u] and [v] have a non-empty
+      intersection. *)
 
   val intersect : t -> t -> bool
 
-  (* [choose_and_remove t] is equivalent (but more efficient) to
-     [(fun t -> let i = choose t in (i,remove i t)) t]*)
+  (** [choose_and_remove t] is equivalent (but more efficient) to
+      [(fun t -> let i = choose t in (i,remove i t)) t]
+      @author Laurent Hubert*)
   val choose_and_remove : t -> int*t
 
 end
 
 include S
 
-(*s Big-endian Patricia trees *)
+(** Big-endian Patricia trees *)
 
 module Big : S
 
-(*s Big-endian Patricia trees with non-negative elements. Changes:
+(** Big-endian Patricia trees with non-negative elements. Changes:
     - [add] and [singleton] raise [Invalid_arg] if a negative element is given
     - [mem] is slightly faster (the Patricia tree is now a search tree)
     - [min_elt] and [max_elt] are now O(log(N))

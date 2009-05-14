@@ -1,6 +1,6 @@
 {i {C Tiphaine Turpin, Laurent Hubert and Nicolas Cannasse}}
 
-{i {C October 2008}}
+{i {C May 2009}}
 
 {2 {L Documentation}}
 
@@ -13,6 +13,9 @@
 {b {L Other}}
 {!modules: JCode JParse JParseSignature JUnparse JUnparseSignature
 JInstruction JLow2High JHigh2Low JClassLow JDump JDumpLow}
+
+{b {L Patricia Tree library}}
+{!modules: Ptmap Ptset}
 
 {b {L Indexes}}
 

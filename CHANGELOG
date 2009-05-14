@@ -1,13 +1,58 @@
-From 1.7 to
----------------
-* efficient RTA implementation for program loading and callgraph computation
-* bugfixes
-* optimizations
-* ptrees needed
-* numbering of class names, field signature and method signature
-* taking in account method nativelly called by SUN's JVM
+From 1.7.1 to 1.8
+-----------------
+The licence has been changed from the GPL to the LGPL.
 
+New features:
+* efficient RTA implementation for program loading and callgraph
+  computation
+* much more efficient (and precise, and simpler to use) static lookup
+  functions (in JControlFlow) (based on JRTA)
+* JPrint can now output the local variable names in the bytecode output
+* a Patricia Tree library has been added and can be used by the client
+  code
 
+Changes in the interface:
+* numbering of class names, field signature and method signature in
+  the program representation (which implies changes in loads of
+  function signatures)
+* JProgram has been splited in 2 : JProgram and JCRA. JRTA (a
+  replacement for JCRA) has been added.
+* adding a function to retrieve the name and signature of a local
+  variable
+* adding a function to retrieve the source line number corresponding
+  to a bytecode instruction
+* adding JDumpBasics.arraytype2shortstring
+* JProgram.get_fields now returns the list of fields instead of the
+  list of indexes (same price, more information)
+
+Minor changes in the code:
+* adding a way to tune javalib to be either more or less
+  permissive (some consistency checks are only done in permissive
+  mode)
+* pprint_*_to_html_file now takes the introduction string instead
+  of a file as first argument.  It is more flexible as the user
+  can also load the string from a file.
+* very small optimizations (avoid recomputing some operations, use a
+  unsafe_get instead of get, order some tests based on their costs)
+* using Patricia Trees instead of Sets or Maps when applicable
+* adding the method called by SUN's VM at startup in the list of entry
+  points
+
+Bugfixes:
+* several bugfix in JControlFlow
+
+From 1.7 to 1.7.1
+-----------------
+Bugfixes:
+* the JFile.mkdir function could produce a stack overflow if the
+  directory passed as argument is not a sub-directory of the current
+  directory. Bug reported by Samuel Hym. This bug is present in
+  JavaLib 1.5, 1.6 and 1.7.
+* the JHigh2Low.h2l_code2attribute function was using lazy functions
+  that were evaluated after that the constant pool were modified,
+  which could cause bugs if the constant pool was emptied before
+  unparsing the class. Bug reported by Samuel Hym. This bug is present
+  in JavaLib 1.7.
 
 From 1.6 to 1.7
 ---------------

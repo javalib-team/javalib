@@ -1,7 +1,7 @@
 (*
  * This file is part of JavaLib
  * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
- * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License

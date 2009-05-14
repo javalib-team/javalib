@@ -13,9 +13,18 @@
  *)
 
 
-(*s Maps over integers implemented as Patricia trees.
-    The following signature is exactly [Map.S with type key = int],
-    with the same specifications. *)
+(** Maps over integers implemented as Patricia trees.
+
+    This implementation follows Chris Okasaki and Andrew Gill's paper
+    {e Fast Mergeable Integer Maps}.*)
+
+(** The following signature is similar to [Map.S with type key = int].
+    The documentation is only given for function that differs from
+    [Map.S with type key = int].
+
+    The module {!Ptset} is based on the same data-structure.
+
+*)
 
 module type S = sig
   type (+'a) t
@@ -30,7 +39,8 @@ module type S = sig
       [m], plus a binding of [k] to [d].  If [k] was already bound to
       [d'] in [m], then the value [f d' d] is added instead of [d].  If
       no merge function is specified, then the previous bindings is
-      simply discard. *)
+      simply discard.
+      @author Laurent Hubert*)
   val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
 
   val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
@@ -55,13 +65,15 @@ module type S = sig
 
   (** [merge f m1 m2] returns a map that has the bindings of [m1] and
       [m2] and which binds [k] to [f d1 d2] if [m1] and [m2] binds the
-      same [k] to [d1] and [d2], respectively. *)
+      same [k] to [d1] and [d2], respectively.
+      @author Laurent Hubert*)
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
 
   (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to
       [remove i t] and [d] equals to [find i t].
 
-      @raise Not_found if [t] is empty. *)
+      @raise Not_found if [t] is empty.
+      @author Laurent Hubert*)
   val choose_and_remove : 'a t -> int * 'a * ('a t)
 
 end

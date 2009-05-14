@@ -83,8 +83,9 @@ javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars -colorize-code \
-		-intro intro.ocamldoc -t JavaLib $(MODULE_INTERFACES:=.mli)
+	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
+		-colorize-code -intro intro.ocamldoc -t JavaLib		\
+		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli ptrees/ptset.mli
 
 clean:
 	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
