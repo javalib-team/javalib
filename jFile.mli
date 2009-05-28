@@ -25,8 +25,12 @@
 (** The type of "compiled" class paths (jar files are opened for efficiency). *)
 type class_path
 
+(** [sep] is the class path separator. It contains a colon (:) under
+    Unix and Cygwin and a semi-colon (;) under Windows (or MinGW). *)
+val sep : string
+
 (** [class_path cp] opens a class path from the list [cp] of
-    directories and jar files separated by colons ([:]).  jar files in
+    directories and jar files separated by {!JFile.sep}.  jar files in
     the given directories are also considered, but they are not looked
     for recursively.  If [cp] is empty([""]), then the current
     directory is used.  Note: the order matters: the search stops when
@@ -35,8 +39,8 @@ type class_path
     jar file inside those directory are unspecified, but the jar file
     of the first directory will be read before the others.
     Note : the following works :
-{[try class_path (Sys.getenv "CLASSPATH")
-with Not_found -> class_path ""]}*)
+    {[try class_path (Sys.getenv "CLASSPATH")
+    with Not_found -> class_path ""]}*)
 val class_path : string -> class_path
 
 (** Close a class path. *)
@@ -61,8 +65,9 @@ val write_class_low : string -> JClassLow.jclass -> unit
 (** {2 Reading/transforming a set of classes.} *)
 
 (** The following functions search for class files in the following order :
-    - [directories] is a list of directories separated by [:]. If a name can be
-    found in some directory, subsequent directories are ignored.
+    - [directories] is a list of directories separated by
+    {!JFile.sep}. If a name can be found in some directory, subsequent
+    directories are ignored.
     - If a name is the name of an existing directory, then every .class file
     inside this directory is read, and the search is over (even if the
     directory is empy).

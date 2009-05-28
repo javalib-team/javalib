@@ -18,9 +18,17 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+
 open ExtList
 open JBasics
 open JClassLow
+
+let sep =
+  match Sys.os_type with
+    | "Unix"
+    | "Cygwin" -> ":"
+    | "Win32" -> ";"
+    | _ -> assert false
 
 let list sep = function
   | t :: q ->
@@ -76,13 +84,13 @@ let open_path s =
     else None
 
 let directories dirs =
-  match ExtString.String.nsplit dirs ":" with
+  match ExtString.String.nsplit dirs sep with
     | [] -> [Filename.current_dir_name]
     | cp -> cp
 
 let class_path cp =
   let cp_list =
-    match ExtString.String.nsplit cp ":" with
+    match ExtString.String.nsplit cp sep with
       | [] -> [Filename.current_dir_name]
       | cp -> cp
   in
