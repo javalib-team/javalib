@@ -306,8 +306,9 @@ let fieldsignature2html program cni fsi =
     @ [PCData (" " ^ fs.fs_name ^ ";")]
 
 let make_methodsignature2html cname ms f =
-  let ms2string ms = JDumpBasics.method_signature ms.ms_name
-    (ms.ms_parameters,ms.ms_return_type) in
+  let ms2string ms = Str.global_replace (Str.regexp_string ",") ", "
+    (JDumpBasics.method_signature ms.ms_name
+       (ms.ms_parameters,ms.ms_return_type)) in
   let chomp_ret_type_htmlize msstring =
     ExtString.String.replace_chars
       (fun c ->
@@ -388,7 +389,7 @@ let methodsignature2html program cni msi info =
     match l with
       | [] -> []
       | hd :: tl ->
-	  List.fold_left (fun x y -> x @ [PCData ","] @ y) hd tl in
+	  List.fold_left (fun x y -> x @ [PCData ", "] @ y) hd tl in
   let parameters2html () =
     list_concat (ExtList.List.mapi
 		       (fun i x -> (valuetype2html program x cn)
