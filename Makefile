@@ -42,11 +42,12 @@ endif
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jPrint jControlFlow jCRA jPrintHierarchy jRTA
+jParse jFile jProgram jPrintHtml jPrint jControlFlow jCRA               \
+jPrintHierarchy jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
 jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\
-jControlFlow jPrint jPrintHierarchy jRTA
+jPrintHtml jControlFlow jPrint jPrintHierarchy jRTA
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc

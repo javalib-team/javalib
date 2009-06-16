@@ -1,0 +1,133 @@
+
+body{
+    width:80%;
+    margin: 0px auto;
+}
+ol {
+    padding : 5px;
+    line-height:0em;
+}
+
+ol.code {
+    font-family: mono;
+    margin-left: 3em;
+}
+
+.instruction {
+    float: left;
+    width: 10em;
+}
+
+.parameter {
+    float: left;
+    /* width:20em; */
+    /* overflow:hidden; */
+}
+
+div.method {
+    float: left;
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    padding: 1em;
+    clear: left;
+    width: 90%;
+    border: 1px solid black;
+}
+
+div.field {
+    float: left;
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
+    padding: 1em;
+    clear: left;
+    width: 90%;
+    border: 1px solid black;
+}
+
+div.class {
+    float: left;
+    margin-bottom: 2em;
+    margin-top: 2em;
+    padding-left: 1em;
+    padding-bottom: 1em;
+    clear: left;
+    width: 100%;
+    border: 1px solid black;
+}
+
+.classname {
+    float: left;
+    font-family: mono;
+    font-size: 2em;
+    padding: 1em;
+}
+
+.field_signature {
+    float: left;
+    font-family: mono;
+}
+
+.method_signature {
+    float: left;
+    font-family: mono;
+}
+
+div.class > ul.annot {
+    color: sienna;
+    float: left;
+    clear: left;
+    list-style-position: inside;
+    list-style-type: none;
+    font-family: mono;
+    margin-top: 0em;
+    margin-bottom: 2em;
+}
+
+div.field > ul.annot, div.method > ul.annot, ol.code ul.annot {
+    color: gray;
+    float: left;
+    list-style-position: inside;
+    list-style-type: none;
+    font-family: mono;
+    margin-top: 0em;
+    margin-bottom: 0.5em;
+}
+
+ul.li {
+    float: left;
+}
+
+li {
+    line-height: 1.1em;
+    clear: left;
+}
+
+ul.clickable {
+    float: left;
+    list-style-type: square;
+}
+
+ul.clickable {
+    display: none;
+    margin-bottom: 0.5em;
+}
+
+span.parameter.clickable {
+    color: darkred;
+}
+
+span.parameter.clickable:hover {
+    background-color: lightgray;
+    cursor: pointer;
+}
+
+span.methodname.clickable {
+    color: Teal;
+}
+
+span.methodname.clickable:hover {
+    background-color: lightgray;
+    cursor: pointer;
+}
