@@ -29,29 +29,26 @@ open JProgram
     debbuging purposes. Annotations can be attached to the program and
     will be displayed properly (according to a given css). *)
 
-(** This record represents the information that must be defined by the
-    user of this module if he wants to print additional information or
+(** This abstract type represents the information that must be defined by
+    the user of this module if he wants to print additional information or
     to filter some data.  *)
-type info =
-    { p_class : class_name_index -> string list;
-      (** Prints class information that is printed inside the class, along with
-	  other attributes of the class. *)
-      p_field : class_name_index -> field_signature_index -> string list;
-      (** Prints field information that is printed along with the corresponding
-	  field. *)  
-      p_method : class_name_index -> method_signature_index -> string list;
-      (** Prints method information that is printed inside the method,
-	  along with other attributes of the method. *)
-      p_callers : class_name_index -> method_signature_index -> ClassMethSet.t;
-      (** Prints information about the possible method callers. *)
-      p_pp : class_name_index -> method_signature_index -> int -> string list;
-      (** Prints information associated to program points. The information is
-	  printed after the instruction. *)
-    }
+type info
 
 (** [void_info] is an instance of [info] that does not print anything
     nor filter anything. *)
 val void_info : info
+
+(** [get_program_info p_class p_field p_method p_pp] returns an instance of
+    [info] given annotation functions [p_class], [p_field], [p_method] and
+    [p_pp]. *)
+val get_program_info :
+  JProgram.program ->
+  (JProgram.class_name_index -> string list) ->
+  (JProgram.class_name_index -> JProgram.field_signature_index -> string list) ->
+  (JProgram.class_name_index ->
+     JProgram.method_signature_index -> string list) ->
+  (JProgram.class_name_index ->
+     JProgram.method_signature_index -> int -> string list) -> info
 
 (** {2 HTML printing functions} *)
 

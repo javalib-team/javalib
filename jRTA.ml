@@ -178,7 +178,8 @@ struct
 	mutable clinits : ClassSet.t;
 	dic : dictionary;
 	workset : (class_name_index * JProgram.concrete_method) Dllist.dllist;
-	classpath : JFile.class_path }
+	classpath : JFile.class_path;
+	mutable native_methods : ClassMethSet.t }
 
   exception Method_not_found
 
@@ -526,7 +527,13 @@ struct
   and add_to_workset p (cni,msi) =
     let cm = make_workset_item p (cni,msi) in
       match cm.cm_implementation with
-	| Native -> cm.cm_has_been_parsed <- true (* useful ? *)
+	| Native -> cm.cm_has_been_parsed <- true; (* useful ? *)
+	    let ioc_info = get_class_info p cni in
+	    let cname = JDumpBasics.class_name (get_name ioc_info.class_data) in
+	    let msname = (p.dic.retrieve_ms msi).ms_name in
+	      if not(ClassMethSet.mem (cni,msi) p.native_methods) then
+		(prerr_endline ("parsing native method " ^ cname ^ ":" ^ msname);
+		 p.native_methods <- ClassMethSet.add (cni,msi) p.native_methods)
 	| Java _ ->
 	    if not( cm.cm_has_been_parsed ) then
 	      (cm.cm_has_been_parsed <- true;
@@ -744,7 +751,8 @@ struct
 	static_special_lookup = ClassMap.empty;
 	clinits = ClassSet.empty;
 	workset = workset;
-	classpath = classpath }
+	classpath = classpath;
+	native_methods = ClassMethSet.empty }
     in
       List.iter
 	(fun (cni,msi) ->

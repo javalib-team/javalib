@@ -192,10 +192,20 @@ let print_html_tree htmltree out =
 
 type info =
     { p_class : class_name_index -> string list;
+      (** Prints class information that is printed inside the class, along with
+	  other attributes of the class. *)
       p_field : class_name_index -> field_signature_index -> string list;
+      (** Prints field information that is printed along with the corresponding
+	  field. *)  
       p_method : class_name_index -> method_signature_index -> string list;
+      (** Prints method information that is printed inside the method,
+	  along with other attributes of the method. *)
       p_callers : class_name_index -> method_signature_index -> ClassMethSet.t;
-      p_pp : class_name_index -> method_signature_index -> int -> string list }
+      (** Prints information about the possible method callers. *)
+      p_pp : class_name_index -> method_signature_index -> int -> string list;
+      (** Prints information associated to program points. The information is
+	  printed after the instruction. *)
+    }
 
 let void_info =
   { p_class = (fun _ -> []);
@@ -203,7 +213,33 @@ let void_info =
     p_method = (fun _ _ -> []);
     p_callers = (fun _ _ -> ClassMethSet.empty);
     p_pp = (fun _ _ _ -> []) }
-    
+
+let revert_callgraph program =
+  let cg = get_callgraph program in
+    List.fold_left
+      (fun cmmap ((cn,ms,_),(ccn,cms)) ->
+	 let cni = program.dictionary.get_cn_index cn
+	 and msi = program.dictionary.get_ms_index ms
+	 and ccni = program.dictionary.get_cn_index ccn
+	 and cmsi = program.dictionary.get_ms_index cms in
+	 let cmset =
+	   try ClassMethMap.find (ccni,cmsi) cmmap
+	   with _ -> ClassMethSet.empty in
+	   ClassMethMap.add (ccni,cmsi) (ClassMethSet.add (cni,msi) cmset) cmmap
+      ) ClassMethMap.empty cg
+
+let get_callers rcg cni msi =
+  try ClassMethMap.find (cni,msi) rcg
+  with _ -> ClassMethSet.empty
+
+let get_program_info program p_class p_field p_method p_pp =
+  { p_class = p_class;
+    p_field = p_field;
+    p_method = p_method;
+    p_callers = get_callers (revert_callgraph program);
+    p_pp = p_pp
+  }
+
 let rec get_relative_path frompackage topackage =
   match (frompackage,topackage) with
     | ([],[]) -> "./"
