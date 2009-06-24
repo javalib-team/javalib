@@ -33,7 +33,7 @@ jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\
 jPrintHtml jControlFlow jPrint jPrintHierarchy jRTA
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
-.PHONY : all install clean cleanall doc
+.PHONY : all install clean cleanall cleandoc doc
 
 all: ptrees/ptrees.cma ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa #ocaml tests tests.opt
 
@@ -102,6 +102,7 @@ clean:
 	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
 
 cleanall: clean
-	rm -rf $(DOCDIR) ocaml tests tests.opt sample sample.opt *.cmi	\
+	rm -rf ocaml tests tests.opt sample sample.opt *.cmi	\
 		*.cma *.cmxa
-
+cleandoc:
+	rm -rf $(DOCDIR)
