@@ -43,7 +43,7 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 
 # Clean up
 clean:
-	rm -f *.o *.a *.cm[iox] *~
+	rm -f *.o *.a *.cm[iox] *~ *.annot
 cleanall:clean
 	rm -f *.cma *.cmxa
 
