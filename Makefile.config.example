@@ -16,9 +16,29 @@
 # License along with this program.  If not, see 
 # <http://www.gnu.org/licenses/>.
 
-
 EXTLIB_PATH=+extlib
 CAMLZIP_PATH=+zip
 
 INSTALL_DIR = `ocamlc -where`/javaLib
 DOCDIR = doc
+
+OPT_FLAGS=-noassert -ccopt -O3
+
+DEBUG=no
+CMO=no
+
+OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
+OCAMLDOC = ocamldoc.opt
+OCAMLDEP = ocamldep.opt -pp camlp4o.opt
+OCAMLMKTOP = ocamlmktop
+INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH) -I ptrees
+
+ifeq ($(DEBUG),yes)
+OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
+else
+ifeq ($(DEBUG),prof)
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p $(OPT_FLAGS)
+else
+OCAMLOPT = ocamlopt.opt -pp camlp4o.opt $(OPT_FLAGS)
+endif
+endif

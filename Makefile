@@ -21,23 +21,6 @@
 
 
 -include Makefile.config
-DEBUG=no
-
-OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
-OCAMLDOC = ocamldoc.opt
-OCAMLDEP = ocamldep.opt -pp camlp4o.opt
-OCAMLMKTOP = ocamlmktop
-INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH) -I ptrees
-
-ifeq ($(DEBUG),yes)
-OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
-else
-ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p $(OPT_FLAGS)
-else
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt $(OPT_FLAGS)
-endif
-endif
 
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
@@ -52,7 +35,7 @@ jPrintHtml jControlFlow jPrint jPrintHierarchy jRTA
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall doc
 
-all: ptrees/ptrees.cma ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa ocaml #tests tests.opt
+all: ptrees/ptrees.cma ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa #ocaml tests tests.opt
 
 ptrees/ptrees.cma ptrees/ptrees.cmxa:$(wildcard ptrees/*.ml ptrees/*.mli)
 	$(MAKE) -C $(@D) $(@F)
@@ -76,24 +59,12 @@ sample:
 sample.opt:
 	$(OCAMLOPT) $(INCLUDE) extLib.cmxa ptrees.cmxa javaLib.cmxa sample.ml -o $@
 
-javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
-	$(OCAMLC) -a $(MODULES:=.cmo) -o $@
-
-javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
-	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
-
-doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
-	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
-		-colorize-code -intro intro.ocamldoc -t JavaLib		\
-		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli ptrees/ptset.mli
-
-clean:
-	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
-
-cleanall: clean
-	rm -rf doc ocaml tests tests.opt sample sample.opt *.cmi *.cma *.cmxa
-
+ifeq ($(CMO),no)
+javaLib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+	$(OCAMLC) $(INCLUDE) -a -o $@ $^
+javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+	$(OCAMLOPT) $(INCLUDE) -a -o $@ $^
+else
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(INCLUDES) $^ > $@
@@ -105,10 +76,28 @@ endif
 
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<
-
-
 %.cmx %.o:%.ml
 	$(OCAMLOPT) $(INCLUDE) -c $<
-
 .mli.cmi:
 	$(OCAMLC) $(INCLUDE) -c $<
+
+javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
+	$(OCAMLC) -a $(MODULES:=.cmo) -o $@
+
+javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
+	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
+endif
+
+doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
+	mkdir -p $(DOCDIR)
+	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
+		-colorize-code -intro intro.ocamldoc -t JavaLib		\
+		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli ptrees/ptset.mli
+
+clean:
+	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
+
+cleanall: clean
+	rm -rf $(DOCDIR) ocaml tests tests.opt sample sample.opt *.cmi	\
+		*.cma *.cmxa
+

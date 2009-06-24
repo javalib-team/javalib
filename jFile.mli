@@ -39,8 +39,8 @@ val sep : string
     jar file inside those directory are unspecified, but the jar file
     of the first directory will be read before the others.
     Note : the following works :
-    {[try class_path (Sys.getenv "CLASSPATH")
-    with Not_found -> class_path ""]}*)
+{[try class_path (Sys.getenv "CLASSPATH")
+with Not_found -> class_path ""]}*)
 val class_path : string -> class_path
 
 (** Close a class path. *)
@@ -66,15 +66,15 @@ val write_class_low : string -> JClassLow.jclass -> unit
 
 (** The following functions search for class files in the following order :
     - [directories] is a list of directories separated by
-    {!JFile.sep}. If a name can be found in some directory, subsequent
-    directories are ignored.
-    - If a name is the name of an existing directory, then every .class file
-    inside this directory is read, and the search is over (even if the
-    directory is empy).
-    - Otherwise, if the name refers to an existing .class file (without the
-    extension) then this file is read.
-    - Otherwise, if the name ends in .jar and the file exists, it is assumed
-    to be jar file and the class files inside are read.
+    {!JFile.sep}.  If a name can be found in some directory,
+    subsequent directories are ignored.
+    - If a name is the name of an existing directory, then every
+    .class file inside this directory is read, and the search is over
+    (even if the directory is empy).
+    - Otherwise, if the name refers to an existing .class file
+    (without the extension) then this file is read.
+    - Otherwise, if the name ends in .jar and the file exists, it is
+    assumed to be jar file and the class files inside are read.
 
     Dots in class and directory names are interpreted as / (but not for jar
     files). *)
