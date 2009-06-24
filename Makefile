@@ -61,19 +61,23 @@ sample.opt:
 
 ifeq ($(CMO),no)
 javaLib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLC) $(INCLUDE) -a -o $@ $^
+	$(OCAMLC) $(PP) $(INCLUDE) -a -o $@ $^
 javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLOPT) $(INCLUDE) -a -o $@ $^
+	$(OCAMLOPT) $(PP) $(INCLUDE) -a -o $@ $^
 else
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLDEP) $(INCLUDES) $^ > $@
+	$(OCAMLDEP) $(PP) $(INCLUDES) $^ > $@
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
 -include .depend
 endif
 endif
 
+jParseSignature.cmo:jParseSignature.ml
+	$(OCAMLC) $(INCLUDE) $(PP) -c $<
+jParseSignature.cmx jParseSignature.o:jParseSignature.ml
+	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<
 %.cmx %.o:%.ml

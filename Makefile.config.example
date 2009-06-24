@@ -27,18 +27,19 @@ OPT_FLAGS=-noassert -ccopt -O3
 DEBUG=no
 CMO=no
 
-OCAMLC = ocamlc.opt -w Ae -dtypes -g -pp camlp4o.opt
+OCAMLC = ocamlc.opt -w Ae -dtypes -g
 OCAMLDOC = ocamldoc.opt
-OCAMLDEP = ocamldep.opt -pp camlp4o.opt
+OCAMLDEP = ocamldep.opt
 OCAMLMKTOP = ocamlmktop
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH) -I ptrees
+PP = -pp camlp4o.opt
 
 ifeq ($(DEBUG),yes)
-OCAMLOPT = ocamlopt.opt -g -pp camlp4o.opt
+OCAMLOPT = ocamlopt.opt -g
 else
 ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt -p $(OPT_FLAGS)
+OCAMLOPT = ocamlopt.opt -p $(OPT_FLAGS)
 else
-OCAMLOPT = ocamlopt.opt -pp camlp4o.opt $(OPT_FLAGS)
+OCAMLOPT = ocamlopt.opt $(OPT_FLAGS)
 endif
 endif
