@@ -16,13 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
-
-OCAMLC=ocamlc.opt
-OCAMLOPT=ocamlopt.opt
-OCAMLDEP=ocamldep.opt
-
-OCAMLOPTFLAGS=$(INCLUDES) $(OPT_FLAGS)
-OCAMLFLAGS=$(INCLUDES) -noassert
+-include ../Makefile.config
 
 MODULES=ptmap.ml ptset.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli
