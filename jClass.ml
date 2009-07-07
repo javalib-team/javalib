@@ -414,9 +414,17 @@ let get_local_variable_info i pp code =
     | None -> None
     | Some lvt ->
         let offset =
+          (* when an [store v] is done, [v] will have its type at the
+             next program point.  Therefore, the LocalVariableTable
+             only refers [v] from the next program point.  To have the
+             name and type of [v] we therefore need to look at the
+             next program point. *)
 	  match code.c_code.(pp) with
-	    | OpStore(_,_) -> -1
-	    | OpRet(_) -> -1
+              (* heuristics (because wherever an instruction can be
+                 encode with the short version in can also be encode
+                 in the long version.) *)
+	    | OpStore(_,value) when value < 4 -> -1
+	    | OpStore(_,_) -> -2
 	    | _ -> 0
         in
 	  try
