@@ -421,10 +421,11 @@ let get_local_variable_info i pp code =
              next program point. *)
 	  match code.c_code.(pp) with
               (* heuristics (because wherever an instruction can be
-                 encode with the short version in can also be encode
-                 in the long version.) *)
+                 encode with one of the two short versions it can also
+                 be encoded in one of the longer version.) *)
 	    | OpStore(_,value) when value < 4 -> -1
-	    | OpStore(_,_) -> -2
+	    | OpStore(_,value) when value <= 0xFF -> -2
+	    | OpStore(_,_) -> -3
 	    | _ -> 0
         in
 	  try
