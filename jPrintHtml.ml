@@ -42,7 +42,7 @@ type html_tree = | CustomTag of string * (html_tree list) * string
 		 | PCData of string
 
 let gen_tag_attributes attributes =
-  String.concat ", "
+  String.concat " "
     (List.map (fun (k,v) -> k ^ "=" ^ "\"" ^ v ^ "\"") attributes)
 
 let gen_opening_tag ?(iscustom=true) tagname attributes =
@@ -82,7 +82,8 @@ let gen_anchor name info =
   gen_custom_tag "a" [("name",name);("href","#")] [(PCData info)]
 
 let gen_html_document htmltree =
-  gen_custom_tag "html" [] htmltree
+  gen_custom_tag "html" [("xmlns","http://www.w3.org/1999/xhtml");
+			 ("lang","en")] htmltree
 
 let gen_html_head htmltree =
   gen_custom_tag "head" [] htmltree
@@ -98,7 +99,7 @@ let gen_css_link href =
 			 ("type","text/css"); ("media","all")]
 
 let gen_javascript_src src =
-  gen_simple_tag "script" [("language","JavaScript"); ("src",src)]
+  gen_custom_tag "script" [("type","text/javascript"); ("src",src)] []
 
 let gen_annots annots =
   let ullist =
@@ -321,17 +322,31 @@ let get_class_name program cni =
       | `Interface i -> i.i_name
 
 let cn2anchorname cn =
-  JDumpBasics.type2shortstring (TObject (TClass cn))
+  String.concat "." cn
+
+let rec type2anchorstring t =
+  match t with
+    | TObject (TClass cn) -> String.concat "." cn
+    | TObject (TArray a) -> (type2anchorstring a) ^ ".-"
+	(* ] is prohibited... *)
+    | _ -> JDumpBasics.type2shortstring t
+
+let rettype2anchorstring rt =
+  match rt with
+    | Some t -> type2anchorstring t
+    | None -> "void"
 
 let fs2anchorname cn fs =
-  (cn2anchorname cn) ^ ":"
-  ^ fs.fs_name ^ ":" ^ (JDumpBasics.type2shortstring fs.fs_type)
+  let fstype2string = type2anchorstring fs.fs_type in
+    (cn2anchorname cn) ^ ":" ^ fs.fs_name ^ ":" ^ fstype2string
 
 let ms2anchorname cn ms =
-  (cn2anchorname cn) ^ ":" ^ ms.ms_name ^ ":("
-  ^ (String.concat ""
-       (List.map JDumpBasics.type2shortstring ms.ms_parameters))
-  ^ ")" ^ (JDumpBasics.rettype2shortstring ms.ms_return_type)
+  let msname = Str.global_replace (Str.regexp_string "<") "-"
+    (Str.global_replace (Str.regexp_string ">") "-" ms.ms_name) in
+    (cn2anchorname cn) ^ ":" ^ msname ^ ":"
+    ^ (String.concat ""
+	 (List.map type2anchorstring ms.ms_parameters))
+    ^ (rettype2anchorstring ms.ms_return_type)
 
 let access2string access =
   match access with
@@ -373,9 +388,8 @@ let make_methodsignature2html cname ms f =
 	   | '>' -> "&gt;"
 	   | _ -> String.make 1 c)
       (snd (ExtString.String.split msstring " ")) in
-  let msstr = ms2string ms in
-  let mssimple = chomp_ret_type_htmlize msstr in
-    f cname mssimple msstr
+  let mssimple = chomp_ret_type_htmlize (ms2string ms) in
+    f cname mssimple mssimple
 
 let methodcallers2html program cni msi info =
   let cn = program.dictionary.retrieve_cn cni in
@@ -449,8 +463,8 @@ let methodsignature2html program cni msi info =
   let parameters2html () =
     list_concat (ExtList.List.mapi
 		       (fun i x -> (valuetype2html program x cn)
-			  @ [PCData " "]
-			  @ [PCData (get_local_variable_ident i 0 meth)])
+			  @ [PCData (" "
+				     ^ (get_local_variable_ident i 0 meth))])
 		       ms.ms_parameters) in
   let mname2html = methodname2html program cni msi info in
     if (ms.ms_name = "<clinit>") then
@@ -678,10 +692,12 @@ let pp_print_program_to_html_files program outputdir info css js =
 	 and relative_js = (get_relative_path package []) ^ jsfile in
 	 let doc = gen_class_document program cni info
 	   relative_css relative_js in
+	 let doctype = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" in
 	   create_package_dir outputdir package;
 	   let out =
 	     open_out (outputdir ^ "/" ^
 			 String.concat "/" (package @ [cname ^ ".html"])) in
+	     output_string out doctype;
 	     print_html_tree doc out;
 	     close_out out
       ) program.classes

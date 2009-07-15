@@ -29,9 +29,7 @@ open JProgram
     debbuging purposes. Annotations can be attached to the program and
     will be displayed properly (according to a given css). *)
 
-(** This abstract type represents the information that must be defined by
-    the user of this module if he wants to print additional information or
-    to filter some data.  *)
+(** This abstract type represents the information that will be printed. *)
 type info
 
 (** [void_info] is an instance of [info] that does not print anything
