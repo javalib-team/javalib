@@ -692,7 +692,7 @@ let pp_print_program_to_html_files program outputdir info css js =
 	 and relative_js = (get_relative_path package []) ^ jsfile in
 	 let doc = gen_class_document program cni info
 	   relative_css relative_js in
-	 let doctype = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n" in
+	 let doctype = "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Transitional//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd\">\n" in
 	   create_package_dir outputdir package;
 	   let out =
 	     open_out (outputdir ^ "/" ^
