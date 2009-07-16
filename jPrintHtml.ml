@@ -387,9 +387,10 @@ let make_methodsignature2html cname ms f =
 	   | '<' -> "&lt;"
 	   | '>' -> "&gt;"
 	   | _ -> String.make 1 c)
-      (snd (ExtString.String.split msstring " ")) in
-  let mssimple = chomp_ret_type_htmlize (ms2string ms) in
-    f cname mssimple mssimple
+      msstring in
+  let msstr = chomp_ret_type_htmlize (ms2string ms) in
+  let mssimple = snd (ExtString.String.split msstr " ") in
+    f cname mssimple msstr
 
 let methodcallers2html program cni msi info =
   let cn = program.dictionary.retrieve_cn cni in
