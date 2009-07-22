@@ -18,6 +18,9 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+(* TODO : correct a display bug in Safari related to list numerotation.
+   Maybe the css is only to be modified... *)
+
 open JBasics
 open JClass
 open JProgram
