@@ -20,7 +20,8 @@
 
 
 
--include Makefile.config
+-include ../Makefile.config
+INCLUDE:=$(INCLUDE) -I ../ptrees/
 
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
@@ -35,9 +36,9 @@ jPrintHtml jControlFlow jPrint jPrintHierarchy jRTA
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc
 
-all: ptrees/ptrees.cma ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa #ocaml tests tests.opt
+all: ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa #ocaml tests tests.opt
 
-ptrees/ptrees.cma ptrees/ptrees.cmxa:$(wildcard ptrees/*.ml ptrees/*.mli)
+../ptrees/ptrees.cma ../ptrees/ptrees.cmxa:$(wildcard ../ptrees/*.ml ../ptrees/*.mli)
 	$(MAKE) -C $(@D) $(@F)
 
 install: javaLib.cma javaLib.cmxa
@@ -67,7 +68,7 @@ javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 else
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLDEP) $(PP) $(INCLUDES) $^ > $@
+	$(OCAMLDEP) $(PP) $(INCLUDE) $^ > $@
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
 -include .depend
@@ -96,7 +97,8 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
 	mkdir -p $(DOCDIR)
 	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
 		-colorize-code -intro intro.ocamldoc -t JavaLib		\
-		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli ptrees/ptset.mli
+		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
+		 ../ptrees/ptset.mli
 
 clean:
 	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
