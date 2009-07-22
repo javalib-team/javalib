@@ -50,5 +50,9 @@ val get_program_info :
 
 (** {2 HTML printing functions} *)
 
+(** [pp_print_program_to_html_files p outputdir info css js] generates html
+    files representing the program [p] in the output directory [outputdir],
+    given the annotation information [info], a path to a css style sheet [css]
+    and a path to a javascript file [js]. *)    
 val pp_print_program_to_html_files :
   program -> string -> info -> string -> string -> unit
