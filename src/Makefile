@@ -22,6 +22,7 @@
 
 -include ../Makefile.config
 INCLUDE:=$(INCLUDE) -I ../ptrees/
+DOCDIR:=../$(DOCDIR)
 
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
@@ -93,10 +94,10 @@ javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
 endif
 
-doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) intro.ocamldoc
+doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
 	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
-		-colorize-code -intro intro.ocamldoc -t JavaLib		\
+		-colorize-code -intro ../intro.ocamldoc -t JavaLib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli
 
