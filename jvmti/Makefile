@@ -11,11 +11,11 @@ $(LIBS)/libCallsTracer.so: CallsTracer.c
 
 stubs: NativeStubsGen.cmo NativeStubsGen.cmx
 
-NativeStubsGen.cmo: NativeStubsGen.ml
-	ocamlc -pp camlp4o -c NativeStubsGen.ml
+NativeStubsGen.cmo: NativeStubsGen.ml NativeStubsGen.mli
+	ocamlc -pp camlp4o -c NativeStubsGen.mli NativeStubsGen.ml
 
-NativeStubsGen.cmx: NativeStubsGen.ml
-	ocamlopt -pp camlp4o -c NativeStubsGen.ml
+NativeStubsGen.cmx: NativeStubsGen.ml NativeStubsGen.mli
+	ocamlopt -pp camlp4o -c NativeStubsGen.mli NativeStubsGen.ml
 
 clean:
 	rm -rf $(LIBS) *.la *.cm* *.o
