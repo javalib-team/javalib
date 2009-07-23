@@ -8,7 +8,6 @@ ol {
 }
 
 ol.code {
-    font-family: mono;
     margin-left: 3em;
 }
 
@@ -45,19 +44,12 @@ div.class {
 }
 
 .classname {
-    display:block;
     font-size: 2em;
     padding: 1em;
 }
 
-.field_signature {
-    display: inline-block;
-    font-family: mono;
-}
-
-.method_signature {
+.field_signature, .method_signature {
     display:inline-block;
-    font-family: mono;
 }
 
 ul.annot{
@@ -65,7 +57,6 @@ ul.annot{
     margin-top: 0em;
     list-style-position: inside;
     list-style-type: none;
-    font-family: mono;
 }
 div.field > ul.annot, div.method_signature > ul.annot, ol.code ul.annot {
     display:inline-block;
@@ -80,10 +71,6 @@ div.class > ul.annot {
 
 li {
     line-height: 1.1em;
-}
-
-ol.code > div {
-    display:inline-block;
 }
 
 ul.clickable {
