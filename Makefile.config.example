@@ -31,7 +31,7 @@ OCAMLC = ocamlc.opt -w Ae -dtypes -g
 OCAMLDOC = ocamldoc.opt
 OCAMLDEP = ocamldep.opt
 OCAMLMKTOP = ocamlmktop
-INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH) -I ptrees
+INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 PP = -pp camlp4o.opt
 
 ifeq ($(DEBUG),yes)
