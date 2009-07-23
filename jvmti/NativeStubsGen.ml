@@ -6,6 +6,16 @@ type jmethod = { m_type : string;
 		 m_signature : string
 	       }
 
+let jmethod_compare m1 m2 =
+  if (m1.m_type = m2.m_type) then
+    if (m1.m_class = m2.m_class) then
+      if (m1.m_name = m2.m_name) then
+	if (m1.m_signature = m2.m_signature) then 0
+	else compare m1.m_signature m2.m_signature
+      else compare m1.m_name m2.m_name
+    else compare m1.m_class m2.m_class
+  else compare m1.m_type m2.m_type
+    
 module ClassSignatureSet = Set.Make(
   struct
     type t = string
@@ -15,17 +25,13 @@ module ClassSignatureSet = Set.Make(
 module MethodSet = Set.Make(
   struct
     type t = jmethod
-    let compare m1 m2 =
-      (compare m1.m_type m2.m_type) + (compare m1.m_class m2.m_class)
-      + (compare m1.m_name m2.m_name) + (compare m1.m_signature m2.m_signature)
+    let compare = jmethod_compare
   end)
 
 module MethodMap = Map.Make(
   struct
     type t = jmethod
-    let compare m1 m2 =
-      (compare m1.m_type m2.m_type) + (compare m1.m_class m2.m_class)
-      + (compare m1.m_name m2.m_name) + (compare m1.m_signature m2.m_signature)
+    let compare = jmethod_compare
   end)
 
 module StringMap = Map.Make(
@@ -36,6 +42,8 @@ module StringMap = Map.Make(
 
 type native_method_info = { native_alloc : ClassSignatureSet.t;
 			    native_calls : MethodSet.t }
+
+type native_info = native_method_info MethodMap.t
 
 let keywords = ["{"; "}"]
 
