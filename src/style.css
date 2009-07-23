@@ -1,6 +1,7 @@
 body{
     width:80%;
     margin: 0px auto;
+    font-family: mono;
 }
 ol {
     padding : 5px;
@@ -45,7 +46,6 @@ div.class {
 
 .classname {
     display:block;
-    font-family: mono;
     font-size: 2em;
     padding: 1em;
 }
@@ -67,7 +67,7 @@ ul.annot{
     list-style-type: none;
     font-family: mono;
 }
-div.field > ul.annot, div.method > ul.annot, ol.code ul.annot {
+div.field > ul.annot, div.method_signature > ul.annot, ol.code ul.annot {
     display:inline-block;
     color: gray;
     margin-bottom: 0.5em;
@@ -88,8 +88,9 @@ ol.code > div {
 
 ul.clickable {
     display: none;
-    margin-bottom: 0.5em;
     list-style-type: square;
+    vertical-align: top;
+    margin:0;
 }
 
 span.parameter.clickable {
