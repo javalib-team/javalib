@@ -324,54 +324,49 @@ let fprint_native_info native_info file =
       ) native_info;
     close_out oc
       
-module NativeInfo =
-struct
-  type t = native_info
-  let get_native_methods info =
-    let methods = ref [] in
-      MethodMap.iter
-	(fun jmethod _ ->
-	   if (jmethod.m_type = "Native") then
-	     methods := (jmethod.m_class,jmethod.m_name,jmethod.m_signature)
-	     :: !methods) info;
-      List.rev !methods
-	
-  let get_native_method_allocations (m_class,m_name,m_signature) info =
-    let native_alloc =
-      (MethodMap.find { m_type = "Native";
-			m_class = m_class;
-			m_name = m_name;
-			m_signature = m_signature } info).native_alloc in
-      ClassSignatureSet.elements native_alloc
-	
-  let get_native_method_calls (m_class,m_name,m_signature) info =
-    let native_calls =
-      (MethodMap.find { m_type = "Native";
-			m_class = m_class;
-			m_name = m_name;
-			m_signature = m_signature } info).native_calls in
-      List.map (fun jmethod ->
-		  (jmethod.m_class,jmethod.m_name,jmethod.m_signature)
-	       ) (MethodSet.elements native_calls)
-	
-  let fprint_native_info = fprint_native_info
-    
-  let merge_native_info info1 info2 =
-    MethodMap.fold
-      (fun jmeth methinfo1 native_info ->
-	 if (MethodMap.mem jmeth native_info) then
-	   let methinfo2 = MethodMap.find jmeth native_info in
-	   let new_methinfo =
-	     { native_alloc = ClassSignatureSet.union
-		 methinfo1.native_alloc methinfo2.native_alloc;
-	       native_calls = MethodSet.union
-		 methinfo1.native_calls methinfo2.native_calls } in
-	     MethodMap.add jmeth new_methinfo native_info
-	 else
-	   MethodMap.add jmeth methinfo1 native_info) info1 info2
+type t = native_info
+let get_native_methods info =
+  let methods = ref [] in
+    MethodMap.iter
+      (fun jmethod _ ->
+	 if (jmethod.m_type = "Native") then
+	   methods := (jmethod.m_class,jmethod.m_name,jmethod.m_signature)
+	   :: !methods) info;
+    List.rev !methods
       
-  let merge_native_info_files file1 file2 =
-    let info1 = parse_native_info_file file1
-    and info2 = parse_native_info_file file2 in
-      merge_native_info info1 info2
-end
+let get_native_method_allocations (m_class,m_name,m_signature) info =
+  let native_alloc =
+    (MethodMap.find { m_type = "Native";
+		      m_class = m_class;
+		      m_name = m_name;
+		      m_signature = m_signature } info).native_alloc in
+    ClassSignatureSet.elements native_alloc
+      
+let get_native_method_calls (m_class,m_name,m_signature) info =
+  let native_calls =
+    (MethodMap.find { m_type = "Native";
+		      m_class = m_class;
+		      m_name = m_name;
+		      m_signature = m_signature } info).native_calls in
+    List.map (fun jmethod ->
+		(jmethod.m_class,jmethod.m_name,jmethod.m_signature)
+	     ) (MethodSet.elements native_calls)
+      
+let merge_native_info info1 info2 =
+  MethodMap.fold
+    (fun jmeth methinfo1 native_info ->
+       if (MethodMap.mem jmeth native_info) then
+	 let methinfo2 = MethodMap.find jmeth native_info in
+	 let new_methinfo =
+	   { native_alloc = ClassSignatureSet.union
+	       methinfo1.native_alloc methinfo2.native_alloc;
+	     native_calls = MethodSet.union
+	       methinfo1.native_calls methinfo2.native_calls } in
+	   MethodMap.add jmeth new_methinfo native_info
+       else
+	 MethodMap.add jmeth methinfo1 native_info) info1 info2
+    
+let merge_native_info_files file1 file2 =
+  let info1 = parse_native_info_file file1
+  and info2 = parse_native_info_file file2 in
+    merge_native_info info1 info2
