@@ -685,8 +685,8 @@ let js = "function showInfoList(e){
     	if (children[i].nodeName == \"UL\"
 	    && children[i].className == \"clickable\"){
 	    var item = children[i];
-	    if (item.style.display != \"block\"){
-		item.style.display = \"block\";
+	    if (item.style.display != \"inline-block\"){
+		item.style.display = \"inline-block\";
 	    } else{
 		item.style.display = \"none\";
 	    }
