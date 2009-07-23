@@ -46,12 +46,18 @@ val get_program_info :
   (class_name_index -> method_signature_index -> string list) ->
   (class_name_index -> method_signature_index -> int -> string list) -> info
 
+val css:string
+val js:string
+
 (** {2 HTML printing functions} *)
 
-(** [pp_print_program_to_html_files p outputdir info css js] generates html
-    files representing the program [p] in the output directory [outputdir],
-    given the annotation information [info], a path to a css style sheet [css]
-    and a path to a javascript file [js]. 
+(** [pp_print_program_to_html_files ~css ~js ~p ~outputdir ~info]
+    generates html files representing the program [p] in the output
+    directory [outputdir], given the annotation information [info], an
+    optional Cascading Style Sheet (CSS) [css] and an optional
+    JavaCcript file [js].  If [css] or [js] is not provided, {!css}
+    and {!js} are used when [css] or [js] is not provided.
+
     There is a display bug in Safari => use Firefox. *)
 val pp_print_program_to_html_files :
-  program -> string -> info -> string -> string -> unit
+  ?css:string -> ?js:string -> program:program -> outputdir:string -> info:info -> unit

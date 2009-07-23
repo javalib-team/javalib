@@ -672,20 +672,36 @@ let create_package_dir outputdir package =
 	       dirname ^ "/" ^ basename) (outputdir ^ "/" ^ hd) tl in
 	  create_dir dirname
 
-let pp_print_program_to_html_files program outputdir info css js =
-  let stylefile = "style.css"
-  and jsfile = "actions.js" in
+let css = "(* CSS *)"
+
+let js = "function showInfoList(e)
+{
+    var parent = e.parentNode;
+    var children = parent.childNodes;
+    var len = children.length;
+    
+    for(var i = 0; i < len; i++){
+    	if (children[i].nodeName == \"UL\"
+	    && children[i].className == \"clickable\"){
+	    var item = children[i];
+	    if (item.style.display != \"block\"){
+		item.style.display = \"block\";
+	    } else{
+		item.style.display = \"none\";
+	    }
+	}
+    }
+}
+"
+
+let pp_print_program_to_html_files ?(css=css) ?(js=js) ~program ~outputdir ~info =
   let copy_file src dst =
-    let inchan = open_in src
-    and outchan = open_out dst in
-      try
-	while (true) do
-	  output_byte outchan (input_byte inchan);
-	done
-      with End_of_file ->
-	 flush outchan;
-	 close_out outchan;
-	 close_in inchan in
+    let outchan = open_out dst in
+      output_string outchan src;
+      close_out outchan
+  and stylefile = "style.css"
+  and jsfile = "actions.js"
+  in
     copy_file css (outputdir ^ "/" ^ stylefile);
     copy_file js (outputdir ^ "/" ^ jsfile);
     ClassMap.iter

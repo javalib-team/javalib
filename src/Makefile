@@ -24,6 +24,9 @@
 INCLUDE:=$(INCLUDE) -I ../ptrees/
 DOCDIR:=../$(DOCDIR)
 
+JS=\"../html/actions.js\"
+CSS=\"../html/style.css\"
+
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
@@ -61,12 +64,12 @@ sample:
 sample.opt:
 	$(OCAMLOPT) $(INCLUDE) extLib.cmxa ptrees.cmxa javaLib.cmxa sample.ml -o $@
 
-ifeq ($(CMO),no)
-javaLib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLC) $(PP) $(INCLUDE) -a -o $@ $^
-javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLOPT) $(PP) $(INCLUDE) -a -o $@ $^
-else
+# ifeq ($(CMO),no)
+# javaLib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+# 	$(OCAMLC) $(PP) $(INCLUDE) -a -o $@ $^
+# javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+# 	$(OCAMLOPT) $(PP) $(INCLUDE) -a -o $@ $^
+# else
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(PP) $(INCLUDE) $^ > $@
@@ -80,6 +83,12 @@ jParseSignature.cmo:jParseSignature.ml
 	$(OCAMLC) $(INCLUDE) $(PP) -c $<
 jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
+
+jPrintHtml.cmo:jPrintHtml.ml
+	$(OCAMLC) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
+jPrintHtml.cmx jPrintHtml.o:jPrintHtml.ml
+	$(OCAMLC) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
+
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<
 %.cmx %.o:%.ml
@@ -92,7 +101,7 @@ javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 
 javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
-endif
+# endif
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
