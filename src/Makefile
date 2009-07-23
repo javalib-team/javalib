@@ -100,6 +100,7 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 		-colorize-code -intro ../intro.ocamldoc -t JavaLib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli
+	echo "</body></html>" >> $(DOCDIR)/index.html # workarround for a bug in ocamldoc
 
 clean:
 	rm -rf .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~

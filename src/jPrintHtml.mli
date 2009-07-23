@@ -40,13 +40,11 @@ val void_info : info
     [info] given annotation functions [p_class], [p_field], [p_method] and
     [p_pp]. *)
 val get_program_info :
-  JProgram.program ->
-  (JProgram.class_name_index -> string list) ->
-  (JProgram.class_name_index -> JProgram.field_signature_index -> string list) ->
-  (JProgram.class_name_index ->
-     JProgram.method_signature_index -> string list) ->
-  (JProgram.class_name_index ->
-     JProgram.method_signature_index -> int -> string list) -> info
+  program ->
+  (class_name_index -> string list) ->
+  (class_name_index -> field_signature_index -> string list) ->
+  (class_name_index -> method_signature_index -> string list) ->
+  (class_name_index -> method_signature_index -> int -> string list) -> info
 
 (** {2 HTML printing functions} *)
 
