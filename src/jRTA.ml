@@ -402,8 +402,8 @@ struct
 			       s := ClassSet.add i !s) c.JClass.c_interfaces;
 		!s in
 
-	      (* For each implemented interface and its super interfaces we add
-		 cni in the program interfaces map *)
+	    (* For each implemented interface and its super interfaces we add
+	       cni in the program interfaces map *)
 	    let super_implemented_interfaces =
 	      (ClassSet.fold
 		 (fun i_index s ->
@@ -468,7 +468,7 @@ struct
 		!s in
 
 	    let methods = abstract_mmap2pmap p
-		  i.JClass.i_methods i.JClass.i_initializer in
+	      i.JClass.i_methods i.JClass.i_initializer in
 	    let fields = ifmap2iocfmap p i.JClass.i_fields in
 
 	    let ioc_info =
@@ -523,17 +523,14 @@ struct
 	| ConcreteMethod cm -> cm
 	| AbstractMethod _ ->
 	    failwith "Can't add an Abstract Method to the workset"
-      
+              
   and add_to_workset p (cni,msi) =
     let cm = make_workset_item p (cni,msi) in
       match cm.cm_implementation with
 	| Native -> cm.cm_has_been_parsed <- true; (* useful ? *)
-	    let ioc_info = get_class_info p cni in
-	    let cname = JDumpBasics.class_name (get_name ioc_info.class_data) in
-	    let msname = (p.dic.retrieve_ms msi).ms_name in
-	      if not(ClassMethSet.mem (cni,msi) p.native_methods) then
-		(prerr_endline ("parsing native method " ^ cname ^ ":" ^ msname);
-		 p.native_methods <- ClassMethSet.add (cni,msi) p.native_methods)
+	    if not(ClassMethSet.mem (cni,msi) p.native_methods)
+            then
+              p.native_methods <- ClassMethSet.add (cni,msi) p.native_methods
 	| Java _ ->
 	    if not( cm.cm_has_been_parsed ) then
 	      (cm.cm_has_been_parsed <- true;
@@ -766,6 +763,8 @@ struct
     let classpath = JFile.class_path classpath in
     let p = new_program_cache entrypoints classpath in
       iter_workset p;
+      if not (ClassMethSet.is_empty p.native_methods)
+      then prerr_endline "The program contains native method. Beware that native methods' side effects may invalidate the result of the analysis.";
       JFile.close_class_path classpath;
       p
 
