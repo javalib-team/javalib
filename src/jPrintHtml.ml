@@ -695,7 +695,7 @@ let js = "function showInfoList(e){
 }
 "
 
-let pp_print_program_to_html_files ?(css=css) ?(js=js) ~program ~outputdir ~info =
+let pp_print_program_to_html_files ?(css=css) ?(js=js) program outputdir info =
   let copy_file src dst =
     let outchan = open_out dst in
       output_string outchan src;

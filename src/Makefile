@@ -27,9 +27,9 @@ DOCDIR:=../$(DOCDIR)
 CSS=\"style.css\"
 
 # ------ 
-MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
+MODULES=jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jPrintHtml jPrint jControlFlow jCRA               \
+jParse jFile jProgram jPrintHtml jPrint jControlFlow jCRA		\
 jPrintHierarchy jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
@@ -85,8 +85,9 @@ jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 
 jPrintHtml.cmo:jPrintHtml.ml
 	$(OCAMLC) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
+
 jPrintHtml.cmx jPrintHtml.o:jPrintHtml.ml
-	$(OCAMLC) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
+	$(OCAMLOPT) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
 
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<

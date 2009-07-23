@@ -51,7 +51,7 @@ val js:string
 
 (** {2 HTML printing functions} *)
 
-(** [pp_print_program_to_html_files ~css ~js ~p ~outputdir ~info]
+(** [pp_print_program_to_html_files ~css ~js program outputdir info]
     generates html files representing the program [p] in the output
     directory [outputdir], given the annotation information [info], an
     optional Cascading Style Sheet (CSS) [css] and an optional
@@ -60,4 +60,4 @@ val js:string
 
     There is a display bug in Safari => use Firefox. *)
 val pp_print_program_to_html_files :
-  ?css:string -> ?js:string -> program:program -> outputdir:string -> info:info -> unit
+  ?css:string -> ?js:string -> program -> string -> info -> unit
