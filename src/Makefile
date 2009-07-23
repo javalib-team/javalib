@@ -24,8 +24,7 @@
 INCLUDE:=$(INCLUDE) -I ../ptrees/
 DOCDIR:=../$(DOCDIR)
 
-JS=\"../html/actions.js\"
-CSS=\"../html/style.css\"
+CSS=\"style.css\"
 
 # ------ 
 MODULES= jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
