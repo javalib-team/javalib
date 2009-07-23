@@ -672,10 +672,11 @@ let create_package_dir outputdir package =
 	       dirname ^ "/" ^ basename) (outputdir ^ "/" ^ hd) tl in
 	  create_dir dirname
 
+(* WARNING: do not edit the next line, the CSS comment will be
+   replaced by the actual CSS. (cf. Makefile) *)
 let css = "(* CSS *)"
 
-let js = "function showInfoList(e)
-{
+let js = "function showInfoList(e){
     var parent = e.parentNode;
     var children = parent.childNodes;
     var len = children.length;
