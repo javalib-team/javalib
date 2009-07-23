@@ -1,11 +1,9 @@
-
 body{
     width:80%;
     margin: 0px auto;
 }
 ol {
     padding : 5px;
-    line-height:0em;
 }
 
 ol.code {
@@ -14,104 +12,84 @@ ol.code {
 }
 
 .instruction {
-    float: left;
+    display:inline-block;
     width: 10em;
 }
 
-.parameter {
-    float: left;
-    /* width:20em; */
-    /* overflow:hidden; */
-}
-
 div.method {
-    float: left;
     margin-left: 2em;
     margin-bottom: 0.5em;
     margin-top: 0.5em;
     padding: 1em;
-    clear: left;
     width: 90%;
     border: 1px solid black;
 }
 
 div.field {
-    float: left;
     margin-left: 2em;
     margin-bottom: 0.5em;
     margin-top: 0.5em;
     padding: 1em;
-    clear: left;
     width: 90%;
     border: 1px solid black;
 }
 
 div.class {
-    float: left;
     margin-bottom: 2em;
     margin-top: 2em;
     padding-left: 1em;
     padding-bottom: 1em;
-    clear: left;
     width: 100%;
     border: 1px solid black;
 }
 
 .classname {
-    float: left;
+    display:block;
     font-family: mono;
     font-size: 2em;
     padding: 1em;
 }
 
 .field_signature {
-    float: left;
+    display: inline-block;
     font-family: mono;
 }
 
 .method_signature {
-    float: left;
+    display:inline-block;
     font-family: mono;
+}
+
+ul.annot{
+    vertical-align:top;
+    margin-top: 0em;
+    list-style-position: inside;
+    list-style-type: none;
+    font-family: mono;
+}
+div.field > ul.annot, div.method > ul.annot, ol.code ul.annot {
+    display:inline-block;
+    color: gray;
+    margin-bottom: 0.5em;
 }
 
 div.class > ul.annot {
     color: sienna;
-    float: left;
-    clear: left;
-    list-style-position: inside;
-    list-style-type: none;
-    font-family: mono;
-    margin-top: 0em;
     margin-bottom: 2em;
-}
-
-div.field > ul.annot, div.method > ul.annot, ol.code ul.annot {
-    color: gray;
-    float: left;
-    list-style-position: inside;
-    list-style-type: none;
-    font-family: mono;
-    margin-top: 0em;
-    margin-bottom: 0.5em;
-}
-
-ul.li {
-    float: left;
 }
 
 li {
     line-height: 1.1em;
-    clear: left;
 }
 
-ul.clickable {
-    float: left;
-    list-style-type: square;
+ol.code > div {
+    display:inline-block;
 }
 
 ul.clickable {
     display: none;
     margin-bottom: 0.5em;
+    list-style-type: square;
 }
 
 span.parameter.clickable {
