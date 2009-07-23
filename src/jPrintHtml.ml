@@ -119,7 +119,7 @@ let gen_hidden_list hlist =
   let ullist =
     List.map
       (fun elt ->
-	 gen_custom_tag "li" [] elt
+	 gen_custom_tag "li" [] [gen_div elt []]
       ) hlist in
     gen_custom_tag "ul" [("class",clickable_class)] ullist
 
@@ -143,7 +143,7 @@ let gen_inst pp inst prm annots =
 	      ("onclick","showInfoList(this)")])
 	  :: [gen_hidden_list l] in
     gen_custom_tag "li" [("value",string_of_int pp)]
-      ((instruction :: parameter) @ [annotations])
+      [gen_div ((instruction :: parameter) @ [annotations]) []]
 
 let gen_code insts =
   let ollist =
@@ -162,11 +162,10 @@ let add_anchor anchor_name anchor_info htmllist =
   else
     htmllist
 
-let gen_method anchor_name method_signature annots insts =
-  let meth_sig = gen_div method_signature
+let gen_method anchor_name method_signature callers annots insts =
+  let meth_sig = gen_div (method_signature @ [gen_annots annots] @ callers)
     [("class", method_signature_class)] in
-  let meth_body = [meth_sig ; gen_annots annots ;
-		   gen_code insts] in
+  let meth_body = [meth_sig; gen_code insts] in
     gen_div (add_anchor anchor_name "" meth_body)
       [("class", method_class)]
 
@@ -177,7 +176,7 @@ let gen_field anchor_name field_signature annots =
     gen_div (add_anchor anchor_name "" field_body) [("class",field_class)]
 
 let gen_class anchor_name classname annots content =
-  let class_name = gen_span classname [("class",classname_class)] in 
+  let class_name = gen_div classname [("class",classname_class)] in 
   let class_body = (class_name :: (gen_annots annots) :: content) in
     gen_div (add_anchor anchor_name "" class_body)
       [("class", class_class)]
@@ -418,11 +417,11 @@ let methodcallers2html program cni msi info =
 let methodname2html program cni msi info mname =
   let callersoption = methodcallers2html program cni msi info in
     match callersoption with
-      | None -> [PCData mname]
+      | None -> ([PCData mname],[])
       | Some callers ->
-	  [gen_span ([PCData mname])
-	     [("class",methodname_class ^ " " ^ clickable_class);
-	      ("onclick","showInfoList(this)")]; callers]
+	  ([gen_span [PCData mname]
+	      [("class",methodname_class ^ " " ^ clickable_class);
+	       ("onclick","showInfoList(this)")]], [callers])
 
 let get_local_variable_ident i pp m =
   match m with
@@ -472,19 +471,22 @@ let methodsignature2html program cni msi info =
 		       ms.ms_parameters) in
   let mname2html = methodname2html program cni msi info in
     if (ms.ms_name = "<clinit>") then
-      (PCData (header ^ " ")) :: (mname2html "clinit") @ [PCData ("{};")]
+      let (mname,callers) = mname2html "clinit" in
+	((PCData (header ^ " ")) :: mname @ [PCData ("{};")],
+	 callers)
     else if (ms.ms_name = "<init>") then
-      (PCData (header ^ " "))
-      :: (mname2html (snd (split_package_class cn)))
-      @ [PCData "("]
-      @ (parameters2html ())
-      @ [PCData ");"]
+      let (mname,callers) = mname2html (snd (split_package_class cn)) in
+	((PCData (header ^ " ")) :: mname
+	 @ [PCData "("]
+	 @ (parameters2html ())
+	 @ [PCData ");"], callers)
     else
-      (PCData (header ^ " "))
-      :: (returntype2html program ms.ms_return_type cn)
-      @ (PCData (" ") ::(mname2html ms.ms_name)) @ [PCData "("]
-      @ (parameters2html ())
-      @ [PCData ");"]
+      let (mname,callers) = mname2html ms.ms_name in
+	((PCData (header ^ " "))
+	 :: (returntype2html program ms.ms_return_type cn)
+	 @ (PCData (" ") :: mname) @ [PCData "("]
+	 @ (parameters2html ())
+	 @ [PCData ");"], callers)
 
 let iocsignature2html program cni =
   let ioc = get_interface_or_class program cni in
@@ -514,8 +516,8 @@ let method2html program cni msi info insts =
     match meth with
       | AbstractMethod am -> am.am_signature
       | ConcreteMethod cm -> cm.cm_signature in
-    gen_method (ms2anchorname cn ms)
-      (methodsignature2html program cni msi info) annots insts
+  let (method_signature,callers) = methodsignature2html program cni msi info in
+    gen_method (ms2anchorname cn ms) method_signature callers annots insts
 
 let get_fields_indexes program cni =
   let ioc = get_interface_or_class program cni in
