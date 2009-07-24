@@ -690,6 +690,10 @@ struct
 	  let cni = p.dic.get_cn_index cn in
 	    add_instantiated_class p cni;
 	    add_class_clinits p cni
+      | OpConst (`Class _) ->
+	  let cni = p.dic.get_cn_index ["java";"lang";"Class"] in
+	    add_instantiated_class p cni;
+	    add_class_clinits p cni
       | OpGetStatic (cn,fs)
       | OpPutStatic (cn,fs) ->
 	  let cni = p.dic.get_cn_index cn in
@@ -723,13 +727,13 @@ struct
     in
       Dllist.iter_to_head
 	(fun (cni,cm) ->
-	   let code =
 	   match cm.cm_implementation with
 	     | Native ->
 		 failwith "A Native Method shouldn't be found in the workset"
-	     | Java t -> (Lazy.force t).c_code
-	   in
-	     Array.iter (parse_instruction p cni) code)
+	     | Java t ->
+		 let code = (Lazy.force t).c_code
+		 in
+		   Array.iter (parse_instruction p cni) code)
 	tail
 
   let new_program_cache entrypoints classpath =

@@ -98,92 +98,97 @@ let rec parse_vmalloc_attrs expr =
 let callstackmap = ref StringMap.empty
   
 let rec parse_jvmti native_info expr =
-  match expr with parser
-    | [< 'Ident "MethodEntry"; 'Kwd "{";
-	 attrs = parse_methodentry_attrs; 'Kwd "}" >] ->
-	let threadname = StringMap.find "thread" attrs in
-	let stack =
-	  try
-	    StringMap.find threadname !callstackmap
-	  with _ ->
-	    let s = Stack.create () in
-	      callstackmap := StringMap.add threadname s !callstackmap;
-	      s in
-	let previous_method_attrs =
-	  try
-	    Stack.top stack
-	  with _ ->
-	    StringMap.add "type" "None" StringMap.empty in
-	let m_type = StringMap.find "type" attrs
-	and m_class = StringMap.find "class" attrs
-	and m_name = StringMap.find "name" attrs
-	and m_signature = StringMap.find "signature" attrs in
-	let new_native_info =
-	  if ((StringMap.find "type" previous_method_attrs) = "Native") then
-	    let prev_m_type = StringMap.find "type" previous_method_attrs
-	    and prev_m_class = StringMap.find "class" previous_method_attrs
-	    and prev_m_name = StringMap.find "name" previous_method_attrs
-	    and prev_m_signature = StringMap.find "signature" previous_method_attrs in
-	    let jmethod = { m_type = m_type;
-			    m_class = m_class;
-			    m_name = m_name;
-			    m_signature = m_signature } in
-	    let jprevmethod = { m_type = prev_m_type;
-				m_class = prev_m_class;
-				m_name = prev_m_name;
-				m_signature = prev_m_signature } in
-	    let meth_info =
-	      try
-		MethodMap.find jprevmethod native_info
-	      with _ -> { native_alloc = ClassSignatureSet.empty;
-			  native_calls = MethodSet.empty } in
-	    let new_meth_info =
-	      { meth_info with
-		  native_calls = MethodSet.add jmethod
-		  meth_info.native_calls } in
-	      MethodMap.add jprevmethod new_meth_info native_info
-	  else native_info in
-	  Stack.push attrs stack;
-	  parse_jvmti new_native_info expr
-    | [< 'Ident "MethodExit"; 'Kwd "{";
-	 attrs = parse_methodexit_attrs; 'Kwd "}" >] ->
-	let threadname = StringMap.find "thread" attrs in
-	let stack =
-	  try
-	    StringMap.find threadname !callstackmap
-	  with _ -> failwith "MethodExit without MethodEntry !" in
-	  ignore (Stack.pop stack);
-	  parse_jvmti native_info expr
-    | [< 'Ident "VMAlloc"; 'Kwd "{";
-	 attrs = parse_vmalloc_attrs; 'Kwd "}" >] ->
-	let threadname = StringMap.find "thread" attrs in
-	let stack =
-	  try
-	    StringMap.find threadname !callstackmap
-	  with _ -> failwith "VMalloc anywhere !" in
-	let method_attrs = Stack.top stack in
-	  if ((StringMap.find "type" method_attrs) = "Native") then
-	    let allocated_class = StringMap.find "class" attrs in
-	    let m_type = StringMap.find "type" method_attrs
-	    and m_class = StringMap.find "class" method_attrs
-	    and m_name = StringMap.find "name" method_attrs
-	    and m_signature = StringMap.find "signature" method_attrs in
-	    let jmethod = { m_type = m_type;
-			    m_class = m_class;
-			    m_name = m_name;
-			    m_signature = m_signature } in
-	    let meth_info =
-	      try
-		MethodMap.find jmethod native_info
-	      with _ -> { native_alloc = ClassSignatureSet.empty;
-			  native_calls = MethodSet.empty } in
-	    let new_meth_info =
-	      { meth_info with
-		  native_alloc = ClassSignatureSet.add allocated_class
-		  meth_info.native_alloc } in
-	      parse_jvmti (MethodMap.add jmethod new_meth_info native_info) expr
-	  else parse_jvmti native_info expr
-    | [< >] -> native_info
+  let empty_method_info = { native_alloc = ClassSignatureSet.empty;
+			    native_calls = MethodSet.empty } in
+    match expr with parser
+      | [< 'Ident "MethodEntry"; 'Kwd "{";
+	   attrs = parse_methodentry_attrs; 'Kwd "}" >] ->
+	  let threadname = StringMap.find "thread" attrs in
+	  let stack =
+	    try
+	      StringMap.find threadname !callstackmap
+	    with _ ->
+	      let s = Stack.create () in
+		callstackmap := StringMap.add threadname s !callstackmap;
+		s in
+	  let previous_method_attrs =
+	    try
+	      Stack.top stack
+	    with _ ->
+	      StringMap.add "type" "None" StringMap.empty in
+	  let m_type = StringMap.find "type" attrs
+	  and m_class = StringMap.find "class" attrs
+	  and m_name = StringMap.find "name" attrs
+	  and m_signature = StringMap.find "signature" attrs in
+	  let jmethod = { m_type = m_type;
+			  m_class = m_class;
+			  m_name = m_name;
+			  m_signature = m_signature } in
+	  let new_native_info =
+	    if ((StringMap.find "type" previous_method_attrs) = "Native") then
+	      let prev_m_type = StringMap.find "type" previous_method_attrs
+	      and prev_m_class = StringMap.find "class" previous_method_attrs
+	      and prev_m_name = StringMap.find "name" previous_method_attrs
+	      and prev_m_signature = StringMap.find "signature"
+		previous_method_attrs in
+	      let jprevmethod = { m_type = prev_m_type;
+				  m_class = prev_m_class;
+				  m_name = prev_m_name;
+				  m_signature = prev_m_signature } in
+	      let meth_info =
+		try
+		  MethodMap.find jprevmethod native_info
+		with _ -> empty_method_info in
+	      let new_meth_info =
+		{ meth_info with
+		    native_calls = MethodSet.add jmethod
+		    meth_info.native_calls } in
+		MethodMap.add jprevmethod new_meth_info native_info
+	    else
+	      if ((StringMap.find "type" attrs) = "Native") then
+		MethodMap.add jmethod empty_method_info native_info
+	      else native_info in
+	    Stack.push attrs stack;
+	    parse_jvmti new_native_info expr
+      | [< 'Ident "MethodExit"; 'Kwd "{";
+	   attrs = parse_methodexit_attrs; 'Kwd "}" >] ->
+	  let threadname = StringMap.find "thread" attrs in
+	  let stack =
+	    try
+	      StringMap.find threadname !callstackmap
+	    with _ -> failwith "MethodExit without MethodEntry !" in
+	    ignore (Stack.pop stack);
+	    parse_jvmti native_info expr
+      | [< 'Ident "VMAlloc"; 'Kwd "{";
+	   attrs = parse_vmalloc_attrs; 'Kwd "}" >] ->
+	  let threadname = StringMap.find "thread" attrs in
+	  let stack =
+	    try
+	      StringMap.find threadname !callstackmap
+	    with _ -> failwith "VMalloc anywhere !" in
+	  let method_attrs = Stack.top stack in
+	    if ((StringMap.find "type" method_attrs) = "Native") then
+	      let allocated_class = StringMap.find "class" attrs in
+	      let m_type = StringMap.find "type" method_attrs
+	      and m_class = StringMap.find "class" method_attrs
+	      and m_name = StringMap.find "name" method_attrs
+	      and m_signature = StringMap.find "signature" method_attrs in
+	      let jmethod = { m_type = m_type;
+			      m_class = m_class;
+			      m_name = m_name;
+			      m_signature = m_signature } in
+	      let meth_info =
+		try
+		  MethodMap.find jmethod native_info
+		with _ -> empty_method_info in
+	      let new_meth_info =
+		{ meth_info with
+		    native_alloc = ClassSignatureSet.add allocated_class
+		    meth_info.native_alloc } in
+		parse_jvmti (MethodMap.add
+			       jmethod new_meth_info native_info) expr
+	    else parse_jvmti native_info expr
+      | [< >] -> native_info
 	
 let parse_jvmti_callstrace_file file =
   let native_info = MethodMap.empty in
@@ -233,6 +238,8 @@ let rec parse_native_calls expr =
     | [< >] -> MethodSet.empty
 	
 let rec parse_native_alloc_calls method_attrs native_info expr =
+  let empty_method_info = { native_alloc = ClassSignatureSet.empty;
+			    native_calls = MethodSet.empty } in
   let m_type = StringMap.find "type" method_attrs
   and m_class = StringMap.find "class" method_attrs
   and m_name = StringMap.find "name" method_attrs
@@ -246,8 +253,7 @@ let rec parse_native_alloc_calls method_attrs native_info expr =
 	   allocated_classes = parse_native_alloc; 'Kwd "}" >] ->
 	  let method_info =
 	    try MethodMap.find jmethod native_info
-	    with _ -> { native_alloc = ClassSignatureSet.empty;
-			native_calls = MethodSet.empty } in
+	    with _ -> empty_method_info in
 	  let new_method_info =
 	    { method_info with
 		native_alloc = ClassSignatureSet.union
@@ -259,8 +265,7 @@ let rec parse_native_alloc_calls method_attrs native_info expr =
 	   native_calls = parse_native_calls; 'Kwd "}" >] ->
 	  let method_info =
 	    try MethodMap.find jmethod native_info
-	    with _ -> { native_alloc = ClassSignatureSet.empty;
-			native_calls = MethodSet.empty } in
+	    with _ -> empty_method_info in
 	  let new_method_info =
 	    { method_info with
 		native_calls = MethodSet.union
@@ -268,7 +273,10 @@ let rec parse_native_alloc_calls method_attrs native_info expr =
 	  let new_native_info =
 	    MethodMap.add jmethod new_method_info native_info in
 	    parse_native_alloc_calls method_attrs new_native_info expr
-      | [< >] -> native_info
+      | [< >] ->
+	  if (MethodMap.mem jmethod native_info) then
+	    native_info
+	  else MethodMap.add jmethod empty_method_info native_info
 	  
 let rec parse_native_info_stream native_info expr =
   match expr with parser
