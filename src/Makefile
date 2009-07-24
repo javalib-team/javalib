@@ -21,7 +21,7 @@
 
 
 -include ../Makefile.config
-INCLUDE:=$(INCLUDE) -I ../ptrees/
+INCLUDE:=$(INCLUDE) -I ../ptrees/ -I ../jvmti/
 DOCDIR:=../$(DOCDIR)
 
 CSS=\"style.css\"
