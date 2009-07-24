@@ -30,6 +30,7 @@
     the JVM during its initialization. (cf {!default_entrypoints}).*)
 val parse_program :
   ?other_entrypoints:(JBasics.class_name * JClass.method_signature) list ->
+  ?native_stubs:string option ->
   string -> JBasics.class_name * JClass.method_signature-> JProgram.program
 
 (** Sun's JVM calls some methods natively during the JVM

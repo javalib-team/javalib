@@ -179,7 +179,9 @@ struct
 	dic : dictionary;
 	workset : (class_name_index * JProgram.concrete_method) Dllist.dllist;
 	classpath : JFile.class_path;
-	mutable native_methods : ClassMethSet.t }
+	mutable native_methods : ClassMethSet.t;
+	parse_natives : bool;
+	native_methods_info : NativeStubsGen.t}
 
   exception Method_not_found
 
@@ -527,10 +529,12 @@ struct
   and add_to_workset p (cni,msi) =
     let cm = make_workset_item p (cni,msi) in
       match cm.cm_implementation with
-	| Native -> cm.cm_has_been_parsed <- true; (* useful ? *)
-	    if not(ClassMethSet.mem (cni,msi) p.native_methods)
-            then
-              p.native_methods <- ClassMethSet.add (cni,msi) p.native_methods
+	| Native ->
+	    if not(cm.cm_has_been_parsed) then
+	      (cm.cm_has_been_parsed <- true;
+               p.native_methods <- ClassMethSet.add (cni,msi) p.native_methods;
+	       if (p.parse_natives) then Dllist.add (cni,cm) p.workset
+	      )
 	| Java _ ->
 	    if not( cm.cm_has_been_parsed ) then
 	      (cm.cm_has_been_parsed <- true;
@@ -722,6 +726,39 @@ struct
 	    add_class_clinits p rcni
       | _ -> ()
 
+  let parse_native_method p allocated_classes calls =
+    let normalize_cn cn =
+      if (cn <> []) then
+	let head = List.hd cn in
+	  (String.sub head 1 ((String.length head) - 1)) :: List.tl cn
+      else [] in
+      List.iter
+	(fun signature ->
+	   match JParseSignature.parse_objectType signature with
+	     | TArray _ -> ()
+	     | TClass cn ->
+		 (* hack : why a class should not be encapsulated by L; ? *)
+		 let cn = normalize_cn cn in
+		 let cni = p.dic.get_cn_index cn in
+		   add_instantiated_class p cni;
+		   add_class_clinits p cni
+	) allocated_classes;
+      List.iter
+      	(fun (m_class,m_name,m_signature) ->
+	   let cn =
+	     match JParseSignature.parse_objectType m_class with
+	       | TArray _ -> failwith "Bad class"
+	       | TClass cn -> normalize_cn cn in
+	   let (parameters,rettype) =
+	     JParseSignature.parse_method_descriptor m_signature in
+	   let ms = { ms_name = m_name;
+		      ms_parameters = parameters;
+		      ms_return_type = rettype } in
+	   let cni = p.dic.get_cn_index cn in
+	   let msi = p.dic.get_ms_index ms in
+	     add_to_workset p (cni,msi)
+	) calls
+    
   let iter_workset p =
     let tail = Dllist.tail p.workset
     in
@@ -729,15 +766,42 @@ struct
 	(fun (cni,cm) ->
 	   match cm.cm_implementation with
 	     | Native ->
-		 failwith "A Native Method shouldn't be found in the workset"
+		 if not(p.parse_natives) then
+		   failwith "A Native Method shouldn't be found in the workset"
+		 else
+		   let ms = cm.cm_signature in
+		   let m_class =
+		     "L" ^ (JUnparseSignature.unparse_objectType
+			      (TClass (p.dic.retrieve_cn cni))) ^ ";"
+		   and m_name = ms.ms_name
+		   and m_signature = JUnparseSignature.unparse_method_descriptor
+		     (ms.ms_parameters, ms.ms_return_type) in
+		   let m = (m_class,m_name,m_signature) in
+		     (try
+			let (m_alloc, m_calls) =
+			  (NativeStubsGen.get_native_method_allocations m
+			     p.native_methods_info,
+			   NativeStubsGen.get_native_method_calls m
+			     p.native_methods_info) in
+			  parse_native_method p m_alloc m_calls
+		      with _ ->
+			prerr_endline ("warning : found native method " ^ m_class
+				       ^ "." ^ m_name ^ ":" ^ m_signature
+				       ^ " not present in the stub file.")
+		     )
 	     | Java t ->
 		 let code = (Lazy.force t).c_code
 		 in
 		   Array.iter (parse_instruction p cni) code)
 	tail
 
-  let new_program_cache entrypoints classpath =
+  let new_program_cache entrypoints native_stubs classpath =
     let dic = make_dictionary () in
+    let (parse_natives,native_methods_info) =
+      match native_stubs with
+	| None -> (false, NativeStubsGen.empty_info)
+	| Some file -> (true,
+			NativeStubsGen.parse_native_info_file file) in
     let entrypoints =
       List.map
 	(fun (cn,ms) -> (dic.get_cn_index cn, dic.get_ms_index ms))
@@ -753,7 +817,9 @@ struct
 	clinits = ClassSet.empty;
 	workset = workset;
 	classpath = classpath;
-	native_methods = ClassMethSet.empty }
+	native_methods = ClassMethSet.empty;
+	parse_natives = parse_natives;
+	native_methods_info = native_methods_info }
     in
       List.iter
 	(fun (cni,msi) ->
@@ -763,9 +829,9 @@ struct
 	entrypoints;
       p
 
-  let parse_program entrypoints classpath =
+  let parse_program entrypoints native_stubs classpath =
     let classpath = JFile.class_path classpath in
-    let p = new_program_cache entrypoints classpath in
+    let p = new_program_cache entrypoints native_stubs classpath in
       iter_workset p;
       if not (ClassMethSet.is_empty p.native_methods)
       then prerr_endline "The program contains native method. Beware that native methods' side effects may invalidate the result of the analysis.";
@@ -774,7 +840,7 @@ struct
 
   let parse_program_bench entrypoints classpath =
     let time_start = Sys.time() in
-    let p = parse_program entrypoints classpath in
+    let p = parse_program entrypoints None classpath in
     let s = Dllist.size p.workset in
       Printf.printf "Workset of size %d\n" s;
       let time_stop = Sys.time() in
@@ -888,8 +954,10 @@ let default_entrypoints =
       (["java";"lang";"reflect";"Field"],clinit_signature)::
       []
 
-let parse_program ?(other_entrypoints=default_entrypoints) classpath cnms =
-  let p_cache = (Program.parse_program (cnms::other_entrypoints) classpath) in
+let parse_program ?(other_entrypoints=default_entrypoints) ?(native_stubs=None)
+    classpath cnms =
+  let p_cache = (Program.parse_program (cnms::other_entrypoints) native_stubs
+		   classpath) in
     pcache2jprogram p_cache
 
 let parse_program_bench ?(other_entrypoints=default_entrypoints) classpath cnms =

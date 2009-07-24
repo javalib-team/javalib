@@ -333,6 +333,9 @@ let fprint_native_info native_info file =
     close_out oc
       
 type t = native_info
+
+let empty_info = MethodMap.empty
+
 let get_native_methods info =
   let methods = ref [] in
     MethodMap.iter

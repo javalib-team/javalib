@@ -26,6 +26,9 @@
 
 (** abstract type representing information associated to native methods. *)
 type t
+
+(** represents empty information. *)
+val empty_info : t
   
 (** [get_native_methods native_info] returns the list of native methods
     contained in [native_info]. A native method is represented by a triplet
