@@ -679,23 +679,24 @@ let create_package_dir outputdir package =
 let css = "(* CSS *)"
 
 let js = "function showInfoList(e){
-    var parent = e.parentNode;
-    var children = parent.childNodes;
-    var len = children.length;
+    var siblings = e.parentNode.childNodes;
+    var len = siblings.length;
     
     for(var i = 0; i < len; i++){
-    	if (children[i].nodeName == \"UL\"
-	    && children[i].className == \"clickable\"){
-	    var item = children[i];
-	    if (item.style.display != \"inline-block\"){
-		item.style.display = \"inline-block\";
+        var sibling = siblings[i];
+    	if (sibling.nodeName == \"UL\"
+	    && sibling.className == \"clickable\"){
+	    var style = sibling.style;
+	    if (style.visibility != \"visible\"){
+		style.position = \"static\";
+                style.visibility = \"visible\";
 	    } else{
-		item.style.display = \"none\";
+		style.visibility = \"hidden\";
+                style.position = \"absolute\";
 	    }
 	}
     }
-}
-"
+}"
 
 let pp_print_program_to_html_files ?(css=css) ?(js=js) program outputdir info =
   let copy_file src dst =

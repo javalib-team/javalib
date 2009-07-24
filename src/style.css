@@ -16,28 +16,18 @@ ol.code {
     width: 10em;
 }
 
-div.method {
-    margin-left: 2em;
-    margin-bottom: 0.5em;
-    margin-top: 0.5em;
-    padding: 1em;
+div.field, div.method {
+    margin: 0.5em 3%;
+    padding: 2%;
     width: 90%;
     border: 1px solid black;
 }
-
 div.field {
-    margin-left: 2em;
-    margin-bottom: 0.5em;
-    margin-top: 0.5em;
-    padding: 1em;
-    width: 90%;
-    border: 1px solid black;
+    padding: 0.5em 2%
 }
-
 div.class {
     margin-bottom: 2em;
     margin-top: 2em;
-    padding-left: 1em;
     padding-bottom: 1em;
     width: 100%;
     border: 1px solid black;
@@ -74,10 +64,15 @@ li {
 }
 
 ul.clickable {
-    display: none;
     list-style-type: square;
     vertical-align: top;
     margin:0;
+    visibility: hidden;
+    position: absolute;
+    display: inline-block;
+}
+div.method_signature > ul.clickable {
+    display: block;
 }
 
 span.parameter.clickable {
