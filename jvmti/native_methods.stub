@@ -1,0 +1,202 @@
+Method{type="Native" class="Ljava/io/FileInputStream;" name="close0" signature="()V"}{
+}
+
+Method{type="Native" class="Ljava/io/FileInputStream;" name="open" signature="(Ljava/lang/String;)V"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/io/FileInputStream;" name="readBytes" signature="([BII)I"}{
+}
+
+Method{type="Native" class="Ljava/io/FileOutputStream;" name="writeBytes" signature="([BII)V"}{
+}
+
+Method{type="Native" class="Ljava/io/UnixFileSystem;" name="canonicalize0" signature="(Ljava/lang/String;)Ljava/lang/String;"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="<init>" signature="([BLjava/lang/String;)V"}
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/io/UnixFileSystem;" name="getBooleanAttributes0" signature="(Ljava/io/File;)I"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/io/UnixFileSystem;" name="getLastModifiedTime" signature="(Ljava/io/File;)J"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/io/UnixFileSystem;" name="getLength" signature="(Ljava/io/File;)J"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/lang/Class;" name="getName0" signature="()Ljava/lang/String;"}{
+    VMAlloc{
+        "Ljava/lang/String;"
+        "[C"
+    }
+}
+
+Method{type="Native" class="Ljava/lang/Class;" name="isArray" signature="()Z"}{
+}
+
+Method{type="Native" class="Ljava/lang/Class;" name="isPrimitive" signature="()Z"}{
+}
+
+Method{type="Native" class="Ljava/lang/ClassLoader$NativeLibrary;" name="find" signature="(Ljava/lang/String;)J"}{
+}
+
+Method{type="Native" class="Ljava/lang/ClassLoader;" name="defineClass1" signature="(Ljava/lang/String;[BIILjava/security/ProtectionDomain;Ljava/lang/String;)Ljava/lang/Class;"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/ClassLoader;" name="addClass" signature="(Ljava/lang/Class;)V"}
+    }
+}
+
+Method{type="Native" class="Ljava/lang/ClassLoader;" name="findBootstrapClass" signature="(Ljava/lang/String;)Ljava/lang/Class;"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/ClassNotFoundException;" name="<init>" signature="(Ljava/lang/String;)V"}
+    }
+}
+
+Method{type="Native" class="Ljava/lang/ClassLoader;" name="findLoadedClass0" signature="(Ljava/lang/String;)Ljava/lang/Class;"}{
+}
+
+Method{type="Native" class="Ljava/lang/Object;" name="getClass" signature="()Ljava/lang/Class;"}{
+}
+
+Method{type="Native" class="Ljava/lang/Object;" name="hashCode" signature="()I"}{
+}
+
+Method{type="Native" class="Ljava/lang/Object;" name="notifyAll" signature="()V"}{
+}
+
+Method{type="Native" class="Ljava/lang/String;" name="intern" signature="()Ljava/lang/String;"}{
+    VMAlloc{
+        "Ljava/lang/String;"
+        "[C"
+    }
+}
+
+Method{type="Native" class="Ljava/lang/System;" name="arraycopy" signature="(Ljava/lang/Object;ILjava/lang/Object;II)V"}{
+}
+
+Method{type="Native" class="Ljava/lang/System;" name="currentTimeMillis" signature="()J"}{
+}
+
+Method{type="Native" class="Ljava/lang/Thread;" name="currentThread" signature="()Ljava/lang/Thread;"}{
+}
+
+Method{type="Native" class="Ljava/lang/Thread;" name="isInterrupted" signature="(Z)Z"}{
+}
+
+Method{type="Native" class="Ljava/lang/Thread;" name="setPriority0" signature="(I)V"}{
+}
+
+Method{type="Native" class="Ljava/lang/Throwable;" name="fillInStackTrace" signature="()Ljava/lang/Throwable;"}{
+}
+
+Method{type="Native" class="Ljava/lang/Throwable;" name="getStackTraceDepth" signature="()I"}{
+}
+
+Method{type="Native" class="Ljava/lang/Throwable;" name="getStackTraceElement" signature="(I)Ljava/lang/StackTraceElement;"}{
+    VMAlloc{
+        "Ljava/lang/StackTraceElement;"
+        "Ljava/lang/String;"
+        "[C"
+    }
+}
+
+Method{type="Native" class="Ljava/security/AccessController;" name="doPrivileged" signature="(Ljava/security/PrivilegedAction;)Ljava/lang/Object;"}{
+    Invokes{
+        Method{type="Java" class="Ljava/io/FilePermission$1;" name="run" signature="()Ljava/lang/Object;"}
+        Method{type="Java" class="Lsun/security/action/GetPropertyAction;" name="run" signature="()Ljava/lang/Object;"}
+    }
+}
+
+Method{type="Native" class="Ljava/security/AccessController;" name="doPrivileged" signature="(Ljava/security/PrivilegedExceptionAction;)Ljava/lang/Object;"}{
+    Invokes{
+        Method{type="Java" class="Lsun/misc/URLClassPath$3;" name="run" signature="()Ljava/lang/Object;"}
+    }
+}
+
+Method{type="Native" class="Ljava/security/AccessController;" name="doPrivileged" signature="(Ljava/security/PrivilegedExceptionAction;Ljava/security/AccessControlContext;)Ljava/lang/Object;"}{
+    Invokes{
+        Method{type="Java" class="Ljava/net/URLClassLoader$1;" name="run" signature="()Ljava/lang/Object;"}
+        Method{type="Java" class="Ljava/security/PrivilegedActionException;" name="<init>" signature="(Ljava/lang/Exception;)V"}
+    }
+}
+
+Method{type="Native" class="Ljava/security/AccessController;" name="getInheritedAccessControlContext" signature="()Ljava/security/AccessControlContext;"}{
+}
+
+Method{type="Native" class="Ljava/security/AccessController;" name="getStackAccessControlContext" signature="()Ljava/security/AccessControlContext;"}{
+    VMAlloc{
+        "Ljava/security/AccessControlContext;"
+    }
+}
+
+Method{type="Native" class="Ljava/util/zip/Inflater;" name="inflateBytes" signature="([BII)I"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/Inflater;" name="init" signature="(Z)J"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/Inflater;" name="initIDs" signature="()V"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/ClassLoader;" name="findNative" signature="(Ljava/lang/ClassLoader;Ljava/lang/String;)J"}
+    }
+}
+
+Method{type="Native" class="Ljava/util/zip/Inflater;" name="reset" signature="(J)V"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipEntry;" name="initFields" signature="(J)V"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipEntry;" name="initIDs" signature="()V"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/ClassLoader;" name="findNative" signature="(Ljava/lang/ClassLoader;Ljava/lang/String;)J"}
+    }
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="freeEntry" signature="(JJ)V"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="getCSize" signature="(J)J"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="getEntry" signature="(JLjava/lang/String;Z)J"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="getMethod" signature="(J)I"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="getSize" signature="(J)J"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="getTotal" signature="(J)I"}{
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="initIDs" signature="()V"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/ClassLoader;" name="findNative" signature="(Ljava/lang/ClassLoader;Ljava/lang/String;)J"}
+    }
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="open" signature="(Ljava/lang/String;IJ)J"}{
+    Invokes{
+        Method{type="Java" class="Ljava/lang/String;" name="getBytes" signature="(Ljava/lang/String;)[B"}
+    }
+}
+
+Method{type="Native" class="Ljava/util/zip/ZipFile;" name="read" signature="(JJJ[BII)I"}{
+}
+
