@@ -30,11 +30,11 @@ CSS=\"style.css\"
 MODULES=jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
 jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
 jParse jFile jProgram jPrintHtml jPrint jControlFlow jCRA		\
-jPrintHierarchy jRTA
+jPrintHierarchy jNativeStubs jRTA
 MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
 jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
 jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\
-jPrintHtml jControlFlow jPrint jPrintHierarchy jRTA
+jPrintHtml jControlFlow jPrint jPrintHierarchy jNativeStubs jRTA
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc
@@ -81,6 +81,11 @@ endif
 jParseSignature.cmo:jParseSignature.ml
 	$(OCAMLC) $(INCLUDE) $(PP) -c $<
 jParseSignature.cmx jParseSignature.o:jParseSignature.ml
+	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
+
+jNativeStubs.cmo:jNativeStubs.ml
+	$(OCAMLC) $(INCLUDE) $(PP) -c $<
+jNativeStubs.cmx jNativeStubs.o:jNativeStubs.ml
 	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
 
 jPrintHtml.cmo:jPrintHtml.ml

@@ -181,7 +181,7 @@ struct
 	classpath : JFile.class_path;
 	mutable native_methods : ClassMethSet.t;
 	parse_natives : bool;
-	native_methods_info : NativeStubsGen.t}
+	native_methods_info : JNativeStubs.t}
 
   exception Method_not_found
 
@@ -779,9 +779,9 @@ struct
 		   let m = (m_class,m_name,m_signature) in
 		     (try
 			let (m_alloc, m_calls) =
-			  (NativeStubsGen.get_native_method_allocations m
+			  (JNativeStubs.get_native_method_allocations m
 			     p.native_methods_info,
-			   NativeStubsGen.get_native_method_calls m
+			   JNativeStubs.get_native_method_calls m
 			     p.native_methods_info) in
 			  parse_native_method p m_alloc m_calls
 		      with _ ->
@@ -799,9 +799,9 @@ struct
     let dic = make_dictionary () in
     let (parse_natives,native_methods_info) =
       match native_stubs with
-	| None -> (false, NativeStubsGen.empty_info)
+	| None -> (false, JNativeStubs.empty_info)
 	| Some file -> (true,
-			NativeStubsGen.parse_native_info_file file) in
+			JNativeStubs.parse_native_info_file file) in
     let entrypoints =
       List.map
 	(fun (cn,ms) -> (dic.get_cn_index cn, dic.get_ms_index ms))

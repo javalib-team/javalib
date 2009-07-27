@@ -5,7 +5,7 @@
 {2 {L Documentation}}
 
 {b {L High level manipulations of programs}}
-{!modules: JFile JProgram JCRA JRTA JControlFlow JPrintHierarchy JPrintHtml JPrint}
+{!modules: JFile JProgram JCRA JRTA JControlFlow JPrintHierarchy JPrintHtml JPrint JNativeStubs}
 
 {b {L Hight level representation of classes}}
 {!modules: JBasics JClass JSignature JDumpBasics}
