@@ -57,7 +57,6 @@ val js:string
     optional Cascading Style Sheet (CSS) [css] and an optional
     JavaCcript file [js].  If [css] or [js] is not provided, {!css}
     and {!js} are used when [css] or [js] is not provided.
-
-    There is a display bug in Safari => use Firefox. *)
+*)
 val pp_print_program_to_html_files :
   ?css:string -> ?js:string -> program -> string -> info -> unit

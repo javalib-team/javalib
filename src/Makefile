@@ -49,8 +49,8 @@ install: javaLib.cma javaLib.cmxa
 	cp -f javaLib.cma javaLib.cmxa javaLib.a $(MODULE_INTERFACES:=.cmi) $(INSTALL_DIR)
 	cp -f $(MODULE_INTERFACES:=.mli) $(INSTALL_DIR)
 
-ocaml:
-	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma
+ocaml:javaLib.cma
+	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma str.cma javaLib.cma
 
 tests:javaLib.cma tests.ml
 	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma javaLib.cma tests.ml

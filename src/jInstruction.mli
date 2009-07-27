@@ -43,12 +43,14 @@ val opcodes2code : JBasics.constant array -> JClassLow.opcode array -> JClass.op
 val code2opcodes :
   JBasics.constant DynArray.t -> JClass.opcode array -> JClassLow.opcode array
 
-(**/**)
-
-(* For testing. *)
-
 (** Low level to high level bytecode instruction. *)
 val opcode2instruction : JBasics.constant array -> JClassLow.opcode -> JClass.opcode
 
-(** High level to low level bytecode instruction. *)
-val instruction2opcode : JBasics.constant DynArray.t -> JClass.opcode -> JClassLow.opcode
+(** High level to low level bytecode instruction.
+
+    [instruction2opcode consts length instr] tries to produce an
+    opcode which could be unparsed in [length] byte(s).
+
+    @raise JBasics.Class_structure_error
+*)
+val instruction2opcode : JBasics.constant DynArray.t -> int -> JClass.opcode -> JClassLow.opcode

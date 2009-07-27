@@ -124,8 +124,10 @@ let opcode = function
   | OpACmpEq i -> sprintf "ifacmpeq %d" i
   | OpACmpNe i -> sprintf "ifacmpne %d" i
   | OpGoto i -> sprintf "goto %d" i
-  | OpJsr i -> sprintf "goto %d" i
-  | OpRet i -> sprintf "goto %d" i
+  | OpJsr i -> sprintf "jsr %d" i
+  | OpGotoW i -> sprintf "gotow %d" i
+  | OpJsrW i -> sprintf "jsrw %d" i
+  | OpRet i -> sprintf "ret %d" i
 
   | OpTableSwitch (def,min,max,tbl) ->
       (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
@@ -166,10 +168,7 @@ let opcode = function
   | OpAMultiNewArray (c,n) -> sprintf "amultinewarray type:%d dims:%d" c n
   | OpIfNull i -> sprintf "ifnull %d" i
   | OpIfNonNull i -> sprintf "ifnonnull %d" i
-  | OpGotoW i -> sprintf "gotow %d" i
-  | OpJsrW i -> sprintf "jsrw %d" i
   | OpBreakpoint -> "breakpoint"
-  | OpRetW i -> sprintf "retw %d" i
 
   | OpInvalid -> "invalid"
 

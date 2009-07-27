@@ -18,9 +18,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-(* TODO : correct a display bug in Safari related to list numerotation.
-   Maybe the css is only to be modified... *)
-
 open JBasics
 open JClass
 open JProgram
@@ -397,7 +394,7 @@ let make_methodsignature2html cname ms f =
 let methodcallers2html program cni msi info =
   let cn = program.dictionary.retrieve_cn cni in
   let callers = info.p_callers cni msi in
-    if (callers = ClassMethSet.empty) then None
+    if (callers = ClassMethSet.empty) then []
     else
       let callerslist = ClassMethSet.elements callers in
       let hl = List.map
@@ -412,16 +409,16 @@ let methodcallers2html program cni msi info =
 		  [gen_titled_hyperlink href (name ^ "." ^ mssimple) msstr]
 	       )
 	) callerslist in
-	Some (gen_hidden_list hl)
+	[gen_hidden_list hl]
 
-let methodname2html program cni msi info mname =
-  let callersoption = methodcallers2html program cni msi info in
-    match callersoption with
-      | None -> ([PCData mname],[])
-      | Some callers ->
-	  ([gen_span [PCData mname]
-	      [("class",methodname_class ^ " " ^ clickable_class);
-	       ("onclick","showInfoList(this)")]], [callers])
+let methodname2html cni msi info mname =
+  let callers = info.p_callers cni msi in
+    if (callers = ClassMethSet.empty) then
+      [gen_span [PCData mname] []]
+    else
+      [gen_span [PCData mname]
+	 [("class",methodname_class ^ " " ^ clickable_class);
+	  ("onclick","showInfoList(this)")]]
 
 let get_local_variable_ident i pp m =
   match m with
@@ -469,24 +466,23 @@ let methodsignature2html program cni msi info =
 			  @ [PCData (" "
 				     ^ (get_local_variable_ident i 0 meth))])
 		       ms.ms_parameters) in
-  let mname2html = methodname2html program cni msi info in
+  let mname2html = methodname2html cni msi info in
     if (ms.ms_name = "<clinit>") then
-      let (mname,callers) = mname2html "clinit" in
-	((PCData (header ^ " ")) :: mname @ [PCData ("{};")],
-	 callers)
+      let mname = mname2html "clinit" in
+	(PCData (header ^ " ")) :: mname @ [PCData ("{};")]
     else if (ms.ms_name = "<init>") then
-      let (mname,callers) = mname2html (snd (split_package_class cn)) in
-	((PCData (header ^ " ")) :: mname
-	 @ [PCData "("]
-	 @ (parameters2html ())
-	 @ [PCData ");"], callers)
+      let mname = mname2html (snd (split_package_class cn)) in
+	(PCData (header ^ " ")) :: mname
+	@ [PCData "("]
+	@ (parameters2html ())
+	@ [PCData ");"]
     else
-      let (mname,callers) = mname2html ms.ms_name in
-	((PCData (header ^ " "))
-	 :: (returntype2html program ms.ms_return_type cn)
-	 @ (PCData (" ") :: mname) @ [PCData "("]
-	 @ (parameters2html ())
-	 @ [PCData ");"], callers)
+      let mname = mname2html ms.ms_name in
+	(PCData (header ^ " "))
+	:: (returntype2html program ms.ms_return_type cn)
+	@ (PCData (" ") :: mname) @ [PCData "("]
+	@ (parameters2html ())
+	@ [PCData ");"]
 
 let iocsignature2html program cni =
   let ioc = get_interface_or_class program cni in
@@ -516,7 +512,8 @@ let method2html program cni msi info insts =
     match meth with
       | AbstractMethod am -> am.am_signature
       | ConcreteMethod cm -> cm.cm_signature in
-  let (method_signature,callers) = methodsignature2html program cni msi info in
+  let method_signature = methodsignature2html program cni msi info in
+  let callers = methodcallers2html program cni msi info in
     gen_method (ms2anchorname cn ms) method_signature callers annots insts
 
 let get_fields_indexes program cni =

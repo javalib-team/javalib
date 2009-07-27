@@ -29,11 +29,19 @@ val parse_code : IO.input -> int -> JClassLow.opcode array
 val unparse_code :
   'a IO.output -> JClassLow.opcode array -> unit
 
-(**/**)
+(** [OpcodeLengthError] takes as argument the opcode and the excepted
+    length that cannot be matched by unparsing the opcode. *)
+exception OpcodeLengthError of int * JClassLow.opcode
 
-(* For testing. *)
 
 val parse_full_opcode :
   IO.input -> (unit -> int) -> JClassLow.opcode
+
+(** [unparse_instruction ch count length opcode] output on [ch] the
+    opcode [opcode] in the [length] byte(s) format. E.g [OpLoad
+    (`Int,1)] can be encoded on 4 bytes ([wide iload 0x0001]), 2 bytes
+    ([iload 0x01]) or 1 byte ([iload_1]).
+
+    @raise OpcodeLengthError if the length provided cannot be matched.*)
 val unparse_instruction :
-  'a IO.output -> (unit -> int) -> JClassLow.opcode -> unit
+  'a IO.output -> (unit -> int) -> int -> JClassLow.opcode -> unit

@@ -416,17 +416,18 @@ let get_local_variable_info i pp code =
         let offset =
           (* when an [store v] is done, [v] will have its type at the
              next program point.  Therefore, the LocalVariableTable
-             only refers [v] from the next program point.  To have the
-             name and type of [v] we therefore need to look at the
+             only refers to [v] from the next program point.  To have
+             the name and type of [v] we therefore need to look at the
              next program point. *)
-	  match code.c_code.(pp) with
-              (* heuristics (because wherever an instruction can be
-                 encode with one of the two short versions it can also
-                 be encoded in one of the longer version.) *)
-	    | OpStore(_,value) when value < 4 -> -1
-	    | OpStore(_,value) when value <= 0xFF -> -2
-	    | OpStore(_,_) -> -3
-	    | _ -> 0
+          let code = code.c_code in
+	    match code.(pp) with
+	      | OpStore _ ->
+                  let i = ref (pp + 1) in
+                    while !i < Array.length code && code.(!i) = OpInvalid do
+                      incr i
+                    done;
+                    !i - pp
+	      | _ -> 0
         in
 	  try
 	    let (_,_,s,sign,_) =

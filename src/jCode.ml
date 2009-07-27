@@ -354,8 +354,6 @@ let parse_opcode op ch wide =
 		OpJsrW (read_i32 ch)
 	| 202 ->
 		OpBreakpoint
-	| 209 ->
-		OpRetW (read_ui16 ch)
 	| _ ->
 	    raise (Class_structure_error ("Illegal opcode: " ^ string_of_int op))
 
@@ -381,6 +379,8 @@ let parse_code ch len =
 
 (* Ops unparsing *)
 (**************************)
+
+exception OpcodeLengthError of int * JClassLow.opcode
 
 module OpcodeMap =
   Map.Make(struct type t = opcode let compare = compare end)
@@ -469,10 +469,11 @@ let simple_table =
 exception Not_in_range
 
 (* Instruction without arguments *)
-let simple ch op =
+let simple ch length op =
   try
-    write_ui8 ch
-      (OpcodeMap.find op simple_table)
+    let opcode = OpcodeMap.find op simple_table in
+      if length <> 1 then raise (OpcodeLengthError (length,op));
+      write_ui8 ch opcode
   with
       Not_found -> raise Not_in_range
 
@@ -483,7 +484,7 @@ let int_of_jvm_basic_type = function
   | `Double -> 3
 
 (* Instructions with a jvm_basic_type argument added to the base opcode. *)
-let jvm_basic_type ch inst =
+let jvm_basic_type ch length inst =
   let jvm_basic_type, opcode = match inst with
     | OpArrayLoad k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 46
     | OpArrayStore k -> (match k with `Int -> `Int2Bool | #other_num as k -> k), 79
@@ -496,21 +497,24 @@ let jvm_basic_type ch inst =
     | OpReturn k -> k, 172
     | _ -> raise Not_in_range
   in
-    write_ui8 ch (opcode + int_of_jvm_basic_type jvm_basic_type)
-
-let unparse_local_instruction ch opcode value =
-  if value <= 0xFF
-  then (
-    write_ui8 ch opcode;
-    write_ui8 ch value
-  ) else (
-    write_ui8 ch 196;
-    write_ui8 ch opcode;
-    write_ui16 ch value
-  )
+  let opcode = opcode + int_of_jvm_basic_type jvm_basic_type in
+    if length <> 1 then raise (OpcodeLengthError (length,inst));
+    write_ui8 ch opcode
 
 (* Instructions xload, xstore (but not xaload, xastore) *)
-let ilfda_loadstore ch instr =
+let ilfda_loadstore ch length instr =
+  let unparse_local_instruction opcode value =
+    if length = 2 && value <= 0xFF then (
+      write_ui8 ch opcode;
+      write_ui8 ch value
+    ) else if length = 4 then (
+      write_ui8 ch 196;
+      write_ui8 ch opcode;
+      write_ui16 ch value
+    ) else (
+      raise (OpcodeLengthError (length,instr))
+    )
+  in
   let value = match instr with
     | OpLoad (_, value)
     | OpALoad value
@@ -518,7 +522,7 @@ let ilfda_loadstore ch instr =
     | OpAStore value -> value
     | _ -> raise Not_in_range
   in
-    if value < 4
+    if (length = 1 && value < 4)
     then
       write_ui8 ch
 	(value +
@@ -527,19 +531,19 @@ let ilfda_loadstore ch instr =
 	     | OpALoad _ -> 42
 	     | OpStore (jvm_basic_type, _) -> 59 + 4 * int_of_jvm_basic_type jvm_basic_type
 	     | OpAStore _ -> 75
-	     | _ -> raise Not_in_range)
+	     | _ -> assert false)
     else
-      unparse_local_instruction ch
+      unparse_local_instruction
 	(match instr with
 	   | OpLoad (jvm_basic_type, _) -> 21 +  int_of_jvm_basic_type jvm_basic_type
 	   | OpALoad _ -> 25
 	   | OpStore (jvm_basic_type, _) -> 54 +  int_of_jvm_basic_type jvm_basic_type
 	   | OpAStore _ -> 58
-	   | _ -> raise Not_in_range)
+	   | _ -> assert false)
 	value
 
 (* Instructions with one 16 bits signed argument *)
-let i16 ch inst =
+let i16 ch length inst =
   let i, opcode = match inst with
     | OpSIPush i -> i, 17
     | OpIfEq i -> i, 153
@@ -562,14 +566,15 @@ let i16 ch inst =
     | OpIfNonNull i -> i, 199
     | _ -> raise Not_in_range
   in
+    if length <> 3 then raise (OpcodeLengthError (length,inst));
     write_ui8 ch opcode;
     write_i16 ch i
 
 (* Instructions with one 16 bits unsigned argument *)
-let ui16 ch inst =
+let ui16 ch length inst =
   let i, opcode = match inst with
     | OpLdc1w i -> i, 19
-    | OpRetW i -> i, 209
+    | OpLdc2w i -> i, 20
     | OpNew i -> i, 187
     | OpANewArray i -> i, 189
     | OpCheckCast i -> i, 192
@@ -583,6 +588,7 @@ let ui16 ch inst =
     | OpInvokeStatic i -> i, 184
     | _ -> raise Not_in_range
   in
+    if length <> 3 then raise (OpcodeLengthError (length,inst));
     write_ui8 ch opcode;
     write_ui16 ch i
 
@@ -604,99 +610,124 @@ let padding ch count =
   done
 
 (* Everything else *)
-let other count ch = function
-  | OpIConst n ->
-      if not (JBasics.get_permissive ()) && not (-1l <= n && n <= 5l)
-      then raise (Class_structure_error "Arguments of iconst should be between -1l and 5l (inclusive)");
-      write_ui8 ch (3 + Int32.to_int n)
-  | OpLConst n ->
-      if not (JBasics.get_permissive ()) && not (0L=n || n=1L)
-      then raise (Class_structure_error "Arguments of lconst should be 0L or 1L");
-      write_ui8 ch (9 + Int64.to_int n)
-  | OpFConst n ->
-      if not (JBasics.get_permissive ()) && not (0.=n || n=1. || n=2.)
-      then raise (Class_structure_error "Arguments of fconst should be 0., 1. or 2.");
-      write_ui8 ch (11 + int_of_float n)
-  | OpDConst n ->
-      if not (JBasics.get_permissive ()) && not (0.=n || n=1.)
-      then raise (Class_structure_error "Arguments of dconst should be 0. or 1.");
-      write_ui8 ch (14 + int_of_float n)
-  | OpBIPush n ->
-      write_ui8 ch 16;
-      write_i8 ch n
-  | OpLdc1 index ->
-      write_ui8 ch 18;
-      write_ui8 ch index
-  | OpLdc2w index ->
-      write_ui8 ch 20;
-      write_ui16 ch index
-  | OpIInc (index, incr) ->
-      if
-	index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
-      then (
-	write_ui8 ch 132;
-	write_ui8 ch index;
-	write_i8 ch incr
-      ) else (
-	write_ui8 ch 196;
-	write_ui8 ch 132;
-	write_ui16 ch index;
-	write_i16 ch incr
-      )
-  | OpRet pc ->
-      if
-	pc <= 0xFF
-      then (
-	write_ui8 ch 169;
-	write_ui8 ch pc
-      ) else (
-	write_ui8 ch 196;
-	write_ui8 ch 169;
-	write_ui16 ch pc
-      )
-  | OpTableSwitch (def, low, high, tbl) ->
-      write_ui8 ch 170;
-      padding ch count;
-      write_i32 ch def;
-      write_real_i32 ch low;
-      write_real_i32 ch high;
-      Array.iter (write_i32 ch) tbl
-  | OpLookupSwitch (def, tbl) ->
-      write_ui8 ch 171;
-      padding ch count;
-      write_i32 ch def;
-      write_with_size write_i32 ch
-	(function v, j ->
-	   write_real_i32 ch v;
-	   write_i32 ch j)
-	tbl
-  | OpInvokeInterface (index, nargs) ->
-      write_ui8 ch 185;
-      write_ui16 ch index;
-      write_ui8 ch nargs;
-      write_ui8 ch 0
-  | OpNewArray at ->
-      write_ui8 ch 188;
-      write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
-  | OpAMultiNewArray (c, dims) ->
-      write_ui8 ch 197;
-      write_ui16 ch c;
-      write_ui8 ch dims
-  | OpGotoW i ->
-      write_ui8 ch 200;
-      write_i32 ch i
-  | OpJsrW i ->
-      write_ui8 ch 201;
-      write_i32 ch i
-  | OpInvalid -> ()
-  | _ -> raise Not_in_range
+let other count ch length instr =
+  match instr with
+    | OpIConst n ->
+        if not (-1l <= n && n <= 5l)
+        then raise (Class_structure_error "Arguments of iconst should be between -1l and 5l (inclusive)");
+        if length <> 1 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch (3 + Int32.to_int n)
+    | OpLConst n ->
+        if not (0L=n || n=1L)
+        then raise (Class_structure_error "Arguments of lconst should be 0L or 1L");
+        if length <> 1 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch (9 + Int64.to_int n)
+    | OpFConst n ->
+        if not (0.=n || n=1. || n=2.)
+        then raise (Class_structure_error "Arguments of fconst should be 0., 1. or 2.");
+        if length <> 1 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch (11 + int_of_float n)
+    | OpDConst n ->
+        if not (0.=n || n=1.)
+        then raise (Class_structure_error "Arguments of dconst should be 0. or 1.");
+        if length <> 1 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch (14 + int_of_float n)
+    | OpBIPush n ->
+        if length <> 2 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 16;
+        write_i8 ch n
+    | OpLdc1 index ->
+        if length <> 2 then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 18;
+        write_ui8 ch index
+    | OpIInc (index, incr) ->
+        if length = 3 &&
+	  index <= 0xFF && - 0x80 <= incr && incr <= 0x7F
+        then (
+	  write_ui8 ch 132;
+	  write_ui8 ch index;
+	  write_i8 ch incr
+        ) else if length = 6 then (
+	  write_ui8 ch 196;
+	  write_ui8 ch 132;
+	  write_ui16 ch index;
+	  write_i16 ch incr
+        ) else
+          raise (OpcodeLengthError (length,instr))
+    | OpRet pc ->
+        if length = 2 && pc <= 0xFF
+        then (
+	  write_ui8 ch 169;
+	  write_ui8 ch pc
+        ) else if length = 4 then (
+	  write_ui8 ch 196;
+	  write_ui8 ch 169;
+	  write_ui16 ch pc
+        ) else
+          raise (OpcodeLengthError (length,instr))
+    | OpTableSwitch (def, low, high, tbl) ->
+        flush ch;
+        let padding_size = (3 - (1 + (count () - 2) mod 4))
+        in
+          if length <> 13 + padding_size + 4 * (Array.length tbl)
+          then raise (OpcodeLengthError (length,instr));
+          write_ui8 ch 170;
+          padding ch count;
+          write_i32 ch def;
+          write_real_i32 ch low;
+          write_real_i32 ch high;
+          Array.iter (write_i32 ch) tbl
+    | OpLookupSwitch (def, tbl) ->
+        flush ch;
+        let padding_size = (3 - (1 + (count () - 2) mod 4))
+        in
+          if length <> 9 + padding_size + 8 * (List.length tbl)
+          then raise (OpcodeLengthError (length,instr));
+          write_ui8 ch 171;
+          padding ch count;
+          write_i32 ch def;
+          write_with_size write_i32 ch
+	    (function v, j ->
+	       write_real_i32 ch v;
+	       write_i32 ch j)
+	    tbl
+    | OpInvokeInterface (index, nargs) ->
+        if length <> 5
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 185;
+        write_ui16 ch index;
+        write_ui8 ch nargs;
+        write_ui8 ch 0
+    | OpNewArray at ->
+        if length <> 2
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 188;
+        write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
+    | OpAMultiNewArray (c, dims) ->
+        if length <> 4
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 197;
+        write_ui16 ch c;
+        write_ui8 ch dims
+    | OpGotoW i ->
+        if length <> 5
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 200;
+        write_i32 ch i
+    | OpJsrW i ->
+        if length <> 5
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 201;
+        write_i32 ch i
+    | OpInvalid -> ()
+    | _ -> raise Not_in_range
 
-let unparse_instruction ch count inst =
+let unparse_instruction ch count length inst =
   try
     List.iter
       (function unparse ->
 	 try
-	   unparse ch inst;
+	   unparse ch length inst;
 	   raise Exit
 	 with
 	     Not_in_range -> ())
@@ -716,10 +747,17 @@ let unparse_code ch code =
   let ch, count = pos_out ch in
     Array.iteri
       (fun i opcode ->
-      (* On suppose que unparse_instruction n'Ã©crit rien pour OpInvalid *)
-	 if not (opcode = OpInvalid || count () = i)
-	 then raise (Class_structure_error "unparsing Badly alligned low level bytecode");
-	 unparse_instruction ch count opcode)
+         (* We know that unparse_instruction writes nothing for OpInvalid *)
+         let length =
+           let j = ref (i+1) in
+             while !j < Array.length code && code.(!j) = OpInvalid do
+               incr j
+             done;
+             !j-i
+         in
+	   if not (opcode = OpInvalid || count () = i)
+	   then raise (Class_structure_error "unparsing Badly alligned low level bytecode");
+	   unparse_instruction ch count length opcode)
       code;
     if not (count () = Array.length code)
     then raise (Class_structure_error "unparsing Badly alligned low level bytecode")
