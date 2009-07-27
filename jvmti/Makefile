@@ -1,6 +1,6 @@
 LIBS=.libs
 
-all: $(LIBS)/libCallsTracer.so NativeStubsGen.cmo NativeStubsGen.cmx
+all: NativeStubsGen.cmo NativeStubsGen.cmx
 
 tracer: $(LIBS)/libCallsTracer.so
 
