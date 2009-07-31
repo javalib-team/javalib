@@ -1,12 +1,11 @@
 -include ../Makefile.config
 
-PTREES_PATH=../ptrees
 JAVALIB_PATH=../src
 
-INC=$(INCLUDE) -I $(JAVALIB_PATH) -I $(PTREES_PATH)
+INC=-I $(JAVALIB_PATH)
 
 LIBS=.libs
-CAMLLIBS=unix.cma zip.cma extLib.cma ptrees.cma javaLib.cma
+CAMLLIBS=jNativeStubs.cmo
 
 # JDK_PATH=/System/Library/Frameworks/JavaVM.framework/Versions/1.5.0/Home/
 INCLUDES=-I ${JDK_PATH}/include -I ${JDK_PATH}/include/linux
@@ -30,7 +29,7 @@ NativeStubsGen.cmo: NativeStubsGen.ml NativeStubsGen.mli
 	ocamlc $(INC) -pp camlp4o -o NativeStubsGen.cmo $(CAMLLIBS) NativeStubsGen.mli NativeStubsGen.ml 
 
 NativeStubsGen.cmx: NativeStubsGen.ml NativeStubsGen.mli
-	ocamlopt $(INC) -pp camlp4o -o NativeStubsGen.cmx $(CAMLLIBS:.cma=.cmxa) NativeStubsGen.mli NativeStubsGen.ml 
+	ocamlopt $(INC) -pp camlp4o -o NativeStubsGen.cmx $(CAMLLIBS:.cmo=.cmx) NativeStubsGen.mli NativeStubsGen.ml 
 
 clean:
 	rm -rf $(LIBS) *.la *.cm* *.o

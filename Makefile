@@ -8,7 +8,7 @@ ptrees:
 javalib:ptrees
 	$(MAKE) -C src
 
-jvmti:
+jvmti:javalib
 	$(MAKE) -C jvmti
 
 cleanall:
