@@ -173,12 +173,12 @@ let low2high_cfield consts fs = function f ->
     match cst with
       | [] -> None,other_att
       | AttributeConstant c::oc when not is_static ->  (* it seems quite common *)
-	  if !debug > 1 then prerr_endline "A non-static field has been found with a constant value associated.";
+	  if !debug > 1 then prerr_endline "Warning: A non-static field has been found with a constant value associated.";
 	  None, (AttributeConstant c::(oc@other_att))
       | AttributeConstant c::[] ->
 	  Some c, other_att
       | AttributeConstant c::oc ->
-	  if !debug > 0 then prerr_endline "A field contains more than one constant value associated.";
+	  if !debug > 0 then prerr_endline "Warning: A field contains more than one constant value associated.";
 	  Some c, (oc@other_att)
       | _ -> assert false
   in
@@ -393,7 +393,7 @@ let low2high_acmethod consts ms = function m ->
   then AbstractMethod (low2high_amethod consts ms m)
   else ConcreteMethod (low2high_cmethod consts ms m)
 
-let low2high_methods consts = function ac ->
+let low2high_methods cn consts = function ac ->
   List.fold_left
     (fun map meth ->
       let ms =
@@ -404,8 +404,9 @@ let low2high_methods consts = function ac ->
 	if !debug > 0 && MethodMap.mem ms map
 	then
 	  prerr_endline
-	    ("2 methods have been found with the same signature ("^ms.ms_name
-	      ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
+	    ("Warning: in "^ JDumpBasics.class_name cn 
+             ^ " 2 methods have been found with the same signature (" ^ ms.ms_name
+	     ^ "("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
 	MethodMap.add
 	  ms
 	  (try low2high_acmethod consts ms meth
@@ -580,7 +581,8 @@ let low2high_class cl =
 		     if !debug > 0 && FieldMap.mem fs m
 		     then
 		       prerr_endline
-			 ("Warning: 2 fields have been found with the same signature ("
+			 ("Warning: in "^ JDumpBasics.class_name my_name
+                          ^ " 2 fields have been found with the same signature ("
 			  ^JDumpBasics.value_signature fs.fs_type^" "^ fs.fs_name^")");
 		     FieldMap.add
 		       fs
@@ -600,7 +602,8 @@ let low2high_class cl =
 		     if !debug > 0 && MethodMap.mem ms map
 		     then
 		       prerr_endline
-			 ("2 methods have been found with the same signature ("^ms.ms_name
+			 ("Warning: in "^ JDumpBasics.class_name my_name
+                          ^ " 2 methods have been found with the same signature ("^ms.ms_name
 			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
 		     MethodMap.add
 		       ms
@@ -636,7 +639,7 @@ let low2high_class cl =
 		    (Class_structure_error
 		       "A EnclosingMethod attribute can only be specified at most once per class.")
 	  and my_methods =
-	    try low2high_methods consts cl
+	    try low2high_methods my_name consts cl
 	    with
 	      | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	  and my_fields =
@@ -646,7 +649,8 @@ let low2high_class cl =
 		   if !debug > 0 && FieldMap.mem fs m
 		   then
 		     prerr_endline
-		       ("Warning: 2 fields have been found with the same signature ("
+		       ("Warning: in "^ JDumpBasics.class_name my_name
+                        ^ " 2 fields have been found with the same signature ("
 			^JDumpBasics.value_signature fs.fs_type^" "^fs.fs_name ^")");
 		   FieldMap.add
 		     fs

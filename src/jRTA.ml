@@ -363,11 +363,6 @@ struct
 		     !i_methods
 		  ) }
 
-  and load_class p cni =
-    if not( ClassMap.mem cni p.classes ) then
-      let cn = p.dic.retrieve_cn cni in
-	add_class p cn
-
   and get_class_info p cni =
     try
       ClassMap.find cni p.classes
