@@ -12,6 +12,7 @@ jvmti:javalib
 	$(MAKE) -C jvmti
 
 cleanall:
+	$(RM) *~
 	$(MAKE)	-C jvmti clean
 	$(MAKE) -C src cleanall
 	$(MAKE) -C ptrees cleanall

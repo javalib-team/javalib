@@ -1,3 +1,31 @@
+From 1.8 to 1.8.1
+---------------
+New features:
+* new HTML printer function for programs (cleaner and easier to
+  navigate through)
+* stub generator for native methods for RTA (only for Linux)
+
+Changes in the interface:
+  There should be no change in the interface
+
+Minor changes in the code:
+* Printing a warnings when parsing native methods in RTA and no stub
+  is found
+* Removing some dead code in JRTA
+* Improving some error messages (in JLow2High)
+
+Bugfixes:
+* bugfix (under windows): class path separator is now a semi-colon on
+  windows
+* bugfix (RTA): load java.lang.Class when encountering ldc instruction
+* bugfix: when (un)parsing some code, the bytecode representation
+  could change if the first was not optimal in terms of size (eg. an
+  iload_1 coded as an iload 1)
+* bugfix (get_local_variable_info): a heuristic was used to determined
+  the length of the store instruction, it is now the proper length
+* bugfix (jDumpLow): jsr and ret were printed as goto
+* bugfix: retw(209) not documented => removed
+
 From 1.7.1 to 1.8
 -----------------
 The licence has been changed from the GPL to the LGPL.
