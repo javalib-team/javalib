@@ -1,7 +1,6 @@
 (*
  * This file is part of Javalib
- * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
- * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2009, Frederic Dabrowski (INRIA)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -18,18 +17,4 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-(** This module "unparses" (converts back to strings) descriptors and
-    signatures. *)
-
-open JBasics
-
-val unparse_value_type : value_type -> string
-val unparse_method_descriptor : value_type list * value_type option -> string
-val unparse_descriptor : descriptor -> string
-val unparse_objectType : object_type -> string
-
-open JSignature
-
-val unparse_ClassSignature : classSignature -> string
-val unparse_FieldTypeSignature : fieldTypeSignature -> string
-val unparse_MethodTypeSignature : methodTypeSignature -> string
+val dump : unit IO.output -> JClassLow.jclass -> unit

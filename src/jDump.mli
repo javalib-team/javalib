@@ -1,6 +1,5 @@
 (*
  * This file is part of Javalib
- * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
  *
@@ -19,16 +18,18 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-(** Prints data from {!JClassLow} to a provided output.*)
+(** Prints data from {!JClass} to a provided output.*)
 
-val opcode : JClassLow.opcode -> string
-val dump_code :
-  'a IO.output -> JBasics.constant array -> JClassLow.code -> unit
-val dump_attrib :
-  'a IO.output -> JBasics.constant array -> JClassLow.attribute -> unit
-val access_flags : [< JClassLow.access_flag] list -> string
-val dump_field :
-  'a IO.output -> JBasics.constant array -> JClassLow.jfield -> unit
-val dump_method :
-  'a IO.output -> JBasics.constant array -> JClassLow.jmethod -> unit
-val dump : 'a IO.output -> JClassLow.jclass -> unit
+val opcode : JCode.jopcode -> string
+val dump_code : 'a IO.output -> 'b -> JCode.jcode -> unit
+val dump_cfield :
+  'a IO.output -> JBasics.constant array -> JClass.class_field -> unit
+val dump_ifield :
+  'a IO.output -> JBasics.constant array -> JClass.interface_field -> unit
+val dump_cmethod :
+  'a IO.output -> JBasics.constant array -> JCode.jcode JClass.concrete_method -> unit
+val dump_amethod :
+  'a IO.output -> JBasics.constant array -> JClass.abstract_method -> unit
+val dump_acmethod :
+  'a IO.output -> JBasics.constant array -> JCode.jcode JClass.jmethod -> unit
+val dump : 'a IO.output -> JCode.jcode JClass.interface_or_class -> unit

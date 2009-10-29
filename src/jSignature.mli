@@ -1,5 +1,5 @@
 (*
- * This file is part of JavaLib
+ * This file is part of Javalib
  * Copyright (c)2008 Laurent Hubert (CNRS)
  *
  * This program is free software: you can redistribute it and/or

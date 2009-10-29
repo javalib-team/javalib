@@ -1,5 +1,5 @@
 (*
- * This file is part of JavaLib
+ * This file is part of Javalib
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
