@@ -1,0 +1,53 @@
+<a name="installation" />
+<h2>Installation</h2>
+
+
+<p>
+You need <a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1) 
+and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a> (&gt;=1.03).
+</p>
+
+<h3>ExtLib</h3>
+<p>To build ExtLib (if the version you download is 1.5.1):</p>
+<ul class="code">
+  <li>tar zxf extlib-1.5.1.tar.gz
+  <li>cd extlib-1.5.1
+  <li>make all opt
+</ul>
+
+<p>If you have ocamlfind, you can install ExtLib with:</p>
+<ul class="code">
+  <li>sudo make install
+</ul>
+<p>Otherwise, you can install ExtLib with:
+<ul class="code">
+  <li>mkdir `ocamlc -where`/extlib
+  <li>cp *.{cmi,cma,a,mli,cmxa} `ocamlc -where`/extlib
+</ul>
+
+<h3>CamlZip</h3>
+<p>To build and install CamlZip (if the version you download is 1.03):</p>
+<ul class="code">
+  <li>tar zxf camlzip-1.03.tar.gz
+  <li>cd camlzip
+  <li>make all allopt
+  <li>sudo make install installopt
+</ul>
+
+<h3>JavaLib</h3>
+<p>To build and install JavaLib (if version is 1.8.1):</p>
+<ul class="code">
+  <li>tar jxf javalib-1.8.1.tar.bz2
+  <li>cd javalib-1.8.1
+  <li>cp Makefile.config.example Makefile.config
+  <li>make all
+  <li>sudo make install
+</ul>
+<p style="font-style:italic">Note: If something went wrong at some
+point, you might have to edit Makefile.config just before compiling
+JavaLib.</p>
+
+<p>If you want the documentation:</p>
+<ul class="code">
+  <li>make doc
+</ul>

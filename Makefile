@@ -14,3 +14,5 @@ cleanall clean:
 
 doc:
 	$(MAKE) -C src doc
+cleandoc:
+	$(MAKE) -C src cleandoc
