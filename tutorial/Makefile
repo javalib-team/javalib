@@ -3,12 +3,13 @@
 
 all: javalib_tutorial.tex javalib_tutorial.pdf
 
-javalib_tutorial.tex: javalib_tutorial.rst
+javalib_tutorial.tex: javalib_tutorial.md
 	cat header.tex > javalib_tutorial.tex
-	pandoc -f rst -t latex -o javalib_tutorial_part.tex javalib_tutorial.rst
+	pandoc -f markdown -t latex -o javalib_tutorial_part.tex javalib_tutorial.md
 	cat javalib_tutorial_part.tex >> javalib_tutorial.tex
 	cat footer.tex >> javalib_tutorial.tex
 	rm javalib_tutorial_part.tex
+	pandoc -f markdown -t html -o javalib_tutorial.html javalib_tutorial.md
 
 javalib_tutorial.pdf: javalib_tutorial.tex
 	pdflatex javalib_tutorial.tex
