@@ -1,11 +1,9 @@
 <h2>About this Version</h2>
 
-The major improvement brough by this version is the efficient
-implementation of RTA (Rapid Type Analysis - it is a control flow
-analysis).  It used to load the programs and can then be used for free
-by the client code.  Know bugs have been fixed and there are some
-other changes described in the CHANGELOG file.  The parts of JavaLib
-related to the notion of program (and not only class file) have been
-heavily modified and updating your code to this new version may need
-some work.  The other parts of JavaLib have not changed much and
-adapting your code to this new version should be simple.
+The major difference brough by this version 2 is the clearer definition of the
+purpose of the library: it is meant to handled classes, not programs.  Parts of
+the library have been removed and put in the brand new library: Sawja.  The
+improvements brought in this version of Javalib are mainly focused on the
+documentation, the interfaces (which means a new user of the library should only
+have 3 files to look at), and the overall efficiency (using hash consing, which
+then allows to use Patricia Trees for maps and sets).
