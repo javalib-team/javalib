@@ -99,7 +99,7 @@ javalib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
+	$(OCAMLDOC) -pp "recode UTF-8..Latin-1 <" $(INCLUDE) -d $(DOCDIR) -html -stars		\
 		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli

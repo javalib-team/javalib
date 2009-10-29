@@ -86,12 +86,13 @@ type field_descriptor = value_type
 type method_descriptor = value_type list * value_type option
 
 type field_signature_data = string * field_descriptor
-type class_field_signature_data = string * field_signature_data
 type method_signature_data = string * method_descriptor
-type class_method_signature_data = string * method_signature_data
 
 type method_signature = int * method_signature_data
 type field_signature = int * field_signature_data
+
+type class_field_signature_data = class_name * field_signature
+type class_method_signature_data = class_name * method_signature
 type class_field_signature = int * class_field_signature_data
 type class_method_signature = int * class_method_signature_data
 
@@ -279,7 +280,7 @@ let make_fs fname fdesc =
 
 let make_cfs cs ms =
   let dic = common_dictionary in
-  let cfs = (snd cs, snd ms) in
+  let cfs = (cs,ms) in
   let cfst = dic.class_field_signature_table in
     try
       ClassFieldSignatureMap.find cfs cfst.cfsi_map
@@ -293,7 +294,7 @@ let make_cfs cs ms =
 
 let make_cms cs ms =
   let dic = common_dictionary in
-  let cms = (snd cs, snd ms) in
+  let cms = (cs,ms) in
   let cmst = dic.class_method_signature_table in
     try
       ClassMethodSignatureMap.find cms cmst.cmsi_map
@@ -308,7 +309,7 @@ let make_cms cs ms =
 
 (* Comparison operations. *)
 
-let i_compare s1 s2 = compare (fst s1) (fst s2)
+let i_compare (i1,_:int*'a) (i2,_:int*'b) = i1 - i2
 let cn_compare = i_compare
 let ms_compare = i_compare
 let fs_compare = i_compare
@@ -356,12 +357,9 @@ let fs_hash (i,(_fn,_ft):field_signature) = i
 
 let fs_type (_i,(_fn,ft):field_signature) = ft
 
-let cfs_split (_i,(cn,(fname,ftype)):class_field_signature) =
-  (make_cn cn, make_fs fname ftype)
+let cfs_split (_i,(cn,fs):class_field_signature) = (cn, fs)
 
-let cms_split (_i,(cn,(mname,(margs,mrtype))):class_method_signature) =
-  (make_cn cn,
-   make_ms mname margs mrtype)
+let cms_split (_i,(cn,ms):class_method_signature) = (cn,ms)
 
 
 (* Containers. *)
