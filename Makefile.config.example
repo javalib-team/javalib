@@ -31,6 +31,9 @@ OCAMLC = ocamlc.opt -w Ae -dtypes -g
 OCAMLDOC = ocamldoc.opt
 OCAMLDEP = ocamldep.opt
 OCAMLMKTOP = ocamlmktop
+
+RECODE = -pp "recode UTF-8..Latin-1 <"
+
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 PP = -pp camlp4o.opt
 
