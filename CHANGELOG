@@ -4,35 +4,29 @@ Main changes:
 * the library has been refocused on the class representation: everything dealing
   with the program representation has been removed (and put into SAWJA).
 
-
-* javaLib renamed in javalib
-
-* class names, method signatures and field signatures are now abstract and
-  indexed: impoved efficiency and memory footprint
-
+New features:
 * adding maps and sets for all indexed types: their implementation is based on
   Patricia trees which are must more efficient that the balanced trees of OCaml
-
-* adding a user interface: the standard user should now only need 3 files
-  (javalib.mli, jCode.mli and jBasics.mli)
-
-* the bytecode representation can be changed by the user
-
-* optimized Ptrees library
-
-* module interfaces have been partly re-written and more documented
-
-* improving error messages and exception handling
-
-* adding some printing functions to more easily print data in a JVM or Java
-  representation
-
-* various bugfixes
-
+* Ptrees library optimized
 * adding printing function to Jasmin format
-
 * adding support for Java 6 stackmaps
 
+
+Changes in the interfaces:
+* adding a user interface: the standard user should now only need 3 files
+  (javalib.mli, jCode.mli and jBasics.mli)
+* class names, method signatures and field signatures are now abstract and
+  indexed: impoved efficiency and memory footprint
+* the bytecode representation can be changed by the user: methods and classes
+  are now polymorphic
+* module interfaces have been partly re-written and more documented
+
+Minor changes:
+* javaLib renamed in javalib
+* improving error messages and exception handling
+* adding some printing functions to more easily print data in a JVM or Java
+  representation
+* various bugfixes
 
 
 From 1.8 to 1.8.1
