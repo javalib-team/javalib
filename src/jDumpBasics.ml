@@ -8,20 +8,20 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 open JBasics
 
-let class_name = String.concat "."
+let class_name = cn_name
 
 let sprintf = Printf.sprintf
 
@@ -128,22 +128,24 @@ let dump_constantpool ch =
       IO.write ch '\n')
 
 
+let dump_verification_type = function
+  | VTop -> "Top"
+  | VInteger -> "Integer"
+  | VFloat -> "Float"
+  | VDouble -> "Double"
+  | VLong -> "Long"
+  | VNull -> "Null"
+  | VUninitializedThis -> "UninitializedThis"
+  | VObject c -> sprintf "Object %s" (object_value_signature c)
+  | VUninitialized off -> sprintf "Uninitialized %d" off
+
 let dump_stackmap ch (offset,locals,stack) =
-	let dump_verif_info = function
-		| VTop -> "Top"
-		| VInteger -> "Integer"
-		| VFloat -> "Float"
-		| VDouble -> "Double"
-		| VLong -> "Long"
-		| VNull -> "Null"
-		| VUninitializedThis -> "UninitializedThis"
-		| VObject c -> sprintf "Object %s" (object_value_signature c)
-		| VUninitialized off -> sprintf "Uninitialized %d" off
-	in
-	IO.printf ch "\n      offset=%d,\n      locals=[" offset;
-	List.iter (fun t -> IO.printf ch "\n        %s" (dump_verif_info t)) locals;
-	IO.printf ch "],\n      stack=[";
-	List.iter (fun t -> IO.printf ch "\n        %s" (dump_verif_info t)) stack
+  IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+  List.iter (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) locals;
+  IO.printf ch "],\n      stack=[";
+  List.iter (fun t -> IO.printf ch "\n        %s" (dump_verification_type t)) stack
+
+open JCode
 
 let dump_exc ch _cl exc =
   IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;

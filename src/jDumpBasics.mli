@@ -8,14 +8,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -71,11 +71,10 @@ val dump_constant : 'a IO.output -> constant -> unit
 val dump_constantpool : 'a IO.output -> constant array -> unit
   (** [dump_constantpool ch pool] print on [ch] the constant pool
       [pool].*)
+val dump_verification_type : verification_type -> string
 val dump_stackmap :
-  'a IO.output ->
-  int * verification_type list * verification_type list ->
-  unit
+  'a IO.output -> stackmap -> unit
     (** [dump_stackmap ch sm] prints on [ch] the stackmap [sm]. *)
-val dump_exc : 'a IO.output -> 'b -> exception_handler -> unit
+val dump_exc : 'a IO.output -> 'b -> JCode.exception_handler -> unit
   (** [dump_exc ch _ ex] prints on [ch] the exception handler
       declaration [ex].*)

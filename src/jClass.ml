@@ -8,160 +8,21 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 (* This implementation is only to provide MapFieldSignature and MapMethodSignature.*)
 
 open JBasics
-
-type field_signature = {
-  fs_name:string;
-  fs_type:value_type;
-}
-
-type method_signature = {
-  ms_name:string;
-  ms_parameters:value_type list;
-  ms_return_type : value_type option;
-}
-
-let clinit_signature = {ms_name="<clinit>";ms_parameters=[];ms_return_type=None;}
-let main_signature =
-  {   ms_name = "main";
-      ms_parameters = [TObject (TArray (TObject
-					  (TClass ["java";"lang";"String"])))];
-      ms_return_type = None
-  }
-
-
-type opcode =
-
-  (* Access to a local variable *)
-  | OpLoad of jvm_type * int
-  | OpStore of jvm_type * int
-  | OpIInc of int * int
-
-  (* Stack permutation *)
-  | OpPop
-  | OpPop2
-  | OpDup
-  | OpDupX1
-  | OpDupX2
-  | OpDup2
-  | OpDup2X1
-  | OpDup2X2
-  | OpSwap
-
-  (* Constant loading / it corresponds to instructions *const* and ldc* *)
-  | OpConst of [
-    | `ANull (* AConstNull  *)
-    | `Int of int32
-    | `Long of int64
-    | `Float of float
-    | `Double of float
-    | `Byte of int (* BIPush *)
-    | `Short of int
-    | `String of string
-    | `Class of object_type
-    ]
-
-  (* Arithmetic *)
-  | OpAdd of jvm_basic_type
-  | OpSub of jvm_basic_type
-  | OpMult of jvm_basic_type
-  | OpDiv of jvm_basic_type
-  | OpRem of jvm_basic_type
-  | OpNeg of jvm_basic_type
-
-  (* Logic *)
-  | OpIShl (* Use an I/L argument *)
-  | OpLShl
-  | OpIShr
-  | OpLShr
-  | OpIUShr
-  | OpLUShr
-  | OpIAnd
-  | OpLAnd
-  | OpIOr
-  | OpLOr
-  | OpIXor
-  | OpLXor
-
-  (* Conversion *)
-  | OpI2L (* Use `I of [`L | `F  | `D] *)
-  | OpI2F
-  | OpI2D
-  | OpL2I
-  | OpL2F
-  | OpL2D
-  | OpF2I
-  | OpF2L
-  | OpF2D
-  | OpD2I
-  | OpD2L
-  | OpD2F
-  | OpI2B (* Those three are different *)
-  | OpI2C
-  | OpI2S
-
-  | OpCmp of [`L | `FL | `FG | `DL | `DG]
-
-  (* Conditional jump *)
-  | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
-  | OpIfCmp of [`IEq | `INe | `ILt | `IGe | `IGt | `ILe | `AEq | `ANe] * int
-
-  (* Unconditional jump *)
-  | OpGoto of int
-  | OpJsr of int
-  | OpRet of int
-  | OpTableSwitch of int * int32 * int32 * int array
-  | OpLookupSwitch of int * (int32 * int) list
-
-  (* Heap and static fields *)
-  | OpNew of class_name
-  | OpNewArray of value_type
-  | OpAMultiNewArray of object_type * int (* ClassInfo, dims *)
-  | OpCheckCast of object_type
-  | OpInstanceOf of object_type
-  | OpGetStatic of class_name * field_signature
-  | OpPutStatic of class_name * field_signature
-  | OpGetField of class_name * field_signature
-  | OpPutField of class_name * field_signature
-  | OpArrayLength
-  | OpArrayLoad of jvm_array_type
-  | OpArrayStore of jvm_array_type
-
-  (* Method invocation and return *)
-  | OpInvoke
-      of [
-	`Virtual of object_type
-      | `Special of class_name
-      | `Static of class_name
-      | `Interface of class_name
-      ]
-	* method_signature
-  | OpReturn of jvm_return_type
-
-  (* Exceptions and threads *)
-  | OpThrow
-  | OpMonitorEnter
-  | OpMonitorExit
-
-  (* Other *)
-  | OpNop
-  | OpBreakpoint
-  | OpInvalid
-
-type opcodes = opcode array
+open JCode
 
 (* Visibility modifiers. *)
 type access = [
@@ -188,6 +49,7 @@ type field_kind =
 
 type class_field = {
   cf_signature : field_signature;
+  cf_class_signature : class_field_signature;
   cf_generic_signature : JSignature.fieldTypeSignature option;
   cf_access: access;
   cf_static : bool;
@@ -204,6 +66,7 @@ type class_field = {
     [final].*)
 type interface_field = {
   if_signature : field_signature;
+  if_class_signature : class_field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
   if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
@@ -211,30 +74,23 @@ type interface_field = {
   if_attributes : attributes
 }
 
+type any_field =
+    | InterfaceField of interface_field
+    | ClassField of class_field
+
 (* {2 Methods of classes and interfaces.} *)
 (******************************************)
 
-type code = {
-  c_max_stack : int;
-  c_max_locals : int;
-  c_code : opcodes;
-  c_exc_tbl : exception_handler list;
-  c_line_number_table : (int * int) list option;
-  c_local_variable_table : (int * int * string * value_type * int) list option;
-  c_stack_map : (int* verification_type list * verification_type list) list option;
-  (* This is the MIDP version, not the JSR 202 StackMapTable attribute. *)
-  c_attributes : (string * string) list;
-}
-
-type implementation =
+type 'a implementation =
   | Native
-  | Java of code Lazy.t
+  | Java of 'a Lazy.t
 
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
-type concrete_method = {
+type 'a concrete_method = {
   cm_signature : method_signature;
+  cm_class_method_signature : class_method_signature;
   cm_static : bool;
   cm_final : bool;
   cm_synchronized : bool;
@@ -247,11 +103,12 @@ type concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
-  cm_implementation : implementation;
+  cm_implementation : 'a implementation;
 }
 
 type abstract_method = {
   am_signature : method_signature;
+  am_class_method_signature : class_method_signature;
   am_access: [`Public | `Protected | `Default];
   am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
@@ -266,12 +123,9 @@ type abstract_method = {
 (* {2 Classes and interfaces.} *)
 (***************************)
 
-module FieldMap = Map.Make(struct type t = field_signature let compare = compare end)
-module MethodMap = Map.Make(struct type t = method_signature let compare = compare end)
-
-type jmethod =
+type 'a jmethod =
     | AbstractMethod of abstract_method
-    | ConcreteMethod of concrete_method
+    | ConcreteMethod of 'a concrete_method
 
 type inner_class = {
   ic_class_name : class_name option;
@@ -287,7 +141,7 @@ type inner_class = {
   ic_type : [`ConcreteClass | `Abstract | `Interface]
 }
 
-type jclass = {
+type 'a jclass = {
   c_name : class_name;
   c_version : version;
   c_access : [`Public | `Default];
@@ -307,12 +161,12 @@ type jclass = {
   c_enum: bool;
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
-  c_methods : jmethod MethodMap.t;
+  c_methods : 'a jmethod MethodMap.t;
 }
 
 (* Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
-type jinterface = {
+type 'a jinterface = {
   i_name : class_name;
   i_version : version;
   i_access : [`Public | `Default];
@@ -324,53 +178,52 @@ type jinterface = {
   i_source_debug_extention : string option;
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : 'a concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
 }
 
-type interface_or_class = [
-  | `Interface of jinterface
-  | `Class of jclass
-]
+type 'a interface_or_class =
+  | JInterface of 'a jinterface
+  | JClass of 'a jclass
 
 let get_name = function
-  | `Interface i -> i.i_name
-  | `Class c -> c.c_name
+  | JInterface i -> i.i_name
+  | JClass c -> c.c_name
 
 let get_consts = function
-  | `Interface i -> i.i_consts
-  | `Class c -> c.c_consts
+  | JInterface i -> i.i_consts
+  | JClass c -> c.c_consts
 
 let get_access = function
-  | `Interface i -> i.i_access
-  | `Class c -> c.c_access
+  | JInterface i -> i.i_access
+  | JClass c -> c.c_access
 
 let get_sourcefile = function
-  | `Interface i -> i.i_sourcefile
-  | `Class c -> c.c_sourcefile
+  | JInterface i -> i.i_sourcefile
+  | JClass c -> c.c_sourcefile
 
 let is_deprecated = function
-  | `Interface i -> i.i_deprecated
-  | `Class c -> c.c_deprecated
+  | JInterface i -> i.i_deprecated
+  | JClass c -> c.c_deprecated
 
 let get_inner_classes = function
-  | `Interface i -> i.i_inner_classes
-  | `Class c -> c.c_inner_classes
+  | JInterface i -> i.i_inner_classes
+  | JClass c -> c.c_inner_classes
 
 let get_other_attributes = function
-  | `Interface i -> i.i_other_attributes
-  | `Class c -> c.c_other_attributes
+  | JInterface i -> i.i_other_attributes
+  | JClass c -> c.c_other_attributes
 
 let get_initializer = function
-  | `Interface i -> i.i_initializer
-  | `Class c ->
+  | JInterface i -> i.i_initializer
+  | JClass c ->
       try
 	match
 	  MethodMap.find
-	    {ms_name = "<clinit>" ; ms_parameters = [] ; ms_return_type = None}
+	    clinit_signature
 	    c.c_methods
 	with
 	  | ConcreteMethod m -> Some m
@@ -379,77 +232,218 @@ let get_initializer = function
 	| Not_found -> None
 
 let get_other_flags = function
-  | `Interface i -> i.i_other_flags
-  | `Class c -> c.c_other_flags
+  | JInterface i -> i.i_other_flags
+  | JClass c -> c.c_other_flags
+
+let get_method ioc ms =
+  match ioc with
+    | JInterface {i_initializer = Some cm}
+	when (ms_equal cm.cm_signature ms) ->
+	ConcreteMethod cm
+    | JInterface i ->
+	AbstractMethod(MethodMap.find ms i.i_methods)
+    | JClass c ->
+	MethodMap.find ms c.c_methods
+
+let get_methods = function
+  | JInterface i ->
+      let mmap =
+	MethodMap.map (fun am -> AbstractMethod am) i.i_methods in
+	(match i.i_initializer with
+	   | None -> mmap
+	   | Some cm -> MethodMap.add clinit_signature (ConcreteMethod cm) mmap
+	)
+  | JClass {c_methods = mmap} -> mmap
+
+let get_concrete_methods = function
+  | JInterface i ->
+      (match i.i_initializer with
+	 | None -> MethodMap.empty
+	 | Some cm -> MethodMap.add clinit_signature cm MethodMap.empty
+      )
+  | JClass {c_methods = mmap} ->
+      MethodMap.fold
+	(fun ms m mmap ->
+	   match m with
+	     | AbstractMethod _ -> mmap
+	     | ConcreteMethod cm ->
+		 MethodMap.add ms cm mmap
+	) mmap MethodMap.empty
+
+let get_field c fs = match c with
+  | JInterface i ->
+      InterfaceField (FieldMap.find fs i.i_fields)
+  | JClass c -> ClassField (FieldMap.find fs c.c_fields)
+
+let get_fields = function
+  | JInterface i ->
+      FieldMap.map (fun f -> InterfaceField f) i.i_fields
+  | JClass c ->
+      FieldMap.map (fun f -> ClassField f) c.c_fields
+
+let defines_method ioc ms =
+  match ioc with
+    | JInterface i ->
+	if (ms_equal ms clinit_signature) then
+	  i.i_initializer <> None
+	else MethodMap.mem ms i.i_methods
+    | JClass c -> MethodMap.mem ms c.c_methods
+
+let defines_field ioc fs =
+  match ioc with
+    | JInterface {i_fields = fm} ->
+	FieldMap.mem fs fm
+    | JClass {c_fields = fm} ->
+	FieldMap.mem fs fm
+
+let is_static_method = function
+  | AbstractMethod _ -> false
+  | ConcreteMethod m -> m.cm_static
+
+let is_final_method = function
+  | AbstractMethod _ -> false
+  | ConcreteMethod m -> m.cm_final
+
+let is_synchronized_method = function
+  | AbstractMethod _ -> false
+  | ConcreteMethod m -> m.cm_synchronized
+
+let get_method_signature = function
+  | AbstractMethod m -> m.am_signature
+  | ConcreteMethod m -> m.cm_signature
+
+let get_class_method_signature = function
+  | AbstractMethod m -> m.am_class_method_signature
+  | ConcreteMethod m -> m.cm_class_method_signature
+
+let get_field_signature = function
+  | InterfaceField {if_signature = fs}
+  | ClassField {cf_signature = fs}
+    -> fs
+
+let get_class_field_signature = function
+  | InterfaceField {if_class_signature = cfs}
+  | ClassField {cf_class_signature = cfs}
+    -> cfs
 
 let iter_methods f = function
-  | `Interface i ->
+  | JInterface i ->
       (match i.i_initializer with
 	 | Some i -> f i.cm_signature (ConcreteMethod i)
 	 | None -> ())
-  | `Class c -> MethodMap.iter f c.c_methods
+  | JClass c -> MethodMap.iter f c.c_methods
 
 let iter_concrete_methods f = function
-  | `Interface i ->
+  | JInterface i ->
       (match i.i_initializer with
 	 | Some i -> f i.cm_signature i
 	 | None -> ())
-  | `Class c ->
+  | JClass c ->
       MethodMap.iter
 	(fun s m -> match m with ConcreteMethod m -> f s m | AbstractMethod _ -> ())
 	c.c_methods
 
 let iter_fields f = function
-  | `Interface i ->
+  | JInterface i ->
       FieldMap.iter
-	(fun s fi -> f s (`InterfaceField fi ))
+	(fun s fi -> f s (InterfaceField fi ))
 	i.i_fields
-  | `Class c ->
+  | JClass c ->
       FieldMap.iter
-	(fun s fi -> f s (`ClassField fi ))
+	(fun s fi -> f s (ClassField fi ))
 	c.c_fields
 
-let get_local_variable_info i pp code =
-  match code.c_local_variable_table with
-    | None -> None
-    | Some lvt ->
-        let offset =
-          (* when an [store v] is done, [v] will have its type at the
-             next program point.  Therefore, the LocalVariableTable
-             only refers to [v] from the next program point.  To have
-             the name and type of [v] we therefore need to look at the
-             next program point. *)
-          let code = code.c_code in
-	    match code.(pp) with
-	      | OpStore _ ->
-                  let i = ref (pp + 1) in
-                    while !i < Array.length code && code.(!i) = OpInvalid do
-                      incr i
-                    done;
-                    !i - pp
-	      | _ -> 0
-        in
-	  try
-	    let (_,_,s,sign,_) =
-	      List.find
-		(fun (start,len,_,_,index) ->
-		   pp >= start + offset
-                   && pp < start + len
-                   && index = i
-                ) lvt
-            in
-              Some (s,sign)
-          with _ -> None
+let map_concrete_method f cm =
+  {
+    cm_signature = cm.cm_signature;
+    cm_class_method_signature = cm.cm_class_method_signature;
+    cm_static = cm.cm_static;
+    cm_final = cm.cm_final;
+    cm_synchronized = cm.cm_synchronized;
+    cm_strict = cm.cm_strict;
+    cm_access = cm.cm_access;
+    cm_generic_signature = cm.cm_generic_signature;
+    cm_bridge = cm.cm_bridge;
+    cm_varargs = cm.cm_varargs;
+    cm_synthetic = cm.cm_synthetic;
+    cm_other_flags = cm.cm_other_flags;
+    cm_exceptions = cm.cm_exceptions;
+    cm_attributes = cm.cm_attributes;
+    cm_implementation = (match cm.cm_implementation with
+			   | Native -> Native
+			   | Java c -> Java (lazy (f (Lazy.force c)))
+			)
+  }
 
-let get_source_line_number pp code =
-  match code.c_line_number_table with
-    | None -> None
-    | Some lnt ->
-        let rec find_line prev = function
-          | (start_pc,_)::_ when (start_pc > pp) -> Some prev
-          | (_,line_number)::r -> find_line line_number r
-          | [] -> Some prev
-        in
-          try find_line (fst (List.hd lnt)) lnt
-          with _ -> None
-              
+let map_concrete_method_context f cm = map_concrete_method  (f cm) cm
+
+let map_method f = function
+  | AbstractMethod am -> AbstractMethod am
+  | ConcreteMethod cm -> ConcreteMethod (map_concrete_method f cm)
+
+let map_method_context f = function
+  | AbstractMethod am -> AbstractMethod am
+  | ConcreteMethod cm -> ConcreteMethod (map_concrete_method_context f cm)
+
+let map_class_gen map_method f c =
+  {
+    c_name = c.c_name;
+    c_version = c.c_version;
+    c_access = c.c_access;
+    c_final = c.c_final;
+    c_abstract = c.c_abstract;
+    c_super_class = c.c_super_class;
+    c_generic_signature = c.c_generic_signature;
+    c_fields = c.c_fields;
+    c_interfaces = c.c_interfaces;
+    c_consts = c.c_consts;
+    c_sourcefile = c.c_sourcefile;
+    c_deprecated = c.c_deprecated;
+    c_enclosing_method = c.c_enclosing_method;
+    c_source_debug_extention = c.c_source_debug_extention;
+    c_inner_classes = c.c_inner_classes;
+    c_synthetic = c.c_synthetic;
+    c_enum = c.c_enum;
+    c_other_flags = c.c_other_flags;
+    c_other_attributes = c.c_other_attributes;
+    c_methods = MethodMap.map (map_method f) c.c_methods;
+  }
+
+let map_class_context f c = map_class_gen map_method_context f c
+let map_class f c = map_class_gen map_method f c
+
+let map_interface_gen map_concrete_method f i =
+  {
+    i_name = i.i_name;
+    i_version = i.i_version;
+    i_access = i.i_access;
+    i_interfaces = i.i_interfaces;
+    i_generic_signature = i.i_generic_signature;
+    i_consts = i.i_consts;
+    i_sourcefile = i.i_sourcefile;
+    i_deprecated = i.i_deprecated;
+    i_source_debug_extention = i.i_source_debug_extention;
+    i_inner_classes = i.i_inner_classes;
+    i_other_attributes = i.i_other_attributes;
+    i_initializer = (match i.i_initializer with
+		       | None -> None
+		       | Some cm ->
+			   Some (map_concrete_method f cm)
+		    );
+    i_annotation = i.i_annotation;
+    i_other_flags = i.i_other_flags;
+    i_fields = i.i_fields;
+    i_methods = i.i_methods;
+  }
+
+let map_interface_context f i =
+  map_interface_gen map_concrete_method_context f i
+let map_interface f i = map_interface_gen map_concrete_method f i
+
+let map_interface_or_class f = function
+  | JInterface i -> JInterface (map_interface f i)
+  | JClass c -> JClass (map_class f c)
+
+let map_interface_or_class_context f = function
+  | JInterface i -> JInterface (map_interface_context f i)
+  | JClass c -> JClass (map_class_context f c)

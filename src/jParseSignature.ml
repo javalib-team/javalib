@@ -8,14 +8,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -74,6 +74,8 @@ and parse_more_name = parser
        name = parse_name >] -> name
   | [< >] -> []
 
+let get_name x = make_cn (String.concat "." (parse_name x))
+
 (* Java type. *)
 let parse_base_type = parser
   | [< 'b when b = UChar.of_char 'B' >] -> `Byte
@@ -87,7 +89,7 @@ let parse_base_type = parser
 
 let rec parse_object_type = parser
   | [< 'l when l = UChar.of_char 'L';
-       name = parse_name;
+       name = get_name;
        'semicolon when semicolon = UChar.of_char ';' >] -> TClass name
   | [< a = parse_array >] -> a
 
@@ -110,7 +112,7 @@ let parse_type_option = parser
 (* A class name, possibly an array class. *)
 let parse_ot = parser
   | [< array = parse_array >] -> array
-  | [< name = parse_name >] -> TClass name
+  | [< name = get_name >] -> TClass name
 
 let parse_method_sig = parser
   | [< 'lpar when lpar = UChar.of_char '(';
@@ -162,7 +164,7 @@ let parse_TypeVariableSignature : stream -> typeVariable = parser
        name = parse_ident (UTF8.Buf.create 0);
        'semicolon when semicolon = UChar.of_char ';'>] -> TypeVariable name
 
-let parse_QualifiedName : stream -> class_name = parse_name
+let parse_QualifiedName : stream -> class_name = get_name
 
 let rec parse_TypeArguments : stream -> typeArgument list =
   let parse_TypeArgument = parser
@@ -211,16 +213,13 @@ and parse_ClassTypeSignatureSuffixes : stream -> simpleClassTypeSignature list =
 
 and parse_ClassTypeSignature : stream -> classTypeSignature = parser
   | [< 'l when l = UChar.of_char 'L';
-       package = parse_QualifiedName;
+       qualified_name = parse_QualifiedName;
        args = parse_TypeArguments;
        cts = parse_ClassTypeSignatureSuffixes;
        'semicolon when semicolon = UChar.of_char ';' >]
     ->
-      let (ct,package) =
-	let rev = List.rev package in
-	let hd = List.hd rev in
-	  (hd,List.rev (List.tl rev))
-      in
+      let package = cn_package qualified_name in
+      let ct = cn_simple_name qualified_name in
       let (current_class,enclosing_classes) =
 	let rev = List.rev ({scts_name = ct;scts_type_arguments = args;}::cts) in
 	let hd = List.hd rev in

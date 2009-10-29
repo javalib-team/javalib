@@ -21,57 +21,57 @@
 
 
 -include ../Makefile.config
-INCLUDE:=$(INCLUDE) -I ../ptrees/ -I ../jvmti/
+INCLUDE:=$(INCLUDE) -I ../ptrees/
 DOCDIR:=../$(DOCDIR)
 
 CSS=\"style.css\"
 
 # ------ 
-MODULES=jBasics jClass jDumpBasics jDumpLow jCode jInstruction		\
-jUnparseSignature jHigh2Low jDump jUnparse jParseSignature jLow2High	\
-jParse jFile jProgram jPrintHtml jPrint jControlFlow jCRA		\
-jPrintHierarchy jNativeStubs jRTA
-MODULE_INTERFACES=jBasics jClassLow jSignature jClass jDumpBasics	\
-jDumpLow jDump jCode jInstruction jUnparseSignature jUnparse		\
-jParseSignature jParse jLow2High jHigh2Low jFile jProgram jCRA		\
-jPrintHtml jControlFlow jPrint jPrintHierarchy jNativeStubs jRTA
+MODULES=jBasics jBasicsLow jCode jClass jDumpBasics jDumpLow jParseCode	\
+jInstruction jUnparseSignature jHigh2Low jDump jDumpJasmin jUnparse	\
+jParseSignature jLow2High jParse jFile javalib
+
+MODULE_INTERFACES=jBasics jBasicsLow jCode jClassLow jSignature	jClass	\
+jDumpBasics jDumpLow jDump jDumpJasmin jParseCode jInstruction		\
+jUnparseSignature jUnparse jParseSignature jParse jLow2High jHigh2Low	\
+jFile javalib
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc
 
-all: ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa javaLib.cma javaLib.cmxa #ocaml tests tests.opt
+all: ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa javalib.cma javalib.cmxa
 
 ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa:$(wildcard ../ptrees/*.ml ../ptrees/*.mli)
 	$(MAKE) -C $(@D) $(@F)
 
-install: javaLib.cma javaLib.cmxa
+install: javalib.cma javalib.cmxa
 	mkdir -p $(INSTALL_DIR)
-	cp -f javaLib.cma javaLib.cmxa javaLib.a $(MODULE_INTERFACES:=.cmi) $(INSTALL_DIR)
+	cp -f javalib.cma javalib.cmxa javalib.a $(MODULE_INTERFACES:=.cmi) $(INSTALL_DIR)
 	cp -f $(MODULE_INTERFACES:=.mli) $(INSTALL_DIR)
 
-ocaml:javaLib.cma
-	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma str.cma javaLib.cma
+ocaml:javalib.cma
+	$(OCAMLMKTOP) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma str.cma javalib.cma
 
-tests:javaLib.cma tests.ml
-	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma javaLib.cma tests.ml
-tests.opt:javaLib.cmxa tests.ml
-	$(OCAMLOPT) $(INCLUDE) -o $@ unix.cmxa zip.cmxa extLib.cmxa ptrees.cmxa javaLib.cmxa tests.ml
+tests:javalib.cma tests.ml
+	$(OCAMLC) $(INCLUDE) -o $@ unix.cma zip.cma extLib.cma ptrees.cma javalib.cma tests.ml
+tests.opt:javalib.cmxa tests.ml
+	$(OCAMLOPT) $(INCLUDE) -o $@ unix.cmxa zip.cmxa extLib.cmxa ptrees.cmxa javalib.cmxa tests.ml
 
 sample:
-	$(OCAMLC) $(INCLUDE) extLib.cma ptrees.cma javaLib.cma sample.ml -o $@
+	$(OCAMLC) $(INCLUDE) extLib.cma ptrees.cma javalib.cma sample.ml -o $@
 
 sample.opt:
-	$(OCAMLOPT) $(INCLUDE) extLib.cmxa ptrees.cmxa javaLib.cmxa sample.ml -o $@
+	$(OCAMLOPT) $(INCLUDE) extLib.cmxa ptrees.cmxa javalib.cmxa sample.ml -o $@
 
 # ifeq ($(CMO),no)
-# javaLib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+# javalib.cma:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 # 	$(OCAMLC) $(PP) $(INCLUDE) -a -o $@ $^
-# javaLib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+# javalib.cmxa:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 # 	$(OCAMLOPT) $(PP) $(INCLUDE) -a -o $@ $^
 # else
 # Dependencies
 .depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLDEP) $(PP) $(INCLUDE) $^ > $@
+	$(OCAMLDEP) $(PP) $^ > $@
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)
 -include .depend
@@ -83,17 +83,6 @@ jParseSignature.cmo:jParseSignature.ml
 jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
 
-jNativeStubs.cmo:jNativeStubs.ml
-	$(OCAMLC) $(INCLUDE) $(PP) -c $<
-jNativeStubs.cmx jNativeStubs.o:jNativeStubs.ml
-	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
-
-jPrintHtml.cmo:jPrintHtml.ml
-	$(OCAMLC) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
-
-jPrintHtml.cmx jPrintHtml.o:jPrintHtml.ml
-	$(OCAMLOPT) $(INCLUDE) -pp "/usr/bin/perl -0777 -p -e 'BEGIN{open(CSS,$(CSS));\$$css = <CSS>;}s/\(\* CSS \*\)/\$$css/;'" -c $<
-
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<
 %.cmx %.o:%.ml
@@ -101,17 +90,17 @@ jPrintHtml.cmx jPrintHtml.o:jPrintHtml.ml
 .mli.cmi:
 	$(OCAMLC) $(INCLUDE) -c $<
 
-javaLib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
+javalib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 	$(OCAMLC) -a $(MODULES:=.cmo) -o $@
 
-javaLib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
+javalib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) -a $(MODULES:=.cmx) -o $@
 # endif
 
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) -pp "recode UTF-8..Latin-1 <" $(INCLUDE) -d $(DOCDIR) -html -stars		\
-		-colorize-code -intro ../intro.ocamldoc -t JavaLib	\
+	$(OCAMLDOC) $(INCLUDE) -d $(DOCDIR) -html -stars		\
+		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli
 	echo "</body></html>" >> $(DOCDIR)/index.html # workarround for a bug in ocamldoc

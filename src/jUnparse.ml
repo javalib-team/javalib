@@ -7,22 +7,23 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 open IO
 open IO.BigEndian
 open JBasics
+open JBasicsLow
 open JClassLow
-open JCode
+open JParseCode
 open JUnparseSignature
 
 
@@ -120,30 +121,68 @@ let unparse_flags all_flags flags =
 (* Attributes unparsing *)
 (************************)
 
+let unparse_verification_type consts ch vtype =
+  match vtype with
+    | VTop  -> write_ui8 ch 0
+    | VInteger  -> write_ui8 ch 1
+    | VFloat -> write_ui8 ch 2
+    | VDouble -> write_ui8 ch 3
+    | VLong -> write_ui8 ch 4
+    | VNull -> write_ui8 ch 5
+    | VUninitializedThis -> write_ui8 ch 6
+    | VObject o ->
+	write_ui8 ch 7 ; write_object_type ch consts o
+    | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc
+
+let unparse_verification_type_list consts ch =
+  write_with_size write_ui16 ch (unparse_verification_type consts ch)
+
 let unparse_stackmap_attribute consts stackmap =
   let ch = output_string ()
   in
     write_with_size write_ui16 ch
       (function pc, lt, st ->
-	let unparse_list =
-	  write_with_size write_ui16 ch
-	    (function
-	      | VTop  -> write_ui8 ch 0
-	      | VInteger  -> write_ui8 ch 1
-	      | VFloat -> write_ui8 ch 2
-	      | VDouble -> write_ui8 ch 3
-	      | VLong -> write_ui8 ch 4
-	      | VNull -> write_ui8 ch 5
-	      | VUninitializedThis -> write_ui8 ch 6
-	      | VObject o ->
-		  write_ui8 ch 7 ; write_object_type ch consts o
-	      | VUninitialized pc -> write_ui8 ch 8 ; write_ui16 ch pc)
-	in
-	  write_ui16 ch pc;
-	  unparse_list lt;
-	  unparse_list st)
+	 write_ui16 ch pc;
+	 unparse_verification_type_list consts ch lt;
+	 unparse_verification_type_list consts ch st)
       stackmap;
     ("StackMap",close_out ch)
+
+let unparse_stackmap_table_attribute consts stackmap_attribute =
+  let ch = output_string ()
+  in
+    write_with_size write_ui16 ch
+      (function stackmap_frame ->
+	 match stackmap_frame with
+	   | SameFrame k ->
+	       write_ui8 ch k
+	   | SameLocals (k,vtype) ->
+	       write_ui8 ch k;
+	       unparse_verification_type consts ch vtype
+	   | SameLocalsExtended (k,offset_delta,vtype) ->
+	       write_ui8 ch k;
+	       write_ui16 ch offset_delta;
+	       unparse_verification_type consts ch vtype
+	   | ChopFrame (k,offset_delta) ->
+	       write_ui8 ch k;
+	       write_ui16 ch offset_delta
+	   | SameFrameExtended (k,offset_delta) ->
+	       write_ui8 ch k;
+	       write_ui16 ch offset_delta
+	   | AppendFrame (k,offset_delta,vtype_list) ->
+	       (* The vtype list is not dumped with unparse_verification_type_list
+		  because its length doesn't need to be dumped. Indeed it is
+		  deduced from k (it is k-251). *)
+	       write_ui8 ch k;
+	       write_ui16 ch offset_delta;
+	       List.iter (unparse_verification_type consts ch) vtype_list
+	   | FullFrame (k,offset_delta,lvtypes,svtypes) ->
+	       write_ui8 ch k;
+	       write_ui16 ch offset_delta;
+	       unparse_verification_type_list consts ch lvtypes;
+	       unparse_verification_type_list consts ch svtypes
+      ) stackmap_attribute;
+    ("StackMapTable",close_out ch)
 
 let rec unparse_attribute_to_strings consts =
   let ch = output_string () in
@@ -212,6 +251,9 @@ let rec unparse_attribute_to_strings consts =
       | AttributeStackMap s ->
 	  ignore (close_out ch);
 	  unparse_stackmap_attribute consts s
+      | AttributeStackMapTable s ->
+	  ignore (close_out ch);
+	  unparse_stackmap_table_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
       | AttributeCode code ->
@@ -220,13 +262,13 @@ let rec unparse_attribute_to_strings consts =
 	    write_ui16 ch code.c_max_locals;
 	    write_with_length write_i32 ch
 	      (function ch ->
-		 JCode.unparse_code ch code.c_code);
+		 JParseCode.unparse_code ch code.c_code);
 	    write_with_size write_ui16 ch
 	      (function e ->
-		 write_ui16 ch e.e_start;
-		 write_ui16 ch e.e_end;
-		 write_ui16 ch e.e_handler;
-		 match e.e_catch_type with
+		 write_ui16 ch e.JCode.e_start;
+		 write_ui16 ch e.JCode.e_end;
+		 write_ui16 ch e.JCode.e_handler;
+		 match e.JCode.e_catch_type with
 		   | Some cl -> write_class ch consts cl
 		   | None -> write_ui16 ch 0)
 	      code.c_exc_tbl;

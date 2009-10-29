@@ -7,19 +7,21 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 open JBasics
+open JBasicsLow
 open JClassLow
+open JCode
 open JClass
 
 let debug = ref 1
@@ -49,7 +51,7 @@ type lvt = (int * int * string * value_type * int) list
 
 let combine_LocalVariableTable (lvts:lvt list) : lvt =
   let lvt = List.concat lvts in
-    if not (JBasics.get_permissive ()) then
+    if not (JBasicsLow.get_permissive ()) then
       begin
       let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
 	List.for_all
@@ -88,6 +90,44 @@ let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
 	   al);
   }
 
+let expanse_stackmap_table stackmap_table =
+  let (_,stackmap) =
+    List.fold_left
+      (fun ((pc,l,_),stackmap) frame ->
+	 match frame with
+	   | SameFrame k ->
+	       let offset = pc + k + 1 in
+	       let s = (offset,l,[]) in
+		 (s,s::stackmap)
+	   | SameLocals (k,vtype) ->
+	       let offset = pc + k - 64 + 1 in
+	       let s = (offset,l,[vtype]) in
+		 (s,s::stackmap)
+	   | SameLocalsExtended (_,offset_delta,vtype) ->
+	       let offset = pc + offset_delta + 1 in
+	       let s = (offset,l,[vtype]) in
+		 (s,s::stackmap)
+	   | ChopFrame (k,offset_delta) ->
+	       let offset = pc + offset_delta + 1 in
+	       let nb_chop = 251 - k in
+	       let l_chop = List.rev
+		 (ExtList.List.drop nb_chop (List.rev l)) in
+	       let s = (offset,l_chop,[]) in
+		 (s,s::stackmap)
+	   | SameFrameExtended (_,offset_delta) ->
+	       let offset = pc + offset_delta + 1 in
+	       let s = (offset,l,[]) in
+		 (s,s::stackmap)
+	   | AppendFrame (_,offset_delta,vtype_list) ->
+	       let offset = pc + offset_delta + 1 in
+	       let s = (offset,l@vtype_list,[]) in
+		 (s,s::stackmap)
+	   | FullFrame (_,offset_delta,lv,sv) ->
+	       let offset = pc + offset_delta + 1 in
+	       let s = (offset,lv,sv) in
+		 (s,s::stackmap)
+      ) ((-1,[],[]),[]) stackmap_table in
+    List.rev stackmap
 
 let low2high_code consts = function c ->
   {
@@ -113,7 +153,7 @@ let low2high_code consts = function c ->
 	    (List.fold_left
                (fun lvts ->
                   (function
-                     | AttributeLocalVariableTable lvt -> lvt::lvts
+                     | AttributeLocalVariableTable lvt -> lvt :: lvts
                      | _ -> lvts))
                []
                c.JClassLow.c_attributes)
@@ -121,10 +161,10 @@ let low2high_code consts = function c ->
 	  | [] -> None
 	  | _ -> Some lvt
       end;
-    c_stack_map =
+    c_stack_map_midp =
       begin
 	let rec find_StackMap = function
-	  | AttributeStackMap l::l' ->
+	  | AttributeStackMap l :: l' ->
 	      if find_StackMap l' <> None
 	      then raise (Class_structure_error "Only one StackMap attribute can be attached to a method.");
 	      Some l
@@ -132,16 +172,28 @@ let low2high_code consts = function c ->
 	  | [] -> None
 	in find_StackMap c.JClassLow.c_attributes
       end;
+    c_stack_map_java6 =
+      begin
+	let rec find_StackMapTable = function
+	  | AttributeStackMapTable l :: l' ->
+	      if find_StackMapTable l' <> None
+	      then raise (Class_structure_error "Only one StackMapTable attribute can be attached to a method.");
+	      Some (expanse_stackmap_table l)
+	  | _::l -> find_StackMapTable l
+	  | [] -> None
+	in find_StackMapTable c.JClassLow.c_attributes
+      end;
     c_attributes = low2high_other_attributes consts
       (List.filter
 	 (function
-	    | AttributeStackMap _ | AttributeLocalVariableTable _
+	    | AttributeStackMap _
+	    | AttributeStackMapTable _ | AttributeLocalVariableTable _
 	    | AttributeLineNumberTable _ -> false
 	    | _ -> true)
 	 c.JClassLow.c_attributes);
   }
 
-let low2high_cfield consts fs = function f ->
+let low2high_cfield cn consts fs = function f ->
   let flags = f.f_flags in
   let (is_static,flags) = get_flag `AccStatic flags in
   let (access,flags) = flags2access flags in
@@ -161,7 +213,7 @@ let low2high_cfield consts fs = function f ->
   let kind =
     if is_final
     then
-      if not (JBasics.get_permissive ()) && is_volatile
+      if not (JBasicsLow.get_permissive ()) && is_volatile
       then raise (Class_structure_error "A field cannot be final and volatile.")
       else Final
     else
@@ -173,12 +225,20 @@ let low2high_cfield consts fs = function f ->
     match cst with
       | [] -> None,other_att
       | AttributeConstant c::oc when not is_static ->  (* it seems quite common *)
-	  if !debug > 1 then prerr_endline "Warning: A non-static field has been found with a constant value associated.";
+	  if !debug > 1
+          then
+            prerr_endline
+              ("Warning: Non-static field "^JDumpBasics.class_name cn ^ "."
+               ^ fs_name fs ^ " has been found with a constant value associated.");
 	  None, (AttributeConstant c::(oc@other_att))
       | AttributeConstant c::[] ->
 	  Some c, other_att
       | AttributeConstant c::oc ->
-	  if !debug > 0 then prerr_endline "Warning: A field contains more than one constant value associated.";
+	  if !debug > 0
+          then
+            prerr_endline
+              ("Warning: Field " ^ JDumpBasics.class_name cn ^ "."
+               ^ fs_name fs ^ " contains more than one constant value associated.");
 	  Some c, (oc@other_att)
       | _ -> assert false
   in
@@ -187,19 +247,22 @@ let low2high_cfield consts fs = function f ->
   let generic_signature =
     match generic_signature with
       | [] -> None
-      | [AttributeSignature s] ->
-	  begin
+      | (AttributeSignature s)::rest  ->
+          if rest = [] || JBasicsLow.get_permissive ()
+          then
 	    try
 	      Some (JParseSignature.parse_FieldTypeSignature s)
-	    with e ->
-	      if JBasics.get_permissive ()
+	    with Class_structure_error _ as e ->
+	      if JBasicsLow.get_permissive ()
 	      then None
 	      else raise e
-	  end
-      | _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+	  else
+            raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+      | _ -> assert false
   in
     {
       cf_signature = fs;
+      cf_class_signature = make_cfs cn fs;
       cf_generic_signature = generic_signature;
       cf_access = access;
       cf_static = is_static;
@@ -213,7 +276,7 @@ let low2high_cfield consts fs = function f ->
 	low2high_attributes consts other_att;
     }
 
-let low2high_ifield consts fs = function f ->
+let low2high_ifield cn consts fs = function f ->
   let flags = f.f_flags in
   let (is_public,flags) = get_flag `AccPublic flags in
   let (is_static,flags) = get_flag `AccStatic flags in
@@ -232,16 +295,18 @@ let low2high_ifield consts fs = function f ->
     let generic_signature =
       match generic_signature with
 	| [] -> None
-	| [AttributeSignature s] ->
-	    begin
+	| (AttributeSignature s)::rest ->
+            if rest = [] || JBasicsLow.get_permissive ()
+	    then
 	      try
 		Some (JParseSignature.parse_FieldTypeSignature s)
-	      with e ->
-		if JBasics.get_permissive ()
+	      with Class_structure_error _ as e ->
+		if JBasicsLow.get_permissive ()
 		then None
 		else raise e
-	    end
-	| _ -> raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+	    else
+            raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
+        | _ -> assert false
     in
     let (csts,other_att) =
       List.partition (function AttributeConstant _ -> true | _ -> false) other_att in
@@ -252,6 +317,7 @@ let low2high_ifield consts fs = function f ->
     in
       {
 	if_signature = fs;
+        if_class_signature = make_cfs cn fs;
 	if_generic_signature = generic_signature;
 	if_value = cst;
 	if_synthetic = is_synthetic;
@@ -259,7 +325,7 @@ let low2high_ifield consts fs = function f ->
 	if_attributes = low2high_attributes consts other_att;
       }
 
-let low2high_amethod consts ms = function m ->
+let low2high_amethod consts cs ms = function m ->
   let flags = m.m_flags in
   let (access,flags) = flags2access flags in
   let (_is_abstract,flags) = get_flag `AccAbstract flags in
@@ -287,16 +353,18 @@ let low2high_amethod consts ms = function m ->
     List.partition (function AttributeSignature _ -> true | _ -> false) m.m_attributes in
   let generic_signature = match generic_signature with
     | [] -> None
-    | [AttributeSignature s] ->
-	begin
+    | (AttributeSignature s)::rest ->
+        if rest = [] || JBasicsLow.get_permissive ()
+	then
 	  try
 	    Some (JParseSignature.parse_MethodTypeSignature s)
 	  with Class_structure_error _ as e ->
-	    if JBasics.get_permissive ()
+	    if JBasicsLow.get_permissive ()
 	    then None
 	    else raise e
-	end
-    | _ -> raise (Class_structure_error "An abstract method cannot have several Signature attributes.")
+	else
+          raise (Class_structure_error "An abstract method cannot have several Signature attributes.")
+    | _ -> assert false
   in
   let (exn,other_att) =
     List.partition (function AttributeExceptions _-> true | _ -> false) other_att in
@@ -307,6 +375,7 @@ let low2high_amethod consts ms = function m ->
   in
     {
       am_signature = ms;
+      am_class_method_signature = make_cms cs ms;
       am_access = access;
       am_generic_signature = generic_signature;
       am_synthetic = is_synthetic;
@@ -317,7 +386,7 @@ let low2high_amethod consts ms = function m ->
       am_attributes = low2high_attributes consts other_att;
     }
 
-let low2high_cmethod consts ms = function m ->
+let low2high_cmethod consts cs ms = function m ->
   if m.m_name = "<init>" &&
     List.exists (fun a -> a=`AccStatic || a=`AccFinal || a=`AccSynchronized || a=`AccNative || a=`AccAbstract)
     m.m_flags
@@ -345,16 +414,18 @@ let low2high_cmethod consts ms = function m ->
     List.partition (function AttributeSignature _ -> true | _ -> false) m.m_attributes in
   let generic_signature = match generic_signature with
     | [] -> None
-    | [AttributeSignature s] ->
-	begin
+    | (AttributeSignature s)::rest ->
+        if rest = [] || JBasicsLow.get_permissive ()
+	then
 	  try
 	    Some (JParseSignature.parse_MethodTypeSignature s)
 	  with Class_structure_error _ as e ->
-	    if JBasics.get_permissive ()
+	    if JBasicsLow.get_permissive ()
 	    then None
 	    else raise e
-	end
-    | _ -> raise (Class_structure_error "A method cannot have several Signature attributes.")
+        else
+          raise (Class_structure_error "A method cannot have several Signature attributes.")
+    | _ -> assert false
   and (exn,other_att) =
     List.partition (function AttributeExceptions _ -> true | _ -> false) other_att in
   let exn = match exn with
@@ -373,6 +444,7 @@ let low2high_cmethod consts ms = function m ->
   in
     {
       cm_signature = ms;
+      cm_class_method_signature = make_cms cs ms;
       cm_static = is_static;
       cm_final = is_final;
       cm_synchronized = is_synchronized;
@@ -388,32 +460,30 @@ let low2high_cmethod consts ms = function m ->
       cm_implementation = code;
     }
 
-let low2high_acmethod consts ms = function m ->
+let low2high_acmethod consts cs ms = function m ->
   if List.exists ((=)`AccAbstract) m.m_flags
-  then AbstractMethod (low2high_amethod consts ms m)
-  else ConcreteMethod (low2high_cmethod consts ms m)
+  then AbstractMethod (low2high_amethod consts cs ms m)
+  else ConcreteMethod (low2high_cmethod consts cs ms m)
 
 let low2high_methods cn consts = function ac ->
-  List.fold_left
-    (fun map meth ->
-      let ms =
-	{ms_name = meth.m_name;
-	 ms_parameters = fst meth.m_descriptor;
-	 ms_return_type = snd meth.m_descriptor;}
-      in
-	if !debug > 0 && MethodMap.mem ms map
-	then
-	  prerr_endline
-	    ("Warning: in "^ JDumpBasics.class_name cn 
-             ^ " 2 methods have been found with the same signature (" ^ ms.ms_name
-	     ^ "("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
-	MethodMap.add
-	  ms
-	  (try low2high_acmethod consts ms meth
-	    with Class_structure_error msg -> raise (Class_structure_error ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
-	map)
-    MethodMap.empty
-    ac.j_methods
+  let cs = ac.j_name in
+    List.fold_left
+      (fun map meth ->
+	 let ms = make_ms meth.m_name (fst meth.m_descriptor) (snd meth.m_descriptor) in
+	   if !debug > 0 && MethodMap.mem ms map
+	   then
+	     prerr_endline
+	       ("Warning: in " ^ JDumpBasics.class_name cn
+                ^ " 2 methods have been found with the same signature (" ^ meth.m_name
+		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) (fst meth.m_descriptor)) ^"))");
+	   MethodMap.add
+	     ms
+	     (try low2high_acmethod consts cs ms meth
+	      with Class_structure_error msg ->
+		raise (Class_structure_error
+			 ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
+	     map
+      ) MethodMap.empty ac.j_methods
 
 let low2high_innerclass = function
     (inner_class_info,outer_class_info,inner_name,flags) ->
@@ -451,10 +521,10 @@ let low2high_innerclass = function
 	    else `ConcreteClass
 	}
 
-
 let low2high_class cl =
-  if cl.j_super = None && cl.j_name <> java_lang_object
+  if cl.j_super = None && cl.j_name <> JBasics.java_lang_object
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
+  let cs = cl.j_name in
   let flags = cl.j_flags in
   let (access,flags) = flags2access (flags :> access_flag list) in
   let (accsuper,flags) = get_flag `AccSuper flags in
@@ -471,11 +541,11 @@ let low2high_class cl =
 	 | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
-    if not (JBasics.get_permissive ())
+    if not (JBasicsLow.get_permissive ())
       && not (accsuper || is_interface)
       && not (accsuper && is_interface)
     then raise (Class_structure_error "ACC_SUPER must be set for all classes (that are not interfaces)");
-    if not (JBasics.get_permissive ()) && (is_final && is_abstract)
+    if not (JBasicsLow.get_permissive ()) && (is_final && is_abstract)
     then raise (Class_structure_error "An abstract class cannot be final.");
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
@@ -496,16 +566,18 @@ let low2high_class cl =
     and my_generic_signature =
       match List.find_all (function AttributeSignature _ -> true| _ -> false) cl.j_attributes with
 	| [] -> None
-	| [AttributeSignature s] ->
-	    begin
+	| (AttributeSignature s)::rest  ->
+            if rest = [] || JBasicsLow.get_permissive ()
+            then
 	      try
 		Some (JParseSignature.parse_ClassSignature s)
 	      with Class_structure_error _ as e ->
-		if JBasics.get_permissive ()
+		if JBasicsLow.get_permissive ()
 		then None
 		else raise e
-	    end
-	| _ -> raise (Class_structure_error "A class or interface cannot have several Signature attributes.")
+            else
+              raise (Class_structure_error "A class or interface cannot have several Signature attributes.")
+        | _ -> assert false
     and my_source_debug_extention =
       let sde_attributes =
 	List.find_all
@@ -514,11 +586,15 @@ let low2high_class cl =
       in
 	match sde_attributes with
 	  | [] -> None
-	  | [AttributeSourceDebugExtension s] -> Some s
-	  | _ ->
-	      raise
-		(Class_structure_error
-		   "A class cannot contain several SourceDebugExtension attribute.")
+	  | (AttributeSourceDebugExtension s)::rest
+            ->
+              if rest = [] || JBasicsLow.get_permissive ()
+              then Some s
+              else
+                raise
+		  (Class_structure_error
+		     "A class cannot contain several SourceDebugExtension attribute.")
+    | _ -> assert false
     and my_inner_classes =
       let rec find_InnerClasses = function
 	| AttributeInnerClasses icl::_ -> List.rev_map low2high_innerclass icl
@@ -538,29 +614,31 @@ let low2high_class cl =
       if is_interface
       then
 	begin
-	  if not (JBasics.get_permissive ()) && not is_abstract
+	  if not (JBasicsLow.get_permissive ()) && not is_abstract
 	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
-	  if not (JBasics.get_permissive ()) && not (cl.j_super = Some java_lang_object)
+	  if not (JBasicsLow.get_permissive ()) && not (cl.j_super = Some JBasics.java_lang_object)
 	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
-	  if not (JBasics.get_permissive ()) && (is_enum || is_synthetic)
+	  if not (JBasicsLow.get_permissive ()) && (is_enum || is_synthetic)
 	  then raise (Class_structure_error ("Class file with their `AccInterface flag set must not have "
 					     ^ "their `AccEnum or `AccSynthetic flags set."));
 	  let (init,methods) =
 	    match
 	      List.partition
 		(fun m ->
-		   m.m_name = clinit_signature.ms_name
-		    && fst m.m_descriptor = clinit_signature.ms_parameters)
+		   let clinit_name = ms_name clinit_signature in
+		   let clinit_desc = (ms_args clinit_signature, ms_rtype clinit_signature) in
+		     m.m_name = clinit_name
+		       && fst m.m_descriptor = fst clinit_desc)
 		cl.j_methods
 	    with
-	      | [m],others -> Some (low2high_cmethod consts clinit_signature m),others
+	      | [m],others -> Some (low2high_cmethod consts cs clinit_signature m),others
 	      | [],others -> None, others
 	      | m::_::_,others ->
-		  if not (JBasics.get_permissive ())
+		  if not (JBasicsLow.get_permissive ())
 		  then raise (Class_structure_error "has more than one class initializer <clinit>")
-		  else Some (low2high_cmethod consts clinit_signature m),others
+		  else Some (low2high_cmethod consts cs clinit_signature m),others
 	  in
-	    `Interface {
+	    JInterface {
 	      i_name = my_name;
 	      i_version = my_version;
 	      i_access = my_access;
@@ -577,16 +655,16 @@ let low2high_class cl =
 	      i_other_flags = flags;
 	      i_fields = List.fold_left
 		(fun m f ->
-		   let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		   let fs = make_fs f.f_name f.f_descriptor in
 		     if !debug > 0 && FieldMap.mem fs m
 		     then
 		       prerr_endline
-			 ("Warning: in "^ JDumpBasics.class_name my_name
+			 ("Warning: in " ^ JDumpBasics.class_name my_name
                           ^ " 2 fields have been found with the same signature ("
-			  ^JDumpBasics.value_signature fs.fs_type^" "^ fs.fs_name^")");
+			  ^JDumpBasics.value_signature f.f_descriptor ^" "^ f.f_name^")");
 		     FieldMap.add
 		       fs
-		       (try low2high_ifield consts fs f
+		       (try low2high_ifield my_name consts fs f
 			with Class_structure_error msg ->
 			  raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
 		       m)
@@ -594,20 +672,17 @@ let low2high_class cl =
 		cl.j_fields;
 	      i_methods = List.fold_left
 		(fun map meth ->
-		   let ms =
-		     {ms_name=meth.m_name;
-		      ms_parameters = fst meth.m_descriptor;
-		      ms_return_type = snd meth.m_descriptor;}
-		   in
+		   let ms = make_ms meth.m_name (fst meth.m_descriptor) (snd meth.m_descriptor) in
 		     if !debug > 0 && MethodMap.mem ms map
 		     then
 		       prerr_endline
-			 ("Warning: in "^ JDumpBasics.class_name my_name
-                          ^ " 2 methods have been found with the same signature ("^ms.ms_name
-			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) ms.ms_parameters) ^"))");
+			 ("Warning: in " ^ JDumpBasics.class_name my_name
+                          ^ " 2 methods have been found with the same signature ("^meth.m_name
+			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature)
+						      (fst meth.m_descriptor)) ^"))");
 		     MethodMap.add
 		       ms
-		       (try low2high_amethod consts ms meth
+		       (try low2high_amethod consts cs ms meth
 			with Class_structure_error msg ->
 			  let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
 			  in raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": method " ^sign^": "^msg)))
@@ -623,17 +698,17 @@ let low2high_class cl =
 	  let my_enclosing_method =
 	    match List.find_all (function AttributeEnclosingMethod _ -> true | _ -> false) cl.j_attributes  with
 	      | [] -> None
-	      | [AttributeEnclosingMethod (cn,mso)] ->
+	      | [AttributeEnclosingMethod (cs,mso)] ->
 		  let ms =
 		    match mso with
 		      | None -> None
-		      | Some (mn,SMethod (pl,rt)) ->
-			  Some {ms_name=mn; ms_parameters=pl; ms_return_type=rt;}
+		      | Some (mn,SMethod mdesc) ->
+			  Some (make_ms mn (fst mdesc) (snd mdesc))
 		      | Some (_,SValue _) ->
 			  raise
 			    (Class_structure_error
 			       "A EnclosingMethod attribute cannot specify a field as enclosing method.")
-		  in Some (cn,ms)
+		  in Some (cs, ms)
 	      | _ ->
 		  raise
 		    (Class_structure_error
@@ -641,26 +716,32 @@ let low2high_class cl =
 	  and my_methods =
 	    try low2high_methods my_name consts cl
 	    with
-	      | Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": "^msg))
+	      | Class_structure_error msg ->
+		  raise (Class_structure_error
+			   ("in class "^JDumpBasics.class_name my_name^": "^msg))
 	  and my_fields =
 	    List.fold_left
 	      (fun m f ->
-		 let fs = {fs_name=f.f_name;fs_type=f.f_descriptor} in
+		 let fs = make_fs f.f_name f.f_descriptor in
 		   if !debug > 0 && FieldMap.mem fs m
 		   then
 		     prerr_endline
-		       ("Warning: in "^ JDumpBasics.class_name my_name
+		       ("Warning: in " ^ JDumpBasics.class_name my_name
                         ^ " 2 fields have been found with the same signature ("
-			^JDumpBasics.value_signature fs.fs_type^" "^fs.fs_name ^")");
-		   FieldMap.add
-		     fs
-		     (try low2high_cfield consts fs f
-		      with Class_structure_error msg -> raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": in field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
-		     m)
+			^JDumpBasics.value_signature f.f_descriptor^" "^f.f_name ^")");
+		   FieldMap.add fs
+		     (try low2high_cfield my_name consts fs f
+		      with Class_structure_error msg ->
+			raise (Class_structure_error
+				 ("in class "^JDumpBasics.class_name my_name
+				  ^": in field " ^
+				  JDumpBasics.signature f.f_name
+				  (SValue f.f_descriptor)^": "^msg))
+		     ) m)
 	      FieldMap.empty
 	      cl.j_fields
 	  in
-	    `Class {
+	    JClass {
 	      c_name = my_name;
 	      c_version = my_version;
 	      c_super_class = cl.j_super;

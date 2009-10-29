@@ -1,7 +1,7 @@
 (*
  * Copyright (C) 2008 Jean-Christophe Filliatre
  * Copyright (C) 2008, 2009 Laurent Hubert (CNRS)
- * 
+ *
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file

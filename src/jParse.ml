@@ -3,19 +3,20 @@
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2009, Frederic Dabrowski (INRIA)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -24,22 +25,22 @@ open IO.BigEndian
 open ExtList
 open ExtString
 open JBasics
-
+open JBasicsLow
 open JParseSignature
 
 type tmp_constant =
-	| ConstantClass of int
-	| ConstantField of int * int
-	| ConstantMethod of int * int
-	| ConstantInterfaceMethod of int * int
-	| ConstantString of int
-	| ConstantInt of int32
-	| ConstantFloat of float
-	| ConstantLong of int64
-	| ConstantDouble of float
-	| ConstantNameAndType of int * int
-	| ConstantStringUTF8 of string
-	| ConstantUnusable
+  | ConstantClass of int
+  | ConstantField of int * int
+  | ConstantMethod of int * int
+  | ConstantInterfaceMethod of int * int
+  | ConstantString of int
+  | ConstantInt of int32
+  | ConstantFloat of float
+  | ConstantLong of int64
+  | ConstantDouble of float
+  | ConstantNameAndType of int * int
+  | ConstantStringUTF8 of string
+  | ConstantUnusable
 
 let parse_constant max ch =
   let cid = IO.read_byte ch in
@@ -88,48 +89,48 @@ let parse_constant max ch =
 
 let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
-   `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
-   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
-   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
+    `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
+    `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
 let innerclass_flags =
   [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
-   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
-   `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
-   `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
+    `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+    `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
+    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
 let field_flags =
   [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
-   `AccFinal; `AccRFU 0x20; `AccVolatile; `AccTransient;
-   `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
-   `AccSynthetic; `AccRFU 0x2000; `AccEnum; `AccRFU 0x8000|]
+    `AccFinal; `AccRFU 0x20; `AccVolatile; `AccTransient;
+    `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+    `AccSynthetic; `AccRFU 0x2000; `AccEnum; `AccRFU 0x8000|]
 let method_flags =
   [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
-   `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
-   `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
-   `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
+    `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
+    `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
+    `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
 
 let parse_access_flags all_flags ch =
-	let fl = read_ui16 ch in
-	let flags = ref [] in
-	  Array.iteri
-	    (fun i f -> if fl land (1 lsl i) <> 0 then flags := f :: !flags)
-	    all_flags;
-	!flags
+  let fl = read_ui16 ch in
+  let flags = ref [] in
+    Array.iteri
+      (fun i f -> if fl land (1 lsl i) <> 0 then flags := f :: !flags)
+      all_flags;
+    !flags
 
+let parse_stackmap_type_info consts ch = match IO.read_byte ch with
+  | 0 -> VTop
+  | 1 -> VInteger
+  | 2 -> VFloat
+  | 3 -> VDouble
+  | 4 -> VLong
+  | 5 -> VNull
+  | 6 -> VUninitializedThis
+  | 7 -> VObject (get_object_type consts (read_ui16 ch))
+  | 8 -> VUninitialized (read_ui16 ch)
+  | n -> raise (Class_structure_error ("Illegal stackmap type: " ^ string_of_int n))
 
 let parse_stackmap_frame consts ch =
-  let parse_type_info ch = match IO.read_byte ch with
-    | 0 -> VTop
-    | 1 -> VInteger
-    | 2 -> VFloat
-    | 3 -> VDouble
-    | 4 -> VLong
-    | 5 -> VNull
-    | 6 -> VUninitializedThis
-    | 7 -> VObject (get_object_type consts (read_ui16 ch))
-    | 8 -> VUninitialized (read_ui16 ch)
-    | n -> raise (Class_structure_error ("Illegal stackmap type: " ^ string_of_int n))
-  in let parse_type_info_array ch nb_item =
-      List.init nb_item (fun _ ->parse_type_info ch)
+  let parse_type_info_array ch nb_item =
+    List.init nb_item (fun _ -> parse_stackmap_type_info consts ch)
   in let offset = read_ui16 ch in
   let number_of_locals = read_ui16 ch in
   let locals = parse_type_info_array ch number_of_locals in
@@ -137,17 +138,55 @@ let parse_stackmap_frame consts ch =
   let stack = parse_type_info_array ch number_of_stack_items in
     (offset,locals,stack)
 
+
+(***************************************************************************)
+(* DFr : Addition for 1.6 stackmap *****************************************)
+(***************************************************************************)
+let parse_stackmap_table consts ch =
+  let kind = IO.read_byte ch
+  in
+  let stackmap =
+    if ((kind>=0) && (kind<=63)) then SameFrame(kind)
+    else if ((kind >=64) && (kind <=127)) then
+      let vtype = parse_stackmap_type_info consts ch in
+	SameLocals(kind,vtype)
+    else if (kind=247) then
+      let offset_delta = read_ui16 ch
+      and vtype = parse_stackmap_type_info consts ch in
+	SameLocalsExtended(kind,offset_delta,vtype)
+    else if ((kind >=248) && (kind <=250)) then
+      let offset_delta = read_ui16 ch in ChopFrame(kind,offset_delta)
+    else if (kind=251) then
+      let offset_delta = read_ui16 ch in SameFrameExtended(kind,offset_delta)
+    else if ((kind >=252) && (kind <=254)) then
+      let offset_delta = read_ui16 ch in
+      let locals = List.init (kind-251)
+	(fun _ -> parse_stackmap_type_info consts ch) in
+	AppendFrame(kind,offset_delta,locals)
+    else if (kind=255) then
+      let offset_delta = read_ui16 ch in
+      let nlocals = read_ui16 ch in
+      let locals = List.init nlocals
+	(fun _ -> parse_stackmap_type_info consts ch) in
+      let nstack = read_ui16 ch in
+      let stack = List.init nstack
+	(fun _ -> parse_stackmap_type_info consts ch) in
+	FullFrame(kind,offset_delta,locals,stack)
+    else (print_string("Invalid stackmap kind\n");SameLocals(-1,VTop))
+  in stackmap
+
 let rec parse_code consts ch =
   let max_stack = read_ui16 ch in
   let max_locals = read_ui16 ch in
   let clen =
     match read_i32 ch with
       | toobig when toobig > 65535 ->
-	  raise (Class_structure_error "There must be less than 65536 bytes of instructions in a Code attribute")
+	  raise (Class_structure_error
+		   "There must be less than 65536 bytes of instructions in a Code attribute")
       | ok -> ok
   in
   let code =
-    JCode.parse_code ch clen
+    JParseCode.parse_code ch clen
   in
   let exc_tbl_length = read_ui16 ch in
   let exc_tbl =
@@ -166,10 +205,10 @@ let rec parse_code consts ch =
 		   | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 	 in
 	   {
-	     e_start = spc;
-	     e_end = epc;
-	     e_handler = hpc;
-	     e_catch_type = ct;
+	     JCode.e_start = spc;
+	     JCode.e_end = epc;
+	     JCode.e_handler = hpc;
+	     JCode.e_catch_type = ct;
 	   }
       ) in
   let attrib_count = read_ui16 ch in
@@ -286,7 +325,8 @@ and parse_attribute list consts ch =
 		      let start_pc = read_ui16 ch in
 		      let length = read_ui16 ch in
 		      let name = (get_string_ui16 consts ch) in
-		      let signature = parse_field_descriptor (get_string_ui16 consts ch) in
+		      let signature = parse_field_descriptor
+			(get_string_ui16 consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
 	| "Deprecated" -> check `Deprecated;
@@ -296,49 +336,61 @@ and parse_attribute list consts ch =
 	    let ch, count = IO.pos_in ch in
 	    let nb_stackmap_frames = read_ui16 ch in
 	    let stackmap =
-	      List.init nb_stackmap_frames (fun _ -> parse_stackmap_frame consts ch )
+	      List.init nb_stackmap_frames
+		(fun _ -> parse_stackmap_frame consts ch )
 	    in
 	      if count() <> alen then error();
 	      AttributeStackMap stackmap
+	| "StackMapTable" ->
+	    (* DFr : Addition for 1.6 stackmap *)
+	    check `StackMap;
+	    let ch, count = IO.pos_in ch in
+	    let nentry = read_ui16 ch in
+	    let stackmap =
+	      List.init nentry (fun _ -> parse_stackmap_table consts ch )
+	    in
+	      if count() <> alen then error();
+	      AttributeStackMapTable stackmap
 	| _ -> raise Exit
     with
 	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
 
 let parse_field consts ch =
-	let acc = parse_access_flags field_flags ch in
-	let name = get_string_ui16 consts ch in
-	let sign = parse_field_descriptor (get_string_ui16 consts ch) in
-	let attrib_count = read_ui16 ch in
-	let attrib_to_parse =
-	  if List.exists ((=)`AccStatic) acc
-	  then  [`ConstantValue ; `Synthetic ; `Deprecated ; `Signature]
-	  else  [`Synthetic ; `Deprecated ; `Signature] in
-	let attribs =
-	  List.init
-	    attrib_count
-	    (fun _ -> parse_attribute attrib_to_parse consts ch) in
-	{
-		f_name = name;
-		f_descriptor = sign;
-		f_attributes = attribs;
-		f_flags = acc;
-	}
+  let acc = parse_access_flags field_flags ch in
+  let name = get_string_ui16 consts ch in
+  let sign = parse_field_descriptor (get_string_ui16 consts ch) in
+  let attrib_count = read_ui16 ch in
+  let attrib_to_parse =
+    if List.exists ((=)`AccStatic) acc
+    then  [`ConstantValue ; `Synthetic ; `Deprecated ; `Signature]
+    else  [`Synthetic ; `Deprecated ; `Signature] in
+  let attribs =
+    List.init
+      attrib_count
+      (fun _ -> parse_attribute attrib_to_parse consts ch) in
+    {
+      f_name = name;
+      f_descriptor = sign;
+      f_attributes = attribs;
+      f_flags = acc;
+    }
 
 let parse_method consts ch =
-	let acc = parse_access_flags method_flags ch in
-	let name = get_string_ui16 consts ch in
-	let sign = parse_method_descriptor (get_string_ui16 consts ch) in
-	let attrib_count = read_ui16 ch in
-	let attribs = List.init attrib_count
-	  (fun _ ->
-	     parse_attribute [`Code ; `Exceptions ; `Synthetic ; `Deprecated ; `Signature] consts ch)
-	in
-	{
-		m_name = name;
-		m_descriptor = sign;
-		m_attributes = attribs;
-		m_flags = acc;
-	}
+  let acc = parse_access_flags method_flags ch in
+  let name = get_string_ui16 consts ch in
+  let sign = parse_method_descriptor (get_string_ui16 consts ch) in
+  let attrib_count = read_ui16 ch in
+  let attribs = List.init attrib_count
+    (fun _ ->
+       parse_attribute [`Code ; `Exceptions ; `Synthetic ;
+			`Deprecated ; `Signature] consts ch)
+  in
+    {
+      m_name = name;
+      m_descriptor = sign;
+      m_attributes = attribs;
+      m_flags = acc;
+    }
 
 let rec expand_constant consts n =
   let expand name cl nt =

@@ -1,6 +1,6 @@
-.PHONY:ptrees all javalib jvmti cleanall doc
+.PHONY:ptrees all javalib cleanall doc
 
-all:ptrees javalib jvmti
+all:ptrees javalib
 
 ptrees:
 	$(MAKE) -C ptrees
@@ -8,14 +8,9 @@ ptrees:
 javalib:ptrees
 	$(MAKE) -C src
 
-jvmti:javalib
-	$(MAKE) -C jvmti
-
-cleanall:
-	$(RM) *~
-	$(MAKE)	-C jvmti clean
-	$(MAKE) -C src cleanall
-	$(MAKE) -C ptrees cleanall
+cleanall clean:
+	$(MAKE) -C src $@
+	$(MAKE) -C ptrees $@
 
 doc:
 	$(MAKE) -C src doc

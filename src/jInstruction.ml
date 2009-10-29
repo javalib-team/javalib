@@ -7,20 +7,22 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 open JClass
-open JClassLow
 open JBasics
+open JBasicsLow
+open JCode
+open JClassLow
 open IO
 open IO.BigEndian
 
@@ -28,22 +30,22 @@ let count =
   List.fold_left
     (fun n vt ->
        n + match vt with
-	 | TBasic (`Double | `Long) -> 2
+	 | JBasics.TBasic (`Double | `Long) -> 2
 	 | _ -> 1)
     1
 
 let opcode2instruction consts = function
-	| OpNop -> JClass.OpNop
-	| OpAConstNull -> JClass.OpConst `ANull
-	| OpIConst v -> JClass.OpConst (`Int v)
-	| OpLConst v -> JClass.OpConst (`Long v)
-	| OpFConst v -> JClass.OpConst (`Float v)
-	| OpDConst v -> JClass.OpConst (`Double v)
-	| OpBIPush v -> JClass.OpConst (`Byte v)
-	| OpSIPush v -> JClass.OpConst (`Short v)
+	| OpNop -> JCode.OpNop
+	| OpAConstNull -> JCode.OpConst `ANull
+	| OpIConst v -> JCode.OpConst (`Int v)
+	| OpLConst v -> JCode.OpConst (`Long v)
+	| OpFConst v -> JCode.OpConst (`Float v)
+	| OpDConst v -> JCode.OpConst (`Double v)
+	| OpBIPush v -> JCode.OpConst (`Byte v)
+	| OpSIPush v -> JCode.OpConst (`Short v)
 	| OpLdc1 n
 	| OpLdc1w n ->
-	    JClass.OpConst
+	    JCode.OpConst
 	      (match get_constant_value consts n with
 		 | ConstInt c -> `Int c
 		 | ConstFloat c -> `Float c
@@ -51,7 +53,7 @@ let opcode2instruction consts = function
 		 | ConstClass c -> `Class c
 		 | ConstLong _ | ConstDouble _ -> raise (Class_structure_error ("Illegal constant for Ldc1: long/double")))
 	| OpLdc2w n ->
-	    JClass.OpConst
+	    JCode.OpConst
 	      (match get_constant_value consts n with
 		 | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
 		     raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
@@ -59,161 +61,172 @@ let opcode2instruction consts = function
 		 | ConstDouble c -> `Double c)
 
 	| OpLoad (k, l) ->
-	    JClass.OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
-	| OpALoad l -> JClass.OpLoad (`Object, l)
+	    JCode.OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
+	| OpALoad l -> JCode.OpLoad (`Object, l)
 
 	| OpArrayLoad k ->
-	    JClass.OpArrayLoad (k : [`Int | other_num] :> [> `Int | other_num])
-	| OpAALoad -> JClass.OpArrayLoad `Object
-	| OpBALoad -> JClass.OpArrayLoad `ByteBool
-	| OpCALoad -> JClass.OpArrayLoad `Char
-	| OpSALoad -> JClass.OpArrayLoad `Short
+	    JCode.OpArrayLoad (k : [`Int | other_num] :> [> `Int | other_num])
+	| OpAALoad -> JCode.OpArrayLoad `Object
+	| OpBALoad -> JCode.OpArrayLoad `ByteBool
+	| OpCALoad -> JCode.OpArrayLoad `Char
+	| OpSALoad -> JCode.OpArrayLoad `Short
 
 
 	| OpStore (k, l) ->
-	    JClass.OpStore ((k : jvm_basic_type :> [> jvm_basic_type]), l)
-	| OpAStore l -> JClass.OpStore (`Object, l)
+	    JCode.OpStore ((k : jvm_basic_type :> [> jvm_basic_type]), l)
+	| OpAStore l -> JCode.OpStore (`Object, l)
 
 	| OpArrayStore k ->
-	    JClass.OpArrayStore (k : [`Int | other_num] :> [> `Int | other_num])
+	    JCode.OpArrayStore (k : [`Int | other_num] :> [> `Int | other_num])
 
-	| OpAAStore -> JClass.OpArrayStore `Object
-	| OpBAStore -> JClass.OpArrayStore `ByteBool
-	| OpCAStore -> JClass.OpArrayStore `Char
-	| OpSAStore -> JClass.OpArrayStore `Short
+	| OpAAStore -> JCode.OpArrayStore `Object
+	| OpBAStore -> JCode.OpArrayStore `ByteBool
+	| OpCAStore -> JCode.OpArrayStore `Char
+	| OpSAStore -> JCode.OpArrayStore `Short
 
-	| OpPop -> JClass.OpPop
-	| OpPop2 -> JClass.OpPop2
-	| OpDup -> JClass.OpDup
-	| OpDupX1 -> JClass.OpDupX1
-	| OpDupX2 -> JClass.OpDupX2
-	| OpDup2 -> JClass.OpDup2
-	| OpDup2X1 -> JClass.OpDup2X1
-	| OpDup2X2 -> JClass.OpDup2X2
-	| OpSwap -> JClass.OpSwap
+	| OpPop -> JCode.OpPop
+	| OpPop2 -> JCode.OpPop2
+	| OpDup -> JCode.OpDup
+	| OpDupX1 -> JCode.OpDupX1
+	| OpDupX2 -> JCode.OpDupX2
+	| OpDup2 -> JCode.OpDup2
+	| OpDup2X1 -> JCode.OpDup2X1
+	| OpDup2X2 -> JCode.OpDup2X2
+	| OpSwap -> JCode.OpSwap
 
-	| OpAdd k -> JClass.OpAdd k
-	| OpSub k -> JClass.OpSub k
-	| OpMult k -> JClass.OpMult k
-	| OpDiv k -> JClass.OpDiv k
-	| OpRem k -> JClass.OpRem k
-	| OpNeg k -> JClass.OpNeg k
+	| OpAdd k -> JCode.OpAdd k
+	| OpSub k -> JCode.OpSub k
+	| OpMult k -> JCode.OpMult k
+	| OpDiv k -> JCode.OpDiv k
+	| OpRem k -> JCode.OpRem k
+	| OpNeg k -> JCode.OpNeg k
 
-	| OpIShl -> JClass.OpIShl
-	| OpLShl -> JClass.OpLShl
-	| OpIShr -> JClass.OpIShr
-	| OpLShr -> JClass.OpLShr
-	| OpIUShr -> JClass.OpIUShr
-	| OpLUShr -> JClass.OpLUShr
-	| OpIAnd -> JClass.OpIAnd
-	| OpLAnd -> JClass.OpLAnd
-	| OpIOr -> JClass.OpIOr
-	| OpLOr -> JClass.OpLOr
-	| OpIXor -> JClass.OpIXor
-	| OpLXor -> JClass.OpLXor
+	| OpIShl -> JCode.OpIShl
+	| OpLShl -> JCode.OpLShl
+	| OpIShr -> JCode.OpIShr
+	| OpLShr -> JCode.OpLShr
+	| OpIUShr -> JCode.OpIUShr
+	| OpLUShr -> JCode.OpLUShr
+	| OpIAnd -> JCode.OpIAnd
+	| OpLAnd -> JCode.OpLAnd
+	| OpIOr -> JCode.OpIOr
+	| OpLOr -> JCode.OpLOr
+	| OpIXor -> JCode.OpIXor
+	| OpLXor -> JCode.OpLXor
 
-	| OpIInc (index, incr) -> JClass.OpIInc (index, incr)
+	| OpIInc (index, incr) -> JCode.OpIInc (index, incr)
 
-	| OpI2L -> JClass.OpI2L
-	| OpI2F -> JClass.OpI2F
-	| OpI2D -> JClass.OpI2D
-	| OpL2I -> JClass.OpL2I
-	| OpL2F -> JClass.OpL2F
-	| OpL2D -> JClass.OpL2D
-	| OpF2I -> JClass.OpF2I
-	| OpF2L -> JClass.OpF2L
-	| OpF2D -> JClass.OpF2D
-	| OpD2I -> JClass.OpD2I
-	| OpD2L -> JClass.OpD2L
-	| OpD2F -> JClass.OpD2F
-	| OpI2B -> JClass.OpI2B
-	| OpI2C -> JClass.OpI2C
-	| OpI2S -> JClass.OpI2S
+	| OpI2L -> JCode.OpI2L
+	| OpI2F -> JCode.OpI2F
+	| OpI2D -> JCode.OpI2D
+	| OpL2I -> JCode.OpL2I
+	| OpL2F -> JCode.OpL2F
+	| OpL2D -> JCode.OpL2D
+	| OpF2I -> JCode.OpF2I
+	| OpF2L -> JCode.OpF2L
+	| OpF2D -> JCode.OpF2D
+	| OpD2I -> JCode.OpD2I
+	| OpD2L -> JCode.OpD2L
+	| OpD2F -> JCode.OpD2F
+	| OpI2B -> JCode.OpI2B
+	| OpI2C -> JCode.OpI2C
+	| OpI2S -> JCode.OpI2S
 
-	| OpLCmp -> JClass.OpCmp `L
-	| OpFCmpL -> JClass.OpCmp `FL
-	| OpFCmpG -> JClass.OpCmp `FG
-	| OpDCmpL -> JClass.OpCmp `DL
-	| OpDCmpG -> JClass.OpCmp `DG
-	| OpIfEq pc -> JClass.OpIf (`Eq, pc)
-	| OpIfNe pc -> JClass.OpIf (`Ne, pc)
-	| OpIfLt pc -> JClass.OpIf (`Lt, pc)
-	| OpIfGe pc -> JClass.OpIf (`Ge, pc)
-	| OpIfGt pc -> JClass.OpIf (`Gt, pc)
-	| OpIfLe pc -> JClass.OpIf (`Le, pc)
-	| OpICmpEq pc -> JClass.OpIfCmp (`IEq, pc)
-	| OpICmpNe pc -> JClass.OpIfCmp (`INe, pc)
-	| OpICmpLt pc -> JClass.OpIfCmp (`ILt, pc)
-	| OpICmpGe pc -> JClass.OpIfCmp (`IGe, pc)
-	| OpICmpGt pc -> JClass.OpIfCmp (`IGt, pc)
-	| OpICmpLe pc -> JClass.OpIfCmp (`ILe, pc)
-	| OpACmpEq pc -> JClass.OpIfCmp (`AEq, pc)
-	| OpACmpNe pc -> JClass.OpIfCmp (`ANe, pc)
+	| OpLCmp -> JCode.OpCmp `L
+	| OpFCmpL -> JCode.OpCmp `FL
+	| OpFCmpG -> JCode.OpCmp `FG
+	| OpDCmpL -> JCode.OpCmp `DL
+	| OpDCmpG -> JCode.OpCmp `DG
+	| OpIfEq pc -> JCode.OpIf (`Eq, pc)
+	| OpIfNe pc -> JCode.OpIf (`Ne, pc)
+	| OpIfLt pc -> JCode.OpIf (`Lt, pc)
+	| OpIfGe pc -> JCode.OpIf (`Ge, pc)
+	| OpIfGt pc -> JCode.OpIf (`Gt, pc)
+	| OpIfLe pc -> JCode.OpIf (`Le, pc)
+	| OpICmpEq pc -> JCode.OpIfCmp (`IEq, pc)
+	| OpICmpNe pc -> JCode.OpIfCmp (`INe, pc)
+	| OpICmpLt pc -> JCode.OpIfCmp (`ILt, pc)
+	| OpICmpGe pc -> JCode.OpIfCmp (`IGe, pc)
+	| OpICmpGt pc -> JCode.OpIfCmp (`IGt, pc)
+	| OpICmpLe pc -> JCode.OpIfCmp (`ILe, pc)
+	| OpACmpEq pc -> JCode.OpIfCmp (`AEq, pc)
+	| OpACmpNe pc -> JCode.OpIfCmp (`ANe, pc)
 	| OpGoto pc
-        | OpGotoW pc -> JClass.OpGoto pc
+        | OpGotoW pc -> JCode.OpGoto pc
 	| OpJsr pc
-        | OpJsrW pc -> JClass.OpJsr pc
-	| OpRet l -> JClass.OpRet l
+        | OpJsrW pc -> JCode.OpJsr pc
+	| OpRet l -> JCode.OpRet l
 
-	| OpTableSwitch (def, low, high, tbl) -> JClass.OpTableSwitch  (def, low, high, tbl)
-	| OpLookupSwitch (def, tbl) -> JClass.OpLookupSwitch (def, tbl)
+	| OpTableSwitch (def, low, high, tbl) -> JCode.OpTableSwitch  (def, low, high, tbl)
+	| OpLookupSwitch (def, tbl) -> JCode.OpLookupSwitch (def, tbl)
 
-	| OpReturn k -> JClass.OpReturn (k : jvm_basic_type :> [> jvm_basic_type])
-	| OpAReturn -> JClass.OpReturn `Object
-	| OpReturnVoid -> JClass.OpReturn `Void
+	| OpReturn k -> JCode.OpReturn (k : jvm_basic_type :> [> jvm_basic_type])
+	| OpAReturn -> JCode.OpReturn `Object
+	| OpReturnVoid -> JCode.OpReturn `Void
 
 	| OpGetStatic i ->
-	    let c, n, s = get_field consts i in
-	      JClass.OpGetStatic (c, {fs_name = n; fs_type = s})
+	    let cs, n, s = get_field consts i in
+	    let fs = make_fs n s in
+	      JCode.OpGetStatic (cs, fs)
 	| OpPutStatic i ->
-	    let c, n, s = get_field consts i in
-	      JClass.OpPutStatic (c, {fs_name = n; fs_type = s})
+	    let cs, n, s = get_field consts i in
+	    let fs = make_fs n s in
+	      JCode.OpPutStatic (cs, fs)
 	| OpGetField i ->
-	    let c, n, s = get_field consts i in
-	      JClass.OpGetField (c, {fs_name = n; fs_type = s})
+	    let cs, n, s = get_field consts i in
+	    let fs = make_fs n s in
+	      JCode.OpGetField (cs, fs)
 	| OpPutField i ->
-	    let c, n, s = get_field consts i in
-	      JClass.OpPutField (c, {fs_name = n; fs_type = s})
+	    let cs, n, s = get_field consts i in
+	    let fs = make_fs n s in
+	      JCode.OpPutField (cs, fs)
 	| OpInvokeVirtual i ->
 	    let t, n, s = get_method consts i in
-	      JClass.OpInvoke (`Virtual t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
+	    let ms = make_ms n (fst s) (snd s) in
+	      JCode.OpInvoke (`Virtual t, ms)
 	| OpInvokeNonVirtual i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> JClass.OpInvoke (`Special t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
+	       | TClass cs, n, s ->
+		   let ms = make_ms n (fst s) (snd s) in
+		     JCode.OpInvoke (`Special cs, ms)
 	       | _ -> raise (Class_structure_error ("Illegal invokespecial: array class")))
 	| OpInvokeStatic i ->
 	    (match get_method consts i with
-	       | TClass t, n, s -> JClass.OpInvoke (`Static t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
+	       | TClass cs, n, s ->
+		   let ms = make_ms n (fst s) (snd s) in
+		     JCode.OpInvoke (`Static cs, ms)
 	       | _ -> raise (Class_structure_error ("Illegal invokestatic: array class")))
 	| OpInvokeInterface (i, c) ->
-	    let t, n, (vts, _ as s) = get_interface_method consts i in
+	    let cs, n, (vts, _ as s) = get_interface_method consts i in
 	      if count vts <> c
 	      then raise (Class_structure_error "wrong count in invokeinterface");
-	      JClass.OpInvoke (`Interface t, {ms_name = n; ms_parameters = fst s; ms_return_type = snd s})
+	      let ms = make_ms n (fst s) (snd s) in
+	      JCode.OpInvoke (`Interface cs, ms)
 
-	| OpNew i -> JClass.OpNew (get_class consts i)
-	| OpNewArray bt -> JClass.OpNewArray (TBasic bt)
-	| OpANewArray i -> JClass.OpNewArray (TObject (get_object_type consts i))
-	| OpArrayLength -> JClass.OpArrayLength
-	| OpThrow -> JClass.OpThrow
-	| OpCheckCast i -> JClass.OpCheckCast (get_object_type consts i)
-	| OpInstanceOf i -> JClass.OpInstanceOf (get_object_type consts i)
-	| OpMonitorEnter -> JClass.OpMonitorEnter
-	| OpMonitorExit -> JClass.OpMonitorExit
-	| OpAMultiNewArray (ot, dims) ->
-	    JClass.OpAMultiNewArray (get_object_type consts ot, dims)
-	| OpIfNull pc -> JClass.OpIf (`Null, pc)
-	| OpIfNonNull pc -> JClass.OpIf (`NonNull, pc)
-	| OpBreakpoint -> JClass.OpBreakpoint
+	| OpNew i -> JCode.OpNew (get_class consts i)
+	| OpNewArray bt -> JCode.OpNewArray (TBasic bt)
+	| OpANewArray i -> JCode.OpNewArray (TObject
+						  (get_object_type consts i))
+	| OpArrayLength -> JCode.OpArrayLength
+	| OpThrow -> JCode.OpThrow
+	| OpCheckCast i -> JCode.OpCheckCast (get_object_type consts i)
+	| OpInstanceOf i -> JCode.OpInstanceOf (get_object_type consts i)
+	| OpMonitorEnter -> JCode.OpMonitorEnter
+	| OpMonitorExit -> JCode.OpMonitorExit
+	| OpAMultiNewArray (ot, dims) -> JCode.OpAMultiNewArray
+	    ((get_object_type consts ot), dims)
+	| OpIfNull pc -> JCode.OpIf (`Null, pc)
+	| OpIfNonNull pc -> JCode.OpIf (`NonNull, pc)
+	| OpBreakpoint -> JCode.OpBreakpoint
 
-	| OpInvalid -> JClass.OpInvalid
+	| OpInvalid -> JCode.OpInvalid
 
 let opcodes2code consts opcodes =
   Array.map (opcode2instruction consts) opcodes
 
 let instruction2opcode consts length = function
-  | JClass.OpNop -> OpNop
-  | JClass.OpConst x ->
+  | JCode.OpNop -> OpNop
+  | JCode.OpConst x ->
       let opldc_w c =
 	let index = (value_to_int consts c)
 	in
@@ -247,14 +260,15 @@ let instruction2opcode consts length = function
 	   | `Byte v -> OpBIPush v
 	   | `Short v -> OpSIPush v
 	   | `String v -> opldc_w (ConstString v)
-	   | `Class v -> opldc_w (ConstClass v))
+	   | `Class v -> opldc_w (ConstClass v)
+	)
 
-  | JClass.OpLoad (k, l) ->
+  | JCode.OpLoad (k, l) ->
       (match k with
 	 | `Object -> OpALoad l
 	 | #jvm_basic_type as k -> OpLoad (k, l))
 
-  | JClass.OpArrayLoad k ->
+  | JCode.OpArrayLoad k ->
       (match k with
 	 | `Object -> OpAALoad
 	 | `ByteBool -> OpBALoad
@@ -262,12 +276,12 @@ let instruction2opcode consts length = function
 	 | `Short -> OpSALoad
 	 | `Int | #other_num as k -> OpArrayLoad k)
 
-  | JClass.OpStore (k, l) ->
+  | JCode.OpStore (k, l) ->
       (match k with
 	 | `Object -> OpAStore l
 	 | #jvm_basic_type as k -> OpStore (k, l))
 
-  | JClass.OpArrayStore k ->
+  | JCode.OpArrayStore k ->
       (match k with
 	 | `Object -> OpAAStore
 	 | `ByteBool -> OpBAStore
@@ -275,62 +289,62 @@ let instruction2opcode consts length = function
 	 | `Short -> OpSAStore
 	 | `Int | #other_num as k -> OpArrayStore k)
 
-  | JClass.OpPop -> OpPop
-  | JClass.OpPop2 -> OpPop2
-  | JClass.OpDup -> OpDup
-  | JClass.OpDupX1 -> OpDupX1
-  | JClass.OpDupX2 -> OpDupX2
-  | JClass.OpDup2 -> OpDup2
-  | JClass.OpDup2X1 -> OpDup2X1
-  | JClass.OpDup2X2 -> OpDup2X2
-  | JClass.OpSwap -> OpSwap
+  | JCode.OpPop -> OpPop
+  | JCode.OpPop2 -> OpPop2
+  | JCode.OpDup -> OpDup
+  | JCode.OpDupX1 -> OpDupX1
+  | JCode.OpDupX2 -> OpDupX2
+  | JCode.OpDup2 -> OpDup2
+  | JCode.OpDup2X1 -> OpDup2X1
+  | JCode.OpDup2X2 -> OpDup2X2
+  | JCode.OpSwap -> OpSwap
 
-  | JClass.OpAdd k -> OpAdd k
-  | JClass.OpSub k -> OpSub k
-  | JClass.OpMult k -> OpMult k
-  | JClass.OpDiv k -> OpDiv k
-  | JClass.OpRem k -> OpRem k
-  | JClass.OpNeg k -> OpNeg k
+  | JCode.OpAdd k -> OpAdd k
+  | JCode.OpSub k -> OpSub k
+  | JCode.OpMult k -> OpMult k
+  | JCode.OpDiv k -> OpDiv k
+  | JCode.OpRem k -> OpRem k
+  | JCode.OpNeg k -> OpNeg k
 
-  | JClass.OpIShl -> OpIShl
-  | JClass.OpLShl -> OpLShl
-  | JClass.OpIShr -> OpIShr
-  | JClass.OpLShr -> OpLShr
-  | JClass.OpIUShr -> OpIUShr
-  | JClass.OpLUShr -> OpLUShr
-  | JClass.OpIAnd -> OpIAnd
-  | JClass.OpLAnd -> OpLAnd
-  | JClass.OpIOr -> OpIOr
-  | JClass.OpLOr -> OpLOr
-  | JClass.OpIXor -> OpIXor
-  | JClass.OpLXor -> OpLXor
+  | JCode.OpIShl -> OpIShl
+  | JCode.OpLShl -> OpLShl
+  | JCode.OpIShr -> OpIShr
+  | JCode.OpLShr -> OpLShr
+  | JCode.OpIUShr -> OpIUShr
+  | JCode.OpLUShr -> OpLUShr
+  | JCode.OpIAnd -> OpIAnd
+  | JCode.OpLAnd -> OpLAnd
+  | JCode.OpIOr -> OpIOr
+  | JCode.OpLOr -> OpLOr
+  | JCode.OpIXor -> OpIXor
+  | JCode.OpLXor -> OpLXor
 
-  | JClass.OpIInc (index, incr) -> OpIInc (index, incr)
+  | JCode.OpIInc (index, incr) -> OpIInc (index, incr)
 
-  | JClass.OpI2L -> OpI2L
-  | JClass.OpI2F -> OpI2F
-  | JClass.OpI2D -> OpI2D
-  | JClass.OpL2I -> OpL2I
-  | JClass.OpL2F -> OpL2F
-  | JClass.OpL2D -> OpL2D
-  | JClass.OpF2I -> OpF2I
-  | JClass.OpF2L -> OpF2L
-  | JClass.OpF2D -> OpF2D
-  | JClass.OpD2I -> OpD2I
-  | JClass.OpD2L -> OpD2L
-  | JClass.OpD2F -> OpD2F
-  | JClass.OpI2B -> OpI2B
-  | JClass.OpI2C -> OpI2C
-  | JClass.OpI2S -> OpI2S
+  | JCode.OpI2L -> OpI2L
+  | JCode.OpI2F -> OpI2F
+  | JCode.OpI2D -> OpI2D
+  | JCode.OpL2I -> OpL2I
+  | JCode.OpL2F -> OpL2F
+  | JCode.OpL2D -> OpL2D
+  | JCode.OpF2I -> OpF2I
+  | JCode.OpF2L -> OpF2L
+  | JCode.OpF2D -> OpF2D
+  | JCode.OpD2I -> OpD2I
+  | JCode.OpD2L -> OpD2L
+  | JCode.OpD2F -> OpD2F
+  | JCode.OpI2B -> OpI2B
+  | JCode.OpI2C -> OpI2C
+  | JCode.OpI2S -> OpI2S
 
-  | JClass.OpCmp x ->
+  | JCode.OpCmp x ->
       (match x with
 	 | `L -> OpLCmp
 	 | `FL -> OpFCmpL
 	 | `FG -> OpFCmpG
 	 | `DL -> OpDCmpL
 	 | `DG -> OpDCmpG)
-  | JClass.OpIf (x, pc) ->
+  | JCode.OpIf (x, pc) ->
       (match x with
 	   `Eq -> OpIfEq pc
 	 | `Ne -> OpIfNe pc
@@ -340,7 +354,7 @@ let instruction2opcode consts length = function
 	 | `Le -> OpIfLe pc
 	 | `Null -> OpIfNull pc
 	 | `NonNull -> OpIfNonNull pc)
-  | JClass.OpIfCmp (x, pc) ->
+  | JCode.OpIfCmp (x, pc) ->
       (match x with
 	   `IEq -> OpICmpEq pc
 	 | `INe -> OpICmpNe pc
@@ -350,7 +364,7 @@ let instruction2opcode consts length = function
 	 | `ILe -> OpICmpLe pc
 	 | `AEq -> OpACmpEq pc
 	 | `ANe -> OpACmpNe pc)
-  | JClass.OpGoto pc ->
+  | JCode.OpGoto pc ->
       if length = 3
       then OpGoto pc
       else if length = 5
@@ -360,7 +374,7 @@ let instruction2opcode consts length = function
           (Class_structure_error
              ("OpGoto "^string_of_int pc ^ " cannot be encoded in "
               ^ string_of_int length ^" bytes."))
-  | JClass.OpJsr pc ->
+  | JCode.OpJsr pc ->
       if length = 3
       then OpJsr pc
       else if length = 5
@@ -370,58 +384,70 @@ let instruction2opcode consts length = function
           (Class_structure_error
              ("OpJsr " ^ string_of_int pc ^ " cannot be encoded in "
               ^ string_of_int length ^" bytes."))
-  | JClass.OpRet l -> OpRet l
+  | JCode.OpRet l -> OpRet l
 
-  | JClass.OpTableSwitch (def, low, high, tbl) -> OpTableSwitch  (def, low, high, tbl)
-  | JClass.OpLookupSwitch (def, tbl) -> OpLookupSwitch (def, tbl)
+  | JCode.OpTableSwitch (def, low, high, tbl) -> OpTableSwitch  (def, low, high, tbl)
+  | JCode.OpLookupSwitch (def, tbl) -> OpLookupSwitch (def, tbl)
 
-  | JClass.OpReturn k ->
+  | JCode.OpReturn k ->
       (match k with
 	 | `Object -> OpAReturn
 	 | `Void -> OpReturnVoid
 	 | #jvm_basic_type as k -> OpReturn k)
 
-  | JClass.OpGetStatic (c, s) ->
-      OpGetStatic (field_to_int consts (c, s.fs_name, s.fs_type))
-  | JClass.OpPutStatic (c, s) ->
-      OpPutStatic (field_to_int consts (c, s.fs_name, s.fs_type))
-  | JClass.OpGetField (c, s) ->
-      OpGetField (field_to_int consts (c, s.fs_name, s.fs_type))
-  | JClass.OpPutField (c, s) ->
-      OpPutField (field_to_int consts (c, s.fs_name, s.fs_type))
-  | JClass.OpInvoke (x, s) ->
-      (match x with
-	 | `Virtual t ->
-	     OpInvokeVirtual
-	       (method_to_int consts (t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
-	 | `Special t ->
-	     OpInvokeNonVirtual
-	       (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
-	 | `Static t ->
-	     OpInvokeStatic
-	       (method_to_int consts (TClass t, s.ms_name, (s.ms_parameters,s.ms_return_type)))
-	 | `Interface t ->
-	     OpInvokeInterface
-	       (constant_to_int consts (ConstInterfaceMethod (t, s.ms_name, (s.ms_parameters,s.ms_return_type))), count s.ms_parameters))
+  | JCode.OpGetStatic (cs, fs) ->
+      let fname = fs_name fs in
+      let ftype = fs_type fs in
+	OpGetStatic (field_to_int consts (cs, fname, ftype))
+  | JCode.OpPutStatic (cs, fs) ->
+      let fname = fs_name fs in
+      let ftype = fs_type fs in
+	OpPutStatic (field_to_int consts (cs, fname, ftype))
+  | JCode.OpGetField (cs, fs) ->
+      let fname = fs_name fs in
+      let ftype = fs_type fs in
+	OpGetField (field_to_int consts (cs, fname, ftype))
+  | JCode.OpPutField (cs, fs) ->
+      let fname = fs_name fs in
+      let ftype = fs_type fs in
+	OpPutField (field_to_int consts (cs, fname, ftype))
+  | JCode.OpInvoke (x, ms) ->
+      let mname = ms_name ms in
+      let mdesc = (ms_args ms, ms_rtype ms) in
+	(match x with
+	   | `Virtual t ->
+	       OpInvokeVirtual
+		 (method_to_int consts (t, mname, mdesc))
+	   | `Special t ->
+	       OpInvokeNonVirtual
+		 (method_to_int consts (TClass t, mname, mdesc))
+	   | `Static t ->
+	       OpInvokeStatic
+		 (method_to_int consts (TClass t, mname, mdesc))
+	   | `Interface t ->
+	       OpInvokeInterface
+		 (constant_to_int consts
+		    (ConstInterfaceMethod (t, mname, mdesc)), count (fst mdesc))
+	)
 
-  | JClass.OpNew n ->
-      OpNew (class_to_int consts n)
-  | JClass.OpNewArray t ->
+  | JCode.OpNew cs -> OpNew (class_to_int consts cs)
+  | JCode.OpNewArray t ->
       (match t with
 	 | TBasic bt -> OpNewArray bt
 	 | TObject ot ->
-	     OpANewArray (object_type_to_int consts ot))
-  | JClass.OpArrayLength -> OpArrayLength
-  | JClass.OpThrow -> OpThrow
-  | JClass.OpCheckCast ot -> OpCheckCast (object_type_to_int consts ot)
-  | JClass.OpInstanceOf ot -> OpInstanceOf (object_type_to_int consts ot)
-  | JClass.OpMonitorEnter -> OpMonitorEnter
-  | JClass.OpMonitorExit -> OpMonitorExit
-  | JClass.OpAMultiNewArray (i, dims) ->
+	     OpANewArray (object_type_to_int consts ot)
+      )
+  | JCode.OpArrayLength -> OpArrayLength
+  | JCode.OpThrow -> OpThrow
+  | JCode.OpCheckCast ot -> OpCheckCast (object_type_to_int consts ot)
+  | JCode.OpInstanceOf ot -> OpInstanceOf (object_type_to_int consts ot)
+  | JCode.OpMonitorEnter -> OpMonitorEnter
+  | JCode.OpMonitorExit -> OpMonitorExit
+  | JCode.OpAMultiNewArray (i, dims) ->
       OpAMultiNewArray (object_type_to_int consts i, dims)
-  | JClass.OpBreakpoint -> OpBreakpoint
+  | JCode.OpBreakpoint -> OpBreakpoint
 
-  | JClass.OpInvalid -> OpInvalid
+  | JCode.OpInvalid -> OpInvalid
 
 let check_space _consts offset length opcode =
   let ch = output_string () in
@@ -430,23 +456,23 @@ let check_space _consts offset length opcode =
     for i = 1 to offsetmod4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
-    JCode.unparse_instruction ch count length opcode;
+    JParseCode.unparse_instruction ch count length opcode;
     let space_taken = count () - offsetmod4 in
     let opcodestring = close_out ch in
-      if not (JBasics.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
+      if not (JBasicsLow.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
       then failwith "check_space: count does not seems to provide the right result";
       length = space_taken
-      
+
 
 let code2opcodes consts code =
   let opcodes = Array.create (Array.length code) OpNop in
     Array.iteri
       (fun i instr ->
-	 if instr <> JClass.OpInvalid
+	 if instr <> JCode.OpInvalid
 	 then (
            let length =
              let j = ref (i+1) in
-               while !j < Array.length code && code.(!j) = JClass.OpInvalid do
+               while !j < Array.length code && code.(!j) = JCode.OpInvalid do
                  opcodes.(!j) <- OpInvalid;
                  incr j
                done;
@@ -454,8 +480,8 @@ let code2opcodes consts code =
            in
 	   let opcode = instruction2opcode consts length instr in
 	     opcodes.(i) <- opcode;
-	     if not (JBasics.get_permissive ()) && not (check_space consts i length opcode)
-	     then 
+	     if not (JBasicsLow.get_permissive ()) && not (check_space consts i length opcode)
+	     then
                raise (Class_structure_error "Low level translation of instruction is too long for the allocated space in high level code");
 	 ))
       code;

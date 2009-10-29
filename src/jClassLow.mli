@@ -3,19 +3,20 @@
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2009, Frederic Dabrowski (INRIA)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -159,7 +160,7 @@ type opcode =
   | OpGotoW of int                (* offset *)
   | OpJsrW of int                 (* offset *)
   | OpBreakpoint                  (* should not be found *)
-
+  (* | OpRetW of int *)
   | OpInvalid
       (* if [opcodes.(i) = OpInvalid] it means that there is an opcode
          that starts at position j, with j<i, an covers positions up
@@ -238,63 +239,78 @@ type access_flag = [
 | `AccEnum
 ]
 
+(** DFr : Addition for 1.6 stackmap. *)
+type stackmap_frame =
+  | SameFrame of int
+  | SameLocals of int * verification_type
+  | SameLocalsExtended of int * int * verification_type
+  | ChopFrame of int * int
+  | SameFrameExtended of int * int
+  | AppendFrame of int * int * verification_type list
+  | FullFrame of int * int * verification_type list * verification_type list
+
 type code = {
-	c_max_stack : int;
-	c_max_locals : int;
-	c_code : opcodes;
-	c_exc_tbl : exception_handler list;
-	c_attributes : attribute list;
+  c_max_stack : int;
+  c_max_locals : int;
+  c_code : opcodes;
+  c_exc_tbl : JCode.exception_handler list;
+  c_attributes : attribute list;
 }
 
 and attribute =
-	| AttributeSourceFile of string
-	| AttributeConstant of constant_value
-	| AttributeCode of code Lazy.t
-	| AttributeExceptions of class_name list
-	| AttributeInnerClasses of
-	    (class_name option * class_name option * string option * inner_flag list) list
-	    (** inner_class_info, outer_class_info, inner_name, inner_class_access_flags *)
-	| AttributeSynthetic
-	| AttributeLineNumberTable of (int * int) list
-	| AttributeLocalVariableTable of (int * int * string * value_type * int) list
-	    (** start_pc, length, name, type, index *)
-	| AttributeDeprecated
-	| AttributeStackMap of (int*(verification_type list)*(verification_type list)) list
-	| AttributeSignature of string
-	    (** Introduced in Java 5 for generics
-		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
-	| AttributeEnclosingMethod of (class_name * (string * descriptor) option)
-	    (** Introduced in Java 5 for local classes (classes
-		defined in a method body)
-		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
-	| AttributeSourceDebugExtension of string
-	    (** Introduced in Java 5 for debugging purpose (no
-		semantics defined)
-		({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
-	| AttributeUnknown of string * string
+  | AttributeSourceFile of string
+  | AttributeConstant of constant_value
+  | AttributeCode of code Lazy.t
+  | AttributeExceptions of class_name list
+  | AttributeInnerClasses of
+      (class_name option * class_name option * string option
+       * inner_flag list) list
+	(** inner_class_info, outer_class_info, inner_name,
+	    inner_class_access_flags *)
+  | AttributeSynthetic
+  | AttributeLineNumberTable of (int * int) list
+  | AttributeLocalVariableTable of (int * int * string * value_type * int) list
+      (** start_pc, length, name, type, index *)
+  | AttributeDeprecated
+  | AttributeStackMap of (int*(verification_type list)
+			  *(verification_type list)) list
+  | AttributeSignature of string
+      (** Introduced in Java 5 for generics
+	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
+  | AttributeEnclosingMethod of (class_name * (string * descriptor) option)
+      (** Introduced in Java 5 for local classes (classes
+	  defined in a method body)
+	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
+  | AttributeSourceDebugExtension of string
+      (** Introduced in Java 5 for debugging purpose (no
+	  semantics defined)
+	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
+  | AttributeStackMapTable of stackmap_frame list
+      (** DFr : Addition for 1.6 stackmap. *)
+  | AttributeUnknown of string * string
 
 type jfield = {
-	f_name : string;
-	f_descriptor : field_descriptor;
-	f_flags : field_flag list;
-	f_attributes : attribute list
+  f_name : string;
+  f_descriptor : value_type;
+  f_flags : field_flag list;
+  f_attributes : attribute list
 }
 
 type jmethod = {
-	m_name : string;
-	m_descriptor : method_descriptor;
-	m_flags : method_flag list;
-	m_attributes : attribute list
+  m_name : string;
+  m_descriptor : method_descriptor;
+  m_flags : method_flag list;
+  m_attributes : attribute list
 }
 
 type jclass = {
-	j_name : class_name;
-	j_super : class_name option;
-	j_interfaces : class_name list;
-	j_consts : constant array;
-	j_flags : class_flag list;
-	j_fields : jfield list;
-	j_methods : jmethod list;
-	j_attributes : attribute list;
-	j_version : version;
+  j_name : class_name;
+  j_super : class_name option;
+  j_interfaces : class_name list;
+  j_consts : constant array;
+  j_flags : class_flag list;
+  j_fields : jfield list;
+  j_methods : jmethod list;
+  j_attributes : attribute list;
+  j_version : version;
 }

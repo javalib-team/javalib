@@ -8,171 +8,23 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
 (** High level Ocaml representation of a Java class file. *)
 
 open JBasics
+open JCode
 
-type field_signature = {
-  fs_name:string;
-  fs_type:value_type;
-}
-
-type method_signature = {
-  ms_name:string;
-  ms_parameters:value_type list;
-  ms_return_type : value_type option;
-  (* Note : 2 methods in the same class can can differ only by their
-     return type in case of bridge methods. *)
-}
-
-val clinit_signature : method_signature
-val main_signature : method_signature
-
-
-(** {2 Bytecode instructions.} *)
-(********************************)
-
-type opcode =
-
-  (* Access to a local variable *)
-  | OpLoad of jvm_type * int
-  | OpStore of jvm_type * int
-  | OpIInc of int * int (** index, increment *)
-
-  (* Stack permutation *)
-  | OpPop
-  | OpPop2
-  | OpDup
-  | OpDupX1
-  | OpDupX2
-  | OpDup2
-  | OpDup2X1
-  | OpDup2X2
-  | OpSwap
-
-  (* Constant loading / it corresponds to instructions *const* and ldc* *)
-  | OpConst of [
-    | `ANull (** AConstNull  *)
-    | `Int of int32
-    | `Long of int64
-    | `Float of float
-    | `Double of float
-    | `Byte of int (** BIPush *)
-    | `Short of int
-    | `String of string
-    | `Class of object_type
-    ]
-
-  (* Arithmetic *)
-  | OpAdd of jvm_basic_type
-  | OpSub of jvm_basic_type
-  | OpMult of jvm_basic_type
-  | OpDiv of jvm_basic_type
-  | OpRem of jvm_basic_type
-  | OpNeg of jvm_basic_type
-
-  (* Logic *)
-  | OpIShl (* Use an I/L argument *)
-  | OpLShl
-  | OpIShr
-  | OpLShr
-  | OpIUShr
-  | OpLUShr
-  | OpIAnd
-  | OpLAnd
-  | OpIOr
-  | OpLOr
-  | OpIXor
-  | OpLXor
-
-  (* Conversion *)
-  | OpI2L (* Use `I of [`L | `F  | `D] *)
-  | OpI2F
-  | OpI2D
-  | OpL2I
-  | OpL2F
-  | OpL2D
-  | OpF2I
-  | OpF2L
-  | OpF2D
-  | OpD2I
-  | OpD2L
-  | OpD2F
-  | OpI2B (* Those three are different *)
-  | OpI2C
-  | OpI2S
-
-  | OpCmp of [`L | `FL | `FG | `DL | `DG]
-
-  (* Conditional jump *)
-  | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
-  | OpIfCmp of [`IEq | `INe | `ILt | `IGe | `IGt | `ILe | `AEq | `ANe] * int
-
-  (* Unconditional jump *)
-  | OpGoto of int
-  | OpJsr of int
-  | OpRet of int
-  | OpTableSwitch of int * int32 * int32 * int array (* (default,low,high,jump offsets) *)
-  | OpLookupSwitch of int * (int32 * int) list       (* (default, (match,offset) list) *)
-
-  (* Heap and static fields *)
-  | OpNew of class_name
-  | OpNewArray of value_type
-  | OpAMultiNewArray of object_type * int (** ClassInfo, dims *)
-  | OpCheckCast of object_type
-  | OpInstanceOf of object_type
-  | OpGetStatic of class_name * field_signature
-  | OpPutStatic of class_name * field_signature
-  | OpGetField of class_name * field_signature
-  | OpPutField of class_name * field_signature
-  | OpArrayLength
-  | OpArrayLoad of jvm_array_type
-  | OpArrayStore of jvm_array_type
-
-  (* Method invocation and return *)
-  | OpInvoke
-      of [
-	`Virtual of object_type
-      | `Special of class_name
-      | `Static of class_name
-      | `Interface of class_name
-      ]
-	* method_signature
-  | OpReturn of jvm_return_type
-
-  (* Exceptions and threads *)
-  | OpThrow
-  | OpMonitorEnter
-  | OpMonitorExit
-
-  (* Other *)
-  | OpNop
-  | OpBreakpoint
-  | OpInvalid
-      (* if [opcodes.(i) = OpInvalid] it means that there is an opcode
-         that starts at position j, with j<i, an covers positions up
-         to k, with k>=i. *)
-      (* If a opcode array is forged, the number of opinvalid plus one
-         must match the number of bytes on which the preceding
-         instruction must be encoded. E.g. [|OpLoad (`Int2Bool,1);
-         OpInvalid|] is encoded as an [iload 0X01]; [|OpLoad
-         (`Int2Bool,1)|] is encoded as an [iload_1]; [|OpLoad
-         (`Int2Bool,1); OpInvalid; OpInvalid; OpInvalid|] is encoded
-         as an [wide;iload 0x0001].
-      *)
-
-type opcodes = opcode array
+(** {2 Fields access and attributes.} *)
 
 (** Visibility modifiers. *)
 type access = [
@@ -201,6 +53,7 @@ type field_kind =
 
 type class_field = {
   cf_signature : field_signature;
+  cf_class_signature : class_field_signature;
   cf_generic_signature : JSignature.fieldTypeSignature option;
   cf_access: access;
   cf_static : bool;
@@ -219,6 +72,7 @@ type class_field = {
     [final].*)
 type interface_field = {
   if_signature : field_signature;
+  if_class_signature : class_field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
@@ -230,29 +84,20 @@ type interface_field = {
   if_attributes : attributes
 }
 
+type any_field = | InterfaceField of interface_field | ClassField of class_field
+
 (** {2 Methods of classes and interfaces.} *)
 (********************************)
 
-type code = {
-  c_max_stack : int;
-  c_max_locals : int;
-  c_code : opcodes;
-  c_exc_tbl : exception_handler list;
-  c_line_number_table : (int * int) list option;
-  c_local_variable_table : (int * int * string * value_type * int) list option;
-  c_stack_map : (int* verification_type list * verification_type list) list option;
-  (** This is the MIDP version, not the JSR 202 StackMapTable attribute. *)
-  c_attributes : (string * string) list;
-}
-
-type implementation =
+type 'a implementation =
   | Native
-  | Java of code Lazy.t
+  | Java of 'a Lazy.t
 
 (* l'attribut final n'a pas vraiment de sens pour une méthode
    statique, mais c'est autorisé dans la spec JVM. *)
-type concrete_method = {
+type 'a concrete_method = {
   cm_signature : method_signature;
+  cm_class_method_signature : class_method_signature;
   cm_static : bool;
   cm_final : bool;
   cm_synchronized : bool;
@@ -267,11 +112,12 @@ type concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
-  cm_implementation : implementation;
+  cm_implementation : 'a implementation;
 }
 
 type abstract_method = {
   am_signature : method_signature;
+  am_class_method_signature : class_method_signature;
   am_access: [`Public | `Protected | `Default];
   am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
@@ -284,15 +130,13 @@ type abstract_method = {
   am_attributes : attributes;
 }
 
+
+type 'a jmethod =
+    | AbstractMethod of abstract_method
+    | ConcreteMethod of 'a concrete_method
+
 (** {2 Classes and interfaces.} *)
 (***************************)
-
-module FieldMap : Map.S with type key = field_signature
-module MethodMap : Map.S with type key = method_signature
-
-type jmethod =
-    | AbstractMethod of abstract_method
-    | ConcreteMethod of concrete_method
 
 type inner_class = {
   ic_class_name : class_name option;
@@ -308,7 +152,7 @@ type inner_class = {
   ic_type : [`ConcreteClass | `Abstract | `Interface]
 }
 
-type jclass = {
+type 'a jclass = {
   c_name : class_name;
   c_version : version;
   c_access : [`Public | `Default];
@@ -339,12 +183,12 @@ type jclass = {
   c_enum: bool;
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
-  c_methods : jmethod MethodMap.t;
+  c_methods : 'a jmethod MethodMap.t;
 }
 
 (** Interfaces cannot be final and can only contains abstract
     methods. Their super class is [java.lang.Object].*)
-type jinterface = {
+type 'a jinterface = {
   i_name : class_name;
   i_version : version;
   i_access : [`Public | `Default];
@@ -359,52 +203,72 @@ type jinterface = {
       ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
   i_inner_classes : inner_class list;
   i_other_attributes : (string * string) list;
-  i_initializer : concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : 'a concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
 }
 
-(* Les polymorphic variants servent juste pour simplifier JProgram en évitant
-   les préfixe (faudrait enlever ça dans l'idéal). *)
-type interface_or_class = [
-  | `Interface of jinterface
-  | `Class of jclass
-]
+type 'a interface_or_class =
+  | JInterface of 'a jinterface
+  | JClass of 'a jclass
 
-(** {2 Access functions.} *)
+(** {2 Classes access functions.} *)
 
-val get_name : interface_or_class -> class_name
-val get_consts : interface_or_class -> constant array
-val get_access : interface_or_class -> [`Default | `Public]
-val get_sourcefile : interface_or_class -> string option
-val is_deprecated : interface_or_class -> bool
-val get_inner_classes : interface_or_class -> inner_class list
-val get_other_attributes : interface_or_class -> (string * string) list
-val get_initializer : interface_or_class -> concrete_method option
-val get_other_flags : interface_or_class -> int list
+val get_name : 'a interface_or_class -> class_name
+val get_consts : 'a interface_or_class -> constant array
+val get_access : 'a interface_or_class -> [`Default | `Public]
+val get_sourcefile : 'a interface_or_class -> string option
+val is_deprecated : 'a interface_or_class -> bool
+val get_inner_classes : 'a interface_or_class -> inner_class list
+val get_other_attributes : 'a interface_or_class -> (string * string) list
+val get_initializer : 'a interface_or_class -> 'a concrete_method option
+val get_other_flags : 'a interface_or_class -> int list
 
+(** {2 Methods access functions.} *)
 
-(** [get_local_variable_info i pp m] returns the name and signature of
-    the local variable [i] at program point [pp] in the method code
-    [m], if they are defined in the local variable table (The bytecode
-    needs to be compiled with the -g option). Otherwise the value
-    [None] is returned.
-*)
-val get_local_variable_info :
-  int -> int -> code -> (string * JBasics.value_type) option
+val get_method_signature : 'a jmethod -> method_signature
+val get_class_method_signature : 'a jmethod -> class_method_signature
+val is_static_method : 'a jmethod -> bool
+val is_final_method : 'a jmethod -> bool
+val is_synchronized_method : 'a jmethod -> bool
+val get_method : 'a interface_or_class -> method_signature -> 'a jmethod
+val get_methods : 'a interface_or_class -> 'a jmethod MethodMap.t
+val get_concrete_methods : 'a interface_or_class -> 'a concrete_method MethodMap.t
+val defines_method : 'a interface_or_class -> method_signature -> bool
 
-(** [get_source_line_number pp m] returns the source line number
-    corresponding the program point [pp] of the method code [m].  The
-    line number give a rough idea and may be wrong.  It uses the
-    attribute LineNumberTable (cf. JVMS §4.7.8). *)
-val get_source_line_number : int -> code -> int option
+(** {2 Fields access functions.} *)
+
+val get_field_signature : any_field -> field_signature
+val get_class_field_signature : any_field -> class_field_signature
+val get_field : 'a interface_or_class -> field_signature -> any_field
+val get_fields : 'a interface_or_class -> any_field FieldMap.t
+val defines_field : 'a interface_or_class -> field_signature -> bool
+
+(** {2 Iterators.} *)
 
 (** The following functions iterate over all methods of a class or interface
     (including the static initializer, if any). *)
 
-val iter_methods : (method_signature -> jmethod -> unit) -> interface_or_class -> unit
-val iter_concrete_methods : (method_signature -> concrete_method -> unit) -> interface_or_class -> unit
+val iter_methods : (method_signature -> 'a jmethod -> unit) -> 'a interface_or_class -> unit
+val iter_concrete_methods : (method_signature -> 'a concrete_method -> unit) -> 'a interface_or_class -> unit
 
-val iter_fields : (field_signature -> [`ClassField of class_field | `InterfaceField of interface_field] -> unit) -> interface_or_class -> unit
+val iter_fields : (field_signature -> any_field -> unit) -> 'a interface_or_class -> unit
+
+(** {2 Transforming code representation.} *)
+
+val map_concrete_method :
+  ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
+
+val map_class : ('a -> 'b) -> 'a jclass -> 'b jclass
+val map_interface : ('a -> 'b) -> 'a jinterface -> 'b jinterface
+val map_interface_or_class :
+  ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+
+val map_class_context :
+  ('a concrete_method -> 'a -> 'b) -> 'a jclass -> 'b jclass
+val map_interface_context :
+  ('a concrete_method -> 'a -> 'b) -> 'a jinterface -> 'b jinterface
+val map_interface_or_class_context :
+  ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class

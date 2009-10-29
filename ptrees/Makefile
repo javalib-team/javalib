@@ -23,6 +23,11 @@ MODULE_INTERFACES=ptmap.mli ptset.mli
 
 all:ptrees.cma ptrees.cmxa
 
+install: ptrees.cma ptrees.cmxa
+	mkdir -p $(INSTALL_DIR)
+	cp -f ptrees.cma ptrees.cmxa ptrees.a $(MODULE_INTERFACES:.mli=.cmi) $(INSTALL_DIR)
+	cp -f $(MODULE_INTERFACES) $(INSTALL_DIR)
+
 .PHONY : default all clean cleanall doc
 
 
@@ -43,7 +48,7 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 
 # Clean up
 clean:
-	rm -f *.o *.a *.cm[iox] *~ *.annot
+	rm -f *.o *.a *.cm[iox] *~ *.annot .depend
 cleanall:clean
 	rm -f *.cma *.cmxa
 

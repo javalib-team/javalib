@@ -7,14 +7,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -29,16 +29,6 @@ let sep =
     | "Cygwin" -> ":"
     | "Win32" -> ";"
     | _ -> assert false
-
-let list sep = function
-  | t :: q ->
-      List.fold_left
-	(fun p s -> p ^ sep ^ s)
-	t
-	q
-  | [] -> ""
-
-let print_ident = list "."
 
 let replace_dot s =
   let s = String.copy s in
@@ -83,10 +73,13 @@ let open_path s =
     then Some (`jar (Zip.open_in s))
     else None
 
-let directories dirs =
+type directories = string list
+
+let make_directories dirs =
   match ExtString.String.nsplit dirs sep with
     | [] -> [Filename.current_dir_name]
-    | cp -> cp
+    | cp ->
+	List.filter is_dir cp
 
 let class_path cp =
   let cp_list =
@@ -149,16 +142,17 @@ let rec fold_directories f file = function
       with No_class_found _ ->
 	fold_directories f file q
 
-let get_class_low class_path c =
-  fold_directories
-    (fun path -> lookup c path)
-    c
-    class_path
+let get_class_low class_path cs =
+  let cname = JDumpBasics.class_name cs in
+    fold_directories
+      (fun path -> lookup cname path)
+      cname
+      class_path
 
 let get_class class_path c = JLow2High.low2high_class (get_class_low class_path c)
 
 let write_class_low output_dir classe =
-  let class_name = print_ident classe.j_name in
+  let class_name = JDumpBasics.class_name classe.j_name in
   let c = replace_dot class_name ^ ".class" in
     (mkdir
        (Filename.concat output_dir (Filename.dirname c))
@@ -237,7 +231,9 @@ let apply_to_jar f other s =
    - a jar file (with the .jar suffix).
    The resulting directory, class file, or jar file if any, is written
    in the directory given as argument of the `transform constructor.
-   Throws No_class_found otherwise. *)
+   Throws No_class_found otherwise.
+   Throws Invalid_argument if the name is not implicit (it must be relative and
+   must not start with [./] or [../]) *)
 let fold_string class_path f file =
   if not (Filename.is_implicit file)
   then
@@ -251,16 +247,16 @@ let fold_string class_path f file =
       try
 	apply_to_dir_or_class
 	  (function c ->
-	    let ch = open_in_bin c in
-	    let input = IO.input_channel ch in
-	    let classe = JParse.parse_class_low_level input in
-	      IO.close_in input;
-	      match f with
-		| `read f ->
-		    f classe
-		| `transform (output_dir, f) ->
-		    let classe = f classe in
-		      write_class_low output_dir classe)
+	     let ch = open_in_bin c in
+	     let input = IO.input_channel ch in
+	     let classe = JParse.parse_class_low_level input in
+	       IO.close_in input;
+	       match f with
+		 | `read f ->
+		     f classe
+		 | `transform (output_dir, f) ->
+		     let classe = f classe in
+		       write_class_low output_dir classe)
 	  (Filename.concat class_path c)
       with
 	  No_class_found _ ->
@@ -268,7 +264,7 @@ let fold_string class_path f file =
 	      | `read f ->
 		  apply_to_jar
 		    (function classe ->
-		      f classe)
+		       f classe)
 		    (fun _ _ -> ())
 		    (Filename.concat class_path file)
 	      | `transform (output_dir, f) ->
@@ -277,53 +273,106 @@ let fold_string class_path f file =
 		    0o755;
 		  let jar' = Zip.open_out (Filename.concat output_dir file) in
 		    (try
-			apply_to_jar
-			  (function classe ->
+		       apply_to_jar
+			 (function classe ->
 			    let classe = f classe in
-			    let class_name = print_ident classe.j_name in
+			    let class_name = JDumpBasics.class_name classe.j_name in
 			    let c = replace_dot class_name ^ ".class"
 			    and contents =
 			      let s = IO.output_string () in
 				JUnparse.unparse_class_low_level s classe;
 				IO.close_out s in
 			      Zip.add_entry contents jar' c)
-			  (fun jar e ->
+			 (fun jar e ->
 			    let contents = Zip.read_entry jar e in
 			      Zip.add_entry contents jar' e.Zip.filename)
-			  (Filename.concat class_path file);
-		      with
-			  e ->
-			    Zip.close_out jar';
-			    Unix.unlink (Filename.concat output_dir file);
-			    raise e);
+			 (Filename.concat class_path file);
+		     with
+			 e ->
+			   Zip.close_out jar';
+			   Unix.unlink (Filename.concat output_dir file);
+			   raise e);
 		    Zip.close_out jar'
 
 (* Applies f to a list of files, in a colon-separated list of directories. *)
-let fold class_path f files =
+let fold directories f files =
   List.iter
     (function file ->
        fold_directories (fun class_path -> fold_string class_path f file) file
-	 (List.filter is_dir (directories class_path)))
+	 directories)
     files
 
-let read_low class_path f accu files =
+let read_low directories f accu files =
   let accu = ref accu in
-    fold class_path (`read (function classe -> accu := f ! accu classe)) files;
+    fold directories (`read (function classe -> accu := f ! accu classe)) files;
     ! accu
 
-let read class_path f accu files =
+let read directories f accu files =
   let accu = ref accu in
-    fold class_path
+    fold directories
       (`read
 	  (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
       files;
     ! accu
 
-let transform_low class_path output_dir f files =
-  fold class_path (`transform (output_dir, f)) files
+let transform_low directories output_dir f files =
+  fold directories (`transform (output_dir, f)) files
 
-let transform class_path output_dir f files =
-  fold class_path
+let transform directories output_dir f files =
+  fold directories
     (`transform
 	(output_dir,fun c -> JHigh2Low.high2low (f (JLow2High.low2high_class c))))
     files
+
+let is_file f =
+  try
+    (Unix.stat f).Unix.st_kind = Unix.S_REG
+  with Unix.Unix_error (Unix.ENOENT, _,_) -> false
+
+let is_dir d =
+  try
+    (Unix.stat d).Unix.st_kind = Unix.S_DIR
+  with Unix.Unix_error (Unix.ENOENT, _,_) -> false
+
+let make_dir_absolute dir =
+  if Filename.is_relative dir
+  then Filename.concat (Unix.getcwd ()) dir
+  else dir
+
+let iter f filename =
+  if is_file filename && Filename.check_suffix filename ".class" then
+    begin
+      let cp = class_path (Filename.dirname filename) in
+      let file = Filename.chop_suffix (Filename.basename filename) ".class" in
+      let _ = f (get_class cp (JBasics.make_cn file)) in
+	close_class_path cp
+    end
+  else if is_file filename && Filename.check_suffix filename ".jar" then
+    begin
+      let cp = Filename.dirname filename in
+      let filename = Filename.basename filename in
+      let nb_class = ref 0 in
+      let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () [filename]
+      in
+	Printf.printf "%d classes\n" !nb_class
+    end
+  else if is_dir filename then
+    let cp = filename in
+    let jar_files = ref [] in
+    let dir = Unix.opendir (make_dir_absolute filename) in
+    let nb_class = ref 0 in
+      try
+	while true do
+	  let next = Unix.readdir dir in
+	    if Filename.check_suffix next ".jar" then jar_files := next :: !jar_files
+	done
+      with End_of_file ->
+	( Unix.closedir dir;
+	  let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () !jar_files
+	  in
+	Printf.printf "%d classes in %d jar files\n" !nb_class (List.length !jar_files))
+  else begin
+    Printf.printf "%s is not a valid class file, nor a valid jar file, nor a directory\n" filename;
+    exit 0
+  end
+

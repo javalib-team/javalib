@@ -8,14 +8,14 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
@@ -172,118 +172,140 @@ let opcode = function
 
   | OpInvalid -> "invalid"
 
-
+let dump_java6_stackmap ch frame =
+  match frame with
+    | SameFrame k -> IO.printf ch "SameFrame(tag:%d)\n" k
+    | SameLocals (k,vtype) ->
+	IO.printf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
+    | SameLocalsExtended (k,i,vtype) ->
+	IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
+	  k i (dump_verification_type vtype)
+    | ChopFrame (k,i) ->
+	IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
+    | SameFrameExtended (k,i) ->
+	IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
+    | AppendFrame (k,i,vtypes) ->
+	let svtypes = String.concat "," (List.map dump_verification_type vtypes) in
+	  IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
+    | FullFrame (k,offset,locals,stack) ->
+	IO.printf ch "FullFrame(tag:%d," k;
+	dump_stackmap ch (offset,locals,stack);
+	IO.printf ch ")\n"
 
 let rec dump_code ch consts code =
-	IO.printf ch "max_stack = %d , max_locals = %d\n" code.JClassLow.c_max_stack code.JClassLow.c_max_locals;
-	Array.iteri (fun i c ->
-		match c with
-		  | OpInvalid -> (); (* IO.printf ch "__\n" *)
-		  | _ -> IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
-	) code.JClassLow.c_code;
-	IO.printf ch "    exceptions"; List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
-	List.iter (dump_attrib ch consts) code.JClassLow.c_attributes
+  IO.printf ch "max_stack = %d , max_locals = %d\n" code.JClassLow.c_max_stack code.JClassLow.c_max_locals;
+  Array.iteri (fun i c ->
+		 match c with
+		   | OpInvalid -> (); (* IO.printf ch "__\n" *)
+		   | _ -> IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
+	      ) code.JClassLow.c_code;
+  IO.printf ch "    exceptions"; List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
+  List.iter (dump_attrib ch consts) code.JClassLow.c_attributes
 
 and dump_attrib ch consts = function
-	| AttributeSourceFile s ->
-	    IO.printf ch "    source = %s\n" s
-	| AttributeSignature s ->
-	    IO.printf ch "    signature = %s\n" s
-	| AttributeEnclosingMethod (cn,mso) ->
-	    IO.printf ch "    enclosing method : class = %s, method = " (JDumpBasics.class_name cn);
-	    (match mso with
-	       | None -> IO.printf ch "None"
-	       | Some (mn,ms) -> IO.printf ch "%s" (JDumpBasics.signature mn ms));
-	    IO.printf ch "\n"
-	| AttributeSourceDebugExtension s ->
-	    IO.printf ch "    SourceDebugExtension = %s\n" s
-	| AttributeConstant c ->
-	    IO.printf ch "    const ";
-	    dump_constant_value ch c;
-	    IO.printf ch "\n";
-	| AttributeCode code ->
-	    dump_code ch consts (Lazy.force code) (* IO.printf ch "    unexpected code attribute" *)
-	| AttributeExceptions l ->
-	    IO.printf ch "    exceptions";
-	    List.iter (fun cn -> IO.nwrite ch (class_name cn^" ")) l;
-	    IO.printf ch "\n"
-	| AttributeInnerClasses _ ->
-	    IO.printf ch "    inner-classes\n"
-	| AttributeSynthetic ->
-	    IO.printf ch "    synthetic\n"
-	| AttributeLineNumberTable _lines ->
-	    IO.printf ch "    line-numbers\n"
-	| AttributeLocalVariableTable variables ->
-	    IO.printf ch "    local-variables\n";
-	    List.iter
-	      (function start_pc, length, name, signature, index ->
-		 IO.printf ch "      from %d to %d, %s %s at %d\n"
-		   start_pc
-		   (start_pc + length)
-		   (value_signature signature)
-		   name
-		   index)
-	      variables
-	| AttributeDeprecated ->
-	    IO.printf ch "    deprecated\n"
-	| AttributeStackMap stackmap_frames ->
-	    IO.printf ch "    stackmap = ["; List.iter (dump_stackmap ch) stackmap_frames; IO.printf ch "]\n";
-	| AttributeUnknown (s,_) ->
-	    IO.printf ch "    ?%s\n" s
+  | AttributeSourceFile s ->
+      IO.printf ch "    source = %s\n" s
+  | AttributeSignature s ->
+      IO.printf ch "    signature = %s\n" s
+  | AttributeEnclosingMethod (cn,mso) ->
+      IO.printf ch "    enclosing method : class = %s, method = " (JDumpBasics.class_name cn);
+      (match mso with
+	 | None -> IO.printf ch "None"
+	 | Some (mn,ms) -> IO.printf ch "%s" (JDumpBasics.signature mn ms));
+      IO.printf ch "\n"
+  | AttributeSourceDebugExtension s ->
+      IO.printf ch "    SourceDebugExtension = %s\n" s
+  | AttributeConstant c ->
+      IO.printf ch "    const ";
+      dump_constant_value ch c;
+      IO.printf ch "\n";
+  | AttributeCode code ->
+      dump_code ch consts (Lazy.force code) (* IO.printf ch "    unexpected code attribute" *)
+  | AttributeExceptions l ->
+      IO.printf ch "    exceptions";
+      List.iter (fun cn -> IO.nwrite ch (class_name cn^" ")) l;
+      IO.printf ch "\n"
+  | AttributeInnerClasses _ ->
+      IO.printf ch "    inner-classes\n"
+  | AttributeSynthetic ->
+      IO.printf ch "    synthetic\n"
+  | AttributeLineNumberTable _lines ->
+      IO.printf ch "    line-numbers\n"
+  | AttributeLocalVariableTable variables ->
+      IO.printf ch "    local-variables\n";
+      List.iter
+	(function start_pc, length, name, signature, index ->
+	   IO.printf ch "      from %d to %d, %s %s at %d\n"
+	     start_pc
+	     (start_pc + length)
+	     (value_signature signature)
+	     name
+	     index)
+	variables
+  | AttributeDeprecated ->
+      IO.printf ch "    deprecated\n"
+  | AttributeStackMap stackmap_frames ->
+      IO.printf ch "    stackmap midp = [";
+      List.iter (dump_stackmap ch) stackmap_frames; IO.printf ch "]\n"
+  | AttributeStackMapTable stackmap_frames ->
+      IO.printf ch "    stackmap java6 = [";
+      List.iter (dump_java6_stackmap ch) stackmap_frames; IO.printf ch "]\n"
+  | AttributeUnknown (s,_) ->
+      IO.printf ch "    ?%s\n" s
 
 let access_flags = function
-	| [] -> ""
-	| flags ->
-		String.concat " " (List.map (function
-			| `AccPublic -> "public"
-			| `AccPrivate -> "private"
-			| `AccProtected -> "protected"
-			| `AccStatic -> "static"
-			| `AccFinal -> "final"
-			| `AccSynchronized -> "synchronized"
-			| `AccVolatile -> "volatile"
-			| `AccTransient -> "transient"
-			| `AccNative -> "native"
-			| `AccInterface -> "interface"
-			| `AccAbstract -> "abstract"
-			| `AccStrict -> "strict"
-			| `AccEnum -> "enum"
-			| `AccAnnotation -> "annotation"
-			| `AccVarArgs -> "VarArgs"
-			| `AccBridge -> "bridge"
-			| `AccSuper -> "`AccSuper"
-			| `AccSynthetic -> "synthetic"
-			| `AccRFU i -> Printf.sprintf "rfu 0x%X" i
-		) flags) ^ " "
+  | [] -> ""
+  | flags ->
+      String.concat " " (List.map (function
+				     | `AccPublic -> "public"
+				     | `AccPrivate -> "private"
+				     | `AccProtected -> "protected"
+				     | `AccStatic -> "static"
+				     | `AccFinal -> "final"
+				     | `AccSynchronized -> "synchronized"
+				     | `AccVolatile -> "volatile"
+				     | `AccTransient -> "transient"
+				     | `AccNative -> "native"
+				     | `AccInterface -> "interface"
+				     | `AccAbstract -> "abstract"
+				     | `AccStrict -> "strict"
+				     | `AccEnum -> "enum"
+				     | `AccAnnotation -> "annotation"
+				     | `AccVarArgs -> "VarArgs"
+				     | `AccBridge -> "bridge"
+				     | `AccSuper -> "`AccSuper"
+				     | `AccSynthetic -> "synthetic"
+				     | `AccRFU i -> Printf.sprintf "rfu 0x%X" i
+				  ) flags) ^ " "
 
 let dump_field ch consts f =
-	IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
-	List.iter (dump_attrib ch consts) f.f_attributes
+  IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
+  List.iter (dump_attrib ch consts) f.f_attributes
 
 let dump_method ch consts m =
-	IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
-	List.iter (dump_attrib ch consts) m.m_attributes;
-	IO.write ch '\n'
+  IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
+  List.iter (dump_attrib ch consts) m.m_attributes;
+  IO.write ch '\n'
 
 let dump_super ch = function
   | None -> ()
   | Some c -> IO.printf ch "  extends %s\n" (class_name c)
 
 let dump ch cl =
-	IO.printf ch "%sclass %s\n" (access_flags cl.j_flags) (class_name cl.j_name);
-	dump_super ch cl.j_super;
-	if cl.j_interfaces <> [] then IO.printf ch "  implements %s\n" (String.concat " " (List.map class_name cl.j_interfaces));
-	IO.printf ch "{\n\n";
-	IO.printf ch "/* **** CONSTANTS ****\n";
-(* Put this in the dump method for high level class files
-	Array.iteri (fun i c ->
-		IO.printf ch "    %d  " i;
-		dump_constant ch c;
-		IO.write ch '\n'
-	) cl.j_consts;
-*)
-	IO.printf ch "// ****************** */\n\n";
-	List.iter (dump_field ch cl.j_consts) cl.j_fields;
-	IO.printf ch "\n";
-	List.iter (dump_method ch cl.j_consts) cl.j_methods;
-	IO.printf ch "}\n";
+  IO.printf ch "%sclass %s\n" (access_flags cl.j_flags) (class_name cl.j_name);
+  dump_super ch cl.j_super;
+  if cl.j_interfaces <> [] then IO.printf ch "  implements %s\n" (String.concat " " (List.map class_name cl.j_interfaces));
+  IO.printf ch "{\n\n";
+  IO.printf ch "/* **** CONSTANTS ****\n";
+  (* Put this in the dump method for high level class files
+     Array.iteri (fun i c ->
+     IO.printf ch "    %d  " i;
+     dump_constant ch c;
+     IO.write ch '\n'
+     ) cl.j_consts;
+  *)
+  IO.printf ch "// ****************** */\n\n";
+  List.iter (dump_field ch cl.j_consts) cl.j_fields;
+  IO.printf ch "\n";
+  List.iter (dump_method ch cl.j_consts) cl.j_methods;
+  IO.printf ch "}\n";

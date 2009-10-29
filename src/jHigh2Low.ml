@@ -7,18 +7,20 @@
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
  * the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
- * License along with this program.  If not, see 
+ * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
 
+open JBasics
 open JClassLow
+open JCode
 open JClass
 
 let deprecated_to_attribute = function
@@ -43,13 +45,15 @@ let class_generic_signature_to_attribute = function
 
 let enclosingmethod_to_attribute = function
   | None -> []
-  | Some (cn,mso) ->
+  | Some (cs,mso) ->
       let meth = match mso with
 	| None -> None
 	| Some ms ->
-	    Some (ms.ms_name, JBasics.SMethod (ms.ms_parameters,ms.ms_return_type))
+	    let mname = ms_name ms in
+	    let mdesc = (ms_args ms, ms_rtype ms) in
+	      Some (mname, SMethod mdesc)
       in
-	[AttributeEnclosingMethod (cn,meth)]
+	[AttributeEnclosingMethod (cs,meth)]
 
 let sourcedebugextension_to_attribute = function
   | None -> []
@@ -84,12 +88,26 @@ let h2l_inner_classes = function
 	  @ (if ic.ic_enum then [`AccEnum] else [])
 	  @ (List.map (fun i -> `AccRFU i) ic.ic_other_flags)
 	  @ (match ic.ic_type with
-	    | `Interface -> [`AccAbstract;`AccInterface]
-	    | `Abstract -> [`AccAbstract]
-	    | `ConcreteClass -> [])
+	       | `Interface -> [`AccAbstract;`AccInterface]
+	       | `Abstract -> [`AccAbstract]
+	       | `ConcreteClass -> [])
 	in (inner_class_info,outer_class_info,inner_name,inner_class_access_flags)
       in
 	[AttributeInnerClasses (List.map h2l_ic icl)]
+
+(* This function only build full frames. We don't try to compress the stackmap
+   information like javac. *)
+let h2l_stackmap_table sm : stackmap_frame list =
+  let (_,table) =
+    List.fold_left
+      (fun (last,table) (pc,lv,sv) ->
+	 if (last = 0) then
+	   (pc,FullFrame(255,pc,lv,sv)::table)
+	 else
+	   let offset_delta = pc - last - 1 in
+	     (pc,FullFrame(255,offset_delta,lv,sv)::table)
+      ) (0,[]) sm in
+    List.rev table
 
 let h2l_code2attribute consts = function
   | Native -> []
@@ -101,9 +119,13 @@ let h2l_code2attribute consts = function
 	   JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
 	   JClassLow.c_exc_tbl = code.c_exc_tbl;
 	   JClassLow.c_attributes =
-	      (match code.c_stack_map with
+	      (match code.c_stack_map_midp with
 		 | Some sm -> [AttributeStackMap sm]
 		 | None -> [])
+	      @ (match code.c_stack_map_java6 with
+		   | Some sm -> [AttributeStackMapTable
+				   (h2l_stackmap_table sm)]
+		   | None -> [])
 	      @ (match code.c_line_number_table with
 		   | Some lnt -> [AttributeLineNumberTable lnt]
 		   | None -> [])
@@ -123,44 +145,52 @@ let h2l_code2attribute consts = function
         [AttributeCode (code)]
 
 let h2l_cfield _consts f =
-  {f_name = f.cf_signature.fs_name;
-   f_descriptor = f.cf_signature.fs_type;
-   f_flags =
-      (if f.cf_transient then [`AccTransient] else [])
-      @ (match f.cf_kind with
-	| Final -> [`AccFinal]
-	| Volatile -> [`AccVolatile]
-	| NotFinal -> [])
-      @ (if f.cf_static then [`AccStatic] else [])
-      @ (if f.cf_synthetic then [`AccSynthetic] else [])
-      @ (if f.cf_enum then [`AccEnum] else [])
-      @ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
-      @ (access2flags f.cf_access);
-   f_attributes =
-      (match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
-      @ (field_generic_signature_to_attribute f.cf_generic_signature)
-      @ (h2l_attributes f.cf_attributes);
-  }
+  let fs = f.cf_signature in
+  let fname = fs_name fs in
+  let fdesc = fs_type fs in
+    {f_name = fname;
+     f_descriptor = fdesc;
+     f_flags =
+	(if f.cf_transient then [`AccTransient] else [])
+	@ (match f.cf_kind with
+	     | Final -> [`AccFinal]
+	     | Volatile -> [`AccVolatile]
+	     | NotFinal -> [])
+	@ (if f.cf_static then [`AccStatic] else [])
+	@ (if f.cf_synthetic then [`AccSynthetic] else [])
+	@ (if f.cf_enum then [`AccEnum] else [])
+	@ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
+	@ (access2flags f.cf_access);
+     f_attributes =
+	(match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
+	@ (field_generic_signature_to_attribute f.cf_generic_signature)
+	@ (h2l_attributes f.cf_attributes);
+    }
 
 let h2l_ifield _consts f =
-  {f_name = f.if_signature.fs_name;
-   f_descriptor = f.if_signature.fs_type;
-   f_flags =
-      (if f.if_synthetic then [`AccSynthetic] else [])
-      @ (List.map (fun i -> `AccRFU i) f.if_other_flags)
-      @ [`AccPublic;`AccStatic;`AccFinal];
-   f_attributes =
-      (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
-      @ (field_generic_signature_to_attribute f.if_generic_signature)
-      @ (h2l_attributes f.if_attributes);
-  }
+  let fs = f.if_signature in
+  let fname = fs_name fs in
+  let fdesc = fs_type fs in
+    {f_name = fname;
+     f_descriptor = fdesc;
+     f_flags =
+	(if f.if_synthetic then [`AccSynthetic] else [])
+	@ (List.map (fun i -> `AccRFU i) f.if_other_flags)
+	@ [`AccPublic;`AccStatic;`AccFinal];
+     f_attributes =
+	(match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
+	@ (field_generic_signature_to_attribute f.if_generic_signature)
+	@ (h2l_attributes f.if_attributes);
+    }
 
 let h2l_cmethod consts m =
+  let ms = m.cm_signature in
+  let mname = ms_name ms in
+  let mdesc = (ms_args ms, ms_rtype ms) in
   let code = h2l_code2attribute consts m.cm_implementation
   in
-    {m_name = m.cm_signature.ms_name;
-     m_descriptor =
-	(m.cm_signature.ms_parameters, m.cm_signature.ms_return_type);
+    {m_name = mname;
+     m_descriptor = mdesc;
      m_flags =
 	(if m.cm_static then [`AccStatic] else [])
 	@ (if m.cm_final then [`AccFinal] else [])
@@ -174,29 +204,34 @@ let h2l_cmethod consts m =
 	@ (access2flags m.cm_access);
      m_attributes =
 	(match m.cm_exceptions with
-	  | [] -> []
-	  | l -> [AttributeExceptions l])
+	   | [] -> []
+	   | l -> [AttributeExceptions l]
+	)
 	@ method_generic_signature_to_attribute m.cm_generic_signature
 	@ code
 	@ h2l_attributes m.cm_attributes;
     }
 
 let h2l_amethod _consts m =
-  {m_name = m.am_signature.ms_name;
-   m_descriptor = (m.am_signature.ms_parameters, m.am_signature.ms_return_type);
-   m_flags =
-      (if m.am_bridge then [`AccBridge] else [])
-      @ (if m.am_varargs then [`AccVarArgs] else [])
-      @ (if m.am_synthetic then [`AccSynthetic] else [])
-      @ (List.map (fun i -> `AccRFU i) m.am_other_flags)
-      @ (`AccAbstract::access2flags m.am_access);
-   m_attributes =
-      (match m.am_exceptions with
-	| [] -> []
-	| l -> [AttributeExceptions l])
-      @ method_generic_signature_to_attribute m.am_generic_signature
-      @ h2l_attributes m.am_attributes;
-  }
+  let ms = m.am_signature in
+  let mname = ms_name ms in
+  let mdesc = (ms_args ms, ms_rtype ms) in
+    {m_name = mname;
+     m_descriptor = mdesc;
+     m_flags =
+	(if m.am_bridge then [`AccBridge] else [])
+	@ (if m.am_varargs then [`AccVarArgs] else [])
+	@ (if m.am_synthetic then [`AccSynthetic] else [])
+	@ (List.map (fun i -> `AccRFU i) m.am_other_flags)
+	@ (`AccAbstract::access2flags m.am_access);
+     m_attributes =
+	(match m.am_exceptions with
+	   | [] -> []
+	   | l -> [AttributeExceptions l]
+	)
+	@ method_generic_signature_to_attribute m.am_generic_signature
+	@ h2l_attributes m.am_attributes;
+    }
 
 let h2l_acmethod consts = function
   | AbstractMethod m -> h2l_amethod consts m
@@ -204,14 +239,13 @@ let h2l_acmethod consts = function
 
 let h2l_concretemethods consts c' mm =
   {c' with
-    j_methods = MethodMap.fold (fun _fs f l -> h2l_cmethod consts f::l) mm [];
+     j_methods = MethodMap.fold (fun _fs f l -> h2l_cmethod consts f::l) mm [];
   }
 
 let h2l_methods consts c' mm =
   {c' with
-    j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts f::l) mm [];
+     j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts f::l) mm [];
   }
-
 
 let high2low_class c =
   let consts = DynArray.of_array c.c_consts in
@@ -245,12 +279,12 @@ let high2low_class c =
   let c'= h2l_methods consts c' c.c_methods
   in {c' with j_consts = DynArray.to_array consts}
 
-let high2low_interface (c:jinterface) =
+let high2low_interface (c:JCode.jcode jinterface) =
   let consts = DynArray.of_array c.i_consts in
   let c' =
     {j_name = c.i_name;
      j_version = c.i_version;
-     j_super = Some JBasics.java_lang_object;
+     j_super = Some java_lang_object;
      j_interfaces = c.i_interfaces;
      j_consts = c.i_consts; (*will be updated later on*)
      j_flags =
@@ -276,5 +310,5 @@ let high2low_interface (c:jinterface) =
     {c' with j_consts = DynArray.to_array consts}
 
 let high2low = function
-  | `Interface i -> high2low_interface i
-  | `Class c -> high2low_class c
+  | JInterface i -> high2low_interface i
+  | JClass c -> high2low_class c

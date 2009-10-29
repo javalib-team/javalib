@@ -1,7 +1,7 @@
 (*
  * Copyright (C) 2008 Jean-Christophe Filliatre
  * Copyright (C) 2008, 2009 Laurent Hubert (CNRS)
- * 
+ *
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -80,7 +80,7 @@ type t =
     $$\mathtt{Branch~(0,~1,~Leaf~4,~Branch~(1,~4,~Leaf~1,~Leaf~5))}$$
     The first branching bit is the bit 0 (and the corresponding prefix
     is [0b0], not of use here), with $\{4\}$ on the left and $\{1,5\}$ on the
-    right. Then the right subtree branches on bit 2 (and so has a branching 
+    right. Then the right subtree branches on bit 2 (and so has a branching
     value of $2^2 = 4$), with prefix [0b01 = 1]. *)
 
 (*s Empty set and singletons. *)
@@ -120,9 +120,9 @@ let mask p m = p land (m-1)
 
 let join (p0,t0,p1,t1) =
   let m = branching_bit p0 p1 in
-  if zero_bit p0 m then 
+  if zero_bit p0 m then
     Branch (mask p0 m, m, t0, t1)
-  else 
+  else
     Branch (mask p0 m, m, t1, t0)
 
 (*s Then the insertion of value [k] in set [t] is easily implemented
@@ -138,11 +138,11 @@ let match_prefix k p m = (mask k m) == p
 let add k t =
   let rec ins = function
     | Empty -> Leaf k
-    | Leaf j as t -> 
+    | Leaf j as t ->
 	if j == k then t else join (k, Leaf k, j, t)
     | Branch (p,m,t0,t1) as t ->
 	if match_prefix k p m then
-	  if zero_bit k m then 
+	  if zero_bit k m then
 	    Branch (p, m, ins t0, t1)
 	  else
 	    Branch (p, m, t0, ins t1)
@@ -153,7 +153,7 @@ let add k t =
 
 (*s The code to remove an element is basically similar to the code of
     insertion. But since we have to maintain the invariant that both
-    subtrees of a [Branch] node are non-empty, we use here the 
+    subtrees of a [Branch] node are non-empty, we use here the
     ``smart constructor'' [branch] instead of [Branch]. *)
 
 let branch = function
@@ -165,7 +165,7 @@ let remove k t =
   let rec rmv = function
     | Empty -> Empty
     | Leaf j as t -> if k == j then Empty else t
-    | Branch (p,m,t0,t1) as t -> 
+    | Branch (p,m,t0,t1) as t ->
 	if match_prefix k p m then
 	  if zero_bit k m then
 	    branch (p, m, rmv t0, t1)
@@ -204,9 +204,9 @@ let rec merge = function
 	Branch (p, m, merge (s0,t0), merge (s1,t1))
       else if m < n && match_prefix q p m then
 	(* [q] contains [p]. Merge [t] with a subtree of [s]. *)
-	if zero_bit q m then 
+	if zero_bit q m then
 	  Branch (p, m, merge (s0,t), s1)
-        else 
+        else
 	  Branch (p, m, s0, merge (s1,t))
       else if m > n && match_prefix p q n then
 	(* [p] contains [q]. Merge [s] with a subtree of [t]. *)
@@ -234,9 +234,9 @@ let rec subset s1 s2 = match (s1,s2) with
       if m1 == m2 && p1 == p2 then
 	subset l1 l2 && subset r1 r2
       else if m1 > m2 && match_prefix p1 p2 m2 then
-	if zero_bit p1 m2 then 
+	if zero_bit p1 m2 then
 	  subset l1 l2 && subset r1 l2
-	else 
+	else
 	  subset l1 r2 && subset r1 r2
       else
 	false
@@ -252,7 +252,7 @@ let rec inter s1 s2 = match (s1,s2) with
   | Leaf k1, _ -> if mem k1 s2 then s1 else Empty
   | _, Leaf k2 -> if mem k2 s1 then s2 else Empty
   | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-      if m1 == m2 && p1 == p2 then 
+      if m1 == m2 && p1 == p2 then
 	merge (inter l1 l2, inter r1 r2)
       else if m1 < m2 && match_prefix p2 p1 m1 then
 	inter (if zero_bit p2 m1 then l1 else r1) s2
@@ -270,9 +270,9 @@ let rec diff s1 s2 = match (s1,s2) with
       if m1 == m2 && p1 == p2 then
 	merge (diff l1 l2, diff r1 r2)
       else if m1 < m2 && match_prefix p2 p1 m1 then
-	if zero_bit p2 m1 then 
-	  merge (diff l1 s2, r1) 
-	else 
+	if zero_bit p2 m1 then
+	  merge (diff l1 s2, r1)
+	else
 	  merge (l1, diff r1 s2)
       else if m1 > m2 && match_prefix p1 p2 m2 then
 	if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
@@ -292,7 +292,7 @@ let rec iter f = function
   | Empty -> ()
   | Leaf k -> f k
   | Branch (_,_,t0,t1) -> iter f t0; iter f t1
-      
+
 let rec fold f s accu = match s with
   | Empty -> accu
   | Leaf k -> f k accu
@@ -340,7 +340,7 @@ let split x s =
   let coll k (l, b, r) =
     if k < x then add k l, b, r
     else if k > x then l, b, add k r
-    else l, true, r 
+    else l, true, r
   in
   fold coll s (Empty, false, Empty)
 
@@ -398,13 +398,13 @@ module Big = struct
 
   type elt = int
 
-  type t_ = t 
+  type t_ = t
   type t = t_
 
   let empty = Empty
 
   let is_empty = function Empty -> true | _ -> false
-  
+
   let singleton k = Leaf k
 
   let zero_bit k m = (k land m) == 0
@@ -416,18 +416,18 @@ module Big = struct
 
   let mask k m  = (k lor (m-1)) land (lnot m)
 
-  (* we first write a naive implementation of [highest_bit] 
+  (* we first write a naive implementation of [highest_bit]
      only has to work for bytes *)
-  let naive_highest_bit x = 
+  let naive_highest_bit x =
     assert (x < 256);
-    let rec loop i = 
+    let rec loop i =
       if i = 0 then 1 else if x lsr i = 1 then 1 lsl i else loop (i-1)
     in
     loop 7
 
   (* then we build a table giving the highest bit for bytes *)
   let hbit = Array.init 256 naive_highest_bit
-  
+
   (* to determine the highest bit of [x] we split it into bytes *)
   let highest_bit_32 x =
     let n = x lsr 24 in if n != 0 then hbit.(n) lsl 24
@@ -449,21 +449,21 @@ module Big = struct
   let join (p0,t0,p1,t1) =
     (*i let m = function Branch (_,m,_,_) -> m | _ -> 0 in i*)
     let m = branching_bit p0 p1 (*EXP (m t0) (m t1) *) in
-    if zero_bit p0 m then 
+    if zero_bit p0 m then
       Branch (mask p0 m, m, t0, t1)
-    else 
+    else
       Branch (mask p0 m, m, t1, t0)
-    
+
   let match_prefix k p m = (mask k m) == p
 
   let add k t =
     let rec ins = function
       | Empty -> Leaf k
-      | Leaf j as t -> 
+      | Leaf j as t ->
 	  if j == k then t else join (k, Leaf k, j, t)
       | Branch (p,m,t0,t1) as t ->
 	  if match_prefix k p m then
-	    if zero_bit k m then 
+	    if zero_bit k m then
 	      Branch (p, m, ins t0, t1)
 	    else
 	      Branch (p, m, t0, ins t1)
@@ -471,12 +471,12 @@ module Big = struct
 	    join (k, Leaf k, p, t)
     in
     ins t
-      
+
   let remove k t =
     let rec rmv = function
       | Empty -> Empty
       | Leaf j as t -> if k == j then Empty else t
-      | Branch (p,m,t0,t1) as t -> 
+      | Branch (p,m,t0,t1) as t ->
 	  if match_prefix k p m then
 	    if zero_bit k m then
 	      branch (p, m, rmv t0, t1)
@@ -486,7 +486,7 @@ module Big = struct
 	    t
     in
     rmv t
-      
+
   let rec merge = function
     | Empty, t  -> t
     | t, Empty  -> t
@@ -498,9 +498,9 @@ module Big = struct
 	  Branch (p, m, merge (s0,t0), merge (s1,t1))
 	else if m > n && match_prefix q p m then
 	  (* [q] contains [p]. Merge [t] with a subtree of [s]. *)
-	  if zero_bit q m then 
+	  if zero_bit q m then
 	    Branch (p, m, merge (s0,t), s1)
-          else 
+          else
 	    Branch (p, m, s0, merge (s1,t))
 	else if m < n && match_prefix p q n then
 	  (* [p] contains [q]. Merge [s] with a subtree of [t]. *)
@@ -511,7 +511,7 @@ module Big = struct
 	else
 	  (* The prefixes disagree. *)
 	  join (p, s, q, t)
-	    
+
   let union s t = merge (s,t)
 
   let rec subset s1 s2 = match (s1,s2) with
@@ -523,9 +523,9 @@ module Big = struct
 	if m1 == m2 && p1 == p2 then
 	  subset l1 l2 && subset r1 r2
 	else if m1 < m2 && match_prefix p1 p2 m2 then
-	  if zero_bit p1 m2 then 
+	  if zero_bit p1 m2 then
 	    subset l1 l2 && subset r1 l2
-	  else 
+	  else
 	    subset l1 r2 && subset r1 r2
 	else
 	  false
@@ -536,7 +536,7 @@ module Big = struct
     | Leaf k1, _ -> if mem k1 s2 then s1 else Empty
     | _, Leaf k2 -> if mem k2 s1 then s2 else Empty
     | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	if m1 == m2 && p1 == p2 then 
+	if m1 == m2 && p1 == p2 then
 	  merge (inter l1 l2, inter r1 r2)
 	else if m1 > m2 && match_prefix p2 p1 m1 then
 	  inter (if zero_bit p2 m1 then l1 else r1) s2
@@ -554,9 +554,9 @@ module Big = struct
 	if m1 == m2 && p1 == p2 then
 	  merge (diff l1 l2, diff r1 r2)
 	else if m1 > m2 && match_prefix p2 p1 m1 then
-	  if zero_bit p2 m1 then 
-	    merge (diff l1 s2, r1) 
-	  else 
+	  if zero_bit p2 m1 then
+	    merge (diff l1 s2, r1)
+	  else
 	    merge (l1, diff r1 s2)
 	else if m1 < m2 && match_prefix p1 p2 m2 then
 	  if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
@@ -570,7 +570,7 @@ module Big = struct
   let for_all = for_all
   let exists = exists
   let filter = filter
-    
+
   let partition p s =
     let rec part (t,f as acc) = function
       | Empty -> acc
@@ -595,7 +595,7 @@ module Big = struct
     let coll k (l, b, r) =
       if k < x then add k l, b, r
       else if k > x then l, b, add k r
-      else l, true, r 
+      else l, true, r
     in
     fold coll s (Empty, false, Empty)
 
@@ -607,7 +607,7 @@ module Big = struct
   let equal = (=)
 
   let compare = compare
-  
+
   let make l = List.fold_right add l empty
 
   let rec intersect s1 s2 = match (s1,s2) with
@@ -715,13 +715,12 @@ end
 let test empty add mem =
   let seed = Random.int max_int in
   Random.init seed;
-  let s = 
-    let rec loop s i = 
+  let s =
+    let rec loop s i =
       if i = 1000 then s else loop (add (Random.int max_int) s) (succ i)
     in
     loop empty 0
   in
   Random.init seed;
   for i = 0 to 999 do assert (mem (Random.int max_int) s) done
-
 

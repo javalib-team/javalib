@@ -1,18 +1,18 @@
-{i {C Laurent Hubert, Nicolas Barré, Tiphaine Turpin and Nicolas Cannasse}}
+{i {C Tiphaine Turpin, Laurent Hubert, Nicolas Barre and Nicolas Cannasse}}
 
 {i {C September 2009}}
 
 {2 {L Documentation}}
 
-{b {L High level manipulations of programs}}
-{!modules: JFile JProgram JCRA JRTA JControlFlow JPrintHierarchy JPrintHtml JPrint JNativeStubs}
+{b {L User interface}}
+{!modules: Javalib JBasics JCode}
 
-{b {L Hight level representation of classes}}
-{!modules: JBasics JClass JSignature JDumpBasics}
+{b {L High level representation of classes}}
+{!modules: JBasics JDumpBasics JSignature JClass JCode JFile}
 
 {b {L Other}}
-{!modules: JCode JParse JParseSignature JUnparse JUnparseSignature
-JInstruction JLow2High JHigh2Low JClassLow JDump JDumpLow}
+{!modules: JParseCode JParse JParseSignature JUnparse JUnparseSignature
+JInstruction JLow2High JHigh2Low JBasicsLow JClassLow JDump JDumpLow}
 
 {b {L Patricia Tree library}}
 {!modules: Ptmap Ptset}

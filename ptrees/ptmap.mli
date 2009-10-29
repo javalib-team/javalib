@@ -1,7 +1,7 @@
 (*
  * Copyright (C) 2008 Jean-Christophe Filliatre
  * Copyright (C) 2008, 2009 Laurent Hubert (CNRS)
- * 
+ *
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -63,11 +63,19 @@ module type S = sig
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
-  (** [merge f m1 m2] returns a map that has the bindings of [m1] and
-      [m2] and which binds [k] to [f d1 d2] if [m1] and [m2] binds the
-      same [k] to [d1] and [d2], respectively.
+  (** [merge f m1 m2] returns a map that has the bindings of [m1] and [m2] and
+      which binds [k] to [f d1 d2] if [m1] and [m2] binds the same [k] to
+      different [d1] and [d2], respectively. If [d1] equals [d2], [f d1 d2] is
+      supposed to return [d1].
+
       @author Laurent Hubert*)
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+
+  (** [merge_first m1 m2] is the same as [merge (fun a _ -> a) m1 m2] but it
+      reuses more data from the first map.*)
+  val merge_first : 'a t -> 'a t -> 'a t
+
+  val diff : ('a -> 'a -> bool) -> 'a t -> 'a t -> 'a t
 
   (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to
       [remove i t] and [d] equals to [find i t].
@@ -75,6 +83,24 @@ module type S = sig
       @raise Not_found if [t] is empty.
       @author Laurent Hubert*)
   val choose_and_remove : 'a t -> int * 'a * ('a t)
+
+  (** [inter m1 m2] returns a map with all the bindings [(k,d)] of [m1] such
+      that [mem k m2]. *)
+  val inter : 'a t -> 'b t -> 'a t
+
+  val cardinal: 'a t -> int
+
+  val exists: (int -> 'a -> bool) -> 'a t -> bool
+
+  val filter: ('a -> bool) -> 'a t -> 'a t
+
+  val filteri: (int -> 'a -> bool) -> 'a t -> 'a t
+
+  val filter_map : ('a -> 'b option) -> 'a t -> 'b t
+
+  val partition: ('a -> bool) -> 'a t -> 'a t * 'a t
+
+  val elements: 'a t -> (int * 'a) list
 
 end
 
