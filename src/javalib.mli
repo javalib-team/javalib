@@ -406,7 +406,7 @@ val transform :
 
     @raise Class_structure_error if the length of an opcode produced is greater
     than the available space (number of OpInvalid + 1) except if
-    {!JBasicsLow.set_permissive} has been called with [true]. *)
+    {!JBasics.set_permissive} has been called with [true]. *)
 val unparse_class : JCode.jcode interface_or_class -> out_channel -> unit
 
 

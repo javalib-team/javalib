@@ -39,7 +39,7 @@ val opcodes2code : JBasics.constant array -> JClassLow.opcode array -> JCode.jop
 
     @raise Class_structure_error if the length of an opcode produced is greater
     than the available space (number of OpInvalid + 1) except if
-    {!JBasicsLow.set_permissive} has been called with [true].  Note that this
+    {!JBasics.set_permissive} has been called with [true].  Note that this
     will only be an issue when dumping the code to a class file.
 *)
 val code2opcodes :

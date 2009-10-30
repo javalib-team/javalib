@@ -51,7 +51,7 @@ type lvt = (int * int * string * value_type * int) list
 
 let combine_LocalVariableTable (lvts:lvt list) : lvt =
   let lvt = List.concat lvts in
-    if not (JBasicsLow.get_permissive ()) then
+    if not (JBasics.get_permissive ()) then
       begin
       let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
 	List.for_all
@@ -213,7 +213,7 @@ let low2high_cfield cn consts fs = function f ->
   let kind =
     if is_final
     then
-      if not (JBasicsLow.get_permissive ()) && is_volatile
+      if not (JBasics.get_permissive ()) && is_volatile
       then raise (Class_structure_error "A field cannot be final and volatile.")
       else Final
     else
@@ -248,12 +248,12 @@ let low2high_cfield cn consts fs = function f ->
     match generic_signature with
       | [] -> None
       | (AttributeSignature s)::rest  ->
-          if rest = [] || JBasicsLow.get_permissive ()
+          if rest = [] || JBasics.get_permissive ()
           then
 	    try
 	      Some (JParseSignature.parse_FieldTypeSignature s)
 	    with Class_structure_error _ as e ->
-	      if JBasicsLow.get_permissive ()
+	      if JBasics.get_permissive ()
 	      then None
 	      else raise e
 	  else
@@ -296,12 +296,12 @@ let low2high_ifield cn consts fs = function f ->
       match generic_signature with
 	| [] -> None
 	| (AttributeSignature s)::rest ->
-            if rest = [] || JBasicsLow.get_permissive ()
+            if rest = [] || JBasics.get_permissive ()
 	    then
 	      try
 		Some (JParseSignature.parse_FieldTypeSignature s)
 	      with Class_structure_error _ as e ->
-		if JBasicsLow.get_permissive ()
+		if JBasics.get_permissive ()
 		then None
 		else raise e
 	    else
@@ -354,12 +354,12 @@ let low2high_amethod consts cs ms = function m ->
   let generic_signature = match generic_signature with
     | [] -> None
     | (AttributeSignature s)::rest ->
-        if rest = [] || JBasicsLow.get_permissive ()
+        if rest = [] || JBasics.get_permissive ()
 	then
 	  try
 	    Some (JParseSignature.parse_MethodTypeSignature s)
 	  with Class_structure_error _ as e ->
-	    if JBasicsLow.get_permissive ()
+	    if JBasics.get_permissive ()
 	    then None
 	    else raise e
 	else
@@ -415,12 +415,12 @@ let low2high_cmethod consts cs ms = function m ->
   let generic_signature = match generic_signature with
     | [] -> None
     | (AttributeSignature s)::rest ->
-        if rest = [] || JBasicsLow.get_permissive ()
+        if rest = [] || JBasics.get_permissive ()
 	then
 	  try
 	    Some (JParseSignature.parse_MethodTypeSignature s)
 	  with Class_structure_error _ as e ->
-	    if JBasicsLow.get_permissive ()
+	    if JBasics.get_permissive ()
 	    then None
 	    else raise e
         else
@@ -541,11 +541,11 @@ let low2high_class cl =
 	 | _ -> raise (Failure "Bug in JavaLib in JLow2High.low2high_class : unexpected flag found."))
       flags
   in
-    if not (JBasicsLow.get_permissive ())
+    if not (JBasics.get_permissive ())
       && not (accsuper || is_interface)
       && not (accsuper && is_interface)
     then raise (Class_structure_error "ACC_SUPER must be set for all classes (that are not interfaces)");
-    if not (JBasicsLow.get_permissive ()) && (is_final && is_abstract)
+    if not (JBasics.get_permissive ()) && (is_final && is_abstract)
     then raise (Class_structure_error "An abstract class cannot be final.");
     let consts = DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
@@ -567,12 +567,12 @@ let low2high_class cl =
       match List.find_all (function AttributeSignature _ -> true| _ -> false) cl.j_attributes with
 	| [] -> None
 	| (AttributeSignature s)::rest  ->
-            if rest = [] || JBasicsLow.get_permissive ()
+            if rest = [] || JBasics.get_permissive ()
             then
 	      try
 		Some (JParseSignature.parse_ClassSignature s)
 	      with Class_structure_error _ as e ->
-		if JBasicsLow.get_permissive ()
+		if JBasics.get_permissive ()
 		then None
 		else raise e
             else
@@ -588,7 +588,7 @@ let low2high_class cl =
 	  | [] -> None
 	  | (AttributeSourceDebugExtension s)::rest
             ->
-              if rest = [] || JBasicsLow.get_permissive ()
+              if rest = [] || JBasics.get_permissive ()
               then Some s
               else
                 raise
@@ -614,11 +614,11 @@ let low2high_class cl =
       if is_interface
       then
 	begin
-	  if not (JBasicsLow.get_permissive ()) && not is_abstract
+	  if not (JBasics.get_permissive ()) && not is_abstract
 	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
-	  if not (JBasicsLow.get_permissive ()) && not (cl.j_super = Some JBasics.java_lang_object)
+	  if not (JBasics.get_permissive ()) && not (cl.j_super = Some JBasics.java_lang_object)
 	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
-	  if not (JBasicsLow.get_permissive ()) && (is_enum || is_synthetic)
+	  if not (JBasics.get_permissive ()) && (is_enum || is_synthetic)
 	  then raise (Class_structure_error ("Class file with their `AccInterface flag set must not have "
 					     ^ "their `AccEnum or `AccSynthetic flags set."));
 	  let (init,methods) =
@@ -634,7 +634,7 @@ let low2high_class cl =
 	      | [m],others -> Some (low2high_cmethod consts cs clinit_signature m),others
 	      | [],others -> None, others
 	      | m::_::_,others ->
-		  if not (JBasicsLow.get_permissive ())
+		  if not (JBasics.get_permissive ())
 		  then raise (Class_structure_error "has more than one class initializer <clinit>")
 		  else Some (low2high_cmethod consts cs clinit_signature m),others
 	  in

@@ -5,17 +5,29 @@
 {2 {L Documentation}}
 
 {b {L User interface}}
+
+The following modules consitute the user interface of Javalib. They are the only
+modules you should need.
+
 {!modules: Javalib JBasics JCode}
 
-{b {L High level representation of classes}}
-{!modules: JBasics JDumpBasics JSignature JClass JCode JFile}
-
-{b {L Other}}
-{!modules: JParseCode JParse JParseSignature JUnparse JUnparseSignature
-JInstruction JLow2High JHigh2Low JBasicsLow JClassLow JDump JDumpLow}
-
 {b {L Patricia Tree library}}
+
+The Patricia Tree library has been developed by
+{{:http://www.lri.fr/~filliatr/software.en.html}Filliatre} and extended by
+ourselves to add some features and to improve its efficiency in our context.
+
 {!modules: Ptmap Ptset}
+
+{b {L Other internal modules}}
+
+Those are the internal modules of Javalib.  You should not need to look into
+those files unless you do rely advanced stuff (and in this case we would love to
+have some feedback).
+
+{!JDumpBasics}, {!JSignature}, {!JClass}, {!JFile}, {!JParseCode}, {!JParse},
+{!JParseSignature}, {!JUnparse}, {!JUnparseSignature}, {!JInstruction}, {!JLow2High},
+{!JHigh2Low}, {!JBasicsLow}, {!JClassLow} and {!JDumpLow}.
 
 {b {L Indexes}}
 
