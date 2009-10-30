@@ -378,3 +378,13 @@ module ClassMethodMaptoSet :
 sig
   val to_set : 'a ClassMethodMap.t -> ClassMethodSet.t
 end
+
+(** {2 Tuning JavaLib.} *)
+
+(** [set_permissive true] disables some checking in JavaLib.  It can
+    allow to parse some files that do not strictly comply with the
+    official specification.  *)
+val set_permissive : bool -> unit
+
+val get_permissive : unit -> bool
+

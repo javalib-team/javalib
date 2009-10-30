@@ -514,3 +514,7 @@ module ClassMethodMaptoSet =
   MaptoSet (struct type t = class_method_signature end)
     (ClassMethodMap) (ClassMethodSet)
 
+(* javalib tuning *)
+let permissive = ref false
+let set_permissive b = permissive := b
+let get_permissive _ = !permissive

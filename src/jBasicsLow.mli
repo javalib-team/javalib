@@ -88,12 +88,3 @@ val write_with_length :
 val write_with_size :
   ('a IO.output -> int -> unit) -> 'a IO.output -> ('c -> unit) -> 'c list -> unit
 
-(** {2 Tuning JavaLib.} *)
-
-(** [set_permissive true] disables some checking in JavaLib.  It can
-    allow to parse some files that do not strictly comply with the
-    official specification.  *)
-val set_permissive : bool -> unit
-
-val get_permissive : unit -> bool
-

@@ -60,9 +60,9 @@ a:hover {
 }
 
 body {
-    width: 60%;
-    margin-left: 15em;
-    margin-right: 15em;
+    width: 800px;
+    margin-left: auto;
+    margin-right: auto;
     text-align:justify;
 }
 
