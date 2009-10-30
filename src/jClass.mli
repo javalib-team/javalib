@@ -230,6 +230,7 @@ val get_other_flags : 'a interface_or_class -> int list
 
 val get_method_signature : 'a jmethod -> method_signature
 val get_class_method_signature : 'a jmethod -> class_method_signature
+val get_method_visibility : 'a jmethod -> access
 val is_static_method : 'a jmethod -> bool
 val is_final_method : 'a jmethod -> bool
 val is_synchronized_method : 'a jmethod -> bool
@@ -242,6 +243,10 @@ val defines_method : 'a interface_or_class -> method_signature -> bool
 
 val get_field_signature : any_field -> field_signature
 val get_class_field_signature : any_field -> class_field_signature
+val get_field_visibility : any_field -> access
+val is_static_field : any_field -> bool
+val is_final_field : any_field -> bool
+
 val get_field : 'a interface_or_class -> field_signature -> any_field
 val get_fields : 'a interface_or_class -> any_field FieldMap.t
 val defines_field : 'a interface_or_class -> field_signature -> bool

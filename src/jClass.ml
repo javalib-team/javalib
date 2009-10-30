@@ -308,6 +308,10 @@ let is_synchronized_method = function
   | AbstractMethod _ -> false
   | ConcreteMethod m -> m.cm_synchronized
 
+let get_method_visibility = function
+  | AbstractMethod m -> (m.am_access:>access)
+  | ConcreteMethod m -> m.cm_access
+
 let get_method_signature = function
   | AbstractMethod m -> m.am_signature
   | ConcreteMethod m -> m.cm_signature
@@ -320,6 +324,18 @@ let get_field_signature = function
   | InterfaceField {if_signature = fs}
   | ClassField {cf_signature = fs}
     -> fs
+
+let is_final_field = function
+  | InterfaceField _ -> false
+  | ClassField f -> f.cf_kind = Final
+
+let is_static_field = function
+  | InterfaceField _ -> true
+  | ClassField f -> f.cf_static
+
+let get_field_visibility = function
+  | ClassField f -> f.cf_access
+  | InterfaceField _ -> `Public
 
 let get_class_field_signature = function
   | InterfaceField {if_class_signature = cfs}

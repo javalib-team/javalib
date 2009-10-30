@@ -91,6 +91,10 @@ type any_field = | InterfaceField of interface_field | ClassField of class_field
 
 val get_field_signature : any_field -> field_signature
 val get_class_field_signature : any_field -> class_field_signature
+val get_field_visibility : any_field -> access
+val is_static_field : any_field -> bool
+val is_final_field : any_field -> bool
+
 
 (** {2 Methods of classes and interfaces.} *)
 
@@ -121,6 +125,7 @@ type 'a concrete_method = {
   cm_implementation : 'a implementation;
 }
 
+(** An abstract method cannot not be final, synchronized, strict or private. *)
 type abstract_method = {
   am_signature : method_signature;
   am_class_method_signature : class_method_signature;
@@ -144,6 +149,7 @@ type 'a jmethod =
 
 val get_method_signature : 'a jmethod -> method_signature
 val get_class_method_signature : 'a jmethod -> class_method_signature
+val get_method_visibility : 'a jmethod -> access
 val is_static_method : 'a jmethod -> bool
 val is_final_method : 'a jmethod -> bool
 val is_synchronized_method : 'a jmethod -> bool

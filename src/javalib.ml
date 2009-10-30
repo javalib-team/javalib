@@ -290,35 +290,20 @@ struct
 	     | _ -> Some(Printf.sprintf "%d: %s" i (jopcode ~jvm:jvm op))
 	) cl
 
+  let access_to_string = function
+    | `Default -> None
+    | `Protected -> Some "protected"
+    | `Public -> Some "public"
+    | `Private -> Some "private"
+
   let method_access m =
-    let access a =
-      match a with
-	| `Default -> None
-	| `Protected -> Some "protected"
-	| `Public -> Some "public"
-	| `Private -> Some "private" in
-      match m with
-	| AbstractMethod am ->
-	    access am.am_access
-	| ConcreteMethod cm ->
-	    access cm.cm_access
+    access_to_string (get_method_visibility m)
 
   let field_access f =
-    let access a =
-      match a with
-	| `Default -> None
-	| `Protected -> Some "protected"
-	| `Public -> Some "public"
-	| `Private -> Some "private" in
-      match f with
-	| ClassField cf -> access cf.cf_access
-	| InterfaceField _ -> Some "public"
+    access_to_string (get_field_visibility f)
 
   let interface_or_class_access ioc =
-    let access = get_access ioc in
-      match access with
-	| `Default -> None
-	| `Public -> Some "public"
+    access_to_string (get_access ioc)
 
   let method_kind m =
     match m with
@@ -329,15 +314,13 @@ struct
 	     | Native -> Some "native"
 	  )
 
-  let field_kind f =
-    match f with
-      | ClassField cf ->
-	  (match cf.cf_kind with
-	     | Final -> Some "final"
-	     | Volatile -> Some "volatile"
-	     | NotFinal -> None
-	  )
-      | InterfaceField _ -> None
+  let field_kind = function
+    | InterfaceField _ -> None
+    | ClassField cf ->
+	match cf.cf_kind with
+	  | Final -> Some "final"
+	  | Volatile -> Some "volatile"
+	  | NotFinal -> None
 
   let method_static m =
     if (is_static_method m) then Some "static"
