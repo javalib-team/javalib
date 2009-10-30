@@ -1,0 +1,67 @@
+h1 {
+    color: #0080c0;
+    font-family: serif;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.tutorial-title {
+    text-align: center;
+    margin-top: 2em;
+    margin-bottom: 3em;
+}
+
+#TOC {
+    margin-bottom: 3em;
+}
+
+h2 {
+    text-align: left;
+    vertical-align: top;
+    background-color: #ffffff;
+    color: #0080c0 ;
+    font: sans-serif;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 5px;
+    margin-left: 1em;
+}
+
+h3 {
+    text-align: left;
+    vertical-align: top;
+    background-color: #ffffff;
+    color: #0080e0;
+    font: sans-serif;
+    font-weight: bold;
+    margin-top: 5px;
+    margin-bottom:3px;
+    margin-left: 1em;
+}
+
+a:link { 
+    color: #0080c0; 
+    text-decoration : none;
+}
+
+a:visited { 
+    color: #0080c0; 
+    text-decoration : none;
+}
+
+a:active {
+    color: white;
+    background-color: #0080c0;
+}
+
+a:hover { 
+    text-decoration: underline;
+}
+
+body {
+    width: 60%;
+    margin-left: 15em;
+    margin-right: 15em;
+}
+
