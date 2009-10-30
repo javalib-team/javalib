@@ -9,7 +9,7 @@ javalib_tutorial.tex: javalib_tutorial.md
 	cat javalib_tutorial_part.tex >> javalib_tutorial.tex
 	cat footer.tex >> javalib_tutorial.tex
 	rm javalib_tutorial_part.tex
-	pandoc -s -c style.css -B header.html --toc -T 'Javalib tutorial' -f markdown -t html -o javalib-tut.html javalib_tutorial.md
+	pandoc -s -c style.css -B header.html --toc -T 'Javalib tutorial' -f markdown -t html javalib_tutorial.md | tidy -q > javalib-tut.html
 
 javalib_tutorial.pdf: javalib_tutorial.tex
 	pdflatex javalib_tutorial.tex
