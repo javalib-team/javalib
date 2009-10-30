@@ -31,7 +31,7 @@ type jopcode =
   (* Access to a local variable *)
   | OpLoad of jvm_type * int
   | OpStore of jvm_type * int
-  | OpIInc of int * int (** index, increment *)
+  | OpIInc of int * int                 (** index, increment *)
 
   (* Stack permutation *)
   | OpPop
@@ -46,15 +46,15 @@ type jopcode =
 
   (* Constant loading / it corresponds to instructions *const* and ldc* *)
   | OpConst of [
-    | `ANull (** AConstNull  *)
-    | `Int of int32
-    | `Long of int64
-    | `Float of float
-    | `Double of float
-    | `Byte of int (** BIPush *)
-    | `Short of int
-    | `String of string
-    | `Class of object_type
+    | `ANull                            (** AConstNull  *)
+    | `Int of int32                     (** IConst / ldc / ldc_w *)
+    | `Long of int64                    (** LConst / ldc2w  *)
+    | `Float of float                   (** FConst / ldc / ldc_w *)
+    | `Double of float                  (** DConst / ldc2w  *)
+    | `Byte of int                      (** BIPush *)
+    | `Short of int                     (** SIPush *)
+    | `String of string                 (** ldc / ldc_w  *)
+    | `Class of object_type             (** ldc / ldc_w *)
     ]
 
   (* Arithmetic *)
@@ -106,8 +106,8 @@ type jopcode =
   | OpGoto of int
   | OpJsr of int
   | OpRet of int
-  | OpTableSwitch of int * int32 * int32 * int array (* (default,low,high,jump offsets) *)
-  | OpLookupSwitch of int * (int32 * int) list       (* (default, (match,offset) list) *)
+  | OpTableSwitch of int * int32 * int32 * int array (** (default,low,high,jump offsets) *)
+  | OpLookupSwitch of int * (int32 * int) list       (** (default, (match,offset) list) *)
 
   (* Heap and static fields *)
   | OpNew of class_name
