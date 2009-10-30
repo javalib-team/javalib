@@ -2,7 +2,7 @@ From 1.8.1 to 2
 ---------------
 Main changes:
 * the library has been refocused on the class representation: everything dealing
-  with the program representation has been removed (and put into SAWJA).
+  with the program representation has been removed (and put into Sawja).
 
 New features:
 * adding maps and sets for all indexed types: their implementation is based on
