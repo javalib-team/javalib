@@ -228,6 +228,8 @@ let exception_handler exc =
        | Some cl -> s := !s ^ Printf.sprintf "class %s" (class_name cl));
     !s ^ ")"
 
+(* TODO: take a local variable table as argument to replace variable number with
+   their name. *)
 let jopcode_jvm =
   let sprintf = Printf.sprintf in
     function
