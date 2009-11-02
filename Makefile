@@ -8,11 +8,14 @@ ptrees:
 javalib:ptrees
 	$(MAKE) -C src
 
+install:
+	$(MAKE) -C ptrees $@
+	$(MAKE) -C src $@
+
 cleanall clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C ptrees $@
-
-doc:
-	$(MAKE) -C src doc
-cleandoc:
-	$(MAKE) -C src cleandoc
+	$(MAKE) -C doc $@
+cleandoc doc:
+	$(MAKE) -C src $@
+	$(MAKE) -C doc $@

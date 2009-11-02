@@ -16,7 +16,7 @@
 # License along with this program.  If not, see 
 # <http://www.gnu.org/licenses/>.
 
-EXTLIB_PATH=+extlib
+EXTLIB_PATH=+site-lib/extlib
 CAMLZIP_PATH=+zip
 
 INSTALL_DIR = `ocamlc -where`/javaLib
@@ -32,7 +32,10 @@ OCAMLDOC = ocamldoc.opt
 OCAMLDEP = ocamldep.opt
 OCAMLMKTOP = ocamlmktop
 
-RECODE = -pp "recode UTF-8..Latin-1 <"
+# Uncomment the following line if you have recode on your system (otherwise,
+# some name and other characters in the documentation will not appear the right
+# way)
+# RECODE = -pp "recode UTF-8..Latin-1 <"
 
 INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
 PP = -pp camlp4o.opt

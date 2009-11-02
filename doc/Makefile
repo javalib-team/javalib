@@ -9,4 +9,7 @@ $(DEST)/README:intro.html aboutversion.html history.html documentation.html cont
 	for i in $^ ; do lynx -dump "$$i" >> $@ ;done
 
 clean:
-	rm -f $(DEST)/INSTALL $(DEST)/README *~
+	rm -f *~
+cleanall:clean
+cleandoc:clean
+	rm -f $(DEST)/INSTALL $(DEST)/README
