@@ -113,7 +113,7 @@ The methods you need are in the *Javalib* module. You can open this
 module cause you will need it very often.
 
 ~~~~~
-    open javalib
+    open Javalib
 ~~~~~
 
 Then, you need to build a **class_path** to specify where the classes
