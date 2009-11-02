@@ -16,6 +16,7 @@ cleanall clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C ptrees $@
 	$(MAKE) -C doc $@
+	$(RM) *~
 cleandoc doc:
 	$(MAKE) -C src $@
 	$(MAKE) -C doc $@

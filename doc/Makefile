@@ -1,5 +1,6 @@
 DEST=..
-all: $(DEST)/INSTALL $(DEST)/README
+doc: $(DEST)/INSTALL $(DEST)/README
+all:doc
 
 $(DEST)/INSTALL:install.html
 	lynx -dump $< > $@

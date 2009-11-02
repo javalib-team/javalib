@@ -20,7 +20,7 @@ EXTLIB_PATH=+site-lib/extlib
 CAMLZIP_PATH=+zip
 
 INSTALL_DIR = `ocamlc -where`/javaLib
-DOCDIR = doc
+DOCDIR = doc/api
 
 OPT_FLAGS=-noassert -ccopt -O3
 
