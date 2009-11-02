@@ -19,11 +19,15 @@ and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a> 
 <ul class="code">
   <li>sudo make install
 </ul>
-<p>Otherwise, you can install ExtLib with:
+<p>Otherwise, you can install ExtLib with:</p>
 <ul class="code">
   <li>sudo mkdir `ocamlc -where`/extlib
   <li>sudo cp *.{cmi,cma,a,mli,cmxa} `ocamlc -where`/extlib
 </ul>
+<p>If you install ExtLib like this, you will have to edit the Makefile.config
+  file in javalib's directory and
+  replace <span class="code">+site-lib/extlib</span>
+  with <span class="code">+extlib</span>.
 
 <h3>CamlZip</h3>
 <p>To build and install CamlZip (if the version you download is 1.03):</p>
@@ -35,11 +39,10 @@ and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a> 
 </ul>
 
 <h3>Javalib</h3>
-<p>To build and install Javalib (if version is 2.0):</p>
+<p>To build and install Javalib (if version is 2.0.1):</p>
 <ul class="code">
-  <li>tar jxf javalib-2.0.tar.bz2
-  <li>cd javalib-2.0
-  <li>cp Makefile.config.example Makefile.config
+  <li>tar jxf javalib-2.0.1.tar.bz2
+  <li>cd javalib-2.0.1
   <li>make all
   <li>sudo make install
 </ul>
