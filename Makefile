@@ -1,4 +1,4 @@
-.PHONY:ptrees all javalib cleanall doc
+.PHONY:all ptrees javalib install clean cleanall cleandoc doc
 
 all:ptrees javalib
 
