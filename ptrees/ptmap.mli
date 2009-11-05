@@ -100,6 +100,7 @@ module type S = sig
 
   val partition: ('a -> bool) -> 'a t -> 'a t * 'a t
 
+  (** [elements m] return the unsorted list of bindings of [m].  *)
   val elements: 'a t -> (int * 'a) list
 
 end

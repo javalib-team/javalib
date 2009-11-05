@@ -147,22 +147,6 @@ let remove k t =
 	  t
   in rmv t
 
-let remove_eq k a f t =
-  let rec rmv = function
-    | Empty -> Empty
-    | Leaf (j,b) as t->
-	if (k == j) && (f a b) then Empty
-	else t
-    | Branch (p,m,t0,t1) as t ->
-	if match_prefix k p m then
-	  if zero_bit k m then
-	    branch (p, m, rmv t0, t1)
-	  else
-	    branch (p, m, t0, rmv t1)
-	else
-	  t
-  in rmv t
-
 let rec choose_and_remove = function
   | Empty -> raise Not_found
   | Leaf (j,d) -> (j,d,Empty)
@@ -329,6 +313,22 @@ let rec inter s1 s2 =
 
 
 let diff f t1 t2 =
+  let remove_eq k a f t =
+    let rec rmv = function
+      | Empty -> Empty
+      | Leaf (j,b) as t->
+	  if (k == j) && (f a b) then Empty
+	  else t
+      | Branch (p,m,t0,t1) as t ->
+	  if match_prefix k p m then
+	    if zero_bit k m then
+	      branch (p, m, rmv t0, t1)
+	    else
+	      branch (p, m, t0, rmv t1)
+	  else
+	    t
+    in rmv t
+  in
   let id = fun x _ -> x in
   let rec diff t1 t2 =
     match (t1,t2) with
@@ -366,7 +366,7 @@ let rec exists p = function
 (*   | Leaf (_,a) as t -> if pr a then t else Empty *)
 (*   | Branch (p,m,t0,t1) -> branch (p, m, filter pr t0, filter pr t1) *)
 
-(* implementation which keeps as much of the original tree (same addresses) which *)
+(* implementation which keeps as much of the original tree (same addresses) *)
 let filter pr map =
   let rec filter = function
     | Empty -> false,Empty
@@ -384,10 +384,22 @@ let filter pr map =
             false, b
   in snd (filter map)
 
-let rec filteri pr = function
-  | Empty -> Empty
-  | Leaf (k,a) as t -> if pr k a then t else Empty
-  | Branch (p,m,t0,t1) -> branch (p, m, filteri pr t0, filteri pr t1)
+let filteri pr map =
+  let rec filteri = function
+    | Empty -> false,Empty
+    | Leaf (k,a) as t -> if pr k a then (false,t) else (true,Empty)
+    | Branch (p,m,t0,t1) as b ->
+        let (m0,t0') = filteri t0
+        and (m1,t1') = filteri t1
+        in
+          if m0 || m1
+          then
+            let t0 = if m0 then t0' else t0
+            and t1 = if m1 then t1' else t1
+            in true, branch (p,m, t0, t1)
+          else
+            false, b
+  in snd (filteri map)
 
 let rec filter_map pr = function
   | Empty -> Empty
@@ -417,6 +429,4 @@ let elements s =
     | Leaf (k,a) -> (k,a) :: acc
     | Branch (_,_,l,r) -> elements_aux (elements_aux acc l) r
   in
-    (* unfortunately there is no easy way to get the elements in ascending
-       order with little-endian Patricia trees *)
-  List.sort Pervasives.compare (elements_aux [] s)
+    elements_aux [] s
