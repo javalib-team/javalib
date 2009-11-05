@@ -315,7 +315,8 @@ val map_interface_or_class_context :
 type class_path
 
 (** [class_path cp] opens a class path from the list [cp] of
-    directories and jar files separated by {!JFile.sep}.  jar files in
+    directories and jar files separated by a colon (:) under Unix and
+    Cygwin and a semi-colon (;) under Windows (or MinGW).  jar files in
     the given directories are also considered, but they are not looked
     for recursively.  If [cp] is empty([""]), then the current
     directory is used.  Note: the order matters: the search stops when

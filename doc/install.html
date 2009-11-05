@@ -1,56 +1,56 @@
-<a name="installation" />
+<a id="installation" />
 <h2>Installation</h2>
 
 
 <p>
-You need <a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1) 
-and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a> (&gt;=1.03).
+You need
+<a href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>
+(&gt;=1.2.3),
+<a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1)
+and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a>
+(&gt;=1.03).
 </p>
 
 <h3>ExtLib</h3>
-<p>To build ExtLib (if the version you download is 1.5.1):</p>
-<ul class="code">
-  <li>tar zxf extlib-1.5.1.tar.gz
-  <li>cd extlib-1.5.1
-  <li>make all opt
-</ul>
-
-<p>If you have ocamlfind, you can install ExtLib with:</p>
-<ul class="code">
-  <li>sudo make install
-</ul>
-<p>Otherwise, you can install ExtLib with:</p>
-<ul class="code">
-  <li>sudo mkdir `ocamlc -where`/extlib
-  <li>sudo cp *.{cmi,cma,a,mli,cmxa} `ocamlc -where`/extlib
-</ul>
-<p>If you install ExtLib like this, you will have to edit the Makefile.config
-  file in javalib's directory and
-  replace <span class="code">+site-lib/extlib</span>
-  with <span class="code">+extlib</span>.
+<p>To build and install ExtLib (if the version you have downloaded is
+1.5.1):</p>
+<ol class="code">
+  <li>tar zxf extlib-1.5.1.tar.gz</li>
+  <li>cd extlib-1.5.1</li>
+  <li>sed -i 's/"1.5"/"1.5.1"/' META.txt</li>
+  <li>make all opt</li>
+  <li>sudo make install</li>
+</ol>
+<p><em>Note: Step 3 fixes a bug in the version number stored in the META file of
+    ExtLib.</em></p>
 
 <h3>CamlZip</h3>
-<p>To build and install CamlZip (if the version you download is 1.03):</p>
-<ul class="code">
-  <li>tar zxf camlzip-1.03.tar.gz
-  <li>cd camlzip
-  <li>make all allopt
-  <li>sudo make install installopt
-</ul>
+<p>To build and install CamlZip (if the version you have downloaded is
+1.04):</p>
+<ol class="code">
+  <li>tar zxf camlzip-1.04.tar.gz</li>
+  <li>cd camlzip</li>
+  <li>make all allopt</li>
+  <li>sudo make install installopt</li>
+</ol>
 
 <h3>Javalib</h3>
-<p>To build and install Javalib (if version is 2.0.1):</p>
-<ul class="code">
-  <li>tar jxf javalib-2.0.1.tar.bz2
-  <li>cd javalib-2.0.1
-  <li>make all
-  <li>sudo make install
-</ul>
-<p style="font-style:italic">Note: If something went wrong at some
-point, you might have to edit Makefile.config just before compiling
-Javalib.</p>
+<p>To build and install Javalib (if the version you have downdloaded is 2.0.1)
+(you may skip Step 3 if you installed CamlZip using Findlib - either manually or
+with a package manager): </p>
+<ol class="code">
+  <li>tar jxf javalib-2.0.1.tar.bz2</li>
+  <li>cd javalib-2.0.1</li> 
+  <li>sudo make -C camlzip</li>
+  <li>make ptrees</li>
+  <li>sudo make installptrees</li>
+  <li>make all</li>
+  <li>sudo make install</li>
+</ol>
+<p style="font-style:italic">Note: If something went wrong at some point, you
+  might have to edit Makefile.config.</p>
 
 <p>If you want the documentation:</p>
 <ul class="code">
-  <li>make doc
+  <li>make doc</li>
 </ul>

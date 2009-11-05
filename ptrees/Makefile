@@ -21,36 +21,34 @@
 MODULES=ptmap.ml ptset.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli
 
+.PHONY : all clean cleanall cleandoc doc install remove
+
 all:ptrees.cma ptrees.cmxa
 
-install: ptrees.cma ptrees.cmxa
-	mkdir -p $(INSTALL_DIR)
-	cp -f ptrees.cma ptrees.cmxa ptrees.a $(MODULE_INTERFACES:.mli=.cmi) $(INSTALL_DIR)
-	cp -f $(MODULE_INTERFACES) $(INSTALL_DIR)
-
-.PHONY : default all clean cleanall doc
-
-
+install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.mli=.cmi)
+	$(INSTALL) ptrees $^ ptrees.a
+remove:
+	ocamlfind remove ptrees
 ptrees.cma:$(MODULES:.ml=.cmo)
-	$(OCAMLC) $(OCAMLFLAGS) -o $@ -a $^
+	$(OCAMLC) $(FLAGS) -o $@ -a $^
 
 ptrees.cmxa:$(MODULES:.ml=.cmx)
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) -o $@ -a $^
+	$(OCAMLOPT) -o $@ -a $^
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .cma .cmxa
 
 .ml.cmo:.depend Makefile
-	$(OCAMLC) $(OCAMLFLAGS) -c $< 
+	$(OCAMLC) $(FLAGS) -c $< 
 .mli.cmi:.depend Makefile
-	$(OCAMLC) $(OCAMLFLAGS) -c $<
+	$(OCAMLC) $(FLAGS) -c $<
 .ml.cmx:.depend Makefile
-	$(OCAMLOPT) $(OCAMLOPTFLAGS) -c $< 
+	$(OCAMLOPT) -c $< 
 
 # Clean up
 clean:
-	rm -f *.o *.a *.cm[iox] *~ *.annot .depend
+	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend
 cleanall:clean
-	rm -f *.cma *.cmxa
+	$(RM) *.cma *.cmxa
 
 # Dependencies
 .depend:Makefile $(MODULE_INTERFACES) $(MODULES)

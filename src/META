@@ -1,0 +1,8 @@
+# -*-conf-*-
+version = "2.0.1"
+description = "library to parse Java .class files"
+requires = "unix,str,extlib,zip,ptrees"
+archive(native) = "javalib.cmxa"
+archive(byte) = "javalib.cma"
+#archive(gprof) = javalib-gprof.cmxa
+#archive(debug) ...

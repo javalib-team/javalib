@@ -1,6 +1,7 @@
-.PHONY:all ptrees javalib install clean cleanall cleandoc doc
+.PHONY:all ptrees installptrees javalib install clean cleanall cleandoc doc
 
-all:ptrees javalib
+# should do : 
+all:javalib
 
 ptrees:
 	$(MAKE) -C ptrees
@@ -8,8 +9,9 @@ ptrees:
 javalib:ptrees
 	$(MAKE) -C src
 
-install:
-	$(MAKE) -C ptrees $@
+installptrees removeptrees:%ptrees:
+	$(MAKE) -C ptrees $*
+install remove:
 	$(MAKE) -C src $@
 
 cleanall clean:

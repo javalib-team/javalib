@@ -1,0 +1,5 @@
+# -*-conf-*-
+version = "1.1"
+description = "Maps and Sets of integers based on Patricia trees (efficient implementation)"
+archive(native) = "ptrees.cmxa"
+archive(byte) = "ptrees.cma"

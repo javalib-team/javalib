@@ -1,3 +1,4 @@
+# -*-Makefile-*-
 # This file is part of JavaLib
 # Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
 # Copyright (c)2007 Laurent Hubert (CNRS)
@@ -16,36 +17,39 @@
 # License along with this program.  If not, see 
 # <http://www.gnu.org/licenses/>.
 
-EXTLIB_PATH=+site-lib/extlib
-CAMLZIP_PATH=+zip
-
-INSTALL_DIR = `ocamlc -where`/javaLib
 DOCDIR = doc/api
 
-OPT_FLAGS=-noassert -ccopt -O3
+# set to yes to keep debugging information in native library or to prof to
+# profile (with gprof) your program
+#
+# DEBUG = {yes|no|prof}
+DEBUG = yes
 
-DEBUG=no
-CMO=no
-
-OCAMLC = ocamlc.opt -w Ae -dtypes -g
-OCAMLDOC = ocamldoc.opt
-OCAMLDEP = ocamldep.opt
-OCAMLMKTOP = ocamlmktop
-
-# Uncomment the following line if you have recode on your system (otherwise,
-# some name and other characters in the documentation will not appear the right
-# way)
+# use for to convert the documentation to fix some accent problems
 # RECODE = -pp "recode UTF-8..Latin-1 <"
 
-INCLUDE = -I $(EXTLIB_PATH) -I $(CAMLZIP_PATH)
+# you can remove .opt if you only have camlp4o
 PP = -pp camlp4o.opt
 
+FLAGS = -w Ae -dtypes
+OPT_FLAGS = -noassert -ccopt -O3
+
+OCAMLC = ocamlfind ocamlc
+OCAMLDOC = ocamlfind ocamldoc
+OCAMLDEP = ocamlfind ocamldep
+OCAMLMKTOP = ocamlfind ocamlmktop
+INSTALL = ocamlfind install
+
+INCLUDE = -package unix,str,extlib,zip,ptrees
+
+
+
 ifeq ($(DEBUG),yes)
-OCAMLOPT = ocamlopt.opt -g
+OCAMLOPT = ocamlfind ocamlopt -g
 else
 ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlopt.opt -p $(OPT_FLAGS)
+OCAMLOPT = ocamlfind ocamlopt -p $(OPT_FLAGS)
 else
-OCAMLOPT = ocamlopt.opt $(OPT_FLAGS)
+OCAMLOPT = ocamlfind ocamlopt $(OPT_FLAGS)
 endif
 endif

@@ -284,7 +284,7 @@ exception Class_structure_error of string
 
 (** {2 Containers.} *)
 
-(** Common signature of set containers based on {!Ptmap} implementation. *)
+(** Common signature of set modules based on the Ptrees library. *)
 module type GenericSetSig =
 sig
   type t
@@ -309,7 +309,7 @@ sig
   (* val choose_and_remove : t -> elt * t *)
 end
 
-(** Common signature of map containers based on {!Ptmap} implementation. *)
+(** Common signature of map modules based on Ptrees library. *)
 module type GenericMapSig =
 sig
   type 'a t
