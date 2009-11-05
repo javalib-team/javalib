@@ -294,20 +294,20 @@ val get_fields : 'a interface_or_class -> any_field FieldMap.t
     application is {b lazy}: [f] is not applied until [Lazy.force] is called on
     the implementation: be careful if you use side-effects. *)
 val map_concrete_method :
-  ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
+  ?force:bool -> ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
 
 (** [map_interface_or_class f ioc] lazily applies [f] to all non-native method
     implementations of the interface or class [ioc].  The application of [f] is
     {b lazy} (cf {!Javalib.map_concrete_method}).  *)
 val map_interface_or_class :
-  ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+  ?force:bool -> ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
 
 (** [map_interface_or_class_context f ioc] lazily applies [f] to all non-native
     method implementations of the interface or class [ioc], giving the concrete
     method being transformed as argument to [f].  The application of [f] is {b
     lazy} (cf {!Javalib.map_concrete_method}).  *)
 val map_interface_or_class_context :
-  ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+  ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
 
 (** {2 Files manipulations.} *)
 

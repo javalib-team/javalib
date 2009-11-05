@@ -264,16 +264,16 @@ val iter_fields : (field_signature -> any_field -> unit) -> 'a interface_or_clas
 (** {2 Transforming code representation.} *)
 
 val map_concrete_method :
-  ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
+  ?force:bool -> ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
 
-val map_class : ('a -> 'b) -> 'a jclass -> 'b jclass
-val map_interface : ('a -> 'b) -> 'a jinterface -> 'b jinterface
+val map_class : ?force:bool -> ('a -> 'b) -> 'a jclass -> 'b jclass
+val map_interface : ?force:bool -> ('a -> 'b) -> 'a jinterface -> 'b jinterface
 val map_interface_or_class :
-  ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+  ?force:bool -> ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
 
 val map_class_context :
-  ('a concrete_method -> 'a -> 'b) -> 'a jclass -> 'b jclass
+  ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a jclass -> 'b jclass
 val map_interface_context :
-  ('a concrete_method -> 'a -> 'b) -> 'a jinterface -> 'b jinterface
+  ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a jinterface -> 'b jinterface
 val map_interface_or_class_context :
-  ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+  ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
