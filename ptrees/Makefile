@@ -51,7 +51,7 @@ cleanall:clean
 	$(RM) *.cma *.cmxa
 
 # Dependencies
-.depend:Makefile $(MODULE_INTERFACES) $(MODULES)
+.depend: ../Makefile.config $(MODULE_INTERFACES) $(MODULES)
 	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > $@
 
 ifneq ($(MAKECMDGOALS),clean)

@@ -89,7 +89,7 @@ cleandoc:
 	$(RM) -r $(DOCDIR)
 
 # Dependencies
-.depend:$(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
+.depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(PP) $^ > $@
 
 ifneq ($(MAKECMDGOALS),clean)
