@@ -363,9 +363,9 @@ val iter : (JCode.jcode interface_or_class -> unit) -> string -> unit
 (** Abstract type representing a list of directories. *)
 type directories
 
-(** [make_directories directories] returns an abstract [directories] type.
-    The string [directories] must be a list of files separated by
-    {!JFile.sep}. Only directories are filtered. *)
+(** [make_directories directories] returns an abstract [directories] type.  The
+    string [directories] must be a list of files separated by ":" under Unix or
+    ";" under Windows. Only directories are filtered. *)
 val make_directories : string -> directories
 
 (** The following functions search for class files in the following order :

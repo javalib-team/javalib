@@ -7,8 +7,7 @@ You need
 <a href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>
 (&gt;=1.2.3),
 <a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1)
-and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a>
-(&gt;=1.03).
+and CamlZip (&gt;=1.03) (provided in the archive).
 </p>
 
 <h3>ExtLib</h3>
@@ -24,26 +23,17 @@ and <a href="http://cristal.inria.fr/~xleroy/software.html#camlzip">CamlZip</a>
 <p><em>Note: Step 3 fixes a bug in the version number stored in the META file of
     ExtLib.</em></p>
 
-<h3>CamlZip</h3>
-<p>To build and install CamlZip (if the version you have downloaded is
-1.04):</p>
-<ol class="code">
-  <li>tar zxf camlzip-1.04.tar.gz</li>
-  <li>cd camlzip</li>
-  <li>make all allopt</li>
-  <li>sudo make install installopt</li>
-</ol>
-
 <h3>Javalib</h3>
 <p>To build and install Javalib (if the version you have downdloaded is 2.0.1)
-(you may skip Step 3 if you installed CamlZip using Findlib - either manually or
-with a package manager): </p>
+  (you may skip Step 3 and 4 if you already have installed CamlZip using Findlib
+  - either manually or with a package manager): </p>
 <ol class="code">
   <li>tar jxf javalib-2.0.1.tar.bz2</li>
   <li>cd javalib-2.0.1</li> 
-  <li>sudo make -C camlzip</li>
-  <li>make ptrees</li>
-  <li>sudo make installptrees</li>
+  <li>make -C camlzip</li>
+  <li>sudo make -C camlzip install</li>
+  <li>make -C ptrees</li>
+  <li>sudo make -C ptrees install</li>
   <li>make all</li>
   <li>sudo make install</li>
 </ol>
