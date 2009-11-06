@@ -46,7 +46,7 @@ libcamlzip.a: $(C_OBJS)
 
 clean:
 	rm -f *.cm* *~
-	rm -f *.o *.a
+	rm -f *.o *.a *.so
 
 install:
 	ocamlfind install camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
