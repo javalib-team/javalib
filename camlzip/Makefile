@@ -52,8 +52,8 @@ install:
 	ocamlfind install camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
 		libcamlzip.a $(wildcard dll*.so) zip.cmxa zip.a zip.cmx gzip.cmx
 
-depend:
-	gcc -MM -I$(ZLIB_INCLUDE) *.c > .depend
+.depend:
+	gcc -MM -I`ocamlc -where` -I$(ZLIB_INCLUDE) *.c > .depend
 	ocamldep *.mli *.ml >> .depend
 
-include .depend
+-include .depend
