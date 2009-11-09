@@ -6,32 +6,22 @@
 You need
 <a href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>
 (&gt;=1.2.3),
-<a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1)
-and CamlZip (&gt;=1.03) (provided in the archive).
+<a href="http://code.google.com/p/ocaml-extlib/">ExtLib</a> (&gt;=1.5.1) and
+CamlZip (&gt;=1.03).  ExtLib and CamlZip are provided with Javalib, Findlib is
+probably available through your package manager if you have one.
 </p>
 
-<h3>ExtLib</h3>
-<p>To build and install ExtLib (if the version you have downloaded is
-1.5.1):</p>
-<ol class="code">
-  <li>tar zxf extlib-1.5.1.tar.gz</li>
-  <li>cd extlib-1.5.1</li>
-  <li>sed -i 's/"1.5"/"1.5.1"/' META.txt</li>
-  <li>make all opt</li>
-  <li>sudo make install</li>
-</ol>
-<p><em>Note: Step 3 fixes a bug in the version number stored in the META file of
-    ExtLib.</em></p>
-
-<h3>Javalib</h3>
 <p>To build and install Javalib (if the version you have downdloaded is 2.0.1)
-  (you may skip Step 3 and 4 if you already have installed CamlZip using Findlib
-  - either manually or with a package manager): </p>
+  (you may skip Step 3 and 4, repectively 5 and 6, if you already have installed
+  CamlZip, respectively ExtLib, using Findlib - either manually or with a
+  package manager): </p>
 <ol class="code">
   <li>tar jxf javalib-2.0.1.tar.bz2</li>
-  <li>cd javalib-2.0.1</li> 
+  <li>cd javalib-2.0.1</li>
   <li>make -C camlzip</li>
   <li>sudo make -C camlzip install</li>
+  <li>make -C extlib</li>
+  <li>sudo make -C extlib install</li>
   <li>make -C ptrees</li>
   <li>sudo make -C ptrees install</li>
   <li>make all</li>

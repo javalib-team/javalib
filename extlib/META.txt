@@ -1,0 +1,4 @@
+version="1.5.1"
+description = "Extended Standard Library for Objective Caml"
+archive(byte)="extLib.cma"
+archive(native)="extLib.cmxa"
