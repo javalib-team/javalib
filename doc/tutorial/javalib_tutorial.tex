@@ -1,0 +1,395 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% GENERATED FILE, DO NOT MODIFY.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage[mathletters]{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage{listings}
+
+\title{Javalib Tutorial}
+\author{Nicolas Barré}
+
+\begin{document}
+
+\maketitle
+\newpage
+
+\tableofcontents
+\newpage
+\section{Introduction}
+
+\emph{Javalib} is a library written in \emph{OCaml} with the aim to
+provide a high level representation of \emph{Java} \textbf{.class}
+files. Thus it stands for a good starting point for people who want
+to develop static analysis for \emph{Java} byte-code programs,
+benefiting from the strength of \emph{OCaml} language.
+
+This document briefly presents the API provided by \emph{Javalib}
+and gives some samples of code in \emph{OCaml}.
+
+\section{Global architecture}
+
+The user interface consists of three modules, \emph{JBasics},
+\emph{JCode} and \emph{Javalib}. These modules are the only ones
+someone should need to write static analysis. The other ones
+provide lower level functions and should not be used.
+
+\subsection{\emph{JBasics} module}
+
+This module gives a representation of all the basic types that
+appear at the byte-code level.
+
+These types are:
+
+\begin{itemize}
+\item
+  JVM very basic types (such as int, float, double, \ldots{})
+\item
+  JVM more elaborated types (arrays, objects)
+\item
+  class names, method signatures and field signatures
+\item
+  others: constant pool types and stackmaps types
+\end{itemize}
+The types representing class names, method signatures and field
+signatures are abstract. The directives to build them are in
+\emph{JBasics} and are respectively \textbf{make\_cn},
+\textbf{make\_ms} and \textbf{make\_fs}.
+
+This module also provides some sets and maps containers relative to
+the abstract class names, field signatures and method signatures.
+These maps and sets are very efficient because they rely on the
+hidden indexation of each abstract type, thereby reducing the cost
+of comparison operations between types. Moreover the maps are based
+on \emph{Patricia Trees} implementation, that is known to be really
+fast.
+
+\subsection{\emph{JCode} module}
+
+This module provides a representation of the JVM opcodes and of the
+code structure at the byte-code level.
+
+It is important to notice that the code is represented by an array
+of opcodes, and that the position of an opcode in this array
+corresponds to its relative address in the original binary file
+(this is the same numbering as \textbf{javap}). In \emph{Javalib}
+representation, an opcode includes an instruction and its
+arguments. That's why we needed to introduce a dummy opcode
+\textbf{OpInvalid} to keep the correct numbering.
+
+\subsection{\emph{Javalib} module}
+
+This is the main module of \emph{Javalib} which contains the
+definition of classes, fields and methods types, some methods to
+get a high level representation from binary classes and an internal
+module \emph{JPrint} to pretty-print or dump every type defined in
+the three user modules.
+
+\section{Tutorial}
+
+To begin this tutorial, open an \emph{OCaml} toplevel, for instance
+using the \emph{Emacs} \textbf{tuareg-mode}, and load the following
+libraries in the given order:
+
+\begin{verbatim}
+    #load "str.cma"
+    #load "unix.cma"
+    #load "extLib.cma"
+    #load "zip.cma"
+    #load "ptrees.cma"
+    #load "javalib.cma"
+\end{verbatim}
+Don't forget the associated \textbf{\#directory} directives that
+allow you to specify the paths where to find these libraries.
+
+You can also build a toplevel including all these libraries using
+the command \textbf{make ocaml} in the sources repository of
+\emph{Javalib}. This command builds an executable named
+\textbf{ocaml} which is the result of the \textbf{ocamlmktop}
+command.
+
+\subsection{Making class names, field signatures and method signatures}
+
+Imagine you want to access the method
+\textbf{m:(Ljava.lang.String;)V} and the field \textbf{f:I} of the
+class \textbf{A}.
+
+You first need to build the signatures associated to each entity.
+According to the \emph{Javalib} API you will write:
+
+\begin{verbatim}
+    open JBasics
+    let aname = make_cn "A"
+    let java_lang_string = make_cn "java.lang.String"
+    let ms =
+    make_ms "m" [TObject (TClass java_lang_string)] None
+    let fs = make_fs "f" (TBasic `Int)
+\end{verbatim}
+\subsection{Getting a class representation from a binary file}
+
+The methods you need are in the \emph{Javalib} module. You can open
+this module cause you will need it very often.
+
+\begin{verbatim}
+    open Javalib
+\end{verbatim}
+Then, you need to build a \textbf{class\_path} to specify where the
+classes you want to load have to be found:
+
+\begin{verbatim}
+    let class_path = class_path "./" (* for instance *)
+\end{verbatim}
+You can now load the class \textbf{./A.class} corresponding to
+\textbf{aname}.
+
+\begin{verbatim}
+    let a = get_class class_path aname
+\end{verbatim}
+When you don't need a classpath any more, close it with
+\textbf{close\_class\_path} if you don't want to get file
+descriptors exceptions in a near futur.
+
+\subsection{Getting fields and methods from a class}
+
+You now have the class \textbf{a} of type
+\emph{Javalib.interface\_or\_class}. You might want to recover its
+method \textbf{m} of type \emph{Javalib.jmethod} and field
+\textbf{f} of type \emph{Javalib.any\_field}.
+
+Simply do:
+
+\begin{verbatim}
+    let m = get_method a ms
+    let f = get_field a fs
+\end{verbatim}
+\begin{description}
+\item[Note:]
+The methods \textbf{get\_method} and \textbf{get\_field} raise the
+exception \textbf{Not\_found} if the method or field asked for
+can't be found.
+\end{description}
+It's important to notice that \textbf{a} can be a
+\emph{Class of jclass} or an \emph{Interface of jinterface} (see
+type \emph{interface\_or\_class}), but that the methods
+\textbf{get\_method} and \textbf{get\_field} work equaly on it.
+That's why \textbf{get\_field} returns a value of type
+\emph{any\_field} which can be \emph{ClassField of class\_field} or
+\emph{Interface\_field of interface\_field}. Indeed, according to
+the JVM specification, we need to make the distinction between
+interface fields and class fields.
+
+\subsection{A more sophisticated example}
+
+Now we would like to write a function that takes a
+\textbf{classpath} and a \textbf{classname} as parameters and that
+returns, for each method of this class, a set of the fields
+accessed for reading (instructions \textbf{getstatic} and
+\textbf{getfield}).
+
+Here is the code:
+
+\begin{verbatim}
+    open Javalib
+    open JBasics
+    open JCode
+
+    let get_accessed_fields (class_path : class_path)
+     (cn : class_name) =
+     (* We first recover the interface or class associated to the
+        class name cn. *)
+     let c = get_class class_path cn in
+     (* Then, we get all the methods of c. *)
+     let methods : jvm_code jmethod MethodMap.t = get_methods c in
+     (* For each method of c, we associate a field set containing
+        all the accessed fields. *)
+       MethodMap.map
+        (fun m ->
+          match m with
+          (* A method can be abstract or concrete. *)
+           | AbstractMethod _ ->
+             (* An abstract method has no code to parse. *)
+              FieldSet.empty
+           | ConcreteMethod cm ->
+              (match cm.cm_implementation with
+              (* A concrete method can be native so that we don't
+                 know its behaviour. In this case we suppose that
+                 no fields have been accessed which is not safe. *)
+                | Native -> FieldSet.empty
+                | Java code ->
+                  (* The code is stored in a lazy structure, for
+                     performance purposes. Indeed when loading a
+                     class the Javalib does not parse its methods. *)
+                   let jcode = Lazy.force code in
+                   (* We iter on the array of opcodes, building our
+                      field set at the same time. *)
+                     Array.fold_left
+                      (fun s op ->
+                        match op with
+                         | OpGetField (_, fs)
+                         | OpGetStatic (_, fs) ->
+                      (* We add the field signature in our field set.
+                         In this example, we ignore the classes in
+                         which the fields are defined. *)
+                            FieldSet.add fs s
+                         | _ -> s
+                      ) FieldSet.empty jcode.c_code
+              )
+        ) methods
+\end{verbatim}
+This method has the signature
+
+\begin{verbatim}
+    Javalib.class_path ->
+      JBasics.class_name -> JBasics.FieldSet.t JBasics.MethodMap.t
+\end{verbatim}
+\subsection{Another use case}
+
+Consider the following class written in java:
+
+\begin{verbatim}
+    public class TestString{
+       public boolean m(String s){
+          if (s.equals("str")){
+             return true;
+          } else{
+             return false;
+          }
+       }
+    }
+\end{verbatim}
+We see that the method \emph{m} might raise an \emph{NullPointer}
+exception if we call the method \emph{equals} on an uninitialized
+string \emph{s}. To avoid this, a good practice is to replace the
+test \textbf{s.equals(``str'')} by the expression
+\textbf{``str''.equals(s)} which will return false rather than
+raising an exception.
+
+Let's see the bytecode associated to the method \emph{m}, given by
+\textbf{javap}:
+
+\begin{verbatim}
+    public boolean m(java.lang.String);
+      Code:
+       0:   aload_1
+       1:   ldc     #2; //String str
+       3:   invokevirtual   #3; //Method
+               java/lang/String.equals:(Ljava/lang/Object;)Z
+\end{verbatim}
+We will now write a sample of code that detects instructions of
+type \textbf{ldc `string'} followed by an \textbf{invokevirtual} on
+\emph{java.lang.String.equals} method.
+
+We first need to write a function that returns the next instruction
+and its program point in a code, given this code and a current
+program point:
+
+\begin{verbatim}
+    let rec next_instruction (code : jopcodes) (pp : int)
+      : (jopcode * int) option =
+     try
+       match code.(pp+1) with
+        | OpInvalid -> next_instruction code (pp+1)
+        | op -> Some (op,pp+1)
+     with _ -> None
+\end{verbatim}
+Now we define a function that takes a \emph{classpath} and a
+\emph{classname} as parameters and that returns a map associating
+each concrete method signature to a list of
+(\textbf{int},\textbf{string}) couples representing the program
+points and the strings on which the \emph{java.lang.String.equals}
+method is called.
+
+\begin{verbatim}
+    let get_equals_calls (class_path : class_path)
+      (cn : class_name) =
+     (* We first recover the interface or class associated to the
+        class name cn. *)
+     let java_lang_string = make_cn "java.lang.String" in
+     let equals_ms =
+       make_ms "equals" [TObject (TClass java_lang_object)]
+        (Some (TBasic `Bool)) in
+     let c = get_class class_path cn in
+     (* Then, we get all the concrete methods of c. *)
+     let methods : jvm_code concrete_method MethodMap.t =
+       get_concrete_methods c in
+     (* For each concrete method of c, we associate a (int*string) list
+        containing all the strings passed as parameters to
+        String.equals method, associated to the program point where the
+        call occurs. *)
+       MethodMap.map
+        (fun m ->
+         (match m.cm_implementation with
+           (* A concrete method can be native so that we don't
+              know its behaviour. In this case we suppose that
+              no call to String.equals which is not safe. *)
+           | Native -> []
+           | Java code ->
+             (* The code is stored in a lazy structure, for
+                performance purposes. Indeed when loading a
+                class the Javalib does not parse its methods. *)
+              let jcode = Lazy.force code in
+              let code = jcode.c_code in
+              let l = ref [] in
+              (* We iter on the array of opcodes, building
+                  our list of (int*string) at the same time. *)
+                Array.iteri
+                 (fun pp op ->
+                   match op with
+                    | OpConst (`String s) ->
+                      (* We detect that a string s is pushed on the
+                         stack. The next instruction might be an
+                         invokevirtual on String.equals. *)
+                       (match (next_instruction code pp) with
+                         | Some (inst,ppi) ->
+                            (match inst with
+                              | OpInvoke (`Virtual (TClass cn), ms)
+                                 when cn = java_lang_string
+                                   && ms = equals_ms ->
+                                (* We add the program point of the
+                                   invokevirtual and the pushed string
+                                   in our list. *)
+                                 l := (ppi, s) :: !l
+                              | _ -> ()
+                            )
+                         | None -> ()
+                       )
+                    | _ -> ()
+                 ) code;
+              (* We simply return our list, in the reverse order so that
+                 the program points appear in ascending order. *)
+                List.rev !l
+         )
+        ) methods
+\end{verbatim}
+This method has the signature
+
+\begin{verbatim}
+    Javalib.class_path ->
+      JBasics.class_name -> (int * string) list JBasics.MethodMap.t
+\end{verbatim}
+We obtain the expected result on the previous class
+\emph{TestString}:
+
+\begin{verbatim}
+    # let cp = class_path ".";;
+    val cp : Javalib.class_path = <abstr>
+
+    # let cn = make_cn "TestString";;
+    val cn : JBasics.class_name = <abstr>
+
+    # let mmap = get_equals_calls cp cn;;
+    val mmap : (int * string) list JBasics.MethodMap.t = <abstr>
+
+    # let l = 
+        let sk = List.map (ms_name) (MethodMap.key_elements mmap)
+        and sv = MethodMap.value_elements mmap in
+          List.combine sk sv;;
+    val l : (string * (int * string) list) list =
+      [("m", [(3, "str")]); ("<init>", [])]
+
+    # let () = close_class_path cp;;
+\end{verbatim}
+
+\end{document}
