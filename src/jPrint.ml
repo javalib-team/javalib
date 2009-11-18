@@ -206,8 +206,8 @@ let stack_map (offset,locals,stack) =
     | VLong -> "Long"
     | VNull -> "Null"
     | VUninitializedThis -> "UninitializedThis"
-    | VObject c -> Printf.sprintf "Object %s" (object_type c)
-    | VUninitialized off -> Printf.sprintf "Uninitialized %d" off
+    | VObject c -> "Object " ^(object_type c)
+    | VUninitialized off -> "Uninitialized " ^(string_of_int off)
   in
   let s = ref (Printf.sprintf "\n      offset=%d,\n      locals=[" offset) in
     List.iter
@@ -237,19 +237,20 @@ let jopcode_jvm =
       | OpConst x ->
           (match x with
 	     | `ANull -> "aconstnull"
-	     | `Int i -> sprintf "iconst %ld" i
-	     | `Long i -> sprintf "lconst %Ld" i
-	     | `Float f -> sprintf "fconst %f" f
-	     | `Double f -> sprintf "dconst %f" f
-	     | `Byte n -> sprintf "bipush %d" n
-	     | `Short a -> sprintf "sipush %d " a
-	     | `Class c -> sprintf "ldc class %s" (object_type ~jvm:true c)
-	     | `String s -> sprintf "ldc string '%s'" s)
+	     | `Int i -> "iconst " ^ (Int32.to_string i)
+	     | `Long i -> "lconst %Ld" ^ (Int64.to_string i)
+	     | `Float f -> "fconst " ^ (string_of_float f)
+	     | `Double f -> "dconst " ^(string_of_float f)
+	     | `Byte n -> "bipush " ^ (string_of_int n)
+	     | `Short a -> "sipush " ^ (string_of_int a)
+	     | `Class c -> "ldc class " ^ (object_type ~jvm:true c)
+	     | `String s -> "ldc string '"^s^"'")
 
       | OpLoad (k,n) ->
           (match k with
-	     | `Object -> sprintf "aload %d" n
-	     | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%cload %d" (JDumpBasics.jvm_basic_type k) n)
+	     | `Object -> "aload " ^(string_of_int n)
+	     | `Int2Bool | `Long | `Float | `Double as k ->
+                 sprintf "%cload %d" (JDumpBasics.jvm_basic_type k) n)
 
       | OpArrayLoad k ->
           (match k with
@@ -257,13 +258,15 @@ let jopcode_jvm =
 	     | `ByteBool -> "baload"
 	     | `Char -> "caload"
 	     | `Short -> "saload"
-	     | `Int -> sprintf "%caload" (JDumpBasics.jvm_basic_type `Int2Bool)
-	     | `Long | `Float | `Double as k -> sprintf "%caload" (JDumpBasics.jvm_basic_type k))
+	     | `Int -> "iaload"
+	     | `Long | `Float | `Double as k ->
+                 sprintf "%caload" (JDumpBasics.jvm_basic_type k))
 
       | OpStore (k,n) ->
           (match k with
-	     | `Object -> sprintf "astore %d" n
-	     | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%cstore %d" (JDumpBasics.jvm_basic_type k) n)
+	     | `Object -> "astore " ^(string_of_int n)
+	     | `Int2Bool | `Long | `Float | `Double as k ->
+                 sprintf "%cstore %d" (JDumpBasics.jvm_basic_type k) n)
 
       | OpArrayStore k ->
           (match k with
@@ -271,8 +274,9 @@ let jopcode_jvm =
 	     | `ByteBool -> "bastore"
 	     | `Char -> "castore"
 	     | `Short -> "sastore"
-	     | `Int -> sprintf "%castore" (JDumpBasics.jvm_basic_type `Int2Bool)
-	     | `Long | `Float | `Double as k -> sprintf "%castore" (JDumpBasics.jvm_basic_type k))
+	     | `Int -> "iastore"
+	     | `Long | `Float | `Double as k ->
+                 sprintf "%castore" (JDumpBasics.jvm_basic_type k))
 
       | OpPop -> "pop"
       | OpPop2 -> "pop2"
@@ -304,7 +308,7 @@ let jopcode_jvm =
       | OpIXor -> "ixor"
       | OpLXor -> "lxor"
 
-      | OpIInc (a,b) -> sprintf "iinc %d %d" a b
+      | OpIInc (a,b) -> "iinc "^(string_of_int a)^" "^ (string_of_int b)
 
       | OpI2L -> "i2l"
       | OpI2F -> "i2f"
@@ -331,38 +335,41 @@ let jopcode_jvm =
 	     | `DG -> "dcmpg")
       | OpIf (x, n) ->
           (match x with
-	       `Eq -> sprintf "ifeq %d" n
-	     | `Ne -> sprintf "ifne %d" n
-	     | `Lt -> sprintf "iflt %d" n
-	     | `Ge -> sprintf "ifge %d" n
-	     | `Gt -> sprintf "ifgt %d" n
-	     | `Le -> sprintf "ifle %d" n
-	     | `Null -> sprintf "ifnull %d" n
-	     | `NonNull -> sprintf "ifnonnull %d" n)
+	       `Eq -> "ifeq " ^ (string_of_int n)
+	     | `Ne -> "ifne " ^ (string_of_int n)
+	     | `Lt -> "iflt " ^ (string_of_int n)
+	     | `Ge -> "ifge " ^ (string_of_int n)
+	     | `Gt -> "ifgt " ^ (string_of_int n)
+	     | `Le -> "ifle " ^ (string_of_int n)
+	     | `Null -> "ifnull " ^ (string_of_int n)
+	     | `NonNull -> "ifnonnull " ^ (string_of_int n))
       | OpIfCmp (x, n) ->
           (match x with
-	       `IEq -> sprintf "ifcmpeq %d" n
-	     | `INe -> sprintf "ifcmpne %d" n
-	     | `ILt -> sprintf "ifcmplt %d" n
-	     | `IGe -> sprintf "ifcmpge %d" n
-	     | `IGt -> sprintf "ifcmpgt %d" n
-	     | `ILe -> sprintf "ifcmpme %d" n
-	     | `AEq -> sprintf "ifacmpeq %d" n
-	     | `ANe -> sprintf "ifacmpne %d" n)
-      | OpGoto n -> sprintf "goto %d" n
-      | OpJsr n -> sprintf "jsr %d" n
-      | OpRet n -> sprintf "ret %d" n
+	       `IEq -> "ifcmpeq " ^ (string_of_int n)
+	     | `INe -> "ifcmpne " ^ (string_of_int n)
+	     | `ILt -> "ifcmplt " ^ (string_of_int n)
+	     | `IGe -> "ifcmpge " ^ (string_of_int n)
+	     | `IGt -> "ifcmpgt " ^ (string_of_int n)
+	     | `ILe -> "ifcmpme " ^ (string_of_int n)
+	     | `AEq -> "ifacmpeq " ^ (string_of_int n)
+	     | `ANe -> "ifacmpne " ^ (string_of_int n))
+      | OpGoto n -> "goto " ^ (string_of_int n)
+      | OpJsr n -> "jsr " ^ (string_of_int n)
+      | OpRet n -> "ret " ^ (string_of_int n)
 
       | OpTableSwitch (def,min,max,tbl) ->
           (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
-          let inst = "tableswitch (["^ Int32.to_string min ^":"^ Int32.to_string max ^"] -> ["
+          let inst = 
+            "tableswitch (["^ Int32.to_string min
+            ^":"^ Int32.to_string max ^"] -> ["
           and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
           in inst^table^"],default:"^ string_of_int def^")"
 
       | OpLookupSwitch (default,jumps) ->
           let inst =
 	    List.fold_left
-	      (fun s (int,offset) -> s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
+	      (fun s (int,offset) ->
+                 s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
 	      "lookupswitch "
 	      jumps
           in inst ^ "_ ->" ^string_of_int default
@@ -371,45 +378,47 @@ let jopcode_jvm =
           (match k with
 	     | `Object -> "areturn"
 	     | `Void -> "return"
-	     | `Int2Bool | `Long | `Float | `Double as k -> sprintf "%creturn" (JDumpBasics.jvm_basic_type k))
+	     | `Int2Bool | `Long | `Float | `Double as k ->
+                 sprintf "%creturn" (JDumpBasics.jvm_basic_type k))
 
       | OpGetStatic (cs, fs) ->
-	  sprintf "getstatic %s" (field_signature ~jvm:true ~declared_in:cs fs)
+	  "getstatic "^ (field_signature ~jvm:true ~declared_in:cs fs)
       | OpPutStatic (cs, fs) ->
-	  sprintf "putstatic %s" (field_signature ~jvm:true ~declared_in:cs fs)
+	  "putstatic " ^ (field_signature ~jvm:true ~declared_in:cs fs)
       | OpPutField (cs, fs) ->
-	  sprintf "putfield %s" (field_signature ~jvm:true ~declared_in:cs fs)
+	  "putfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
       | OpGetField (cs, fs) ->
-	  sprintf "getfield %s" (field_signature ~jvm:true ~declared_in:cs fs)
+	  "getfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
       | OpInvoke (x, ms) ->
 	  (match x with
 	     | `Virtual t ->
-	         sprintf "invokevirtual %s"
+	         "invokevirtual " ^
                    (method_signature ~jvm:true ~callee:t ms)
 	     | `Special cs ->
-	         sprintf "invokespecial %s"
+	         "invokespecial " ^
                    (method_signature ~jvm:true ~callee:(TClass cs) ms)
 	     | `Static cs ->
-	         sprintf "invokestatic %s"
+	         "invokestatic " ^
                    (method_signature ~jvm:true ~callee:(TClass cs) ms)
 	     | `Interface cs ->
-	         sprintf "invokeinterface %s"
+	         "invokeinterface " ^
                    (method_signature ~jvm:true ~callee:(TClass cs) ms)
 	  )
-      | OpNew cs -> sprintf "new %s" (class_name cs)
+      | OpNew cs -> "new " ^ (class_name cs)
       | OpNewArray t ->
           (match t with
-	     | TBasic t -> sprintf "newarray %s" (java_basic_type ~jvm:true t)
+	     | TBasic t -> "newarray " ^ (java_basic_type ~jvm:true t)
 	     | TObject c ->
-	         sprintf "anewarray %s" (object_type ~jvm:true c)
+	         "anewarray " ^ (object_type ~jvm:true c)
           )
       | OpArrayLength -> "arraylength"
       | OpThrow -> "athrow"
-      | OpCheckCast t -> sprintf "checkcast %s" (object_type ~jvm:true t)
-      | OpInstanceOf t -> sprintf "instanceof %s" (object_type ~jvm:true t)
+      | OpCheckCast t -> "checkcast " ^ (object_type ~jvm:true t)
+      | OpInstanceOf t -> "instanceof " ^ (object_type ~jvm:true t)
       | OpMonitorEnter -> "monitorenter"
       | OpMonitorExit -> "monitorexit"
-      | OpAMultiNewArray (t,b) -> sprintf "amultinewarray %s %d" (object_type ~jvm:true t) b
+      | OpAMultiNewArray (t,b) ->
+          "amultinewarray " ^(object_type ~jvm:true t) ^ " " ^ (string_of_int b)
       | OpBreakpoint -> "breakpoint"
 
       | OpInvalid -> "invalid"
@@ -418,7 +427,7 @@ let jopcode ?(jvm=false) op =
   if jvm then jopcode_jvm op
   else
     match op with
-      | OpNew cn -> Printf.sprintf "new %s" (cn_name cn)
+      | OpNew cn -> "new " ^ (cn_name cn)
       | OpNewArray v ->
 	  (match v with
 	     | TBasic b -> Printf.sprintf "newarray %s" (java_basic_type b)
@@ -598,7 +607,8 @@ let print_method ?(jvm=false) (m:'a jmethod) (f:'a -> string list)
   let fmt = Format.formatter_of_out_channel out in
     print_method_fmt indent_val header instructions fmt
 
-(* TODO: maybe add implemented interfaces and extended classes in class description. *)
+(* TODO: maybe add implemented interfaces and extended classes in class
+   description. *)
 (* TODO: using a string list for instruction is not efficient (string
    concatenation is expensive) *)
 let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
