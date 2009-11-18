@@ -34,7 +34,7 @@ PP = -pp camlp4o.opt
 FLAGS = -w Ae -dtypes
 OPT_FLAGS = -noassert -ccopt -O3
 
-OCAMLC = ocamlfind ocamlc
+OCAMLC = ocamlfind ocamlc $(FLAGS)
 OCAMLDOC = ocamlfind ocamldoc
 OCAMLDEP = ocamlfind ocamldep
 OCAMLMKTOP = ocamlfind ocamlmktop
