@@ -461,8 +461,8 @@ let map_interface_context ?(force=false) f i =
 let map_interface ?(force=false) f i = map_interface_gen (map_concrete_method ~force:force) f i
 
 let map_interface_or_class ?(force=false) f = function
-  | JInterface i -> JInterface (map_interface f i)
-  | JClass c -> JClass (map_class f c)
+  | JInterface i -> JInterface (map_interface ~force f i)
+  | JClass c -> JClass (map_class ~force f c)
 
 let map_interface_or_class_context ?(force=false) f = function
   | JInterface i -> JInterface (map_interface_context ~force:force f i)
