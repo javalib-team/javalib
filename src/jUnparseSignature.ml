@@ -29,7 +29,8 @@ open JSignature
 
 let encode_class_name cs =
   let cn = cn_name cs in
-    Str.global_replace (Str.regexp "\\.") "/" cn
+    ExtString.String.map
+      (fun c -> if c = '.' then '/' else c) cn
 
 let unparse_basic_type = function
   | `Byte -> "B"
