@@ -198,9 +198,10 @@ let get_source_line_number pp code =
     | None -> None
     | Some lnt ->
         let rec find_line prev = function
-          | (start_pc,_)::_ when (start_pc > pp) -> Some prev
-          | (_,line_number)::r -> find_line line_number r
+          | (start_pc,line_number)::r ->
+	      if (start_pc > pp) then Some prev
+	      else find_line line_number r
           | [] -> Some prev
         in
-          try find_line (fst (List.hd lnt)) lnt
+          try find_line (snd (List.hd lnt)) lnt
           with _ -> None
