@@ -164,6 +164,44 @@ let write_class_low output_dir classe =
 
 let write_class output_dir classe = write_class_low output_dir (JHigh2Low.high2low classe)
 
+let dir_sep =
+  match Sys.os_type with
+    | "Unix" -> "/"	
+    | "Win32" -> "\\"
+    | "Cygwin" -> "/"
+    | _ -> assert false (* Inspirated from filename.ml in the stdlib *)
+
+let extract_class_name_from_file file =
+  let input = IO.input_channel (open_in_bin file) in
+  let c = JParse.parse_class_low_level input in
+    IO.close_in input;
+    let cname = c.j_name in
+    let package = cn_package cname in
+    let path = ExtString.String.nsplit (Filename.dirname file) dir_sep in
+    let ends_with l endl =
+      let (b,rl) =
+	List.fold_left
+	  (fun (b,rl) e ->
+	     match rl with
+	       | [] -> (false, [])
+	       | hd :: tl ->
+		 if (hd = "") then (b,tl)
+		   (* Happens when multiple consecutive separators. *)
+		 else if (b && e = hd) then (true,tl)
+		 else (false,rl)
+	  ) (true,List.rev l) (List.rev endl) in
+	(b,List.rev rl) in
+    let (b,l) = ends_with path package in
+      if b then
+	let classpath = String.concat dir_sep l in
+	  (cname, classpath)
+      else
+	(* Should we be permissive or not ? 
+	   Because in this case the java command will fail.*)
+	let classpath = String.concat dir_sep l in
+	  (cname, classpath)
+      
+
 (* Try to open a string as a directory and recursively applies f to
    every .class file in it. Throws ENOTDIR or ENOENT otherwise. *)
 let rec apply_to_dir f s =

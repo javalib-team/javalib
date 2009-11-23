@@ -352,6 +352,11 @@ val get_class : class_path -> class_name -> jcode interface_or_class
     place.  *)
 val write_class : string -> JCode.jcode interface_or_class -> unit
 
+(** [extract_class_name_from_file f] recovers a class name and a class path
+    from a file path [f].
+    @raise Sys_error if [f] is not a file. [f] must contain the [.class] extension. **)
+val extract_class_name_from_file : string -> JBasics.class_name * string
+
 (** {3 More advanced files manipulations.} *)
 
 (** [iter f filename] applies the function successively the function [f] on each

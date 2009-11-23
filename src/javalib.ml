@@ -33,4 +33,3 @@ struct
   include JPrint
 end
 
-let iter = JFile.iter
