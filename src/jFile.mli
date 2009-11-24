@@ -74,9 +74,9 @@ val write_class : string -> JCode.jcode JClass.interface_or_class -> unit
 (** Same as {! write_class} with low level class files. *)
 val write_class_low : string -> JClassLow.jclass -> unit
 
-(** [extract_class_name_from_file f] recovers a class name and a class path
-    from a file name [f].
-    @raise Sys_error if [f] is not a file. [f] must contain the [.class] extension. **)
+(** [extract_class_name_from_file f] recovers a class name and a class
+    path from the file [f]. @raise Sys_error if [f] is not a file. [f]
+    must contain the [.class] extension. *)
 val extract_class_name_from_file : string -> JBasics.class_name * string
 
 (** {2 Reading/transforming a set of classes.} *)

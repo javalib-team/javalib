@@ -177,27 +177,28 @@ let extract_class_name_from_file file =
     IO.close_in input;
     let cname = c.j_name in
     let package = cn_package cname in
-    let path = ExtString.String.nsplit (Filename.dirname file) dir_sep in
+    let path =
+      let p = ExtString.String.nsplit (Filename.dirname file) dir_sep in
+	match p with
+	  | [] -> []
+	  | hd :: tl ->
+	      (* We delete the unwanted empty strings due to the
+		 presence of multiple consecutive separators in
+		 file. *)
+	      hd :: (ExtList.List.remove_all tl "") in
     let ends_with l endl =
-      let (b,rl) =
-	List.fold_left
-	  (fun (b,rl) e ->
-	     match rl with
-	       | [] -> (false, [])
-	       | hd :: tl ->
-		 if (hd = "") then (b,tl)
-		   (* Happens when multiple consecutive separators. *)
-		 else if (b && e = hd) then (true,tl)
-		 else (false,rl)
-	  ) (true,List.rev l) (List.rev endl) in
-	(b,List.rev rl) in
+      let n = List.length l in
+      let endn = List.length endl in
+      let (hl,tl) = ExtList.List.split_nth (n - endn) l in
+	if (tl = endl) then (true,hl)
+	else (false,l) in
     let (b,l) = ends_with path package in
       if b then
 	let classpath = String.concat dir_sep l in
 	  (cname, classpath)
       else
 	(* Should we be permissive or not ? 
-	   Because in this case the java command will fail.*)
+	   Because in this case the java command will fail. *)
 	let classpath = String.concat dir_sep l in
 	  (cname, classpath)
       
