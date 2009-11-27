@@ -189,9 +189,12 @@ let extract_class_name_from_file file =
     let ends_with l endl =
       let n = List.length l in
       let endn = List.length endl in
-      let (hl,tl) = ExtList.List.split_nth (n - endn) l in
-	if (tl = endl) then (true,hl)
-	else (false,l) in
+	try
+	  let (hl,tl) =
+	    ExtList.List.split_nth (n - endn) l in
+	    if (tl = endl) then (true,hl)
+	    else (false,l)
+	with ExtList.List.Invalid_index _ -> (false,l) in
     let (b,l) = ends_with path package in
       if b then
 	let classpath = String.concat dir_sep l in
