@@ -25,9 +25,10 @@ Those are the internal modules of Javalib.  You should not need to look into
 those files unless you do rely advanced stuff (and in this case we would love to
 have some feedback).
 
-{!JDumpBasics}, {!JSignature}, {!JClass}, {!JFile}, {!JParseCode}, {!JParse},
-{!JParseSignature}, {!JUnparse}, {!JUnparseSignature}, {!JInstruction}, {!JLow2High},
-{!JHigh2Low}, {!JBasicsLow}, {!JClassLow} and {!JDumpLow}.
+{!JDumpBasics}, {!JSignature}, {!JAnnotation}, {!JClass}, {!JFile},
+{!JParseCode}, {!JParse}, {!JParseSignature}, {!JUnparse}, {!JUnparseSignature},
+{!JInstruction}, {!JLow2High}, {!JHigh2Low}, {!JBasicsLow}, {!JClassLow} and
+{!JDumpLow}.
 
 {b {L Indexes}}
 
