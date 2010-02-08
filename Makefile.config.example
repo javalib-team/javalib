@@ -31,7 +31,7 @@ DEBUG = yes
 # you can remove .opt if you only have camlp4o
 PP = -pp camlp4o.opt
 
-FLAGS = -g -w Ae -dtypes
+FLAGS = -g -w Ae -annot
 OPT_FLAGS = -noassert -ccopt -O3
 
 OCAMLC = ocamlfind ocamlc $(FLAGS)
