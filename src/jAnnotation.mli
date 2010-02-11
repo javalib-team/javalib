@@ -1,8 +1,6 @@
 (*
  * This file is part of Javalib
- * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
- * Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
- * Copyright (c)2009 Nicolas Barre (INRIA)
+ * Copyright (c)2010 Laurent Hubert (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -40,7 +38,7 @@ type element_value =
     name should correspond to a name of an element of the annotation but this is
     not checked. *)
 and annotation = {
-  kind : string;
+  kind : JBasics.class_name;
   element_value_pairs : (string * element_value) list;
 }
 
@@ -61,6 +59,15 @@ type default_annotation = AnnotationDefault of element_value
 (** shortcut  *)
 type constant_pool = JBasics.constant array
 type attribute = string * string
+
+(** {2 Annotation printing functions} *)
+
+val pp_element_value : Format.formatter -> element_value -> unit
+val pp_annotation : Format.formatter -> annotation -> unit
+val pp_rt_annotations : Format.formatter -> rt_annotations -> unit
+val pp_default_annotation : Format.formatter -> default_annotation -> unit
+
+(** {2 Annotation parsing functions}  *)
 
 (** [parse_RTVisibleAnnotations constant_pool attribute] checks that attribute
     is a RuntimeVisibleAnnotations attribute and parses the attribute.
