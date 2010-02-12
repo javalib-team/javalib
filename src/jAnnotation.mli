@@ -43,14 +43,14 @@ and annotation = {
 }
 
 
+type visibility = RTVisible | RTInvisible
+
 (** [rt_annotations] represent the annotations which are associated with a
     class, a method or a field. [RTVisibleParameter] and [RTInvisibleParameter]
     should only be associated to methods (but it is not checked). *)
 type rt_annotations =
-  | RTVisible of annotation list
-  | RTInvisible of annotation list
-  | RTVisibleParameter of annotation list list
-  | RTInvisibleParameter of annotation list list
+  | Annotations of visibility * (annotation list)
+  | ParameterAnnotations of visibility * (annotation list list)
 
 (** A [default_annotation] may only be associated with method of annotation
     class and represents the default value of the corresponding element. *)
@@ -58,7 +58,7 @@ type default_annotation = AnnotationDefault of element_value
 
 (** shortcut  *)
 type constant_pool = JBasics.constant array
-type attribute = string * string
+type attributes = (string * string) list
 
 (** {2 Annotation printing functions} *)
 
@@ -69,39 +69,14 @@ val pp_default_annotation : Format.formatter -> default_annotation -> unit
 
 (** {2 Annotation parsing functions}  *)
 
-(** [parse_RTVisibleAnnotations constant_pool attribute] checks that attribute
-    is a RuntimeVisibleAnnotations attribute and parses the attribute.
+(** [parse_RTAnnotations constant_pool attribute] parse the run-time annotations
+    founds in attribute and return them along with the other attributes that
+    have not been parsed. *)
+val parse_RTAnnotations : constant_pool -> attributes -> rt_annotations list * attributes
 
-    @raise Invalid_Argument if the attribute names differs from
-    ["RuntimeVisibleAnnotation"] *)
-val parse_RTVisibleAnnotations : constant_pool -> attribute -> rt_annotations
-
-(** [parse_RTInvisibleAnnotations constant_pool attribute] checks that attribute
-    is a RuntimeInvisibleAnnotations attribute and parses the attribute.
-
-    @raise Invalid_Argument if the attribute names differs from
-    ["RuntimeInvisibleAnnotation"] *)
-val parse_RTInvisibleAnnotations : constant_pool -> attribute -> rt_annotations
-
-(** [parse_RTVisibleParameterAnnotations constant_pool attribute] checks that
-    attribute is a RuntimeVisibleParameterAnnotations attribute and parses the
-    attribute.
-
-    @raise Invalid_Argument if the attribute names differs from
-    ["RuntimeVisibleParameterAnnotation"] *)
-val parse_RTVisibleParameterAnnotations : constant_pool -> attribute -> rt_annotations
-
-(** [parse_RTInvisibleParameterAnnotations constant_pool attribute] checks that
-    attribute is a RuntimeInvisibleParameterAnnotations attribute and parses the
-    attribute.
-
-    @raise Invalid_Argument if the attribute names differs from
-    ["RuntimeInvisibleParameterAnnotation"] *)
-val parse_RTInvisibleParameterAnnotations : constant_pool -> attribute -> rt_annotations
-
-(** [parse_AnnotationDefault constant_pool attribute] checks that attribute is a
-    AnnotationDefault attribute and parses the attribute.
-
-    @raise Invalid_Argument if the attribute names differs from
-    ["AnnotationDefault"] *)
-val parse_AnnotationDefault : constant_pool -> attribute -> default_annotation
+(** [parse_AnnotationDefault constant_pool attributes] parse all
+    AnnotationDefault annotations found in [attributes] and those annotations
+    and the list of attributes where the annotations parsed have been
+    removed.  *)
+val parse_AnnotationDefault :
+  constant_pool -> attributes -> default_annotation list * attributes

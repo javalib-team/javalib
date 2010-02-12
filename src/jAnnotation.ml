@@ -39,11 +39,13 @@ and annotation = {
      name?) *)
 }
 
+
+type visibility = RTVisible | RTInvisible
+
 type rt_annotations =
-  | RTVisible of annotation list
-  | RTInvisible of annotation list
-  | RTVisibleParameter of annotation list list (* a list for each parameter *)
-  | RTInvisibleParameter of annotation list list (* a list for each parameter *)
+  | Annotations of visibility * (annotation list)
+  | ParameterAnnotations of visibility * (annotation list list)
+      (* a list for each parameter *)
 
 type default_annotation =
     AnnotationDefault of element_value (* cf. §4.8.19 of JVM Spec 5 *)
@@ -88,27 +90,19 @@ let pp_rt_annotations fmt annot =
     Format.pp_open_hvbox fmt 2;
     begin
       match annot with
-        | RTVisible annots ->
-            Format.pp_print_string fmt "[RuntimeVisibleAnnotations";
-            print_space fmt;
-            print_list print_space pp_annotation fmt annots;
-        | RTInvisible annots ->
-            Format.pp_print_string fmt "[RuntimeInvisibleAnnotations";
+        | Annotations (visibility,annots) ->
+            Format.pp_print_string fmt
+              (match visibility with
+                 | RTVisible -> "[RuntimeVisibleAnnotations"
+                 | RTInvisible -> "[RuntimeInvisibleAnnotations");
             print_space fmt;
             print_list print_space pp_annotation fmt annots;
 
-        | RTVisibleParameter annots ->
-            Format.pp_print_string fmt "[RuntimeVisibleParameterAnnotations";
-            print_space fmt;
-            print_list print_space
-              (fun fmt param_annot ->
-                 Format.fprintf fmt "[@[<2>";
-                 print_list print_space pp_annotation fmt param_annot;
-                 Format.fprintf fmt "]@]")
-              fmt
-              annots
-        | RTInvisibleParameter annots ->
-            Format.pp_print_string fmt "[RuntimeInvisibleParameterAnnotations";
+        | ParameterAnnotations (visibility,annots) ->
+            Format.pp_print_string fmt
+              (match visibility with
+                 | RTVisible -> "[RuntimeVisibleParameterAnnotations"
+                 | RTInvisible -> "[RuntimeInvisibleParameterAnnotations");
             print_space fmt;
             print_list print_space
               (fun fmt param_annot ->
@@ -129,7 +123,7 @@ let pp_default_annotation fmt = function
 
 (* shortcuts *)
 type constant_pool = JBasics.constant array
-type attribute = string * string
+type attributes = (string * string) list
 
 let rec parse_element_value (csts:constant_pool) ch =
   let tag = read_byte ch in 
@@ -201,38 +195,81 @@ let parse_parameter_annotations csts ch =
   in
     ExtList.List.init num_parameters (fun _ -> parse_annotations csts ch)
 
-let parse_RTVisibleAnnotations
-    (csts:constant_pool) (att_name,att_value:attribute) =
-  if att_name <> "RuntimeVisibleAnnotations"
-  then invalid_arg "parse_RTVisibleAnnotations"
-  else
-    RTVisible (parse_annotations csts (IO.input_string att_value))
+let parse_RTAnnotations csts attributes =
+  List.fold_right
+    (fun ((att_name,att_value) as att) (rtannots,other_atts) ->
+       match att_name with
+         | "RuntimeVisibleAnnotations" ->
+             let annots =
+               Annotations (RTVisible,
+                            parse_annotations csts (IO.input_string att_value))
+             in
+               (annots::rtannots,other_atts)
+         | "RuntimeInvisibleAnnotations" ->
+             let annots =
+               Annotations (RTInvisible,
+                            parse_annotations csts (IO.input_string att_value))
+             in
+               (annots::rtannots,other_atts)
+         | "RuntimeVisibleParameterAnnotations" ->
+             let annots =
+               ParameterAnnotations
+                 (RTVisible,
+                  parse_parameter_annotations csts (IO.input_string att_value))
+             in
+               (annots::rtannots,other_atts)
+         | "RuntimeInvisibleParameterAnnotations" ->
+             let annots =
+               ParameterAnnotations
+                 (RTInvisible,
+                  parse_parameter_annotations csts (IO.input_string att_value))
+             in
+               (annots::rtannots,other_atts)
+         | _ ->
+             (rtannots,att::other_atts))
+    attributes
+    ([],[])
 
-let parse_RTInvisibleAnnotations
-    (csts:constant_pool) (att_name,att_value:attribute) =
-  if att_name <> "RuntimeInvisibleAnnotations"
-  then invalid_arg "parse_RTInvisibleAnnotations"
-  else
-      RTInvisible (parse_annotations csts (IO.input_string att_value))
+let parse_AnnotationDefault csts attributes =
+  List.fold_right
+    (fun att (other_ad,other_att) ->
+       match att with
+         | "AnnotationDefault",att_value ->
+             let ad =
+               AnnotationDefault
+                 (parse_element_value csts (IO.input_string att_value))
+             in (ad::other_ad, other_att)
+         | _ -> (other_ad, att::other_att)
+    )
+    attributes
+    ([],[])
 
-let parse_RTVisibleParameterAnnotations
-    (csts:constant_pool) (att_name,att_value:attribute) =
-  if att_name <> "RuntimeVisibleParameterAnnotations"
-  then invalid_arg "parse_RTVisibleParameterAnnotations"
-  else
-    RTVisibleParameter
-      (parse_parameter_annotations csts (IO.input_string att_value))
+(* let parse_RTVisibleAnnotations *)
+(*     (csts:constant_pool) (att_name,att_value:attribute) = *)
+(*   if att_name <> "RuntimeVisibleAnnotations" *)
+(*   then invalid_arg "parse_RTVisibleAnnotations" *)
+(*   else *)
+(*     RTVisible (parse_annotations csts (IO.input_string att_value)) *)
 
-let parse_RTInvisibleParameterAnnotations
-    (csts:constant_pool) (att_name,att_value:attribute) =
-  if att_name <> "RuntimeInvisibleParameterAnnotations"
-  then invalid_arg "parse_RTInvisibleParameterAnnotations"
-  else
-    RTInvisibleParameter
-      (parse_parameter_annotations csts (IO.input_string att_value))
+(* let parse_RTInvisibleAnnotations *)
+(*     (csts:constant_pool) (att_name,att_value:attribute) = *)
+(*   if att_name <> "RuntimeInvisibleAnnotations" *)
+(*   then invalid_arg "parse_RTInvisibleAnnotations" *)
+(*   else *)
+(*       RTInvisible (parse_annotations csts (IO.input_string att_value)) *)
 
-let parse_AnnotationDefault (csts:constant_pool) (att_name,att_value:attribute) =
-  if att_name <> "AnnotationDefault"
-  then invalid_arg "parse_AnnotationDefault"
-  else
-    AnnotationDefault (parse_element_value csts (IO.input_string att_value))
+(* let parse_RTVisibleParameterAnnotations *)
+(*     (csts:constant_pool) (att_name,att_value:attribute) = *)
+(*   if att_name <> "RuntimeVisibleParameterAnnotations" *)
+(*   then invalid_arg "parse_RTVisibleParameterAnnotations" *)
+(*   else *)
+(*     RTVisibleParameter *)
+(*       (parse_parameter_annotations csts (IO.input_string att_value)) *)
+
+(* let parse_RTInvisibleParameterAnnotations *)
+(*     (csts:constant_pool) (att_name,att_value:attribute) = *)
+(*   if att_name <> "RuntimeInvisibleParameterAnnotations" *)
+(*   then invalid_arg "parse_RTInvisibleParameterAnnotations" *)
+(*   else *)
+(*     RTInvisibleParameter *)
+(*       (parse_parameter_annotations csts (IO.input_string att_value)) *)
