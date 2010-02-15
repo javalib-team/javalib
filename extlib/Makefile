@@ -9,7 +9,8 @@ MODULES = \
 MLI = $(MODULES:=.mli)
 SRC = $(MLI) $(MODULES:=.ml) extLib.ml
 
-all: 
+all:bc opt
+bc: 
 	ocamlc -a -o extLib.cma $(SRC)
 opt: 
 	ocamlopt -a -o extLib.cmxa $(SRC)
