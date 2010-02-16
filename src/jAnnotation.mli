@@ -80,3 +80,17 @@ val parse_RTAnnotations : constant_pool -> attributes -> rt_annotations list * a
     removed.  *)
 val parse_AnnotationDefault :
   constant_pool -> attributes -> default_annotation list * attributes
+
+
+
+(* type 'a method_annotation = { *)
+(*   parameters : ('a*visibility) list;              (\* could include the receiver *\) *)
+(*   receiver_pre : 'a*visibility; *)
+(*   receiver_post : 'a*visibility; *)
+(*   return : 'a*visibility; *)
+(* } *)
+
+(* val parse_method_annotation : *)
+(*   (~default:'a) -> *)
+(*   (~parse:(~prev:'a) -> annotation -> 'a option) -> 'a method_annotation *)
+

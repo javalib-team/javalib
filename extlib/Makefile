@@ -11,9 +11,9 @@ SRC = $(MLI) $(MODULES:=.ml) extLib.ml
 
 all:bc opt
 bc: 
-	ocamlc -a -o extLib.cma $(SRC)
+	ocamlc -g -a -o extLib.cma $(SRC)
 opt: 
-	ocamlopt -a -o extLib.cmxa $(SRC)
+	ocamlopt -g -a -o extLib.cmxa $(SRC)
 doc:
 	ocamlc -c $(MODULES:=.mli)
 	mkdir -p doc/
