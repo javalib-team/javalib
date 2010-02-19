@@ -239,6 +239,7 @@ type access_flag = [
 | `AccEnum
 ]
 
+
 (** DFr : Addition for 1.6 stackmap. *)
 type stackmap_frame =
   | SameFrame of int
@@ -287,6 +288,11 @@ and attribute =
 	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
   | AttributeStackMapTable of stackmap_frame list
       (** DFr : Addition for 1.6 stackmap. *)
+  | AttributeRuntimeVisibleAnnotations of annotation list
+  | AttributeRuntimeInvisibleAnnotations of annotation list
+  | AttributeRuntimeVisibleParameterAnnotations of annotation list list
+  | AttributeRuntimeInvisibleParameterAnnotations of annotation list list
+  | AttributeAnnotationDefault of element_value  (* cf. §4.8.19 of JVM Spec 5 *)
   | AttributeUnknown of string * string
 
 type jfield = {

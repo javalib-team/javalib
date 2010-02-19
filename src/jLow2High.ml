@@ -260,6 +260,32 @@ let low2high_cfield cn consts fs = function f ->
             raise (Class_structure_error "A field contains more than one Signature attribute asscociated with it.")
       | _ -> assert false
   in
+  let (annotations,other_att) =
+    List.partition
+      (function
+         | AttributeRuntimeVisibleAnnotations _
+         | AttributeRuntimeInvisibleAnnotations _
+           -> true
+         | _ -> false)
+      other_att
+  in let annotations =
+      List.fold_right
+        (fun annot annots ->
+           match annot with
+             | AttributeRuntimeVisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTVisible)::annots)
+                   al
+                   annots
+             | AttributeRuntimeInvisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTInvisible)::annots)
+                   al
+                   annots
+             | _ -> assert false)
+        annotations
+        []
+  in
     {
       cf_signature = fs;
       cf_class_signature = make_cfs cn fs;
@@ -272,6 +298,7 @@ let low2high_cfield cn consts fs = function f ->
       cf_synthetic = is_synthetic;
       cf_enum = is_enum;
       cf_other_flags = flags;
+      cf_annotations = annotations;
       cf_attributes =
 	low2high_attributes consts other_att;
     }
@@ -315,6 +342,32 @@ let low2high_ifield cn consts fs = function f ->
       | [AttributeConstant c] -> Some c
       | _ -> raise (Class_structure_error "An interface field contains more than one Constant Attribute.")
     in
+    let (annotations,other_att) =
+      List.partition
+        (function
+           | AttributeRuntimeVisibleAnnotations _
+           | AttributeRuntimeInvisibleAnnotations _
+             -> true
+           | _ -> false)
+        other_att
+    in let annotations =
+        List.fold_right
+          (fun annot annots ->
+             match annot with
+               | AttributeRuntimeVisibleAnnotations al ->
+                   List.fold_right
+                     (fun a annots -> (a,RTVisible)::annots)
+                     al
+                     annots
+               | AttributeRuntimeInvisibleAnnotations al ->
+                   List.fold_right
+                     (fun a annots -> (a,RTInvisible)::annots)
+                     al
+                     annots
+               | _ -> assert false)
+          annotations
+          []
+    in
       {
 	if_signature = fs;
         if_class_signature = make_cfs cn fs;
@@ -322,6 +375,7 @@ let low2high_ifield cn consts fs = function f ->
 	if_value = cst;
 	if_synthetic = is_synthetic;
 	if_other_flags = flags;
+        if_annotations = annotations;
 	if_attributes = low2high_attributes consts other_att;
       }
 
@@ -373,6 +427,76 @@ let low2high_amethod consts cs ms = function m ->
     | [AttributeExceptions cl] -> cl
     | _ -> raise (Class_structure_error "Only one Exception attribute is allowed in a method.")
   in
+  let (default_annotation,other_att) =
+    List.partition
+      (function | AttributeAnnotationDefault _ -> true | _ -> false)
+      other_att
+  in
+  let default_annotation =
+    match default_annotation with
+      | [] -> None
+      | [AttributeAnnotationDefault ad] -> Some ad
+      | _::_::_ ->
+          raise (Class_structure_error
+                   "A method should not have more than one AnnotationDefault attribute")
+      | [_] -> assert false
+  in
+  let (annotations,other_att) =
+    List.partition
+      (function
+         | AttributeRuntimeVisibleAnnotations _
+         | AttributeRuntimeInvisibleAnnotations _
+           -> true
+         | _ -> false)
+      other_att
+  in let annotations =
+      List.fold_right
+        (fun annot annots ->
+           match annot with
+             | AttributeRuntimeVisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTVisible)::annots)
+                   al
+                   annots
+             | AttributeRuntimeInvisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTInvisible)::annots)
+                   al
+                   annots
+             | _ -> assert false)
+        annotations
+        []
+  in
+  let (parameter_annotations,other_att) =
+    List.partition
+      (function
+         | AttributeRuntimeVisibleParameterAnnotations _
+         | AttributeRuntimeInvisibleParameterAnnotations _
+           -> true
+         | _ -> false)
+      other_att
+  in
+  let parameter_annotations =
+    if parameter_annotations = []
+    then []
+    else
+      try 
+        List.fold_left
+          (fun (res:'a list) -> function
+             | AttributeRuntimeVisibleParameterAnnotations pa ->
+                 let pa = List.map (List.map (fun a -> (a,RTVisible))) pa
+                 in List.map2 (@) pa res
+             | AttributeRuntimeInvisibleParameterAnnotations pa ->
+                 let pa = List.map (List.map (fun a -> (a,RTInvisible))) pa
+                 in List.map2 (@) pa res
+             | _ -> assert false)
+          (List.map (fun _ ->[]) (JBasics.ms_args ms))
+          parameter_annotations
+      with Invalid_argument _ ->
+        raise (Class_structure_error
+                 "The length of an Runtime(In)VisibleParameterAnnotations \
+                  does not match the number of arguments of the same method")
+  in
     {
       am_signature = ms;
       am_class_method_signature = make_cms cs ms;
@@ -384,6 +508,10 @@ let low2high_amethod consts cs ms = function m ->
       am_other_flags = flags;
       am_exceptions = exn;
       am_attributes = low2high_attributes consts other_att;
+      am_annotations =
+        {ma_global = annotations;
+         ma_parameters = parameter_annotations;};
+      am_annotation_default = default_annotation;
     }
 
 let low2high_cmethod consts cs ms = function m ->
@@ -438,9 +566,74 @@ let low2high_cmethod consts cs ms = function m ->
     | [AttributeCode c] when not is_native ->
 	Java (lazy (low2high_code consts (Lazy.force c)))
     | [] when is_native -> Native
-    | [] -> raise (Class_structure_error "A method not declared as Native, nor Abstract has been found without code.")
-    | [_] -> raise (Class_structure_error "A method declared as Native has been found with a code attribute.")
-    | _::_::_ -> raise (Class_structure_error "Only one Code attribute is allowed in a method.")
+    | [] ->
+        raise
+          (Class_structure_error
+             "A method not declared as Native, nor Abstract has been found without code.")
+    | [_] ->
+        raise
+          (Class_structure_error
+             "A method declared as Native has been found with a code attribute.")
+    | _::_::_ ->
+        raise
+          (Class_structure_error
+             "Only one Code attribute is allowed in a method.")
+  in
+  let (annotations,other_att) =
+    List.partition
+      (function
+         | AttributeRuntimeVisibleAnnotations _
+         | AttributeRuntimeInvisibleAnnotations _
+           -> true
+         | _ -> false)
+      other_att
+  in let annotations =
+      List.fold_right
+        (fun annot annots ->
+           match annot with
+             | AttributeRuntimeVisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTVisible)::annots)
+                   al
+                   annots
+             | AttributeRuntimeInvisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTInvisible)::annots)
+                   al
+                   annots
+             | _ -> assert false)
+        annotations
+        []
+  in
+  let (parameter_annotations,other_att) =
+    List.partition
+      (function
+         | AttributeRuntimeVisibleParameterAnnotations _
+         | AttributeRuntimeInvisibleParameterAnnotations _
+           -> true
+         | _ -> false)
+      other_att
+  in
+  let parameter_annotations =
+    if parameter_annotations = []
+    then []
+    else
+      try 
+        List.fold_left
+          (fun (res:'a list) -> function
+             | AttributeRuntimeVisibleParameterAnnotations pa ->
+                 let pa = List.map (List.map (fun a -> (a,RTVisible))) pa
+                 in List.map2 (@) pa res
+             | AttributeRuntimeInvisibleParameterAnnotations pa ->
+                 let pa = List.map (List.map (fun a -> (a,RTInvisible))) pa
+                 in List.map2 (@) pa res
+             | _ -> res)
+          (List.map (fun _ ->[]) (JBasics.ms_args ms))
+          parameter_annotations
+      with Invalid_argument _ ->
+        raise (Class_structure_error
+                 "The length of an Runtime(In)VisibleParameterAnnotations \
+                  does not match the number of arguments of the same method")
   in
     {
       cm_signature = ms;
@@ -457,6 +650,9 @@ let low2high_cmethod consts cs ms = function m ->
       cm_other_flags = flags;
       cm_exceptions = exn;
       cm_attributes = low2high_attributes consts other_att;
+      cm_annotations =
+        {ma_global = annotations;
+         ma_parameters = parameter_annotations;};
       cm_implementation = code;
     }
 
@@ -594,18 +790,38 @@ let low2high_class cl =
                 raise
 		  (Class_structure_error
 		     "A class cannot contain several SourceDebugExtension attribute.")
-    | _ -> assert false
+          | _ -> assert false
     and my_inner_classes =
       let rec find_InnerClasses = function
 	| AttributeInnerClasses icl::_ -> List.rev_map low2high_innerclass icl
 	| _::l -> find_InnerClasses l
 	| [] -> []
       in find_InnerClasses cl.j_attributes
+    and my_annotations =
+      List.fold_right
+        (fun annot annots ->
+           match annot with
+             | AttributeRuntimeVisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTVisible)::annots)
+                   al
+                   annots
+             | AttributeRuntimeInvisibleAnnotations al ->
+                 List.fold_right
+                   (fun a annots -> (a,RTInvisible)::annots)
+                   al
+                   annots
+             | _ -> annots)
+        cl.j_attributes
+        []
     and my_other_attributes =
       low2high_other_attributes consts
 	(List.filter
 	   (function
 	      | AttributeSignature _ | AttributeSourceFile _
+              | AttributeSourceDebugExtension _
+              | AttributeRuntimeVisibleAnnotations _
+              | AttributeRuntimeInvisibleAnnotations _
 	      | AttributeDeprecated | AttributeInnerClasses _ -> false
 	      | AttributeEnclosingMethod _ -> is_interface
 	      | _ -> true)
@@ -652,6 +868,7 @@ let low2high_class cl =
 	      i_other_attributes = my_other_attributes;
 	      i_initializer = init;
 	      i_annotation = is_annotation;
+              i_annotations = my_annotations;
 	      i_other_flags = flags;
 	      i_fields = List.fold_left
 		(fun m f ->
@@ -694,25 +911,33 @@ let low2high_class cl =
       else
 	begin
 	  if is_annotation
-	  then raise (Class_structure_error "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
+	  then
+            raise
+              (Class_structure_error
+                 "Class file with their `AccAnnotation flag set must also have their `AccInterface flag set.");
 	  let my_enclosing_method =
-	    match List.find_all (function AttributeEnclosingMethod _ -> true | _ -> false) cl.j_attributes  with
-	      | [] -> None
-	      | [AttributeEnclosingMethod (cs,mso)] ->
-		  let ms =
-		    match mso with
-		      | None -> None
-		      | Some (mn,SMethod mdesc) ->
-			  Some (make_ms mn (fst mdesc) (snd mdesc))
-		      | Some (_,SValue _) ->
-			  raise
-			    (Class_structure_error
-			       "A EnclosingMethod attribute cannot specify a field as enclosing method.")
-		  in Some (cs, ms)
-	      | _ ->
-		  raise
-		    (Class_structure_error
-		       "A EnclosingMethod attribute can only be specified at most once per class.")
+            let enclosing_method_atts =
+              List.find_all
+                (function AttributeEnclosingMethod _ -> true | _ -> false)
+                cl.j_attributes
+            in
+	      match enclosing_method_atts  with
+	        | [] -> None
+	        | [AttributeEnclosingMethod (cs,mso)] ->
+		    let ms =
+		      match mso with
+		        | None -> None
+		        | Some (mn,SMethod mdesc) ->
+			    Some (make_ms mn (fst mdesc) (snd mdesc))
+		        | Some (_,SValue _) ->
+			    raise
+			      (Class_structure_error
+			         "A EnclosingMethod attribute cannot specify a field as enclosing method.")
+		    in Some (cs, ms)
+	        | _ ->
+		    raise
+		      (Class_structure_error
+		         "A EnclosingMethod attribute can only be specified at most once per class.")
 	  and my_methods =
 	    try low2high_methods my_name consts cl
 	    with
@@ -758,6 +983,7 @@ let low2high_class cl =
 	      c_deprecated = my_deprecated;
 	      c_source_debug_extention = my_source_debug_extention;
 	      c_enclosing_method = my_enclosing_method;
+              c_annotations = my_annotations;
 	      c_inner_classes = my_inner_classes;
 	      c_other_attributes = my_other_attributes;
 	      c_fields = my_fields;

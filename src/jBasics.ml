@@ -145,6 +145,21 @@ exception No_class_found of string
 
 exception Class_structure_error of string
 
+(* Annotations *)
+
+type element_value =
+  | EVCst of constant_value
+  | EVEnum of (string * string)
+      (* (type_name_index,const_name_index) cf. JLS 13.1 *)
+      (* TODO: this should probably be modified but I have not understand how *)
+  | EVClass of value_type option
+  | EVAnnotation of annotation
+  | EVArray of element_value list
+
+and annotation = {
+  kind : class_name;
+  element_value_pairs : (string * element_value) list;
+}
 
 (* Definition of dictionary for indexation. *)
 

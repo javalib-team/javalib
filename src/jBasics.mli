@@ -282,6 +282,30 @@ exception No_class_found of string
 exception Class_structure_error of string
 
 
+(** {2 Annotations} *)
+
+(** [element_value] represents a constant value, either a number, a string, a
+    class, an enum, an array of [element_value]s or another annotation. *)
+type element_value =
+  | EVCst of constant_value
+  | EVEnum of (string * string)
+      (* (type_name_index,const_name_index) cf. JLS 13.1 *)
+      (* TODO: this should probably be modified but I have not understand how *)
+  | EVClass of value_type option
+  | EVAnnotation of annotation
+  | EVArray of element_value list
+
+(** An [annotation] contains the name ([kind]) of the annotation an a list of
+    element-value pairs (the name of the element and its value).  The names
+    given here should corresponds to the elements declared during the definition
+    of the annotation, but this is not checked (as it would need to load
+    additional class files). *)
+and annotation = {
+  kind : class_name;
+  element_value_pairs : (string * element_value) list;
+}
+
+
 (** {2 Containers.} *)
 
 (** Common signature of set modules based on the Ptrees library. *)

@@ -24,7 +24,7 @@
 open JBasics
 open JCode
 
-(** {2 Fields access and attributes.} *)
+(** {2 Common types.} *)
 
 (** Visibility modifiers. *)
 type access = [
@@ -42,6 +42,14 @@ type attributes = {
   deprecated : bool;
   other : (string * string) list
 }
+
+(** visibility modifiers for annotations. An annotation may either be visible at
+    run-time ([RTVisible]) or only present in the class file without being
+    visible at run-time ([RTInvisible]).  (Note that there exists a third
+    visibility at the Java source level, but as it corresponds to the
+    source-only visibility they are not in the class file anymore.)  *)
+type visibility = RTVisible | RTInvisible
+
 
 (** {2 Fields of classes and interfaces.} *)
 (*******************************)
@@ -64,8 +72,9 @@ type class_field = {
   cf_kind : field_kind;
   cf_value : constant_value option; (** Only if the field is static final. *)
   cf_transient : bool;
+  cf_annotations: (annotation*visibility) list;
   cf_other_flags : int list;
-  cf_attributes : attributes
+  cf_attributes : attributes;
 }
 
 (** Fields of interfaces are implicitly [public], [static] and
@@ -75,11 +84,12 @@ type interface_field = {
   if_class_signature : class_field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
-  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+  (** corresponds to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
   if_value : constant_value option;
   (** a constant_value is not mandatory, especially as it can be
       initialized by the class initializer <clinit>. *)
+  if_annotations: (annotation*visibility) list;
   if_other_flags : int list;
   if_attributes : attributes
 }
@@ -93,8 +103,19 @@ type 'a implementation =
   | Native
   | Java of 'a Lazy.t
 
-(* l'attribut final n'a pas vraiment de sens pour une méthode
-   statique, mais c'est autorisé dans la spec JVM. *)
+type method_annotations = {
+  ma_global: (annotation*visibility) list;
+  (** annotations that are for the whole method. *)
+  ma_parameters: (annotation*visibility) list list;
+  (** [\[al1,al2\]] represents the annotations for the 2 parameters of the
+      method, [al1] being the annotations for the first parameter and [al2] the
+      annotations for the second parameter.  The length is either empty or it
+      matches the number of parameters of the method (excluding the receiver
+      this).*)
+}
+
+(* The final attribute has no meaning for a static method, but the JVM spec
+   authorizes it anyway... *)
 type 'a concrete_method = {
   cm_signature : method_signature;
   cm_class_method_signature : class_method_signature;
@@ -107,11 +128,12 @@ type 'a concrete_method = {
   cm_bridge: bool;
   cm_varargs : bool;
   cm_synthetic : bool;
-  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+  (** corresponds to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
+  cm_annotations : method_annotations;
   cm_implementation : 'a implementation;
 }
 
@@ -123,17 +145,21 @@ type abstract_method = {
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
-  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+  (** corresponds to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
+  am_annotations : method_annotations;
+  am_annotation_default : element_value option;
+  (** If the method is in an annotation interface, then [am_annotation_default]
+      may contains a default value for this method (annotation element). *)
 }
 
 
 type 'a jmethod =
-    | AbstractMethod of abstract_method
-    | ConcreteMethod of 'a concrete_method
+  | AbstractMethod of abstract_method
+  | ConcreteMethod of 'a concrete_method
 
 (** {2 Classes and interfaces.} *)
 (***************************)
@@ -147,6 +173,8 @@ type inner_class = {
   ic_final : bool;
   ic_synthetic: bool;
   ic_annotation: bool;
+  (** [true] if and only if the class is an annotation (it should in this case
+      be an interface) *)
   ic_enum: bool;
   ic_other_flags : int list;
   ic_type : [`ConcreteClass | `Abstract | `Interface]
@@ -162,7 +190,9 @@ type 'a jclass = {
   c_generic_signature : JSignature.classSignature option;
   c_fields : class_field FieldMap.t;
   c_interfaces : class_name list;
-  c_consts : constant array; (** needed at least for unparsed/unknown attributes that might refer to the constant pool. *)
+  c_consts : constant array;
+  (** the constant pool is at least needed for unparsed/unknown attributes that
+      might refer to the constant pool. *)
   c_sourcefile : string option;
   c_deprecated : bool;
   c_enclosing_method : (class_name * method_signature option) option;
@@ -181,6 +211,7 @@ type 'a jclass = {
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.2 and §4.8.7) *)
   c_enum: bool;
+  c_annotations: (annotation*visibility) list;
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
   c_methods : 'a jmethod MethodMap.t;
@@ -202,9 +233,12 @@ type 'a jinterface = {
       semantics defined)
       ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
   i_inner_classes : inner_class list;
-  i_other_attributes : (string * string) list;
-  i_initializer : 'a concrete_method option; (* should be static/ signature is <clinit>()V; *)
+  i_initializer : 'a concrete_method option;
+  (** the signature is <clinit>()V; and the method should be static  *)
   i_annotation: bool;
+  (** [true] if and only if the interface is an annotation. *)
+  i_annotations: (annotation*visibility) list;
+  i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t

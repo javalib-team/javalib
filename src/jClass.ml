@@ -39,6 +39,13 @@ type attributes = {
   other : (string * string) list
 }
 
+type visibility = RTVisible | RTInvisible
+
+type method_annotations = {
+  ma_global: (annotation*visibility) list;
+  ma_parameters: (annotation*visibility) list list;
+}
+
 (* {2 Fields of classes and interfaces.} *)
 (*******************************)
 
@@ -58,6 +65,7 @@ type class_field = {
   cf_kind : field_kind;
   cf_value : constant_value option; (* Only if the field is static final. *)
   cf_transient : bool;
+  cf_annotations : (annotation*visibility) list;
   cf_other_flags : int list;
   cf_attributes : attributes
 }
@@ -70,6 +78,7 @@ type interface_field = {
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
   if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_annotations : (annotation*visibility) list;
   if_other_flags : int list;
   if_attributes : attributes
 }
@@ -103,6 +112,7 @@ type 'a concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
+  cm_annotations : method_annotations;
   cm_implementation : 'a implementation;
 }
 
@@ -117,6 +127,8 @@ type abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
+  am_annotations : method_annotations;
+  am_annotation_default : element_value option;
 }
 
 
@@ -159,6 +171,7 @@ type 'a jclass = {
   c_inner_classes : inner_class list;
   c_synthetic: bool;
   c_enum: bool;
+  c_annotations: (annotation*visibility) list;
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
   c_methods : 'a jmethod MethodMap.t;
@@ -177,9 +190,10 @@ type 'a jinterface = {
   i_deprecated : bool;
   i_source_debug_extention : string option;
   i_inner_classes : inner_class list;
-  i_other_attributes : (string * string) list;
   i_initializer : 'a concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
+  i_annotations: (annotation*visibility) list;
+  i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
   i_methods : abstract_method MethodMap.t
@@ -385,6 +399,7 @@ let map_concrete_method ?(force=false) f cm =
     cm_other_flags = cm.cm_other_flags;
     cm_exceptions = cm.cm_exceptions;
     cm_attributes = cm.cm_attributes;
+    cm_annotations = cm.cm_annotations;
     cm_implementation = (match cm.cm_implementation with
 			   | Native -> Native
 			   | Java c -> 
@@ -424,6 +439,7 @@ let map_class_gen map_method f c =
     c_inner_classes = c.c_inner_classes;
     c_synthetic = c.c_synthetic;
     c_enum = c.c_enum;
+    c_annotations = c.c_annotations;
     c_other_flags = c.c_other_flags;
     c_other_attributes = c.c_other_attributes;
     c_methods = MethodMap.map (map_method f) c.c_methods;
@@ -451,6 +467,7 @@ let map_interface_gen map_concrete_method f i =
 			   Some (map_concrete_method f cm)
 		    );
     i_annotation = i.i_annotation;
+    i_annotations = i.i_annotations;
     i_other_flags = i.i_other_flags;
     i_fields = i.i_fields;
     i_methods = i.i_methods;

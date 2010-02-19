@@ -175,6 +175,80 @@ let parse_stackmap_table consts ch =
     else (print_string("Invalid stackmap kind\n");SameLocals(-1,VTop))
   in stackmap
 
+
+(* Annotation parsing *)
+let rec parse_element_value consts ch =
+  let tag = IO.read_byte ch in 
+    match Char.chr tag with
+      | 'B' | 'C' | 'I' | 'S' | 'Z'  (* int constant *)
+      | 'D'                          (* double *)
+      | 'F'                          (* float *)
+      | 'J'                          (* long *)
+      | 's'                          (* string *)
+        ->
+          let constant_value_index = read_ui16 ch in
+          let cst = JBasicsLow.get_constant_value consts constant_value_index in
+            EVCst cst
+      | 'e' ->                          (* enum constant *)
+          (* TODO *)
+          failwith "not implemented"
+      | 'c' ->                          (* class constant *)
+          begin
+            try
+              EVClass (Some (JParseSignature.parse_field_descriptor
+                               (JBasicsLow.get_string consts (read_ui16 ch))))
+            with JBasics.Class_structure_error _ ->
+              EVClass None
+          end
+      | '@' ->                          (* annotation type *)
+          EVAnnotation (parse_annotation consts ch)
+      | '[' ->                          (* array *)
+          let num_values = read_ui16 ch in
+          let values =
+            ExtList.List.init num_values (fun _ -> parse_element_value consts ch)
+          in EVArray values
+      | _ ->
+          raise (JBasics.Class_structure_error
+                   "invalid tag in a element_value of an annotation")
+
+and parse_annotation consts ch =
+  let type_index = read_ui16 ch
+  and nb_ev_pairs = read_ui16 ch
+  in
+  let kind =
+    let kind_value_type =
+      JParseSignature.parse_field_descriptor
+        (JBasicsLow.get_string consts type_index)
+    in
+    match kind_value_type with
+      | JBasics.TObject (JBasics.TClass cn) -> cn
+      | _ ->
+          raise
+            (JBasics.Class_structure_error
+               "An annotation should only be a class")
+  and ev_pairs =
+    ExtList.List.init
+      nb_ev_pairs
+      (fun _ ->
+         let name = JBasicsLow.get_string consts (read_ui16 ch)
+         and value = parse_element_value consts ch
+         in (name, value))
+  in
+    {kind = kind;
+     element_value_pairs = ev_pairs}
+
+
+let parse_annotations consts ch =
+  let num_annotations = read_ui16 ch
+  in
+    ExtList.List.init num_annotations (fun _ -> parse_annotation consts ch)
+
+let parse_parameter_annotations consts ch =
+  let num_parameters = IO.read_byte ch
+  in
+    ExtList.List.init num_parameters (fun _ -> parse_annotations consts ch)
+
+
 let rec parse_code consts ch =
   let max_stack = read_ui16 ch in
   let max_locals = read_ui16 ch in
@@ -351,6 +425,23 @@ and parse_attribute list consts ch =
 	    in
 	      if count() <> alen then error();
 	      AttributeStackMapTable stackmap
+        | "RuntimeVisibleAnnotations" ->
+            check `RuntimeVisibleAnnotations;
+            AttributeRuntimeVisibleAnnotations (parse_annotations consts ch)
+        | "RuntimeInvisibleAnnotations" ->
+            check `RuntimeInvisibleAnnotations;
+            AttributeRuntimeInvisibleAnnotations (parse_annotations consts ch)
+        | "RuntimeVisibleParameterAnnotations" ->
+            check `RuntimeVisibleParameterAnnotations;
+            AttributeRuntimeVisibleParameterAnnotations
+              (parse_parameter_annotations consts ch)
+        | "RuntimeInvisibleParameterAnnotations" ->
+            check `RuntimeInvisibleParameterAnnotations;
+            AttributeRuntimeInvisibleParameterAnnotations
+              (parse_parameter_annotations consts ch)
+        | "AnnotationDefault" ->
+            check `AnnotationDefault;
+            AttributeAnnotationDefault (parse_element_value consts ch)
 	| _ -> raise Exit
     with
 	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
@@ -361,9 +452,16 @@ let parse_field consts ch =
   let sign = parse_field_descriptor (get_string_ui16 consts ch) in
   let attrib_count = read_ui16 ch in
   let attrib_to_parse =
-    if List.exists ((=)`AccStatic) acc
-    then  [`ConstantValue ; `Synthetic ; `Deprecated ; `Signature]
-    else  [`Synthetic ; `Deprecated ; `Signature] in
+    let base_attrib =
+      [`Synthetic ; `Deprecated ; `Signature;
+       `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
+       `RuntimeVisibleParameterAnnotations;
+       `RuntimeInvisibleParameterAnnotations;]
+    in
+      if List.exists ((=)`AccStatic) acc
+      then  `ConstantValue:: base_attrib
+      else  base_attrib
+  in
   let attribs =
     List.init
       attrib_count
@@ -382,8 +480,15 @@ let parse_method consts ch =
   let attrib_count = read_ui16 ch in
   let attribs = List.init attrib_count
     (fun _ ->
-       parse_attribute [`Code ; `Exceptions ; `Synthetic ;
-			`Deprecated ; `Signature] consts ch)
+       let to_parse = 
+         [`Code ; `Exceptions ; `Synthetic ;
+	  `Deprecated ; `Signature;
+          `AnnotationDefault;
+          `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
+          `RuntimeVisibleParameterAnnotations;
+          `RuntimeInvisibleParameterAnnotations;]
+       in
+         parse_attribute to_parse consts ch)
   in
     {
       m_name = name;
@@ -472,9 +577,16 @@ let parse_class_low_level ch =
       List.init
 	attrib_count
 	(fun _ ->
-           parse_attribute
-	     [`SourceFile ; `Deprecated ; `InnerClasses ; `Signature; `EnclosingMethod; `SourceDebugExtension]
-	     consts ch)
+           let to_parse =
+             [`Signature; `SourceFile; `Deprecated;
+              `InnerClasses ;`EnclosingMethod; `SourceDebugExtension;
+              `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
+              `RuntimeVisibleParameterAnnotations;
+              `RuntimeInvisibleParameterAnnotations;]
+           in
+             parse_attribute
+               to_parse	     
+	       consts ch)
     in
       {j_consts = consts;
        j_flags = flags;

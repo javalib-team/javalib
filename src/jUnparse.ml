@@ -256,6 +256,12 @@ let rec unparse_attribute_to_strings consts =
 	  unparse_stackmap_table_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
+      | AttributeAnnotationDefault _
+      | AttributeRuntimeVisibleAnnotations _
+      | AttributeRuntimeInvisibleAnnotations _
+      | AttributeRuntimeVisibleParameterAnnotations _
+      | AttributeRuntimeInvisibleParameterAnnotations _
+          -> failwith "unparsing of annotation not yet implemented" (* TODO *)
       | AttributeCode code ->
 	  let code = Lazy.force code in
 	    write_ui16 ch code.c_max_stack;
