@@ -17,6 +17,8 @@ install remove:
 cleanall clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C ptrees $@
+	$(MAKE) -C camlzip $@
+	$(MAKE) -C extlib $@
 	$(MAKE) -C doc $@
 	$(RM) *~
 cleandoc doc:

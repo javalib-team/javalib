@@ -45,8 +45,10 @@ libcamlzip.a: $(C_OBJS)
 	$(OCAMLC) -c -ccopt -g -ccopt -I$(ZLIB_INCLUDE) $<
 
 clean:
-	rm -f *.cm* *~
-	rm -f *.o *.a *.so
+	$(RM) -f *.cmo *.cmx *~
+	$(RM) -f *.o .depend
+cleanall:clean
+	$(RM) *.cma *.cmxa *.a *.so *.cmi
 
 install:
 	ocamlfind install camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
