@@ -26,6 +26,15 @@ open JClass
 
 let debug = ref 1
 
+(* [map2] works even if lists are not the same size by taking elements for the
+   other list as default values *)
+let rec map2 f l1 l2 = match l1,l2 with
+  | [],[] -> []
+  | [],l
+  | l, [] -> l
+  | e1::r1, e2::r2 -> (f e1 e2)::(map2 f r1 r2)
+
+
 let rec flags2access = function
   | `AccPublic::l ->
       if List.exists (fun a -> a = `AccPrivate || a= `AccProtected) l
@@ -53,17 +62,17 @@ let combine_LocalVariableTable (lvts:lvt list) : lvt =
   let lvt = List.concat lvts in
     if not (JBasics.get_permissive ()) then
       begin
-      let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
-	List.for_all
-	  (fun e1 -> List.for_all (f e1) l)
-	  l
-      and overlap (e1_start,e1_end,_,_,_) (e2_start,e2_end,_,_,_) =
-	(e2_start < e1_end && e1_start < e2_end)
-      and similar (_,_,e1_name,_,e1_index) (_,_,e2_name,_,e2_index) =
-	e1_name = e2_name || e1_index = e2_index
-      in
-	if not (for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt)
-	then raise (Class_structure_error "A CodeAttribute contains more than one LocalVariableTable and they are not compatible with each other")
+        let for_all_couple (f:'a -> 'a -> bool) (l:'a list) : bool =
+	  List.for_all
+	    (fun e1 -> List.for_all (f e1) l)
+	    l
+        and overlap (e1_start,e1_end,_,_,_) (e2_start,e2_end,_,_,_) =
+	  (e2_start < e1_end && e1_start < e2_end)
+        and similar (_,_,e1_name,_,e1_index) (_,_,e2_name,_,e2_index) =
+	  e1_name = e2_name || e1_index = e2_index
+        in
+	  if not (for_all_couple (fun e1 e2 -> e1==e1 || not (overlap e1 e2 && similar e1 e2)) lvt)
+	  then raise (Class_structure_error "A CodeAttribute contains more than one LocalVariableTable and they are not compatible with each other")
       end;
     lvt
 
@@ -480,22 +489,25 @@ let low2high_amethod consts cs ms = function m ->
     if parameter_annotations = []
     then []
     else
-      try 
+      let res =
         List.fold_left
           (fun (res:'a list) -> function
              | AttributeRuntimeVisibleParameterAnnotations pa ->
                  let pa = List.map (List.map (fun a -> (a,RTVisible))) pa
-                 in List.map2 (@) pa res
+                 in map2 (@) pa res
              | AttributeRuntimeInvisibleParameterAnnotations pa ->
                  let pa = List.map (List.map (fun a -> (a,RTInvisible))) pa
-                 in List.map2 (@) pa res
+                 in map2 (@) pa res
              | _ -> assert false)
-          (List.map (fun _ ->[]) (JBasics.ms_args ms))
+          []
           parameter_annotations
-      with Invalid_argument _ ->
-        raise (Class_structure_error
-                 "The length of an Runtime(In)VisibleParameterAnnotations \
-                  does not match the number of arguments of the same method")
+      in
+        if List.length res <=  List.length (JBasics.ms_args ms)
+        then res
+        else raise
+          (Class_structure_error
+             "The length of an Runtime(In)VisibleParameterAnnotations \
+              is longer than the number of arguments of the same method")
   in
     {
       am_signature = ms;
@@ -618,22 +630,25 @@ let low2high_cmethod consts cs ms = function m ->
     if parameter_annotations = []
     then []
     else
-      try 
+      let res =
         List.fold_left
           (fun (res:'a list) -> function
              | AttributeRuntimeVisibleParameterAnnotations pa ->
                  let pa = List.map (List.map (fun a -> (a,RTVisible))) pa
-                 in List.map2 (@) pa res
+                 in map2 (@) pa res
              | AttributeRuntimeInvisibleParameterAnnotations pa ->
                  let pa = List.map (List.map (fun a -> (a,RTInvisible))) pa
-                 in List.map2 (@) pa res
-             | _ -> res)
-          (List.map (fun _ ->[]) (JBasics.ms_args ms))
+                 in map2 (@) pa res
+             | _ -> assert false)
+          []
           parameter_annotations
-      with Invalid_argument _ ->
-        raise (Class_structure_error
-                 "The length of an Runtime(In)VisibleParameterAnnotations \
-                  does not match the number of arguments of the same method")
+      in
+        if List.length res <=  List.length (JBasics.ms_args ms)
+        then res
+        else raise
+          (Class_structure_error
+             "The length of an Runtime(In)VisibleParameterAnnotations \
+              is longer than the number of arguments of the same method")
   in
     {
       cm_signature = ms;

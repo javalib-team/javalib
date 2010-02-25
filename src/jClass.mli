@@ -109,9 +109,8 @@ type method_annotations = {
   ma_parameters: (annotation*visibility) list list;
   (** [\[al1,al2\]] represents the annotations for the 2 parameters of the
       method, [al1] being the annotations for the first parameter and [al2] the
-      annotations for the second parameter.  The length is either empty or it
-      matches the number of parameters of the method (excluding the receiver
-      this).*)
+      annotations for the second parameter.  The length is smaller than the
+      number of parameters of the method (excluding the receiver this).*)
 }
 
 (* The final attribute has no meaning for a static method, but the JVM spec

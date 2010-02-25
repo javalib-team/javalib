@@ -180,26 +180,40 @@ let parse_stackmap_table consts ch =
 let rec parse_element_value consts ch =
   let tag = IO.read_byte ch in 
     match Char.chr tag with
-      | 'B' | 'C' | 'I' | 'S' | 'Z'  (* int constant *)
-      | 'D'                          (* double *)
-      | 'F'                          (* float *)
-      | 'J'                          (* long *)
-      | 's'                          (* string *)
+      | 'B' | 'C' | 'I' | 'S' | 'Z'     (* int constant *)
+      | 'D'                             (* double *)
+      | 'F'                             (* float *)
+      | 'J'                             (* long *)
         ->
           let constant_value_index = read_ui16 ch in
-          let cst = JBasicsLow.get_constant_value consts constant_value_index in
+          let cst = get_constant_value consts constant_value_index
+          in
             EVCst cst
+      | 's'                             (* string *)
+        ->
+          let constant_value_index = read_ui16 ch in
+          let cst = get_string consts constant_value_index
+          in
+            EVCst (ConstString cst)
       | 'e' ->                          (* enum constant *)
-          (* TODO *)
-          failwith "not implemented"
+          let type_name_index = read_ui16 ch
+          and const_name_index = read_ui16 ch in
+          let enum_type =
+            let vt =
+              parse_field_descriptor (get_string consts type_name_index)
+            in match vt with
+              | TObject (TClass c) -> c
+              | _ -> assert false
+          and const_name = get_string consts const_name_index
+          in
+            EVEnum (enum_type,const_name)
+              (* failwith ("not implemented EVEnum("^type_name^","^const_name^")") *)
       | 'c' ->                          (* class constant *)
-          begin
-            try
-              EVClass (Some (JParseSignature.parse_field_descriptor
-                               (JBasicsLow.get_string consts (read_ui16 ch))))
-            with JBasics.Class_structure_error _ ->
-              EVClass None
-          end
+          let descriptor = get_string consts (read_ui16 ch)
+          in
+            if descriptor = "V"
+            then EVClass None
+            else EVClass (Some (parse_field_descriptor descriptor))
       | '@' ->                          (* annotation type *)
           EVAnnotation (parse_annotation consts ch)
       | '[' ->                          (* array *)
@@ -220,12 +234,12 @@ and parse_annotation consts ch =
       JParseSignature.parse_field_descriptor
         (JBasicsLow.get_string consts type_index)
     in
-    match kind_value_type with
-      | JBasics.TObject (JBasics.TClass cn) -> cn
-      | _ ->
-          raise
-            (JBasics.Class_structure_error
-               "An annotation should only be a class")
+      match kind_value_type with
+        | JBasics.TObject (JBasics.TClass cn) -> cn
+        | _ ->
+            raise
+              (JBasics.Class_structure_error
+                 "An annotation should only be a class")
   and ev_pairs =
     ExtList.List.init
       nb_ev_pairs

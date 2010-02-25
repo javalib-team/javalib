@@ -84,15 +84,15 @@ val extract_class_name_from_file : string -> JBasics.class_name * string
 (** [iter f filename] applies the function successively the function [f] on each
     classes specified by [filename]. [filename] is either a valid class file,
     a valid jar file, or a valid directory with jar files inside.
-    The dirname of [filename] is used as classpath. *)
+    The dirname of [filename] is used as classpath.  *)
 val iter : (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
 
 (** Abstract type representing a list of directories. *)
 type directories
 
-(** [make_directories directories] returns an abstract [directories] type.
-    The string [directories] must be a list of files separated by
-    {!JFile.sep}. Only directories are filtered. *)
+(** [make_directories directories] returns an abstract [directories] type.  The
+    string [directories] must be a list of files separated by {!JFile.sep}. Only
+    directories are filtered. *)
 val make_directories : string -> directories
 
 (** The following functions search for class files in the following order :
@@ -110,14 +110,14 @@ val make_directories : string -> directories
     files). *)
 
 (** [read directories f acc names] iterates [f] over all classes specified by
-    [names]. [acc] is the initial accumulator value. *)
+    [names]. [acc] is the initial accumulator value.  *)
 val read :
   directories -> ('a -> JCode.jcode JClass.interface_or_class -> 'a) -> 'a -> string list -> 'a
 
-(** [transform directories outputdir f names] applies [f] to all classes specified
-    by [names], writing the resulting classes in [outputdir]. Jar files are
-    mapped to jar files, and the non-class files are kept unchanged in the
-    resulting archive. *)
+(** [transform directories outputdir f names] applies [f] to all classes
+    specified by [names], writing the resulting classes in [outputdir]. Jar
+    files are mapped to jar files, and the non-class files are kept unchanged in
+    the resulting archive.  *)
 val transform :
   directories -> string ->
   (JCode.jcode JClass.interface_or_class -> JCode.jcode JClass.interface_or_class) ->
@@ -126,6 +126,6 @@ val transform :
 (** Same as {! read} with low level class files. *)
 val read_low : directories -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 'a
 
-(** Same as {! transform} with low level class files. *)
+(** Same as {! transform} with low level class files.  *)
 val transform_low :
   directories -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit

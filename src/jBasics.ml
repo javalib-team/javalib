@@ -149,7 +149,7 @@ exception Class_structure_error of string
 
 type element_value =
   | EVCst of constant_value
-  | EVEnum of (string * string)
+  | EVEnum of (class_name * string)
       (* (type_name_index,const_name_index) cf. JLS 13.1 *)
       (* TODO: this should probably be modified but I have not understand how *)
   | EVClass of value_type option
@@ -252,7 +252,7 @@ let common_dictionary = make_dictionary ()
 
 let make_cn : string -> class_name =
   let valid_class_name =
-    Str.regexp "^\\([a-zA-Z_$][a-zA-Z_$0-9]*\\.\\)*\\([a-zA-Z_0-9]+\\$\\)*[a-zA-Z_0-9]+$"
+    Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_0-9-]+\\$\\)*[a-zA-Z_0-9-]+$"
   in function cn ->
     let dic = common_dictionary in
     let cnt = dic.class_name_table in

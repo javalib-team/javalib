@@ -63,7 +63,8 @@ let is_file f =
 (* We should catch only the exceptions Unix_error _ and End_of_file
    that we raised. *)
 
-type class_path = [`dir of string | `jar of Zip.in_file] list
+type cp_unit = [`dir of string | `jar of Zip.in_file]
+type class_path = cp_unit list
 
 let open_path s =
   if is_dir s
@@ -112,7 +113,7 @@ let close_class_path =
       | `jar jar -> Zip.close_in jar)
 
 (* Search for class c in a given directory or jar file *)
-let lookup c =
+let lookup c : cp_unit -> JClassLow.jclass =
   let c = replace_dot c ^ ".class" in
     function path ->
       try
@@ -135,14 +136,14 @@ let lookup c =
 	| Not_found ->
 	    raise (No_class_found c)
 
-let rec fold_directories f file = function
+let rec fold_directories (f: 'b -> 'a) file : 'b list -> 'a = function
   | [] -> raise (No_class_found file)
   | class_path :: q ->
       try f class_path
       with No_class_found _ ->
 	fold_directories f file q
 
-let get_class_low class_path cs =
+let get_class_low (class_path:class_path) cs =
   let cname = JDumpBasics.class_name cs in
     fold_directories
       (fun path -> lookup cname path)
@@ -336,13 +337,20 @@ let fold_string class_path f file =
 			   raise e);
 		    Zip.close_out jar'
 
+exception Encapsulate of exn
+
 (* Applies f to a list of files, in a colon-separated list of directories. *)
 let fold directories f files =
-  List.iter
-    (function file ->
-       fold_directories (fun class_path -> fold_string class_path f file) file
-	 directories)
-    files
+  let f = try f with Not_found as e -> raise (Encapsulate e) in
+    try
+      List.iter
+        (function file ->
+           fold_directories (fun class_path -> fold_string class_path f file) file
+	     directories)
+        files
+    with Encapsulate e -> raise e
+
+  
 
 let read_low directories f accu files =
   let accu = ref accu in
@@ -353,7 +361,7 @@ let read directories f accu files =
   let accu = ref accu in
     fold directories
       (`read
-	  (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
+	 (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
       files;
     ! accu
 
@@ -363,7 +371,7 @@ let transform_low directories output_dir f files =
 let transform directories output_dir f files =
   fold directories
     (`transform
-	(output_dir,fun c -> JHigh2Low.high2low (f (JLow2High.low2high_class c))))
+       (output_dir,fun c -> JHigh2Low.high2low (f (JLow2High.low2high_class c))))
     files
 
 let is_file f =
@@ -412,7 +420,7 @@ let iter f filename =
 	( Unix.closedir dir;
 	  let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () !jar_files
 	  in
-	Printf.printf "%d classes in %d jar files\n" !nb_class (List.length !jar_files))
+	    Printf.printf "%d classes in %d jar files\n" !nb_class (List.length !jar_files))
   else begin
     Printf.printf "%s is not a valid class file, nor a valid jar file, nor a directory\n" filename;
     exit 0

@@ -288,7 +288,7 @@ exception Class_structure_error of string
     class, an enum, an array of [element_value]s or another annotation. *)
 type element_value =
   | EVCst of constant_value
-  | EVEnum of (string * string)
+  | EVEnum of (class_name * string)
       (* (type_name_index,const_name_index) cf. JLS 13.1 *)
       (* TODO: this should probably be modified but I have not understand how *)
   | EVClass of value_type option
