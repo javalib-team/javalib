@@ -180,21 +180,33 @@ let parse_stackmap_table consts ch =
 let rec parse_element_value consts ch =
   let tag = IO.read_byte ch in 
     match Char.chr tag with
-      | 'B' | 'C' | 'I' | 'S' | 'Z'     (* int constant *)
-      | 'D'                             (* double *)
-      | 'F'                             (* float *)
-      | 'J'                             (* long *)
-        ->
+      | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
           let constant_value_index = read_ui16 ch in
           let cst = get_constant_value consts constant_value_index
           in
-            EVCst cst
+            begin
+              match c,cst with
+                | 'B', ConstInt i -> EVCstByte (Int32.to_int i)
+                | 'C', ConstInt i -> EVCstChar (Int32.to_int i)
+                | 'S', ConstInt i -> EVCstShort (Int32.to_int i)
+                | 'Z', ConstInt i -> EVCstBoolean (Int32.to_int i)
+                | 'I', ConstInt i -> EVCstInt i
+                | 'D', ConstDouble d -> EVCstDouble d
+                | 'F', ConstFloat f -> EVCstFloat f
+                | 'J', ConstLong l -> EVCstLong l
+                | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ),_ ->
+                    raise
+                      (Class_structure_error
+                         "A such constant cannot be referenced in such  an \
+                          annotation element")
+                | _,_ -> assert false
+            end
       | 's'                             (* string *)
         ->
           let constant_value_index = read_ui16 ch in
           let cst = get_string consts constant_value_index
           in
-            EVCst (ConstString cst)
+            EVCstString cst
       | 'e' ->                          (* enum constant *)
           let type_name_index = read_ui16 ch
           and const_name_index = read_ui16 ch in
@@ -222,7 +234,7 @@ let rec parse_element_value consts ch =
             ExtList.List.init num_values (fun _ -> parse_element_value consts ch)
           in EVArray values
       | _ ->
-          raise (JBasics.Class_structure_error
+          raise (Class_structure_error
                    "invalid tag in a element_value of an annotation")
 
 and parse_annotation consts ch =
@@ -231,20 +243,19 @@ and parse_annotation consts ch =
   in
   let kind =
     let kind_value_type =
-      JParseSignature.parse_field_descriptor
-        (JBasicsLow.get_string consts type_index)
+      parse_field_descriptor (get_string consts type_index)
     in
       match kind_value_type with
-        | JBasics.TObject (JBasics.TClass cn) -> cn
+        | TObject (TClass cn) -> cn
         | _ ->
             raise
-              (JBasics.Class_structure_error
+              (Class_structure_error
                  "An annotation should only be a class")
   and ev_pairs =
     ExtList.List.init
       nb_ev_pairs
       (fun _ ->
-         let name = JBasicsLow.get_string consts (read_ui16 ch)
+         let name = get_string consts (read_ui16 ch)
          and value = parse_element_value consts ch
          in (name, value))
   in

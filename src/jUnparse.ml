@@ -184,6 +184,99 @@ let unparse_stackmap_table_attribute consts stackmap_attribute =
       ) stackmap_attribute;
     ("StackMapTable",close_out ch)
 
+(* TODO:not tested *)
+let rec unparse_element_value =
+  let char_B = Char.code 'B'
+  and char_C = Char.code 'C'
+  and char_I = Char.code 'I'
+  and char_S = Char.code 'S'
+  and char_Z = Char.code 'Z'
+  and char_D = Char.code 'D'
+  and char_F = Char.code 'F'
+  and char_J = Char.code 'J'
+  and char_e = Char.code 'e'
+  and char_s = Char.code 's'
+  and char_c = Char.code 'c'
+  and char_at = Char.code '@'
+  and char_sqbraket = Char.code '['
+  in fun consts ch -> function
+    | EVCstByte cst ->
+        write_ui8 ch char_B;
+        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+    | EVCstChar cst ->
+        write_ui8 ch char_C;
+        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+    | EVCstInt cst ->
+        write_ui8 ch char_I;
+        write_ui16 ch (value_to_int consts (ConstInt cst))
+    | EVCstShort cst ->
+        write_ui8 ch char_S;
+        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+    | EVCstBoolean cst ->
+        write_ui8 ch char_Z;
+        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+    | EVCstDouble cst ->
+        write_ui8 ch char_D;
+        write_ui16 ch (value_to_int consts (ConstDouble cst))
+    | EVCstFloat cst ->
+        write_ui8 ch char_F;
+        write_ui16 ch (value_to_int consts (ConstFloat cst))
+    | EVCstLong cst ->
+        write_ui8 ch char_J;
+        write_ui16 ch (value_to_int consts (ConstLong cst))
+    | EVCstString s ->
+        write_ui8 ch char_s;
+        write_ui16 ch (constant_to_int consts (ConstStringUTF8 s))
+    | EVEnum (cn,constructor) ->
+        let type_name_index =
+          constant_to_int
+            consts
+            (ConstStringUTF8 (unparse_objectType (TClass cn)))
+        and const_name_index =
+          constant_to_int consts (ConstStringUTF8 constructor)
+        in
+          write_ui8 ch char_e;
+          write_ui16 ch type_name_index;
+          write_ui16 ch const_name_index
+    | EVClass value_type_option ->
+        let string =
+          match value_type_option with
+            | None -> "V"
+            | Some vt -> unparse_value_type vt
+        in
+          write_ui8 ch char_c;
+          write_ui16 ch (constant_to_int consts (ConstStringUTF8 string))
+    | EVAnnotation annot ->
+        write_ui8 ch char_at;
+        unparse_annotation consts ch annot
+    | EVArray elements ->
+        write_ui8 ch char_sqbraket;
+        write_ui16 ch (List.length elements);
+        List.iter (unparse_element_value consts ch) elements
+
+(* TODO:not tested *)
+and unparse_annotation consts ch annot =
+  let type_index =
+    constant_to_int
+      consts
+      (ConstStringUTF8 (unparse_objectType (TClass annot.kind)))
+  and nb_ev_pairs = List.length annot.element_value_pairs
+  in
+    write_ui16 ch type_index;
+    write_ui16 ch nb_ev_pairs;
+    List.iter
+      (fun (name,value) ->
+         write_ui16 ch (constant_to_int consts (ConstStringUTF8 name));
+         unparse_element_value consts ch value)
+      annot.element_value_pairs
+
+let unparse_annotations consts ch annots =
+  write_ui16 ch (List.length annots);
+  List.iter (unparse_annotation consts ch) annots
+let unparse_parameter_annotations consts ch param_annots =
+  write_ui8 ch (List.length param_annots);
+  List.iter (unparse_annotations consts ch) param_annots
+
 let rec unparse_attribute_to_strings consts =
   let ch = output_string () in
     function
@@ -256,12 +349,21 @@ let rec unparse_attribute_to_strings consts =
 	  unparse_stackmap_table_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
-      | AttributeAnnotationDefault _
-      | AttributeRuntimeVisibleAnnotations _
-      | AttributeRuntimeInvisibleAnnotations _
-      | AttributeRuntimeVisibleParameterAnnotations _
-      | AttributeRuntimeInvisibleParameterAnnotations _
-          -> failwith "unparsing of annotation not yet implemented" (* TODO *)
+      | AttributeAnnotationDefault ev ->
+          unparse_element_value consts ch ev;
+          ("AnnotationDefault",close_out ch)
+      | AttributeRuntimeVisibleAnnotations annots ->
+          unparse_annotations consts ch annots;
+          ("RuntimeVisibleAnnotations", close_out ch)
+      | AttributeRuntimeInvisibleAnnotations annots ->
+          unparse_annotations consts ch annots;
+          ("RuntimeInvisibleAnnotations", close_out ch)
+      | AttributeRuntimeVisibleParameterAnnotations param_annots ->
+          unparse_parameter_annotations consts ch param_annots;
+          ("RuntimeVisibleParameterAnnotations", close_out ch)
+      | AttributeRuntimeInvisibleParameterAnnotations param_annots ->
+          unparse_parameter_annotations consts ch param_annots;
+          ("RuntimeInvisibleParameterAnnotations", close_out ch)
       | AttributeCode code ->
 	  let code = Lazy.force code in
 	    write_ui16 ch code.c_max_stack;

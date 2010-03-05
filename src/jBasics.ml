@@ -148,7 +148,15 @@ exception Class_structure_error of string
 (* Annotations *)
 
 type element_value =
-  | EVCst of constant_value
+  | EVCstByte of int
+  | EVCstChar of int
+  | EVCstInt of int32
+  | EVCstShort of int
+  | EVCstBoolean of int
+  | EVCstDouble of float
+  | EVCstFloat of float
+  | EVCstLong of int64
+  | EVCstString of string
   | EVEnum of (class_name * string)
       (* (type_name_index,const_name_index) cf. JLS 13.1 *)
       (* TODO: this should probably be modified but I have not understand how *)

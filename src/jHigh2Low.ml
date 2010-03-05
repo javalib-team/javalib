@@ -144,52 +144,84 @@ let h2l_code2attribute consts = function
         ignore (Lazy.force code);
         [AttributeCode (code)]
 
+let split_vis_invis annots =
+    List.fold_right
+    (fun annot_vis (vis,invis) ->
+       match annot_vis with
+         | annot,RTVisible -> (annot::vis),invis 
+         | annot,RTInvisible -> vis,(annot::invis))
+    annots
+    ([],[])
+
+let h2l_annotations annots =
+  let visible,invisible = split_vis_invis annots in
+  let vis =
+    if visible <> []
+    then [AttributeRuntimeVisibleAnnotations visible]
+    else []
+  in
+    if invisible <> []
+    then (AttributeRuntimeInvisibleAnnotations invisible)::vis
+    else vis
+
+let h2l_parameter_annotation param_annots =
+  let visible,invisible =
+    List.fold_right
+      (fun annot (vis,invis) ->
+         let visible,invisible = split_vis_invis annot
+         in (visible::vis),(invisible::invis))
+      param_annots
+      ([],[])
+  in
+  let vis =
+    if List.exists ((<>)[]) visible
+    then [AttributeRuntimeVisibleParameterAnnotations visible]
+    else []
+  in
+    if List.exists ((<>)[]) invisible
+    then (AttributeRuntimeInvisibleParameterAnnotations invisible)::vis
+    else []
+
 let h2l_cfield _consts f =
   let fs = f.cf_signature in
   let fname = fs_name fs in
   let fdesc = fs_type fs in
-    (* TODO: implement conversion of Java 5 annotations *)
-    if f.cf_annotations <> []
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {f_name = fname;
-       f_descriptor = fdesc;
-       f_flags =
-	  (if f.cf_transient then [`AccTransient] else [])
-	  @ (match f.cf_kind with
-	       | Final -> [`AccFinal]
-	       | Volatile -> [`AccVolatile]
-	       | NotFinal -> [])
-	  @ (if f.cf_static then [`AccStatic] else [])
-	  @ (if f.cf_synthetic then [`AccSynthetic] else [])
-	  @ (if f.cf_enum then [`AccEnum] else [])
-	  @ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
-	  @ (access2flags f.cf_access);
-       f_attributes =
-	  (match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
-	  @ (field_generic_signature_to_attribute f.cf_generic_signature)
-	  @ (h2l_attributes f.cf_attributes);
-      }
+    {f_name = fname;
+     f_descriptor = fdesc;
+     f_flags =
+	(if f.cf_transient then [`AccTransient] else [])
+	@ (match f.cf_kind with
+	     | Final -> [`AccFinal]
+	     | Volatile -> [`AccVolatile]
+	     | NotFinal -> [])
+	@ (if f.cf_static then [`AccStatic] else [])
+	@ (if f.cf_synthetic then [`AccSynthetic] else [])
+	@ (if f.cf_enum then [`AccEnum] else [])
+	@ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
+	@ (access2flags f.cf_access);
+     f_attributes =
+	(match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
+        @ (h2l_annotations f.cf_annotations)
+	@ (field_generic_signature_to_attribute f.cf_generic_signature)
+	@ (h2l_attributes f.cf_attributes);
+    }
 
 let h2l_ifield _consts f =
   let fs = f.if_signature in
   let fname = fs_name fs in
   let fdesc = fs_type fs in
-    (* TODO: implement conversion of Java 5 annotations *)
-    if f.if_annotations <> []
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {f_name = fname;
-       f_descriptor = fdesc;
-       f_flags =
-	  (if f.if_synthetic then [`AccSynthetic] else [])
-	  @ (List.map (fun i -> `AccRFU i) f.if_other_flags)
-	  @ [`AccPublic;`AccStatic;`AccFinal];
-       f_attributes =
-	  (match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
-	  @ (field_generic_signature_to_attribute f.if_generic_signature)
-	  @ (h2l_attributes f.if_attributes);
-      }
+    {f_name = fname;
+     f_descriptor = fdesc;
+     f_flags =
+	(if f.if_synthetic then [`AccSynthetic] else [])
+	@ (List.map (fun i -> `AccRFU i) f.if_other_flags)
+	@ [`AccPublic;`AccStatic;`AccFinal];
+     f_attributes =
+	(match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
+        @ (h2l_annotations f.if_annotations)
+	@ (field_generic_signature_to_attribute f.if_generic_signature)
+	@ (h2l_attributes f.if_attributes);
+    }
 
 let h2l_cmethod consts m =
   let ms = m.cm_signature in
@@ -197,32 +229,30 @@ let h2l_cmethod consts m =
   let mdesc = (ms_args ms, ms_rtype ms) in
   let code = h2l_code2attribute consts m.cm_implementation
   in
-    (* TODO: implement conversion of Java 5 annotations *)
-    if m.cm_annotations <> {ma_global=[];ma_parameters=[];}
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {m_name = mname;
-       m_descriptor = mdesc;
-       m_flags =
-	  (if m.cm_static then [`AccStatic] else [])
-	  @ (if m.cm_final then [`AccFinal] else [])
-	  @ (if m.cm_synchronized then [`AccSynchronized] else [])
-	  @ (if m.cm_strict then [`AccStrict] else [])
-	  @ (match m.cm_implementation with Native -> [`AccNative] |_ -> [])
-	  @ (if m.cm_bridge then [`AccBridge] else [])
-	  @ (if m.cm_varargs then [`AccVarArgs] else [])
-	  @ (if m.cm_synthetic then [`AccSynthetic] else [])
-	  @ (List.map (fun i -> `AccRFU i) m.cm_other_flags)
-	  @ (access2flags m.cm_access);
-       m_attributes =
-	  (match m.cm_exceptions with
-	     | [] -> []
-	     | l -> [AttributeExceptions l]
-	  )
-	  @ method_generic_signature_to_attribute m.cm_generic_signature
-	  @ code
-	  @ h2l_attributes m.cm_attributes;
-      }
+    {m_name = mname;
+     m_descriptor = mdesc;
+     m_flags =
+	(if m.cm_static then [`AccStatic] else [])
+	@ (if m.cm_final then [`AccFinal] else [])
+	@ (if m.cm_synchronized then [`AccSynchronized] else [])
+	@ (if m.cm_strict then [`AccStrict] else [])
+	@ (match m.cm_implementation with Native -> [`AccNative] |_ -> [])
+	@ (if m.cm_bridge then [`AccBridge] else [])
+	@ (if m.cm_varargs then [`AccVarArgs] else [])
+	@ (if m.cm_synthetic then [`AccSynthetic] else [])
+	@ (List.map (fun i -> `AccRFU i) m.cm_other_flags)
+	@ (access2flags m.cm_access);
+     m_attributes =
+	(match m.cm_exceptions with
+	   | [] -> []
+	   | l -> [AttributeExceptions l]
+	)
+        @ h2l_annotations m.cm_annotations.ma_global
+        @ h2l_parameter_annotation m.cm_annotations.ma_parameters
+	@ method_generic_signature_to_attribute m.cm_generic_signature
+	@ code
+	@ h2l_attributes m.cm_attributes;
+    }
 
 let h2l_amethod _consts m =
   let ms = m.am_signature in
@@ -247,6 +277,8 @@ let h2l_amethod _consts m =
 	     | l -> [AttributeExceptions l]
 	  )
 	  @ method_generic_signature_to_attribute m.am_generic_signature
+          @ h2l_annotations m.am_annotations.ma_global
+          @ h2l_parameter_annotation m.am_annotations.ma_parameters
 	  @ h2l_attributes m.am_attributes;
       }
 
@@ -267,72 +299,66 @@ let h2l_methods consts c' mm =
 let high2low_class c =
   let consts = DynArray.of_array c.c_consts in
   let c' =
-    (* TODO: implement conversion of Java 5 annotations *)
-    if c.c_annotations <> []
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {j_name = c.c_name;
-       j_version = c.c_version;
-       j_super = c.c_super_class;
-       j_interfaces = c.c_interfaces;
-       j_consts = c.c_consts; (*will be updated later on*)
-       j_flags =
-	  (if c.c_abstract then [`AccAbstract] else [])
-	  @ (if c.c_synthetic then [`AccSynthetic] else [])
-	  @ (if c.c_enum then [`AccEnum] else [])
-	  @ (if c.c_final then [`AccFinal] else [])
-	  @ (List.map (fun i -> `AccRFU i) c.c_other_flags)
-	  @ (`AccSuper::
-	       match c.c_access with
-	         | `Default -> []
-	         | `Public -> [`AccPublic]);
-       j_fields = FieldMap.fold (fun _fs f l -> h2l_cfield consts f::l) c.c_fields [];
-       j_methods = []; (*will be set later on*)
-       j_attributes =
-	  deprecated_to_attribute c.c_deprecated
-	  @ class_generic_signature_to_attribute c.c_generic_signature
-	  @ enclosingmethod_to_attribute c.c_enclosing_method
-	  @ sourcedebugextension_to_attribute c.c_source_debug_extention
-	  @ h2l_inner_classes c.c_inner_classes
-	  @ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
-	  @ h2l_other_attributes c.c_other_attributes;
-      } in
+    {j_name = c.c_name;
+     j_version = c.c_version;
+     j_super = c.c_super_class;
+     j_interfaces = c.c_interfaces;
+     j_consts = c.c_consts; (*will be updated later on*)
+     j_flags =
+	(if c.c_abstract then [`AccAbstract] else [])
+	@ (if c.c_synthetic then [`AccSynthetic] else [])
+	@ (if c.c_enum then [`AccEnum] else [])
+	@ (if c.c_final then [`AccFinal] else [])
+	@ (List.map (fun i -> `AccRFU i) c.c_other_flags)
+	@ (`AccSuper::
+	     match c.c_access with
+	       | `Default -> []
+	       | `Public -> [`AccPublic]);
+     j_fields = FieldMap.fold (fun _fs f l -> h2l_cfield consts f::l) c.c_fields [];
+     j_methods = []; (*will be set later on*)
+     j_attributes =
+	deprecated_to_attribute c.c_deprecated
+	@ class_generic_signature_to_attribute c.c_generic_signature
+	@ enclosingmethod_to_attribute c.c_enclosing_method
+	@ sourcedebugextension_to_attribute c.c_source_debug_extention
+        @ h2l_annotations c.c_annotations
+	@ h2l_inner_classes c.c_inner_classes
+	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
+	@ h2l_other_attributes c.c_other_attributes;
+    } in
   let c'= h2l_methods consts c' c.c_methods
   in {c' with j_consts = DynArray.to_array consts}
 
 let high2low_interface (c:JCode.jcode jinterface) =
   let consts = DynArray.of_array c.i_consts in
   let c' =
-    (* TODO: implement conversion of Java 5 annotations *)
-    if c.i_annotations <> []
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {j_name = c.i_name;
-       j_version = c.i_version;
-       j_super = Some java_lang_object;
-       j_interfaces = c.i_interfaces;
-       j_consts = c.i_consts; (*will be updated later on*)
-       j_flags =
-	  (if c.i_annotation then [`AccAnnotation] else [])
-	  @ (List.map (fun i -> `AccRFU i) c.i_other_flags)
-	  @ `AccInterface::`AccAbstract::
-	    (match c.i_access with
-	       | `Default -> []
-	       | `Public -> [`AccPublic]);
-       j_fields =
-	  FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
-       j_methods =
-	  (match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts m])
-	  @ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
-       j_attributes =
-	  deprecated_to_attribute c.i_deprecated
-	  @ class_generic_signature_to_attribute c.i_generic_signature
-	  @ sourcedebugextension_to_attribute c.i_source_debug_extention
-	  @ h2l_inner_classes c.i_inner_classes
-	  @ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
-	  @ h2l_other_attributes c.i_other_attributes;
-      } in
-    {c' with j_consts = DynArray.to_array consts}
+    {j_name = c.i_name;
+     j_version = c.i_version;
+     j_super = Some java_lang_object;
+     j_interfaces = c.i_interfaces;
+     j_consts = c.i_consts; (*will be updated later on*)
+     j_flags =
+	(if c.i_annotation then [`AccAnnotation] else [])
+	@ (List.map (fun i -> `AccRFU i) c.i_other_flags)
+	@ `AccInterface::`AccAbstract::
+	  (match c.i_access with
+	     | `Default -> []
+	     | `Public -> [`AccPublic]);
+     j_fields =
+	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
+     j_methods =
+	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts m])
+	@ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
+     j_attributes =
+	deprecated_to_attribute c.i_deprecated
+	@ class_generic_signature_to_attribute c.i_generic_signature
+	@ sourcedebugextension_to_attribute c.i_source_debug_extention
+        @ h2l_annotations c.i_annotations
+	@ h2l_inner_classes c.i_inner_classes
+	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
+	@ h2l_other_attributes c.i_other_attributes;
+    }
+  in {c' with j_consts = DynArray.to_array consts}
 
 let high2low = function
   | JInterface i -> high2low_interface i
