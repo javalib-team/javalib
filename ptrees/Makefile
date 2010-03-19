@@ -22,6 +22,7 @@ MODULES=ptmap.ml ptset.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli
 
 .PHONY : all clean cleanall cleandoc doc install remove
+.DELETE_ON_ERROR:.depend
 
 all:ptrees.cma ptrees.cmxa
 
@@ -29,10 +30,10 @@ install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.m
 	$(INSTALL) ptrees $^ ptrees.a
 remove:
 	ocamlfind remove ptrees
-ptrees.cma:$(MODULES:.ml=.cmo)
+ptrees.cma:$(MODULE_INTERFACES:.mli=.cmi) $(MODULES:.ml=.cmo)
 	$(OCAMLC) $(FLAGS) -o $@ -a $^
 
-ptrees.cmxa:$(MODULES:.ml=.cmx)
+ptrees.cmxa:$(MODULE_INTERFACES:.mli=.cmi) $(MODULES:.ml=.cmx)
 	$(OCAMLOPT) -o $@ -a $^
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .cma .cmxa

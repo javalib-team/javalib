@@ -3,6 +3,8 @@
 
 all: javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html
 
+.DELETE_ON_ERROR:javalib_tutorial.tex javalib-tut.html
+
 javalib_tutorial.tex: javalib_tutorial.md
 	cat header.tex > javalib_tutorial.tex
 	pandoc -f markdown -t latex -o javalib_tutorial_part.tex javalib_tutorial.md

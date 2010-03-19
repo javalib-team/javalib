@@ -72,7 +72,7 @@ javalib.cmxa: ../ptrees/ptrees.cmxa $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 # doc
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(RECODE) $(INCLUDE) -d $(DOCDIR) -html -stars		\
+	$(OCAMLDOC) $(RECODE) $(INCLUDE) -d $(DOCDIR) -html -stars	\
 		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli
@@ -89,6 +89,7 @@ cleandoc:
 	$(RM) -r $(DOCDIR)
 
 # Dependencies
+.DELETE_ON_ERROR:.depend
 .depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(PP) $^ > $@
 

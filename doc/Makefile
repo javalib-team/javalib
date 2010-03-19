@@ -2,6 +2,8 @@ DEST=..
 doc: $(DEST)/INSTALL $(DEST)/README
 all:doc
 
+.DELETE_ON_ERROR:$(DEST)/INSTALL $(DEST)/README
+
 $(DEST)/INSTALL:install.html
 	lynx -dump $< > $@
 
