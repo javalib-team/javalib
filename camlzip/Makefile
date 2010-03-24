@@ -19,6 +19,11 @@ OCAMLMKLIB=ocamlmklib
 OBJS=zlib.cmo zip.cmo gzip.cmo
 C_OBJS=zlibstubs.o
 
+# The path for a local ocamlfind install
+LOCALPATH=$(shell pwd)/../lib
+OCAMLPATH=$(LOCALPATH)
+DLLPATH=$(LOCALPATH)/stublibs
+
 all: libcamlzip.a zip.cma zip.cmxa
 
 zip.cma: $(OBJS)
@@ -47,11 +52,22 @@ libcamlzip.a: $(C_OBJS)
 clean:
 	$(RM) -f *.cmo *.cmx *~
 	$(RM) -f *.o .depend
+
 cleanall:clean
 	$(RM) *.cma *.cmxa *.a *.so *.cmi
 
-install:
-	ocamlfind install camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
+setpath:
+	@echo "Installing static libraries to $(OCAMLPATH)."
+	@echo "Installing dynamic libraries to $(DLLPATH)."
+
+installdir:setpath
+	mkdir -p $(OCAMLPATH) $(DLLPATH)
+
+#-ldconf $(LD_LIBRARY_PATH) 
+
+install:installdir
+	ocamlfind install -destdir $(OCAMLPATH) -ldconf ignore\
+		camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
 		libcamlzip.a $(wildcard dll*.so) zip.cmxa zip.a zip.cmx gzip.cmx
 
 
