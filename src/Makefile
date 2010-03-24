@@ -18,9 +18,8 @@
 # License along with this program.  If not, see 
 # <http://www.gnu.org/licenses/>.
 
-
-
 -include ../Makefile.config
+
 DOCDIR:=../$(DOCDIR)
 
 CSS=\"style.css\"
@@ -61,10 +60,10 @@ jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 .mli.cmi:
 	$(OCAMLC) $(INCLUDE) -c $<
 
-javalib.cma: ../ptrees/ptrees.cma $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
+javalib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 	$(OCAMLC) $(INCLUDE) -a $(MODULES:=.cmo) -o $@
 
-javalib.cmxa: ../ptrees/ptrees.cmxa $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
+javalib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) $(INCLUDE) -a $(MODULES:=.cmx) -o $@
 
 ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa:$(wildcard ../ptrees/*.ml ../ptrees/*.mli)

@@ -1,13 +1,16 @@
+-include Makefile.config
+
 .PHONY:all ptrees installptrees javalib install clean cleanall cleandoc doc
 
 # should do : 
 all:javalib
 
-ptrees:
-	$(MAKE) -C ptrees
-
-javalib:ptrees
+javalib:
+ifeq ($(MAKEDEP),)
 	$(MAKE) -C src
+else
+	@echo "The package(s) $(MAKEDEP) don't seem to have been installed. Don't forget to rerun the configure script once the installation is complete!" | fmt
+endif
 
 installptrees removeptrees:%ptrees:
 	$(MAKE) -C ptrees $*

@@ -1,55 +1,15 @@
-# -*-Makefile-*-
-# This file is part of JavaLib
-# Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
-# Copyright (c)2007 Laurent Hubert (CNRS)
-#
-# This program is free software: you can redistribute it and/or
-# modify it under the terms of the GNU Lesser General Public License
-# as published by the Free Software Foundation, either version 3 of
-# the License, or (at your option) any later version.
-# 
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-# Lesser General Public License for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public
-# License along with this program.  If not, see 
-# <http://www.gnu.org/licenses/>.
+export OCAMLFIND_DESTDIR=$(LOCALDEST)
+export OCAMLPATH=$(LOCALDEST)
 
 DOCDIR = doc/api
 
-# set to yes to keep debugging information in native library or to prof to
-# profile (with gprof) your program
-#
-# DEBUG = {yes|no|prof}
-DEBUG = yes
-
-# use for to convert the documentation to fix some accent problems
-# RECODE = -pp "recode UTF-8..Latin-1 <"
-
-# you can remove .opt if you only have camlp4o
-PP = -pp camlp4o.opt
-
-FLAGS = -g -w Ae -annot
-OPT_FLAGS = -noassert -ccopt -O3
-
-OCAMLC = ocamlfind ocamlc $(FLAGS)
-OCAMLDOC = ocamlfind ocamldoc
-OCAMLDEP = ocamlfind ocamldep
-OCAMLMKTOP = ocamlfind ocamlmktop
-INSTALL = ocamlfind install
+OCAMLC = $(FINDER) ocamlc $(FLAGS)
+OCAMLDOC = $(FINDER) ocamldoc
+OCAMLDEP = $(FINDER) ocamldep
+OCAMLMKTOP = $(FINDER) ocamlmktop
+OCAMLMKLIB = ocamlmklib
 
 INCLUDE = -package unix,str,extlib,camlzip,ptrees
 
+INSTALL = $(FINDER) install
 
-
-ifeq ($(DEBUG),yes)
-OCAMLOPT = ocamlfind ocamlopt -g
-else
-ifeq ($(DEBUG),prof)
-OCAMLOPT = ocamlfind ocamlopt -g -p $(OPT_FLAGS)
-else
-OCAMLOPT = ocamlfind ocamlopt -g $(OPT_FLAGS)
-endif
-endif
