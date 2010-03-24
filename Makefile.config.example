@@ -4,6 +4,7 @@ export OCAMLPATH=$(LOCALDEST)
 DOCDIR = doc/api
 
 OCAMLC = $(FINDER) ocamlc $(FLAGS)
+OCAMLOPT = $(FINDER) ocamlopt $(OPT_FLAGS)
 OCAMLDOC = $(FINDER) ocamldoc
 OCAMLDEP = $(FINDER) ocamldep
 OCAMLMKTOP = $(FINDER) ocamlmktop

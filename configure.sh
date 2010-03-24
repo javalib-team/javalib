@@ -38,14 +38,16 @@ FINDER=`which ocamlfind`
 RECODE=`which recode`
 # The debug flag
 DEBUG=yes
-# The ocamlopt arguments (depends on DEBUG)
-OCAMLOPT=
+# The ocamlopt flags (depends on DEBUG)
+OPT_FLAGS=
+
 # The camlp4o pretty-printer
 PP=
+# The ocamlopt flags
+OPT_FLAGS="-noassert -ccopt -O3"
 
 # The following variables are constants
-FLAGS=" -g -w Ae -annot"
-OPT_FLAGS=" -noassert -ccopt -O3"
+FLAGS="-g -w Ae -annot"
 
 
 #
@@ -80,7 +82,7 @@ function msg()
 # The push function takes an atom and a variable that contains a list, and
 # performs the corresponding push.
 #
-# For instance, if LIST=bar:baz, then after 'push foo LIST', LIST=foo:bar:baz.
+# For instance, if LIST=bar\ baz, then after 'push foo LIST', LIST=foo\ bar\ baz.
 #
 function push ()
 {
@@ -215,16 +217,17 @@ PP=" -pp $cp4"
 
 
 #
-# Infer the value of the DESTDIR and OCAMLOPT variables
+# Infer the value of the DESTDIR and OPT_FLAGS variables
 #
 if [ -n "$LOCALDEST" ]; then
   DESTDIR="-destdir $LOCALDEST"
 fi
 
 case $DEBUG in
-  yes)  OCAMLOPT="\$(FINDER) ocamlopt -g";;      
-  prof) OCAMLOPT="\$(FINDER) ocamlopt -g -p \$(OPT_FLAGS)";;
-  no)   OCAMLOPT="\$(FINDER) ocamlopt -g \$(OPT_FLAGS)";;
+  yes)  OPT_FLAGS="-g";;
+  prof) OPT_FLAGS="-g -p -noassert -ccopt -O3";;
+  no)   OPT_FLAGS="-g -noassert -ccopt -O3";;
+  *)    msg "err" "debug option $DEBUG is not recognized"
 esac
 
 
@@ -251,7 +254,7 @@ echo -n "."
 # Configuration variables
 echo "" >> $makeconfig
 echo "# Variables detected at configure-time" >> $makeconfig
-for var in LOCALDEST MAKEDEP FINDER RECODE DEBUG OCAMLOPT PP; do
+for var in LOCALDEST MAKEDEP FINDER RECODE DEBUG PP; do
   echo "$var=${!var}" >> $makeconfig
 done
 echo -n "."
