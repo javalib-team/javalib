@@ -17,6 +17,9 @@ installptrees removeptrees:%ptrees:
 install remove:
 	$(MAKE) -C src $@
 
+distclean:clean
+	$(RM) Makefile.config
+
 cleanall clean:
 	$(MAKE) -C src $@
 	$(MAKE) -C ptrees $@
@@ -24,6 +27,7 @@ cleanall clean:
 	$(MAKE) -C extlib $@
 	$(MAKE) -C doc $@
 	$(RM) *~
+
 cleandoc doc:
 	$(MAKE) -C src $@
 	$(MAKE) -C doc $@

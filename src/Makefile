@@ -89,7 +89,6 @@ cleandoc:
 	$(RM) -r $(DOCDIR)
 
 # Dependencies
-.DELETE_ON_ERROR:.depend
 .depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
 	$(OCAMLDEP) $(PP) $^ > $@
 
