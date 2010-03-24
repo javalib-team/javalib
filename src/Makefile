@@ -36,6 +36,7 @@ jUnparse jParseSignature jParse jLow2High jHigh2Low jFile javalib jAnnotation
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc remove
+.DELETE_ON_ERROR : .depend
 
 all: javalib.cma javalib.cmxa
 
@@ -76,7 +77,7 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
 		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
 		 ../ptrees/ptset.mli
-	echo "</body></html>" >> $(DOCDIR)/index.html # workarround for a bug in ocamldoc
+	echo "</body></html>" >> $(DOCDIR)/index.html # workaround for a bug in ocamldoc
 
 # cleaning
 clean:
