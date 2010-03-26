@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ###
-### A configuration script for Javalib / Sawja
+### A configuration script for Javalib
 ###
 ###     Provide a "local" configuration option
 ###     Detect ocamlfind
@@ -16,6 +16,20 @@
 ###     
 ###     
 ### Copyright (c)2010 Florent Kirchner
+### 
+### This program is free software: you can redistribute it and/or
+### modify it under the terms of the GNU Lesser General Public License
+### as published by the Free Software Foundation, either version 3 of
+### the License, or (at your option) any later version.
+### 
+### This program is distributed in the hope that it will be useful, but
+### WITHOUT ANY WARRANTY; without even the implied warranty of
+### MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+### Lesser General Public License for more details.
+### 
+### You should have received a copy of the GNU Lesser General Public
+### License along with this program.  If not, see 
+### <http://www.gnu.org/licenses/>.
 ### 
 ### This file: began on         march-18-2010,
 ###            last updated on  .
@@ -35,16 +49,13 @@ MAKEDEP=
 # The path to ocamlfind
 FINDER=`which ocamlfind`
 # The path to recode (used to fix accents in the documentation)
-RECODE=`which recode`
+RECODEBIN=`which recode`
 # The debug flag
 DEBUG=yes
 # The ocamlopt flags (depends on DEBUG)
 OPT_FLAGS=
-
 # The camlp4o pretty-printer
 PP=
-# The ocamlopt flags
-OPT_FLAGS="-noassert -ccopt -O3"
 
 # The following variables are constants
 FLAGS="-g -w Ae -annot"
@@ -142,17 +153,14 @@ while true ; do
     -h|--help) 
         echo "Usage: `basename $0` [--local[=PATH]] [--help] [--debug=yes|no|prof]"
         exit 0;;
-    --) if [ -z $LOCALDEST ]; then 
-          msg "inf" "System-wide installation, in `ocamlfind printconf destdir`" 
-        fi
-        shift; break;;
+    --) shift; break;;
     *) msg "ser" "option parsing" "unrecognized argument '$1'";;
   esac
 done
 
 
 #
-# Check Ocamlfind
+# Check Ocamlfind, print the global installation directory if relevant.
 #
 if [ $FINDER ]; then
   msg "inf" "Ocamlfind found at $FINDER"
@@ -163,12 +171,15 @@ Use your system's software packaging tools to install Findlib, or download it fr
 http://www.camlcity.org/archive/programming/findlib.html"
 fi
 
-
+if [ -z $LOCALDEST ]; then 
+  msg "inf" "System-wide installation, in `$FINDER printconf destdir`" 
+fi
+        
 #
 # Check Camlzip, Ptrees, and Extlib. Set them to compile if necessary.
 #
 for pkg in camlzip ptrees extlib; do
-location=`ocamlfind query $pkg 2>/dev/null`
+location=`$FINDER query $pkg 2>/dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
 else 
@@ -182,7 +193,7 @@ done
 # Check Unix, and Str
 #
 for pkg in unix str; do
-location=`ocamlfind query $pkg 2> /dev/null`
+location=`$FINDER query $pkg 2> /dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
 else 
@@ -194,8 +205,9 @@ done
 #
 # Check Recode
 #
-if [ $RECODE ]; then
-  msg "inf" "Recode found at $RECODE"
+if [ $RECODEBIN ]; then
+  msg "inf" "Recode found at $RECODEBIN"
+  RECODE="-pp \"$RECODEBIN UTF-8..Latin-1 <\""  
 else
   msg "inf" "Recode not found, proceeding anyway"
 fi
@@ -213,7 +225,7 @@ if [ -z "$cp4" ]; then
   fi
 fi
 msg "inf" "Camlp4o found at $cp4"
-PP=" -pp $cp4"
+PP="-pp $cp4"
 
 
 #
@@ -247,14 +259,14 @@ echo -n "  ."
 # Constants
 echo "" >> $makeconfig
 echo "# Configuration constants" >> $makeconfig
-for var in FLAGS OPT_FLAGS; do
+for var in FLAGS; do
   echo "$var=${!var}" >> $makeconfig
 done
 echo -n "."
 # Configuration variables
 echo "" >> $makeconfig
 echo "# Variables detected at configure-time" >> $makeconfig
-for var in LOCALDEST MAKEDEP FINDER RECODE DEBUG PP; do
+for var in OPT_FLAGS LOCALDEST MAKEDEP FINDER RECODE DEBUG PP; do
   echo "$var=${!var}" >> $makeconfig
 done
 echo -n "."
