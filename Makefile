@@ -1,19 +1,23 @@
 -include Makefile.config
 
-.PHONY:all ptrees installptrees javalib install clean cleanall cleandoc doc
+.PHONY:all ptrees camlzip extlib javalib install clean cleanall cleandoc doc
 
 # should do : 
 all:javalib
 
 javalib:
-ifeq ($(MAKEDEP),)
 	$(MAKE) -C src
-else
-	@echo "The package(s) $(MAKEDEP) don't seem to have been installed. Don't forget to rerun the configure script once the installation is complete!" | fmt
-endif
 
-installptrees removeptrees:%ptrees:
+# Package-specific targets
+camlzip installcamlzip removecamlzip:%camlzip:
+	$(MAKE) -C camlzip $*
+
+extlib installextlib removeextlib:%extlib:
+	$(MAKE) -C extlib $*
+
+ptrees installptrees removeptrees:%ptrees:
 	$(MAKE) -C ptrees $*
+
 install remove:
 	$(MAKE) -C src $@
 

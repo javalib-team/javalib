@@ -292,9 +292,9 @@ if [ "$MAKEDEP" ]; then
   for dep in $MAKEDEP; do
     # Use sudo only if it's a nonlocal installation.
     if [ "$LOCALDEST" ]; then
-      echo "    cd $dep && make && make install"
+      echo "    make $dep && make install$dep"
     else
-      echo "    cd $dep && make && sudo make install"
+      echo "    make $dep && sudo make install$dep"
     fi
   done
   echo "Once the packages have been installed, rerun `basename $0` to update the Javalib Makefiles." | fmt

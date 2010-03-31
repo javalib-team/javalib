@@ -11,13 +11,13 @@
   <li>for any missing dependencies,
   <ul> 
     <li>if ptrees was not found,<br />
-    <span class="code">(cd ptrees &amp;&amp;  make &amp;&amp; make install)</span>
+    <span class="code">make ptrees &amp;&amp; make installptrees</span>
     </li>
     <li>if camlzip was not found,<br />
-    <span class="code">(cd camlzip &amp;&amp;  make &amp;&amp; make install)</span>
+    <span class="code">make camlzip &amp;&amp; make installcamlzip</span>
     </li>
     <li>if extlib was not found,<br />
-    <span class="code">(cd extlib &amp;&amp;  make &amp;&amp; make install)</span>
+    <span class="code">make extlib &amp;&amp; make installextlib</span>
     </li>
   </ul></li>
   <li><span class="code">./configure.sh</span></li>
@@ -91,10 +91,9 @@ each execution of configure.sh.
 needed to be compiled and installed. For each of those required, run the
 following commands:
 <dl>
-  <dd><span class="code">cd ddbraryname</span></dd>
-  <dd><span class="code">make</span></dd>
-  <dd><span class="code">make install</span> (if configure was run with the --local option)</dd>
-  <dd><span class="code">sudo make install</span> (else)</dd>
+  <dd><span class="code">make LIBRARYNAME</span></dd>
+  <dd><span class="code">make installLIBRARYNAME</span> (if configure was run with the --local option)</dd>
+  <dd><span class="code">sudo make installLIBRARYNAME</span> (else)</dd>
 </dl>
 </li>
 
