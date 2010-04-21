@@ -73,7 +73,7 @@ type class_field = {
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option; (** Only if the field is static final. *)
+  cf_value : constant_value option;
   cf_transient : bool;
   cf_annotations : (JBasics.annotation * visibility) list;
   cf_other_flags : int list;

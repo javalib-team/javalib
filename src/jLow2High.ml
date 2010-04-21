@@ -845,13 +845,21 @@ let low2high_class cl =
       if is_interface
       then
 	begin
-	  if not (JBasics.get_permissive ()) && not is_abstract
-	  then raise (Class_structure_error "Class file with their `AccInterface flag set must also have their `AccAbstract flag set.");
-	  if not (JBasics.get_permissive ()) && not (cl.j_super = Some JBasics.java_lang_object)
-	  then raise (Class_structure_error "The super-class of interfaces must be java.lang.Object.");
-	  if not (JBasics.get_permissive ()) && (is_enum || is_synthetic)
-	  then raise (Class_structure_error ("Class file with their `AccInterface flag set must not have "
-					     ^ "their `AccEnum or `AccSynthetic flags set."));
+          if not (JBasics.get_permissive ())
+          then
+            begin
+	      if not is_abstract
+	      then raise (Class_structure_error
+                            "A class file with its `AccInterface flag set must \
+                             also have its `AccAbstract flag set.");
+	      if not (cl.j_super = Some JBasics.java_lang_object)
+	      then raise (Class_structure_error
+                            "The super-class of interfaces must be java.lang.Object.");
+	      if is_enum
+	      then raise (Class_structure_error
+                            "A class file with its `AccInterface flag set must \
+                             not have  its their `AccEnum flag set.")
+            end;
 	  let (init,methods) =
 	    match
 	      List.partition
@@ -866,7 +874,8 @@ let low2high_class cl =
 	      | [],others -> None, others
 	      | m::_::_,others ->
 		  if not (JBasics.get_permissive ())
-		  then raise (Class_structure_error "has more than one class initializer <clinit>")
+		  then raise (Class_structure_error
+                                "has more than one class initializer <clinit>")
 		  else Some (low2high_cmethod consts cs clinit_signature m),others
 	  in
 	    JInterface {
@@ -893,31 +902,48 @@ let low2high_class cl =
 		       prerr_endline
 			 ("Warning: in " ^ JDumpBasics.class_name my_name
                           ^ " 2 fields have been found with the same signature ("
-			  ^JDumpBasics.value_signature f.f_descriptor ^" "^ f.f_name^")");
+			  ^ JDumpBasics.value_signature f.f_descriptor
+                          ^ " " ^ f.f_name ^ ")");
 		     FieldMap.add
 		       fs
 		       (try low2high_ifield my_name consts fs f
 			with Class_structure_error msg ->
-			  raise (Class_structure_error ("field " ^JDumpBasics.signature f.f_name (SValue f.f_descriptor)^": "^msg)))
+			  raise (Class_structure_error ("field "
+                                                        ^ (JDumpBasics.signature
+                                                             f.f_name
+                                                             (SValue f.f_descriptor))
+                                                        ^ ": " ^ msg)))
 		       m)
 		FieldMap.empty
 		cl.j_fields;
 	      i_methods = List.fold_left
 		(fun map meth ->
-		   let ms = make_ms meth.m_name (fst meth.m_descriptor) (snd meth.m_descriptor) in
+		   let ms =
+                     make_ms
+                       meth.m_name
+                       (fst meth.m_descriptor)
+                       (snd meth.m_descriptor)
+                   in
 		     if !debug > 0 && MethodMap.mem ms map
 		     then
 		       prerr_endline
 			 ("Warning: in " ^ JDumpBasics.class_name my_name
-                          ^ " 2 methods have been found with the same signature ("^meth.m_name
-			  ^"("^ String.concat ", " (List.map (JDumpBasics.value_signature)
-						      (fst meth.m_descriptor)) ^"))");
+                          ^ " 2 methods have been found with the same signature ("
+                          ^ meth.m_name ^"("
+                          ^ String.concat ", " (List.map (JDumpBasics.value_signature)
+						  (fst meth.m_descriptor))
+                          ^ "))");
 		     MethodMap.add
 		       ms
 		       (try low2high_amethod consts cs ms meth
 			with Class_structure_error msg ->
-			  let sign = JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)
-			  in raise (Class_structure_error ("in class "^JDumpBasics.class_name my_name^": method " ^sign^": "^msg)))
+			  let sign =
+                            JDumpBasics.signature
+                              meth.m_name
+                              (SMethod meth.m_descriptor)
+			  in raise (Class_structure_error
+                                      ("in class " ^ JDumpBasics.class_name my_name
+                                       ^ ": method " ^ sign ^ ": " ^ msg)))
 		       map)
 		MethodMap.empty
 		methods;
