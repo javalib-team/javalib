@@ -27,11 +27,11 @@ CSS=\"style.css\"
 # ------ 
 MODULES=jBasics jBasicsLow jCode jClass jDumpBasics jDumpLow jParseCode		\
 jInstruction jUnparseSignature jHigh2Low jDumpJasmin jUnparse jParseSignature	\
-jLow2High jParse jFile jPrint javalib jAnnotation
+jLow2High jParse jFile jPrint javalib
 
 MODULE_INTERFACES=jBasics jBasicsLow jCode jClassLow jSignature jClass		\
 jDumpBasics jDumpLow jDumpJasmin jParseCode jInstruction jUnparseSignature	\
-jUnparse jParseSignature jParse jLow2High jHigh2Low jFile javalib jAnnotation
+jUnparse jParseSignature jParse jLow2High jHigh2Low jFile javalib
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc remove
