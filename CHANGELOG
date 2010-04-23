@@ -3,11 +3,41 @@ From 2.0.1 to
 New features:
 * installation process now rely on ocamlfind (more homogeneous installation,
   easier to use as dependencies are automatically linked in)
+---
+* Add a configure into the compilation routine
+Replace the Makefile.config custom editing and guessing by a
+'configure.sh' shell script that checks for dependencies, and generates
+the appropriate configuration file.
+This entails reworking the camlzip, extlib, src (Javalib) and toplevel
+Makefiles to use the newly generated variables.
+Local installation is now an easy option, and the use of
+findlib/ocamlfind is generalized to all compilations and installations.
+* adding a distclean target to remove the generated Makefile.config
+---
 * jPrintHTML is now generic with respect to the implementation of methods
+---
+* New function Javalib.extract_class_name_from_file to recover a class name and a class path from a .class file
+* adding a module JAnnotation which parses Java 5 annotations and integration in bytecode representation
+---
 
 Minor fixes:
+---
+* bugfix in JCode.get_local_variable_info: local variable spreading over 0 instruction (written at one point, never read) were causing problems
+* bugfix in JCode.get_source_line_number 
+* bugfix in classname checking (- (minus) is used in some class names)
+* bugfix in JLow2High: some correct classes were rejected
+* others bugfixes (in JFile)
+---
+Minor changes:
 * improved documentation
-
+---
+* add ~force in map functions ...
+* add camlzip and change its makefile in order that camlzip is intalled with findlib
+* add extlib
+* adding debugging compile option by default and moving from -dtypes to -annotin in Makefile.config.example
+* adding DELETE_ON_ERROR target for files generated with
+  redirections in Makefiles (.depend and some others)	
+---
 From 2.0 to 2.0.1
 -----------------
 Minor fixes:
