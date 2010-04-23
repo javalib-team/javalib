@@ -192,6 +192,78 @@ let dump_java6_stackmap ch frame =
 	dump_stackmap ch (offset,locals,stack);
 	IO.printf ch ")\n"
 
+
+(* let print_list sep print fmt = function *)
+(*   | [] -> () *)
+(*   | hd::tl -> *)
+(*       print fmt hd; *)
+(*       List.iter *)
+(*         (fun annot -> sep fmt; print fmt annot) *)
+(*         tl *)
+
+(* let rec pp_element_value fmt = function *)
+(*   | EVCst cst -> *)
+(*       Format.pp_print_string fmt (JPrint.constant (JBasics.ConstValue cst)) *)
+(*   | EVEnum (s1,s2) -> *)
+(*       Format.pp_print_string fmt ("(" ^ s1 ^ "," ^ s2 ^ ")") *)
+(*   | EVClass (None) -> *)
+(*       Format.pp_print_string fmt "Void.class" *)
+(*   | EVClass (Some vt) -> *)
+(*       Format.pp_print_string fmt (Javalib.JPrint.value_type vt) *)
+(*   | EVAnnotation annot -> *)
+(*       pp_annotation fmt annot *)
+(*   | EVArray evlist -> *)
+(*       let print_evlist = *)
+(*         print_list (fun fmt -> Format.fprintf fmt ";@ ") pp_element_value *)
+(*       in *)
+(*         Format.fprintf fmt "[|@[<3>%a|]@]" print_evlist evlist *)
+
+(* and pp_annotation fmt annot = *)
+(*   let print_pair fmt (s,ev) = *)
+(*     Format.fprintf fmt "@[<2>%s =@ %a@]" s pp_element_value ev *)
+(*   in *)
+(*   let print_pairs = print_list (fun fmt -> Format.fprintf fmt ",@ ") print_pair *)
+(*   in *)
+(*     Format.fprintf fmt "@@%s(@[%a)@]" *)
+(*       (JBasics.cn_name annot.kind) print_pairs annot.element_value_pairs *)
+
+
+(* let pp_rt_annotations fmt annot = *)
+(*   let print_space fmt = Format.pp_print_space fmt () in *)
+(*     Format.pp_open_hvbox fmt 2; *)
+(*     begin *)
+(*       match annot with *)
+(*         | Annotations (visibility,annots) -> *)
+(*             Format.pp_print_string fmt *)
+(*               (match visibility with *)
+(*                  | RTVisible -> "[RuntimeVisibleAnnotations" *)
+(*                  | RTInvisible -> "[RuntimeInvisibleAnnotations"); *)
+(*             print_space fmt; *)
+(*             print_list print_space pp_annotation fmt annots; *)
+
+(*         | ParameterAnnotations (visibility,annots) -> *)
+(*             Format.pp_print_string fmt *)
+(*               (match visibility with *)
+(*                  | RTVisible -> "[RuntimeVisibleParameterAnnotations" *)
+(*                  | RTInvisible -> "[RuntimeInvisibleParameterAnnotations"); *)
+(*             print_space fmt; *)
+(*             print_list print_space *)
+(*               (fun fmt param_annot -> *)
+(*                  Format.fprintf fmt "[@[<2>"; *)
+(*                  print_list print_space pp_annotation fmt param_annot; *)
+(*                  Format.fprintf fmt "]@]") *)
+(*               fmt *)
+(*               annots *)
+(*     end; *)
+(*     Format.pp_print_string fmt "]"; *)
+(*     Format.pp_close_box fmt () *)
+
+(* let pp_default_annotation fmt = function *)
+(*   | AnnotationDefault value -> *)
+(*       Format.fprintf fmt *)
+(*         "@[<2>AnnotationDefault@ %a@]" *)
+(*         pp_element_value value *)
+
 let rec dump_code ch consts code =
   IO.printf ch "max_stack = %d , max_locals = %d\n" code.JClassLow.c_max_stack code.JClassLow.c_max_locals;
   Array.iteri (fun i c ->
