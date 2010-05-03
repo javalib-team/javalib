@@ -113,9 +113,23 @@ let dump_constant_value ch = function
 
 let dump_constant ch = function
   | ConstValue v -> dump_constant_value ch v
-  | ConstField (cl,f,sign) -> IO.printf ch "field : %s %s::%s" (value_signature sign) (class_name cl) f
-  | ConstMethod (cl,f,sign) -> IO.printf ch "method : %s"(method_signature (object_value_signature cl ^ "::" ^ f) sign)
-  | ConstInterfaceMethod (cl,f,sign) -> IO.printf ch "interface-method : %s"(method_signature (class_name cl ^ "::" ^ f) sign)
+  | ConstField (cn,fs) ->
+      let fn = fs_name fs
+      and ft = fs_type fs
+      in
+        IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
+  | ConstMethod (cl,ms) ->
+      let mn = ms_name ms
+      and md = ms_args ms, ms_rtype ms
+      in
+        IO.printf ch "method : %s"
+          (method_signature (object_value_signature cl ^ "::" ^ mn) md)
+  | ConstInterfaceMethod (cn,ms) ->
+      let mn = ms_name ms
+      and md = ms_args ms, ms_rtype ms
+      in
+        IO.printf ch "interface-method : %s"
+          (method_signature (class_name cn ^ "::" ^ mn) md)
   | ConstNameAndType (s,sign) -> IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> IO.printf ch "utf8 %s" s
   | ConstUnusable -> IO.printf ch "unusable"

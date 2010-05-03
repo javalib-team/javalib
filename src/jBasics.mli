@@ -243,9 +243,9 @@ type constant_value =
 (** Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstField of (class_name * string * value_type)
-  | ConstMethod of (object_type * string * method_descriptor)
-  | ConstInterfaceMethod of (class_name * string * method_descriptor)
+  | ConstField of (class_name * field_signature)
+  | ConstMethod of (object_type * method_signature)
+  | ConstInterfaceMethod of (class_name * method_signature)
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable

@@ -113,9 +113,9 @@ type constant_value =
 (* Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstField of (class_name * string * value_type)
-  | ConstMethod of (object_type * string * method_descriptor)
-  | ConstInterfaceMethod of (class_name * string * method_descriptor)
+  | ConstField of (class_name * field_signature)
+  | ConstMethod of (object_type * method_signature)
+  | ConstInterfaceMethod of (class_name * method_signature)
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
@@ -192,13 +192,17 @@ module FieldSignatureMap = Map.Make(
 module ClassFieldSignatureMap = Map.Make(
   struct
     type t = class_field_signature_data
-    let compare = compare
+    let compare : class_field_signature_data -> class_field_signature_data -> int =
+      fun (((cni1,_),(fsi1,_))) ((cni2,_),(fsi2,_)) ->
+        compare (cni1,fsi1) (cni2,fsi2)
   end)
 
 module ClassMethodSignatureMap = Map.Make(
   struct
     type t = class_method_signature_data
-    let compare = compare
+    let compare : class_method_signature_data -> class_method_signature_data -> int =
+      fun (((cni1,_),(msi1,_))) ((cni2,_),(msi2,_)) ->
+        compare (cni1,msi1) (cni2,msi2)
   end)
 
 type field_signature_table =

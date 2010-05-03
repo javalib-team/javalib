@@ -108,18 +108,18 @@ let string_of_constant_value v = match v with
 
 let string_of_constant c = match c with
   | ConstValue(c) -> string_of_constant_value c
-  | ConstField(classname, fieldname, fielddesc) ->
+  | ConstField(classname, fs) ->
       let classname' = string_of_classname classname
-      and fielddesc' = string_of_value_type fielddesc
-      in classname'^"/"^fieldname^" "^fielddesc'
-  | ConstMethod(objecttype,methodname,methoddesc) ->
+      and fielddesc' = string_of_value_type (fs_type fs)
+      in classname'^"/"^fs_name fs^" "^fielddesc'
+  | ConstMethod(objecttype,ms) ->
       let objecttype' = string_of_object_type objecttype
-      and methoddesc' = string_of_method_descriptor methoddesc
-      in objecttype'^"/"^methodname^methoddesc'
-  | ConstInterfaceMethod(classname, methodname, methoddesc) ->
+      and methoddesc' = string_of_method_descriptor (ms_args ms, ms_rtype ms)
+      in objecttype'^"/"^(ms_name ms)^methoddesc'
+  | ConstInterfaceMethod(classname, ms) ->
       let classname' = string_of_classname classname
-      and methoddesc' = string_of_method_descriptor methoddesc
-      in classname'^"/"^methodname^methoddesc'
+      and methoddesc' = string_of_method_descriptor (ms_args ms, ms_rtype ms)
+      in classname'^"/"^(ms_name ms)^methoddesc'
   | ConstNameAndType(str,desc) ->
       let desc' =
 	match desc with

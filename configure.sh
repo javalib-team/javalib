@@ -52,6 +52,8 @@ FINDER=`which ocamlfind`
 RECODEBIN=`which recode`
 # The debug flag
 DEBUG=yes
+# The shared option flag
+SHARED=
 # The ocamlopt flags (depends on DEBUG)
 OPT_FLAGS=
 # The camlp4o pretty-printer
@@ -128,6 +130,7 @@ Options:
   -l PATH \t Perform a local installation at PATH.
   -l default \t Perform a local installation in the default directory.
   -d FLAG \t Use the debug flag when compiling.
+  -s  \t\t Complile a dynamically loadable plugin (cmxs).
   -h  \t\t Print this message and exit."
 }
 
@@ -158,6 +161,8 @@ do
           # For the rest of this configure, set OCAMLPATH to $LOCALDEST
           # NB: only children of this script are in the scope of 'export'.
           export OCAMLPATH=$LOCALDEST;;
+    s   ) SHARED="javalib.cmxs"
+           msg "inf" "Plugin version of javalib will be generated at compilation (ocamlopt -shared)";;
     *   ) msg "err" "unrecognized option '$OPTARG'. Type '`basename $0` -h' to list available options";;
   esac
 done
@@ -272,7 +277,7 @@ echo -n "."
 # Configuration variables
 echo "" >> $makeconfig
 echo "# Variables detected at configure-time" >> $makeconfig
-for var in OPT_FLAGS LOCALDEST MAKEDEP FINDER RECODE DEBUG PP; do
+for var in OPT_FLAGS LOCALDEST MAKEDEP FINDER RECODE DEBUG SHARED PP; do
   echo "$var=${!var}" >> $makeconfig
 done
 echo -n "."

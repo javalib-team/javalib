@@ -174,17 +174,12 @@ let constant_value = function
 
 let constant = function
   | ConstValue v -> constant_value v
-  | ConstField (cl,fname,fd) ->
-      "field : " ^ (field_descriptor fd) ^ "  " ^ (class_name cl)
-      ^ "::" ^ fname
-  | ConstMethod (ot,mname,md) ->
-      let ms = make_ms mname (fst md) (snd md) in
-	"method : "
-	^ (method_signature ~callee:ot ms)
-  | ConstInterfaceMethod (cn,mname,md) ->
-      let ms = make_ms mname (fst md) (snd md) in
-	"interface-method : "
-	^ (method_signature ~callee:(TClass cn) ms)
+  | ConstField (cl,fs) ->
+      "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
+  | ConstMethod (ot,ms) ->
+      "method : " ^ (method_signature ~callee:ot ms)
+  | ConstInterfaceMethod (cn,ms) ->
+      "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
   | ConstNameAndType (s,d) -> "name-and-type : " ^ (signature s d)
   | ConstStringUTF8 s -> "utf8 " ^ s
   | ConstUnusable -> "unusable"

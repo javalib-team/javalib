@@ -53,18 +53,20 @@ let unparse_constant_value ch consts = function
 let unparse_constant ch consts =
   function
     | ConstValue v -> unparse_constant_value ch consts v
-    | ConstField (c, s, signature) ->
+    | ConstField (c, fs) ->
 	write_ui8 ch 9;
 	write_class ch consts c;
-	write_name_and_type ch consts (s, SValue signature)
-    | ConstMethod (c, s, signature) ->
+	write_name_and_type ch consts (fs_name fs, SValue (fs_type fs))
+    | ConstMethod (c, ms) ->
 	write_ui8 ch 10;
 	write_object_type ch consts c;
-	write_name_and_type ch consts (s, SMethod signature)
-    | ConstInterfaceMethod (c, s, signature) ->
+	write_name_and_type ch consts
+          (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
+    | ConstInterfaceMethod (c, ms) ->
 	write_ui8 ch 11;
 	write_class ch consts c;
-	write_name_and_type ch consts (s, SMethod signature)
+	write_name_and_type ch consts
+          (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
     | ConstNameAndType (s, signature) ->
 	write_ui8 ch 12;
 	write_string ch consts s;

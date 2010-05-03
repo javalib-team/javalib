@@ -25,7 +25,7 @@ DOCDIR:=../$(DOCDIR)
 CSS=\"style.css\"
 
 # ------ 
-MODULES=jBasics jBasicsLow jCode jClass jDumpBasics jDumpLow jParseCode		\
+MODULES=jBasics jBasicsLow jCode jSignature jClass jDumpBasics jDumpLow jParseCode		\
 jInstruction jUnparseSignature jHigh2Low jDumpJasmin jUnparse jParseSignature	\
 jLow2High jParse jFile jPrint javalib
 
@@ -33,13 +33,15 @@ MODULE_INTERFACES=jBasics jBasicsLow jCode jClassLow jSignature jClass		\
 jDumpBasics jDumpLow jDumpJasmin jParseCode jInstruction jUnparseSignature	\
 jUnparse jParseSignature jParse jLow2High jHigh2Low jFile javalib
 
+FOR_PACK= -for-pack Javalib_pack
+
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc remove
 .DELETE_ON_ERROR : .depend
 
-all: javalib.cma javalib.cmxa
+all: javalib.cma javalib.cmxa $(SHARED)
 
-install: META javalib.cma javalib.cmxa $(MODULE_INTERFACES:=.mli) $(MODULE_INTERFACES:=.cmi)
+install: META javalib.cm[ia] javalib.cmxa $(MODULE_INTERFACES:=.mli) javalib_pack.cm[iox] javalib_pack.o 
 	$(INSTALL) javalib $^ javalib.a
 remove:
 	ocamlfind remove javalib
@@ -51,20 +53,30 @@ ocaml:javalib.cma
 jParseSignature.cmo:jParseSignature.ml
 	$(OCAMLC) $(INCLUDE) $(PP) -c $<
 jParseSignature.cmx jParseSignature.o:jParseSignature.ml
-	$(OCAMLOPT) $(INCLUDE) $(PP) -c $<
+	$(OCAMLOPT) $(INCLUDE) $(PP) $(FOR_PACK) -c $<
 
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -c $<
 %.cmx %.o:%.ml
-	$(OCAMLOPT) $(INCLUDE) -c $<
+	$(OCAMLOPT) $(INCLUDE) $(FOR_PACK) -c $<
 .mli.cmi:
 	$(OCAMLC) $(INCLUDE) -c $<
 
-javalib.cma: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
-	$(OCAMLC) $(INCLUDE) -a $(MODULES:=.cmo) -o $@
+javalib.cma: javalib_pack.cmo
+	$(OCAMLC) $(INCLUDE) -a -o $@ $^
 
-javalib.cmxa: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
-	$(OCAMLOPT) $(INCLUDE) -a $(MODULES:=.cmx) -o $@
+javalib.cmxa: javalib_pack.cmx
+	$(OCAMLOPT) $(INCLUDE) -a -o $@ $^
+
+javalib.cmxs: javalib.cmxa
+	$(OCAMLOPT) $(INCLUDE) -shared -o $@ $^
+
+javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
+	$(OCAMLC) $(INCLUDE) -pack $(MODULES:=.cmo) -o $@
+
+javalib_pack.cmx: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
+	$(OCAMLOPT) $(INCLUDE) -pack $(MODULES:=.cmx) -o $@
+
 
 ../ptrees/ptrees.cma ../ptrees/ptrees.cmxa:$(wildcard ../ptrees/*.ml ../ptrees/*.mli)
 	$(MAKE) -C $(@D) $(@F)
@@ -84,7 +96,7 @@ clean:
 
 cleanall: clean
 	$(RM) -r ocaml tests tests.opt sample sample.opt *.cmi	\
-		*.cma *.cmxa
+		*.cma *.cmxa *.cmxs 
 cleandoc:
 	$(RM) -r $(DOCDIR)
 

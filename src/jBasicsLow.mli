@@ -33,11 +33,11 @@ val get_object_type : constant array -> int -> object_type
 val get_class : constant array -> int -> class_name
 val get_string : constant array -> int -> string
 val get_field : constant array -> int ->
-  class_name * string * value_type
+  class_name * field_signature
 val get_method : constant array -> int ->
-  object_type * string * method_descriptor
+  object_type * method_signature
 val get_interface_method : constant array -> int ->
-  class_name * string * method_descriptor
+  class_name * method_signature
 
 (** Same thing, reading the index in a channel: *)
 
@@ -52,9 +52,9 @@ val value_to_int : constant DynArray.t -> constant_value -> int
 val object_type_to_int : constant DynArray.t -> object_type -> int
 val class_to_int : constant DynArray.t -> class_name -> int
 val field_to_int : constant DynArray.t ->
-  class_name * string * value_type -> int
+  class_name * field_signature -> int
 val method_to_int : constant DynArray.t ->
-  object_type * string * method_descriptor -> int
+  object_type * method_signature -> int
 val string_to_int : constant DynArray.t -> string -> int
 
 (** Same thing, bu writes the index to a channel. *)

@@ -538,16 +538,17 @@ let rec expand_constant consts n =
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
       | ConstantField (cl,nt) ->
 	  (match expand "Field" cl nt with
-	     | TClass c, n, SValue v -> ConstField (c, n, v)
+	     | TClass c, n, SValue v -> ConstField (c, make_fs n v)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Field constant: " ^ ""))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Field constant")))
       | ConstantMethod (cl,nt) ->
 	  (match expand "Method" cl nt with
-	     | c, n, SMethod v -> ConstMethod (c, n, v)
+	     | c, n, SMethod (args,rtype) -> ConstMethod (c, make_ms n args rtype)
 	     | _, _, SValue _ -> raise (Class_structure_error ("Illegal type in Method constant")))
       | ConstantInterfaceMethod (cl,nt) ->
 	  (match expand "InterfaceMethod" cl nt with
-	     | TClass c, n, SMethod v -> ConstInterfaceMethod (c, n, v)
+	     | TClass c, n, SMethod (args,rtype) ->
+                 ConstInterfaceMethod (c, make_ms n args rtype)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
 	     | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
       | ConstantString i ->
