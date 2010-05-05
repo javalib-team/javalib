@@ -18,13 +18,13 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-(** Accessing classes in files, directories and jar files. *)
+(** Accessing classes in files, directories and jar (or zip) files. *)
 
 open JBasics
 
 (** {2 Loading a single class.} *)
 
-(** The type of "compiled" class paths (jar files are opened for efficiency). *)
+(** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
 type class_path
 
 (** [sep] is the class path separator. It contains a colon (:) under
@@ -32,17 +32,17 @@ type class_path
 val sep : string
 
 (** [class_path cp] opens a class path from the list [cp] of
-    directories and jar files separated by {!JFile.sep}.  jar files in
-    the given directories are also considered, but they are not looked
-    for recursively.  If [cp] is empty([""]), then the current
-    directory is used.  Note: the order matters: the search stops when
-    a class file is found. Directories and jar files are read in the
-    given order. When several directories are given, the order of the
-    jar file inside those directory are unspecified, but the jar file
-    of the first directory will be read before the others.
-    Note : the following works :
-{[try class_path (Sys.getenv "CLASSPATH")
-with Not_found -> class_path ""]}*)
+    directories and jar (or zip) files separated by {!JFile.sep}.  jar
+    (or zip) files in the given directories are also considered, but
+    they are not looked for recursively.  If [cp] is empty([""]), then
+    the current directory is used.  Note: the order matters: the
+    search stops when a class file is found. Directories and jar (or
+    zip) files are read in the given order. When several directories
+    are given, the order of the jar (or zip) file inside those
+    directory are unspecified, but the jar (or zip) file of the first
+    directory will be read before the others.  Note : the following
+    works : {[try class_path (Sys.getenv "CLASSPATH") with Not_found
+    -> class_path ""]}*)
 val class_path : string -> class_path
 
 (** Closes a class path. *)
@@ -83,7 +83,7 @@ val extract_class_name_from_file : string -> JBasics.class_name * string
 
 (** [iter f filename] applies the function successively the function [f] on each
     classes specified by [filename]. [filename] is either a valid class file,
-    a valid jar file, or a valid directory with jar files inside.
+    a valid jar (or zip) file, or a valid directory with jar (or zip) files inside.
     The dirname of [filename] is used as classpath.  *)
 val iter : (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
 
@@ -103,10 +103,10 @@ val make_directories : string -> directories
     (even if the directory is empty).
     - Otherwise, if the name refers to an existing .class file
     (without the extension) then this file is read.
-    - Otherwise, if the name ends in .jar and the file exists, it is
-    assumed to be jar file and the class files inside are read.
+    - Otherwise, if the name ends in .jar (or .zip) and the file exists, it is
+    assumed to be jar (or zip) file and the class files inside are read.
 
-    Dots in class names are interpreted as / (but not for jar
+    Dots in class names are interpreted as / (but not for jar (or zip)
     files). *)
 
 (** [read directories f acc names] iterates [f] over all classes specified by
@@ -114,10 +114,11 @@ val make_directories : string -> directories
 val read :
   directories -> ('a -> JCode.jcode JClass.interface_or_class -> 'a) -> 'a -> string list -> 'a
 
-(** [transform directories outputdir f names] applies [f] to all classes
-    specified by [names], writing the resulting classes in [outputdir]. Jar
-    files are mapped to jar files, and the non-class files are kept unchanged in
-    the resulting archive.  *)
+(** [transform directories outputdir f names] applies [f] to all
+    classes specified by [names], writing the resulting classes in
+    [outputdir]. Jar (Or Zip) files are mapped to jar (or zip) files,
+    and the non-class files are kept unchanged in the resulting
+    archive.  *)
 val transform :
   directories -> string ->
   (JCode.jcode JClass.interface_or_class -> JCode.jcode JClass.interface_or_class) ->

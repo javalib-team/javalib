@@ -96,7 +96,7 @@ let class_path cp =
 	      then
 		let files =
 		  List.filter
-		    (fun file -> Filename.check_suffix file ".jar")
+		    (fun file -> Filename.check_suffix file ".jar" or Filename.check_suffix file ".zip")
 		    (Array.to_list (Sys.readdir cp_item))
 		in cp_item::(List.map (Filename.concat cp_item) files)
 	      else
@@ -244,12 +244,14 @@ let apply_to_dir_or_class f s =
 	  else
 	    raise (No_class_found s)
 
-(* Try to open a jar file, checking for the .jar suffix. f is applied to
-   all .class files in the archive. other is applied to other files.
-   Throws No_class_found otherwise. *)
+(* Try to open a jar or zip file, checking for the .jar or .zip
+   suffix. f is applied to all .class files in the archive. other is
+   applied to other files.  Throws No_class_found otherwise. *)
 let apply_to_jar f other s =
   if
-    Filename.check_suffix s ".jar"
+    (Filename.check_suffix s ".jar"
+     or
+     Filename.check_suffix s ".zip")
     && is_file s
   then
     let jar = Zip.open_in s in
@@ -271,8 +273,9 @@ let apply_to_jar f other s =
    name is interpreted (in order of priority) as:
    - a directory name
    - a class name (without extension)
-   - a jar file (with the .jar suffix).
-   The resulting directory, class file, or jar file if any, is written
+   - a jar file (with the .jar suffix)
+   - a zip file (with the .zip suffix).
+   The resulting directory, class file, or jar (or zip) file if any, is written
    in the directory given as argument of the `transform constructor.
    Throws No_class_found otherwise.
    Throws Invalid_argument if the name is not implicit (it must be relative and
@@ -283,7 +286,7 @@ let fold_string class_path f file =
     invalid_arg ("invalid class name " ^ file ^ ", must be implicit")
   else
     let c =
-      if Filename.check_suffix file ".jar"
+      if (Filename.check_suffix file ".jar" or Filename.check_suffix file ".zip")
       then file
       else replace_dot file
     in
@@ -397,7 +400,7 @@ let iter f filename =
       let _ = f (get_class cp (JBasics.make_cn file)) in
 	close_class_path cp
     end
-  else if is_file filename && Filename.check_suffix filename ".jar" then
+  else if is_file filename && (Filename.check_suffix filename ".jar" or Filename.check_suffix filename ".zip") then
     begin
       let cp = Filename.dirname filename in
       let filename = Filename.basename filename in
@@ -414,15 +417,16 @@ let iter f filename =
       try
 	while true do
 	  let next = Unix.readdir dir in
-	    if Filename.check_suffix next ".jar" then jar_files := next :: !jar_files
+	    if (Filename.check_suffix next ".jar" or Filename.check_suffix next ".zip") 
+	    then jar_files := next :: !jar_files
 	done
       with End_of_file ->
 	( Unix.closedir dir;
 	  let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () !jar_files
 	  in
-	    Printf.printf "%d classes in %d jar files\n" !nb_class (List.length !jar_files))
+	    Printf.printf "%d classes in %d jar (or zip) files\n" !nb_class (List.length !jar_files))
   else begin
-    Printf.printf "%s is not a valid class file, nor a valid jar file, nor a directory\n" filename;
+    Printf.printf "%s is not a valid class file, nor a valid jar (or zip) file, nor a directory\n" filename;
     exit 0
   end
 
