@@ -70,7 +70,7 @@ let open_path s =
   if is_dir s
   then Some (`dir s)
   else
-    if Filename.check_suffix s ".jar" && is_file s
+    if (Filename.check_suffix s ".jar" or Filename.check_suffix s ".zip") && is_file s
     then Some (`jar (Zip.open_in s))
     else None
 
