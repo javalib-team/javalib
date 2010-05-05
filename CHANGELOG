@@ -1,4 +1,4 @@
-From 2.0.1 to 
+From 2.0.1 to 2.1
 -----------------
 Compilation & Installation changes: 
 * installation process now rely on ocamlfind (more homogeneous installation,
@@ -6,24 +6,29 @@ Compilation & Installation changes:
 * add a configure script into the compilation routine that automatically
   generate the appropriate Makefile.config file. Local installation is now an
   easy option.
-?* add shared option for compilation (.cmxs) ?
+* compilation of a dynamically loadable library (.cmxs) is now proposed
 
 New features:
-* (un)parsing Java 5 annotations
+* parsing and unparsing of Java 5 annotations
 * new function Javalib.extract_class_name_from_file to recover a class name and
   a class path from a .class file
 
-Minor fixes:
+Minor changes:
+* add ~force in map functions to force to evaluate lazy values
+* improving documentation
+* now using indexed method_signature and field_signature in the constant pool
+  (time and memory footprint improved)
+* improving internal comparison on class_field_signature_data and
+  class_method_signature_data
+* zip files can be given when jar files are excepted
+
+Bug fixes:
 * bugfix in JCode.get_local_variable_info: local variable spreading over 0
   instruction (written at one point, never read) were causing problems
 * bugfix in JCode.get_source_line_number.
 * bugfix in classname checking: '-' (minus) is used in some class names
 * bugfix in JLow2High: some correct classes were rejected during checking.
 * others bugfixes (in JFile)
-
-Minor changes:
-* add ~force in map functions to force to evaluate lazy values
-* improving documentation
 
 
 From 2.0 to 2.0.1
