@@ -138,7 +138,7 @@ Options:
 #
 # The option parsing function. Uses getopts, a bash built-in function.
 #
-while getopts ":d:l:h:s" opt
+while getopts "d:l:hs" opt
 do
   case $opt in 
     h   ) print_usage
