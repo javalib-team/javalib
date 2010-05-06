@@ -17,4 +17,4 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-val dump : unit IO.output -> JClassLow.jclass -> unit
+val dump : 'a IO.output -> JClassLow.jclass -> unit
