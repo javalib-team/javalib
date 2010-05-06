@@ -138,6 +138,7 @@ Options:
 #
 # The option parsing function. Uses getopts, a bash built-in function.
 #
+
 while getopts "d:l:hs" opt
 do
   case $opt in 
@@ -295,6 +296,10 @@ echo " done."
 # - if MAKEDEP is non-empty, then compile and install the dependencies.
 # - else compile and install Javalib 
 #
+#
+# Check for Javalib and Buddy.
+#
+
 if [ "$MAKEDEP" ]; then
   echo ""
   echo "WHAT'S NEXT: the following packages need to be compiled and installed:" | fmt
@@ -310,13 +315,25 @@ if [ "$MAKEDEP" ]; then
   done
   echo "Once the packages have been installed, rerun `basename $0` to update the Javalib Makefiles." | fmt
 else
-  echo ""
-  echo "WHAT'S NEXT: all dependencies are satisfied. Compile and install Javalib with the following commands:" | fmt
-  if [ "$LOCALDEST" ]; then
-    echo "    make && make install"
-  else
-    echo "    make && sudo make install"
-  fi
+    JAVALIB=`$FINDER query javalib 2>/dev/null`
+    echo ""
+    echo "WHAT'S NEXT: all dependencies are satisfied."
+    if [ $? = 0 ]; then
+	echo " A version of Javalib is already installed."
+	echo " Compile, remove and install Javalib with the following commands:" | fmt
+    else echo " Compile and install Javalib with the following commands:" | fmt
+    fi   
+    if [ "$LOCALDEST" ]; then
+	if [ $? = 0 ]; then
+	    echo "    make && make remove install"
+	else echo "    make && make install"
+	fi   
+    else
+	if [ $? = 0 ]; then
+	    echo "    make && sudo make remove install"
+	else echo "    make && sudo make remove install"
+	fi   
+    fi
 fi
 echo ""
 echo "More details can be found in the installation documentation (INSTALL or http://javalib.gforge.inria.fr/javalib-doc.html)." | fmt
