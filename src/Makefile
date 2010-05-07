@@ -70,8 +70,8 @@ javalib.cma: javalib_pack.cmo
 javalib.cmxa: javalib_pack.cmx
 	$(OCAMLOPT) $(INCLUDE) -a -o $@ $^
 
-javalib.cmxs: javalib.cmxa
-	$(OCAMLOPT) $(INCLUDE) -shared -o $@ $^
+# javalib.cmxs: javalib.cmxa
+# 	$(OCAMLOPT) $(INCLUDE) -linkpkg -shared -o $@ $^
 
 javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 	$(OCAMLC) $(INCLUDE) -pack $(MODULES:=.cmo) -o $@

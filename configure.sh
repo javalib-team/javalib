@@ -130,16 +130,16 @@ Options:
   -l PATH \t Perform a local installation at PATH.
   -l default \t Perform a local installation in the default directory.
   -d FLAG \t Use the debug flag when compiling.
-  -s  \t\t Complile a dynamically loadable plugin (cmxs).
   -h  \t\t Print this message and exit."
 }
+#  -s  \t\t Complile a dynamically loadable plugin (cmxs).
 
 
 #
 # The option parsing function. Uses getopts, a bash built-in function.
 #
 
-while getopts "d:l:hs" opt
+while getopts "d:l:h" opt
 do
   case $opt in 
     h   ) print_usage

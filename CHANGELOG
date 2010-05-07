@@ -6,7 +6,6 @@ Compilation & Installation changes:
 * add a configure script into the compilation routine that automatically
   generate the appropriate Makefile.config file. Local installation is now an
   easy option.
-* compilation of a dynamically loadable library (.cmxs) is now proposed
 
 New features:
 * parsing and unparsing of Java 5 annotations
