@@ -8,7 +8,7 @@
   <li><span class="code">tar xf javalib-2.0.1.tar.bz2</span></li>
   <li><span class="code">cd javalib-2.0.1</span></li>
   <li><span class="code">./configure.sh</span></li>
-  <li>for any missing dependencies,
+  <li>if there are missing dependencies,
   <ul> 
     <li>if ptrees was not found,<br />
     <span class="code">make ptrees &amp;&amp; make installptrees</span>
@@ -19,8 +19,10 @@
     <li>if extlib was not found,<br />
     <span class="code">make extlib &amp;&amp; make installextlib</span>
     </li>
+    <li>once all dependencies have been installed,<br />
+      <span class="code">./configure.sh</span>
+    </li>
   </ul></li>
-  <li><span class="code">./configure.sh</span></li>
   <li><span class="code">make &amp;&amp; make install</span></li>
 </ol>
 
@@ -31,10 +33,10 @@
 
 <ol class="detailedinstructions">
 
-<li> Javalib makes extensive use of the <a
-href="http://projects.camlcity.org/projects/findlib.html">Findlib</a> package
-manager (&gt;=1.2.3) and its Ocamlfind front-end, which provide seamless
-management of ocaml libraries. Make sure you have an Objective Caml compiler
+<li> Javalib makes extensive use of
+the <a href="http://projects.camlcity.org/projects/findlib.html">Findlib</a>
+package manager (&gt;=1.2.3) and its Ocamlfind front-end, which provide seamless
+management of OCaml libraries. Make sure you have an Objective Caml compiler
 (&gt;=3.10.0) installed, as well as the findlib/ocamlfind tools.
 </li>
 
@@ -56,30 +58,30 @@ command:
 <dl class="code">
   <dd>./configure.sh [options]</dd>
 </dl>
-For a list of options accepted by the configuration script, run <span class="code">./configure.sh
---help</span>. The main options are:
+For a list of options accepted by the configuration script,
+run <span class="code">./configure.sh -h</span>. The main options are:
 <dl>
   <dt>
-  <span class="code">--local[=&lt;dir&gt;]</span>
+    <span class="code">-l [&lt;dir&gt;]</span>
   </dt>
-  <dd>
-  Proceed to install in the local directory <span class="code">&lt;dir&gt;</span>. If no
-  such directory is given, then the installed files will go into a local
-  './lib' folder.
-  </dd>
+  <dd>Proceed to install in the local
+    directory <span class="code">&lt;dir&gt;</span>.</dd>
+  <dt><span class="code">-l default</span></dt>
+  <dd>Proceed to install in the default local directory ('./lib').</dd>
   <dt>
-  <span class="code">--debug=yes|no|prof</span> (default: <span
-  class="code">yes</span>)
+    <span class="code">-d yes|no|prof</span> (default:
+    <span class="code">yes</span>)
   </dt>
   <dd>
-  Set to <span class="code">yes</span> to keep debugging information in native library
-  or to <span class="code">prof</span> to profile (with gprof) your program.
+    Set to <span class="code">yes</span> to keep debugging information in native
+    library or to <span class="code">prof</span> to profile (with gprof) your
+    program.
   </dd>
 </dl>
 
 <em>Note: The configure script assumes that, if the ptrees and camlzip
-installations are local, then the Javalib install will also be local. What is
-more, it assumes that all of them will reside in the same ./lib folder.</em>
+installations are local, then the Javalib install will also be local.  Moreover,
+it assumes that all of them will reside in the same ./lib folder.</em>
 <br /><br />
 
 The configuration script generates a file called "Makefile.config". You are
@@ -98,10 +100,10 @@ following commands:
 </li>
 
 <li> Now we can check if the dependencies are correctly found---remember to run
-the script with the same options as in step 3.
-<ul class="code">
-        <li>./configure.sh [options]</li>
-</ul>
+  the script with the same options as in step 3.
+  <ul class="code">
+    <li>./configure.sh [options]</li>
+  </ul>
 </li>
 
 <li> We can now proceed to the Javalib compilation. In the toplevel directory,
@@ -109,19 +111,19 @@ enter:
 <dl>
   <dd><span class="code">make</span></dd>
   <dd><span class="code">make install</span> (if configure was run with the --local option)</dd>
-  <dd><span class="code">sudo make install</span> (else)</dd>
+  <dd><span class="code">sudo make install</span> (otherwise)</dd>
 </dl>
 </li>
 
-<li> If you care for the documentation, run:
+<li> If you want the documentation, run:
 <dl class="code">
-        <dd>make doc</dd>
+  <dd>make doc</dd>
 </dl>
 </li>
 
 <li> Finally, you can clean the sources with:
 <dl class="code">
-        <dd>make clean</dd>
+  <dd>make clean</dd>
 </dl>
 </li>
 
