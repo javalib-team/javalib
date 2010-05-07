@@ -14,8 +14,7 @@ New features:
   a class path from a .class file
 
 Minor changes:
-* add ~force in map functions to force to evaluate lazy values
-* improving documentation
+* add ~force in Javalib.map_* functions to force the evaluation of lazy values
 * now using indexed method_signature and field_signature in the constant pool
   (time and memory footprint improved)
 * improving internal comparison on class_field_signature_data and

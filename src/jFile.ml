@@ -424,7 +424,8 @@ let iter f filename =
 	( Unix.closedir dir;
 	  let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () !jar_files
 	  in
-	    Printf.printf "%d classes in %d jar (or zip) files\n" !nb_class (List.length !jar_files))
+	    Printf.printf "%d classes in %d jar (or zip) files\n"
+              !nb_class (List.length !jar_files))
   else begin
     Printf.printf "%s is not a valid class file, nor a valid jar (or zip) file, nor a directory\n" filename;
     exit 0

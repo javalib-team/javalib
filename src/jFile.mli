@@ -40,9 +40,11 @@ val sep : string
     zip) files are read in the given order. When several directories
     are given, the order of the jar (or zip) file inside those
     directory are unspecified, but the jar (or zip) file of the first
-    directory will be read before the others.  Note : the following
-    works : {[try class_path (Sys.getenv "CLASSPATH") with Not_found
-    -> class_path ""]}*)
+    directory will be read before the others.
+
+    Note : the following works :
+    {[try class_path (Sys.getenv "CLASSPATH")
+with Not_found-> class_path ""]}*)
 val class_path : string -> class_path
 
 (** Closes a class path. *)
