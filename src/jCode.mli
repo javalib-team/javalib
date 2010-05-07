@@ -143,17 +143,14 @@ type jopcode =
   | OpNop
   | OpBreakpoint
   | OpInvalid
-      (* if [opcodes.(i) = OpInvalid] it means that there is an opcode
-         that starts at position j, with j<i, an covers positions up
-         to k, with k>=i. *)
-      (* If a opcode array is forged, the number of opinvalid plus one
-         must match the number of bytes on which the preceding
-         instruction must be encoded. E.g. [|OpLoad (`Int2Bool,1);
-         OpInvalid|] is encoded as an [iload 0X01]; [|OpLoad
-         (`Int2Bool,1)|] is encoded as an [iload_1]; [|OpLoad
-         (`Int2Bool,1); OpInvalid; OpInvalid; OpInvalid|] is encoded
-         as an [wide;iload 0x0001].
-      *)
+      (** if [opcodes.(i) = OpInvalid] it means that there is an opcode that
+          starts at position j, with j<i, an covers positions up to k, with
+          k>=i.  If an opcode array is forged, the number of OpInvalid plus one
+          must match the number of bytes on which the preceding instruction must
+          be encoded. E.g. [[|OpLoad (`Int2Bool,1); OpInvalid|]] is encoded as
+          an [iload 0X01]; [[|OpLoad (`Int2Bool,1)|]] is encoded as an [iload_1];
+          [[|OpLoad (`Int2Bool,1); OpInvalid; OpInvalid; OpInvalid|]] is encoded
+          as an [wide;iload 0x0001].  *)
 
 type jopcodes = jopcode array
 
