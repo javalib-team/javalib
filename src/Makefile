@@ -27,11 +27,11 @@ CSS=\"style.css\"
 # ------ 
 MODULES=jBasics jBasicsLow jCode jSignature jClass jDumpBasics jDumpLow jParseCode		\
 jInstruction jUnparseSignature jHigh2Low jDumpJasmin jUnparse jParseSignature	\
-jLow2High jParse jFile jPrint javalib
+jLow2High jParse jFile jManifest jPrint javalib
 
 MODULE_INTERFACES=jBasics jBasicsLow jCode jClassLow jSignature jClass		\
 jDumpBasics jDumpLow jDumpJasmin jParseCode jInstruction jUnparseSignature	\
-jUnparse jParseSignature jParse jLow2High jHigh2Low jFile javalib
+jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib
 
 FOR_PACK= -for-pack Javalib_pack
 
@@ -61,6 +61,8 @@ jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 	$(OCAMLOPT) $(INCLUDE) $(FOR_PACK) -c $<
 .mli.cmi:
 	$(OCAMLC) $(INCLUDE) -c $<
+%.ml: %.mll
+	$(OCAMLLEX) $<
 
 javalib.cma: javalib_pack.cmo
 	$(OCAMLC) $(INCLUDE) -a -o $@ $^
@@ -92,7 +94,8 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 
 # cleaning
 clean:
-	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~
+	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~ \
+	jManifest.ml
 
 cleanall: clean
 	$(RM) -r ocaml tests tests.opt sample sample.opt *.cmi	\
