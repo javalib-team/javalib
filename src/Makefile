@@ -18,6 +18,9 @@
 # License along with this program.  If not, see 
 # <http://www.gnu.org/licenses/>.
 
+
+DOCDIR := doc/api
+
 -include ../Makefile.config
 
 DOCDIR:=../$(DOCDIR)

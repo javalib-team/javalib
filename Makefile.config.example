@@ -1,16 +1,18 @@
 export OCAMLFIND_DESTDIR=$(LOCALDEST)
 export OCAMLPATH=$(LOCALDEST)
 
-DOCDIR = doc/api
-
 OCAMLC = $(FINDER) ocamlc $(FLAGS)
 OCAMLOPT = $(FINDER) ocamlopt $(OPT_FLAGS)
 OCAMLDOC = $(FINDER) ocamldoc
 OCAMLDEP = $(FINDER) ocamldep
 OCAMLMKTOP = $(FINDER) ocamlmktop
 OCAMLMKLIB = ocamlmklib
+OCAMLLEX = ocamllex
 
-INCLUDE = -package unix,str,extlib,camlzip,ptrees
+DOCDIR := doc/api
+
+INCLUDE := -package unix,str,extlib,camlzip,ptrees
+
 
 INSTALL = $(FINDER) install
 

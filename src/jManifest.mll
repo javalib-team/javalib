@@ -81,7 +81,7 @@ and section = parse
   let midlet_main_class m =
     let s = List.assoc "MIDlet-1" m.main_section.main_attributes in
       match List.map (String.strip) (String.nsplit s ",") with
-	| [name ; icon ; main] -> main
+	| [_name ; _icon ; main] -> main
 	| _ -> failwith "incorrect MIDlet-1 attribute"
 
 (* for testing:
