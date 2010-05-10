@@ -403,7 +403,7 @@ val extract_class_name_from_file : string -> JBasics.class_name * string
     a directory is printed on the standard error output.  *)
 val iter :
   ?debug:bool ->
-  (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
+  (JCode.jcode interface_or_class -> unit) -> string -> unit
 
 (** Abstract type representing a list of directories. *)
 type directories
