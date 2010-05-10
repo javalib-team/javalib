@@ -392,7 +392,7 @@ let make_dir_absolute dir =
   then Filename.concat (Unix.getcwd ()) dir
   else dir
 
-let iter f filename =
+let iter ?(debug=false) f filename =
   if is_file filename && Filename.check_suffix filename ".class" then
     begin
       let cp = class_path (Filename.dirname filename) in
@@ -407,7 +407,11 @@ let iter f filename =
       let nb_class = ref 0 in
       let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () [filename]
       in
-	Printf.printf "%d classes\n" !nb_class
+	if debug then
+          begin
+            print_int !nb_class;
+            print_endline " classes"
+          end;
     end
   else if is_dir filename then
     let cp = filename in
@@ -424,10 +428,16 @@ let iter f filename =
 	( Unix.closedir dir;
 	  let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () !jar_files
 	  in
-	    Printf.printf "%d classes in %d jar (or zip) files\n"
-              !nb_class (List.length !jar_files))
+	    if debug then
+              begin
+                print_int !nb_class;
+                print_string " classes in ";
+                print_int (List.length !jar_files);
+                print_endline " jar (or zip) files"
+              end)
   else begin
-    Printf.printf "%s is not a valid class file, nor a valid jar (or zip) file, nor a directory\n" filename;
+    prerr_string  filename;
+    prerr_endline " is not a valid class file, nor a valid jar (or zip) file, nor a directory";
     exit 0
   end
 

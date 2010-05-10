@@ -83,11 +83,15 @@ val extract_class_name_from_file : string -> JBasics.class_name * string
 
 (** {2 Reading/transforming a set of classes.} *)
 
-(** [iter f filename] applies the function successively the function [f] on each
-    classes specified by [filename]. [filename] is either a valid class file,
-    a valid jar (or zip) file, or a valid directory with jar (or zip) files inside.
-    The dirname of [filename] is used as classpath.  *)
-val iter : (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
+(** [iter ~debug:false f filename] applies the function successively the
+    function [f] on each classes specified by [filename]. [filename] is either a
+    valid class file, a valid jar (or zip) file, or a valid directory with jar
+    (or zip) files inside.  The dirname of [filename] is used as classpath.  If
+    [debug] is [true] then the number of classes parsed when given a .jar file or
+    a directory is printed on the standard error output.  *)
+val iter :
+  ?debug:bool ->
+  (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
 
 (** Abstract type representing a list of directories. *)
 type directories
