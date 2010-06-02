@@ -1,3 +1,10 @@
+From 2.1 to 2.1.1
+-----------------
+Minor changes:
+* removing some debugging messages from JFile.iter (display number of classes)
+* Version number of Sawja in FindLib was indicated 2.0.1 for version 2.1, 
+  now it is the correct number (2.1.1)
+
 From 2.0.1 to 2.1
 -----------------
 Compilation & Installation changes: 
