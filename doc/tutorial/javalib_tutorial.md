@@ -84,6 +84,16 @@ given order:
 
 Don't forget the associated **#directory** directives that allow you
 to specify the paths where to find these libraries.
+If you installed javalib with FindLib you should do:
+
+~~~~~
+    #directory "<package_install_path>extlib"
+    #directory "<package_install_path>camlzip"
+    #directory "<package_install_path>ptrees"
+    #directory "<package_install_path>javalib"
+    (*<package_install_path> is given by command 'ocamlfind printconf'. 
+    If it is the same path than standard ocaml library just replace by '+'.*)
+~~~~~
 
 You can also build a toplevel including all these libraries using the
 command **make ocaml** in the sources repository of *Javalib*. This
@@ -183,7 +193,7 @@ Here is the code:
         class name cn. *)
      let c = get_class class_path cn in
      (* Then, we get all the methods of c. *)
-     let methods : jvm_code jmethod MethodMap.t = get_methods c in
+     let methods : jcode jmethod MethodMap.t = get_methods c in
      (* For each method of c, we associate a field set containing
         all the accessed fields. *)
        MethodMap.map
@@ -297,7 +307,7 @@ method is called.
         (Some (TBasic `Bool)) in
      let c = get_class class_path cn in
      (* Then, we get all the concrete methods of c. *)
-     let methods : jvm_code concrete_method MethodMap.t =
+     let methods : jcode concrete_method MethodMap.t =
        get_concrete_methods c in
      (* For each concrete method of c, we associate a (int*string) list
         containing all the strings passed as parameters to
