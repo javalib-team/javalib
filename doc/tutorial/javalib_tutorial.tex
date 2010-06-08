@@ -31,10 +31,12 @@ and gives some samples of code in \emph{OCaml}.
 
 \section{Global architecture}
 
-The user interface consists of three modules, \emph{JBasics},
-\emph{JCode} and \emph{Javalib}. These modules are the only ones
-someone should need to write static analysis. The other ones
-provide lower level functions and should not be used.
+All modules of \emph{Javalib} are sub-modules of the package module
+\emph{Javalib\_pack} in order to avoid possible namespace
+conflicts. The user interface consists of three modules,
+\emph{JBasics}, \emph{JCode} and \emph{Javalib}. These modules are
+the only ones someone should need to write static analysis. The
+other ones provide lower level functions and should not be used.
 
 \subsection{\emph{JBasics} module}
 
@@ -120,6 +122,7 @@ You first need to build the signatures associated to each entity.
 According to the \emph{Javalib} API you will write:
 
 \begin{verbatim}
+    open Javalib_pack
     open JBasics
     let aname = make_cn "A"
     let java_lang_string = make_cn "java.lang.String"
@@ -191,6 +194,7 @@ accessed for reading (instructions \textbf{getstatic} and
 Here is the code:
 
 \begin{verbatim}
+    open Javalib_pack
     open Javalib
     open JBasics
     open JCode

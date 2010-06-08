@@ -3,13 +3,13 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta name="generator" content=
-"HTML Tidy for Linux/x86 (vers 11 February 2007), see www.w3.org" />
-<title>Javalib tutorial</title>
+"HTML Tidy for Linux/x86 (vers 25 March 2009), see www.w3.org" />
+<title>Javalib tutorial -</title>
 <meta http-equiv="Content-Type" content=
 "text/html; charset=us-ascii" />
 <meta name="generator" content="pandoc" />
-<link rel="stylesheet" href="style-tut.css" type="text/css" media=
-"all" />
+<meta name="date" content="" />
+<link rel="stylesheet" href="style-tut.css" type="text/css" />
 </head>
 <body>
 <h1 class="tutorial-title">Javalib tutorial<br />
@@ -56,10 +56,13 @@ point for people who want to develop static analysis for
 </div>
 <div id="global-architecture">
 <h1><a href="#TOC">Global architecture</a></h1>
-<p>The user interface consists of three modules, <em>JBasics</em>,
-<em>JCode</em> and <em>Javalib</em>. These modules are the only
-ones someone should need to write static analysis. The other ones
-provide lower level functions and should not be used.</p>
+<p>All modules of <em>Javalib</em> are sub-modules of the package
+module <em>Javalib_pack</em> in order to avoid possible namespace
+conflicts. The user interface consists of three modules,
+<em>JBasics</em>, <em>JCode</em> and <em>Javalib</em>. These
+modules are the only ones someone should need to write static
+analysis. The other ones provide lower level functions and should
+not be used.</p>
 <div id="jbasics-module">
 <h2><a href="#TOC"><em>JBasics</em> module</a></h2>
 <p>This module gives a representation of all the basic types that
@@ -136,7 +139,8 @@ signatures</a></h2>
 <p>You first need to build the signatures associated to each
 entity. According to the <em>Javalib</em> API you will write:</p>
 <pre>
-<code>    open JBasics
+<code>    open Javalib_pack
+    open JBasics
     let aname = make_cn "A"
     let java_lang_string = make_cn "java.lang.String"
     let ms =
@@ -207,7 +211,8 @@ of the fields accessed for reading (instructions
 <strong>getstatic</strong> and <strong>getfield</strong>).</p>
 <p>Here is the code:</p>
 <pre>
-<code>    open Javalib
+<code>    open Javalib_pack
+    open Javalib
     open JBasics
     open JCode
 

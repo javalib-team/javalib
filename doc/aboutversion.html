@@ -1,9 +1,14 @@
 <h2>About this Version</h2>
+<p>
+This version (2.1.1) contains only 2 minors changes: removing some debugging
+messages and fix version number in META file.
+</p>
+<p>
+The major difference brought by version 2.1 is the parsing and
+unparsing of Java 5 annotations. All modules of <em>Javalib</em> are now
+sub-modules of the module Javalib_pack in order to avoid namespace
+conflicts. Compilation and installation processes changes: a configure
+script has been added, installation process now rely on FindLib. Some
+bufixes were done (see CHANGELOG for details).
+</p>
 
-The major difference brough by this version 2 is the clearer definition of the
-purpose of the library: it is meant to handled classes, not programs.  Parts of
-the library have been removed and put in a brand new library: Sawja.  The
-improvements brought in this version of Javalib are mainly focused on the
-documentation, the interfaces (a new user of the library should only have 3
-files to look at), and the overall efficiency (mainly using hash consing, which
-then allows to use Patricia Trees for maps and sets).

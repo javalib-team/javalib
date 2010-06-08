@@ -13,7 +13,9 @@ some samples of code in *OCaml*.
 Global architecture
 ===================
 
-The user interface consists of three modules, *JBasics*, *JCode* and
+All modules of *Javalib* are sub-modules of the package module
+*Javalib_pack* in order to avoid possible namespace conflicts.  The
+user interface consists of three modules, *JBasics*, *JCode* and
 *Javalib*. These modules are the only ones someone should need to
 write static analysis. The other ones provide lower level functions
 and should not be used.
@@ -98,6 +100,7 @@ You first need to build the signatures associated to each entity.
 According to the *Javalib* API you will write:
 
 ~~~~~
+    open Javalib_pack
     open JBasics
     let aname = make_cn "A"
     let java_lang_string = make_cn "java.lang.String"
@@ -169,6 +172,7 @@ this class, a set of the fields accessed for reading (instructions
 Here is the code:
 
 ~~~~~
+    open Javalib_pack
     open Javalib
     open JBasics
     open JCode
