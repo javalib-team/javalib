@@ -18,6 +18,10 @@ javalib-tut.html: javalib_tutorial.md header.html
 javalib_tutorial.pdf: javalib_tutorial.tex
 	pdflatex javalib_tutorial.tex
 	pdflatex javalib_tutorial.tex
+	rm -f javalib_tutorial.aux 
+	rm -f javalib_tutorial.log 
+	rm -f javalib_tutorial.toc 
+
 
 clean:
 	rm -f javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html
