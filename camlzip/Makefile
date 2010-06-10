@@ -48,7 +48,7 @@ libcamlzip.a: $(C_OBJS)
 	$(OCAMLC) -c -ccopt -g -ccopt -I$(ZLIB_INCLUDE) $<
 
 clean:
-	$(RM) -f *.cmo *.cmx *~
+	$(RM) -f *.cmo *.cmx *.annot *~
 	$(RM) -f *.o .depend
 
 cleanall:clean
