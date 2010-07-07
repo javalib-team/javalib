@@ -26,7 +26,7 @@ install:
 	cp META.txt META
 	ocamlfind install extlib META *.cmi *.cma $(MLI) $(wildcard *.cmxa) $(wildcard *.a)
 
-uninstall:
+remove:
 	ocamlfind remove extlib
 
 clean:
