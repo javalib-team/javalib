@@ -341,6 +341,16 @@ let rec unparse_attribute_to_strings consts =
 	       write_ui16 ch index)
 	    l;
 	  ("LocalVariableTable",close_out ch)
+      | AttributeLocalVariableTypeTable l ->
+          write_with_size write_ui16 ch
+            (function start_pc, length, name, signature, index ->
+               write_ui16 ch start_pc;
+               write_ui16 ch length;
+               write_string ch consts name;
+               write_string ch consts (unparse_FieldTypeSignature signature);
+               write_ui16 ch index)
+            l;
+          ("LocalVariableTypeTable", close_out ch)
       | AttributeDeprecated ->
 	  ("Deprecated",close_out ch)
       | AttributeStackMap s ->

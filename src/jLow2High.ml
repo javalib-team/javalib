@@ -56,9 +56,9 @@ let rec get_flag flag = function
   | f::fl when f=flag -> (true,List.filter ((<>)f) fl)
   | f::fl -> let (b,fl) = get_flag flag fl in (b,f::fl)
 
-type lvt = (int * int * string * value_type * int) list
+type 's lvt = (int * int * string * 's * int) list
 
-let combine_LocalVariableTable (lvts:lvt list) : lvt =
+let combine_LocalVariableTable (lvts:'s lvt list) : 's lvt =
   let lvt = List.concat lvts in
     if not (JBasics.get_permissive ()) then
       begin
@@ -169,6 +169,20 @@ let low2high_code consts = function c ->
 	in match lvt with
 	  | [] -> None
 	  | _ -> Some lvt
+      end;
+    c_local_variable_type_table =
+      begin
+        let lvt = combine_LocalVariableTable
+          (List.fold_left
+             (fun lvts ->
+                (function
+                   | AttributeLocalVariableTypeTable lvt -> lvt :: lvts
+                   | _ -> lvts))
+             []
+             c.JClassLow.c_attributes)
+        in match lvt with
+          | [] -> None
+          | _ -> Some lvt
       end;
     c_stack_map_midp =
       begin

@@ -132,6 +132,9 @@ let h2l_code2attribute consts = function
 	      @ (match code.c_local_variable_table with
 		   | Some lvt -> [AttributeLocalVariableTable lvt]
 		   | None -> [])
+              @ (match code.c_local_variable_type_table with
+                   | Some lvt -> [AttributeLocalVariableTypeTable lvt]
+                   | None -> [])
 	      @ h2l_other_attributes code.c_attributes;
 	  }
       in

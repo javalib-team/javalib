@@ -376,6 +376,17 @@ and dump_attrib ch consts = function
 	     name
 	     index)
 	variables
+  | AttributeLocalVariableTypeTable variables ->
+      IO.nwrite ch "    generic-local-variables\n";
+      List.iter
+	(function start_pc, length, name, signature, index ->
+	   IO.printf ch "      from %d to %d, %s %s at %d\n"
+	     start_pc
+	     (start_pc + length)
+	     (JUnparseSignature.unparse_FieldTypeSignature signature)
+	     name
+	     index)
+	variables
   | AttributeDeprecated ->
       IO.nwrite ch "    deprecated\n"
   | AttributeStackMap stackmap_frames ->

@@ -28,12 +28,12 @@ DOCDIR:=../$(DOCDIR)
 CSS=\"style.css\"
 
 # ------ 
-MODULES=jBasics jBasicsLow jCode jSignature jClass jDumpBasics jDumpLow jParseCode		\
-jInstruction jUnparseSignature jHigh2Low jDumpJasmin jUnparse jParseSignature	\
-jLow2High jParse jFile jManifest jPrint javalib
+MODULES=jBasics jBasicsLow jCode jSignature jClass jDumpBasics jParseCode	\
+jInstruction jUnparseSignature jDumpLow jHigh2Low jDumpJasmin jUnparse		\
+jParseSignature jLow2High jParse jFile jManifest jPrint javalib
 
 MODULE_INTERFACES=jBasics jBasicsLow jCode jClassLow jSignature jClass		\
-jDumpBasics jDumpLow jDumpJasmin jParseCode jInstruction jUnparseSignature	\
+jDumpBasics jUnparseSignature jDumpLow jDumpJasmin jParseCode jInstruction	\
 jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib
 
 FOR_PACK= -for-pack Javalib_pack

@@ -272,6 +272,9 @@ and attribute =
   | AttributeLineNumberTable of (int * int) list
   | AttributeLocalVariableTable of (int * int * string * value_type * int) list
       (** start_pc, length, name, type, index *)
+  | AttributeLocalVariableTypeTable of (int * int * string * JSignature.fieldTypeSignature * int) list
+      (** (start_pc, length, name, type, index), LocalVariableTable for
+          generics, described in the JVM Spec 1.5, §4.8.13 *)
   | AttributeDeprecated
   | AttributeStackMap of (int*(verification_type list)
 			  *(verification_type list)) list

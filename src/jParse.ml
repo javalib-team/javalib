@@ -423,11 +423,27 @@ and parse_attribute list consts ch =
 		   (function _ ->
 		      let start_pc = read_ui16 ch in
 		      let length = read_ui16 ch in
-		      let name = (get_string_ui16 consts ch) in
-		      let signature = parse_field_descriptor
-			(get_string_ui16 consts ch) in
+		      let name = get_string_ui16 consts ch in
+		      let signature =
+                        parse_field_descriptor
+			  (get_string_ui16 consts ch) in
 		      let index = read_ui16 ch in
 			start_pc, length, name, signature, index))
+        | "LocalVariableTypeTable" -> check `LocalVariableTypeTable;
+            let nentry = read_ui16 ch in
+              if nentry *10 + 2 <> alen then error();
+              AttributeLocalVariableTypeTable
+                (List.init
+                nentry
+                (fun _ ->
+                   let start_pc = read_ui16 ch in
+                   let length = read_ui16 ch in
+                   let name = get_string_ui16 consts ch in
+                   let signature =
+                     parse_FieldTypeSignature
+                       (get_string_ui16 consts ch) in
+                   let index = read_ui16 ch in
+                     start_pc, length, name, signature, index))
 	| "Deprecated" -> check `Deprecated;
 	    if alen <> 0 then error ();
 	    AttributeDeprecated

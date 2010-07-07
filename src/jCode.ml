@@ -156,6 +156,7 @@ type jcode = {
   c_exc_tbl : exception_handler list;
   c_line_number_table : (int * int) list option;
   c_local_variable_table : (int * int * string * value_type * int) list option;
+  c_local_variable_type_table : (int * int * string * JSignature.fieldTypeSignature * int) list option;
   c_stack_map_midp : stackmap list option;
   c_stack_map_java6 : stackmap list option;
   c_attributes : (string * string) list;
