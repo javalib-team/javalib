@@ -171,10 +171,11 @@ type jcode = {
   c_code : jopcodes;
   c_exc_tbl : exception_handler list;
   c_line_number_table : (int * int) list option;
-  (** (start_pc, length, name, type, index) *)
+  (** (start_pc, line_number) *)
   c_local_variable_table : (int * int * string * value_type * int) list option;
-  (** LocalVariableTable for generics, described in the JVM Spec 1.5, §4.8.13 *)
+  (** (start_pc, length, name, type, index) *)
   c_local_variable_type_table : (int * int * string * JSignature.fieldTypeSignature * int) list option;
+  (** LocalVariableTable for generics, described in the JVM Spec 1.5, §4.8.13 *)
   c_stack_map_midp : stackmap list option;
   c_stack_map_java6 : stackmap list option;
   c_attributes : (string * string) list;
