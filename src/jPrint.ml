@@ -75,7 +75,7 @@ and value_type ?(jvm=false) vt =
 
 let field_descriptor = value_type
 
-let value_type_list ?names l =
+let value_type_list ?(jvm=false) ?names l =
   let prms =
     match names with
       | None -> List.map value_type l
@@ -84,7 +84,7 @@ let value_type_list ?names l =
 	  try
 	    List.map2
 	      (fun v name ->
-		 (value_type v) ^ " " ^ name) l names
+		 (value_type ~jvm:jvm v) ^ " " ^ name) l names
 	  with
 	      _ -> invalid_arg "Bad length for names list."
   in

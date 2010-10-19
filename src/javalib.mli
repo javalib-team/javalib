@@ -541,7 +541,7 @@ sig
 
      @raise Invalid_argument if the length of [names] is not the same as
      [l].  *)
-  val value_type_list : ?names:string list -> value_type list -> string
+  val value_type_list : ?jvm:bool -> ?names:string list -> value_type list -> string
 
   (** [field_descriptor ~jvm field_descriptor] gives a string representation of a
       [field_descriptor]. *)
