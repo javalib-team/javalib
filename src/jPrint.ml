@@ -22,56 +22,18 @@
 open JBasics
 open JClass
 
-
-let replace_dot s =
-  let s = String.copy s in
-    for i = 0 to String.length s - 1 do
-      if s.[i] = '.' then s.[i] <- '/'
-    done;
-    s
-
-let class_name ?(jvm=false) cn =
-  let cname = cn_name cn in
-    if jvm then
-      "L" ^ (replace_dot cname) ^ ";"
-    else cname
+let class_name  = JDumpBasics.class_name
 
 let cn_package cn =
   String.concat "." (cn_package cn)
 
 let cn_simple_name = cn_simple_name
 
-let java_basic_type ?(jvm=false) bt =
-  match bt with
-    | `Bool ->
-	if jvm then "Z" else "bool"
-    | `Byte ->
-	if jvm then "B" else "byte"
-    | `Char ->
-	if jvm then "C" else "char"
-    | `Double ->
-	if jvm then "D" else "double"
-    | `Float ->
-	if jvm then "F" else "float"
-    | `Int ->
-	if jvm then "I" else "int"
-    | `Long ->
-	if jvm then "J" else "long"
-    | `Short ->
-	if jvm then "S" else "short"
+let java_basic_type  = JDumpBasics.basic_type
 
-let rec object_type ?(jvm=false) ot =
-  match ot with
-    | TClass cn -> class_name ~jvm:jvm cn
-    | TArray vt ->
-	if jvm then
-	  "[" ^ (value_type ~jvm:true vt)
-	else (value_type vt) ^ "[]"
+let object_type = JDumpBasics.object_value_signature
 
-and value_type ?(jvm=false) vt =
-  match vt with
-    | TBasic bt -> java_basic_type ~jvm:jvm bt
-    | TObject ot -> object_type ~jvm:jvm ot
+let value_type = JDumpBasics.value_signature
 
 let field_descriptor = value_type
 
@@ -90,12 +52,7 @@ let value_type_list ?(jvm=false) ?names l =
   in
     "(" ^ (String.concat ", " prms) ^ ")"
 
-let return_type ?(jvm=false) v =
-  match v with
-    | None ->
-	if jvm then "V"
-	else "void"
-    | Some v -> value_type ~jvm:jvm v
+let return_type ?(jvm=false) = JDumpBasics.rettype2shortstring ~jvm:jvm
 
 let method_descriptor ?(jvm=false) args ret =
   let ret = return_type ~jvm:jvm ret in

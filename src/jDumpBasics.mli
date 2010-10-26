@@ -24,26 +24,35 @@
 
 open JBasics
 
-val class_name : class_name -> string
-  (** [class_name cn] returns the fully qualified class name as a
-      string with dots between packages and between package name and
-      class name. *)
-val basic_type : java_basic_type -> string
-  (** [basic_type t] returns the Java representation of the type [t]
-      ({i e.g.} [basic_type `Int] returns "int"). *)
-val object_value_signature : object_type -> string
-  (** [object_value_signature s] return the Java representation of
-      type [s]. *)
-val value_signature : value_type -> string
-  (** [value_signature s] return the Java representation of type
-      [s]. *)
+val class_name : ?jvm:bool -> class_name -> string
+  (** [class_name ~jvm cn] returns the fully qualified class name as a
+      string. If [jvm] is false (default value): with dots between
+      packages and between package name and class name. If [jvm] is
+      true returns the JVM representation. *)
+
+val basic_type : ?jvm:bool -> java_basic_type -> string
+  (** [basic_type ~jvm t], if [jvm] is false (default value), returns the
+      Java representation of the type [t] ({i e.g.} [basic_type `Int]
+      returns "int"). If [jvm] is true: returns the JVM
+      representation of type [t] ({i e.g.} [type2shortstring `Int]
+      returns "I").*)
+
+val object_value_signature : ?jvm:bool -> object_type -> string
+  (** [object_value_signature ~jvm s], if [jvm] is false (by
+      default), returns the Java representation of type [s]. If [jvm]
+      is true returns the JVM representation of type [s].*)
+val value_signature : ?jvm:bool -> value_type -> string
+  (** [value_signature ~jvm s], if [jvm] is false (default value),
+      returns the Java representation of the type [t]. If [jvm] is
+      true: returns the JVM representation of type [t] *)
 val type2shortstring : value_type -> string
-  (** [type2shortstring t] return the JVM representation of type [t]
-      ({i e.g.} [type2shortstring `Int] returns "I"). *)
-val rettype2shortstring : value_type option -> string
-  (** [rettype2shortstring t] return the JVM representation of the
-      return type [t] ({i e.g.} [rettype2shortstring None] returns
-      "V"). *)
+  (** @deprecated {!type2shortstring} is an alias for {!value_signature} [~jvm:true].*)
+val rettype2shortstring : ?jvm:bool -> value_type option -> string
+  (** [rettype2shortstring t], if [jvm] is true (default value),
+      returns the JVM representation of the return type [t] ({i e.g.}
+      [rettype2shortstring None] returns "V"). If [jvm] is false
+      returns the Java representation of type [t] ({i e.g.}
+      [rettype2shortstring None] returns "void").*)
 val arraytype2shortstring : jvm_array_type -> string
   (** [arraytype2shortstring t] return the JVM representation of the
       array type [t] ({i e.g.} [arraytype2shortstring `Object] returns

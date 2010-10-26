@@ -21,51 +21,64 @@
 
 open JBasics
 
-let class_name = cn_name
+let replace_dot s =
+  let s = String.copy s in
+    for i = 0 to String.length s - 1 do
+      if s.[i] = '.' then s.[i] <- '/'
+    done;
+    s
+
+let class_name ?(jvm=false) cn =
+  let cname = cn_name cn in
+    if jvm then
+      replace_dot cname
+    else cname
 
 let sprintf = Printf.sprintf
 
-let basic_type = function
-  | `Bool -> "bool"
-  | `Char -> "char"
-  | `Float -> "float"
-  | `Double -> "double"
-  | `Byte -> "byte"
-  | `Short -> "short"
-  | `Int -> "int"
-  | `Long -> "long"
+let basic_type ?(jvm=false) bt =
+  match bt with
+    | `Bool ->
+	if jvm then "Z" else "bool"
+    | `Byte ->
+	if jvm then "B" else "byte"
+    | `Char ->
+	if jvm then "C" else "char"
+    | `Double ->
+	if jvm then "D" else "double"
+    | `Float ->
+	if jvm then "F" else "float"
+    | `Int ->
+	if jvm then "I" else "int"
+    | `Long ->
+	if jvm then "J" else "long"
+    | `Short ->
+	if jvm then "S" else "short"
 
-let rec object_value_signature = function
-	| TClass cl -> class_name cl
-	| TArray s -> value_signature s ^"[]"
 
-and value_signature = function
-  | TBasic b -> basic_type b
-  | TObject o -> object_value_signature o
+let rec object_value_signature ?(jvm=false) ot =
+  match ot with
+    | TClass cn -> 
+	let cn = class_name ~jvm:jvm cn in
+	  if jvm then "L" ^cn^";"
+	  else cn
+    | TArray vt ->
+	if jvm then
+	  "[" ^ (value_signature ~jvm:true vt)
+	else (value_signature vt) ^ "[]"
 
+and value_signature ?(jvm=false) vt =
+  match vt with
+    | TBasic bt -> basic_type ~jvm:jvm bt
+    | TObject ot -> object_value_signature ~jvm:jvm ot
 
-let type2shortstring t =
-  let bt2ss = function
-    | `Long -> "J"
-    | `Float -> "F"
-    | `Double -> "D"
-    | `Int -> "I"
-    | `Short -> "S"
-    | `Char -> "C"
-    | `Byte -> "B"
-    | `Bool -> "Z"
-  in
-  let rec ot2ss = function
-    | TClass cn -> "L"^class_name cn^";"
-    | TArray t -> "["^ vt2ss t
-  and vt2ss = function
-    | TBasic t -> bt2ss t
-    | TObject t -> ot2ss t
-  in vt2ss t
+let type2shortstring = value_signature ~jvm:true
 
-let rettype2shortstring = function
-  | None -> "V"
-  | Some t -> type2shortstring t
+let rettype2shortstring ?(jvm=true) = function
+    None ->
+	if jvm then "V"
+	else "void"
+    | Some v -> value_signature ~jvm:jvm v 
 
 let arraytype2shortstring = function
   | `Long -> "J"

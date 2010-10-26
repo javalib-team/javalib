@@ -519,8 +519,8 @@ sig
       [method_descriptor], associated to the name [name]. *)
   val signature : ?jvm:bool -> string -> descriptor -> string
 
-  (** [java_basic_type ~jvm java_basic_type] gives a string representation of a
-      [java_basic_type]. *)
+  (** [java_basic_type ~jvm java_basic_type] gives a string
+      representation of a [java_basic_type]. *)
   val java_basic_type : ?jvm:bool -> java_basic_type -> string
 
   (** [object_type ~jvm object_type] gives a string representation of an

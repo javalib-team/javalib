@@ -284,7 +284,7 @@ let rec dump_element_value ch = function
   | EVClass None ->
       IO.nwrite ch "Void.class"
   | EVClass (Some vt) ->
-      IO.nwrite ch (type2shortstring vt)
+      IO.nwrite ch (value_signature ~jvm:true vt)
   | EVAnnotation annot ->
       dump_annotation ch annot
   | EVArray evlist ->

@@ -193,9 +193,10 @@ val get_source_line_number : int -> jcode -> int option
 
 (** [get_local_variable_info i pp m] returns the name and signature of
     the local variable [i] at program point [pp] in the method code
-    [m], if they are defined in the local variable table (The bytecode
-    needs to be compiled with the -g option). Otherwise the value
-    [None] is returned.
+    [m] (including the [pp] of the first assignement of [i], it's not
+    the case in [c_local_variable_table]), if they are defined in the
+    local variable table (The bytecode needs to be compiled with the
+    -g option). Otherwise the value [None] is returned.
 *)
 val get_local_variable_info :
   int -> int -> jcode -> (string * value_type) option
