@@ -116,6 +116,16 @@ let java_basic_type = function
   | `Byte
   | `Bool -> 'b'
 
+let jvm_array_type = function
+  | `Int -> 'i'
+  | `Long -> 'l'
+  | `Float -> 'f'
+  | `Double -> 'd'
+  | `Short -> 's'
+  | `Char -> 'c'
+  | `ByteBool -> 'b'
+  | `Object -> 'a'
+
 let dump_constant_value ch = function
   | ConstString s -> IO.printf ch "string '%s'" s
   | ConstInt i -> IO.printf ch "int %ld" i

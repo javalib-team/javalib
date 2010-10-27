@@ -68,6 +68,9 @@ val signature : string -> descriptor -> string
 val jvm_basic_type :  [< `Int | jvm_basic_type ] -> char
   (** [jvm_basic_type t] returns the lowercase character that
       corresponds to the type [t]. *)
+val jvm_array_type :  jvm_array_type -> char
+  (** [jvm_array_type t] returns the lowercase character that
+      corresponds to the type [t]. *)
 val java_basic_type : java_basic_type -> char
   (** [java_basic_type t] returns the lowercase character that
       corresponds to the type [t]. *)

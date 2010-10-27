@@ -25,11 +25,9 @@ exception JDumpJasminException of string
 let string_of_version version  =
   (string_of_int version.major)^(".")^(string_of_int version.minor)
 
-let string_of_classname cn =  cn_name cn
+let string_of_classname cn =  JDumpBasics.class_name ~jvm:true cn
 
-let string_of_super super = match super with
-  | None -> "java/lang/Object"
-  | Some cn -> string_of_classname cn
+let string_of_classname_type cn = JDumpBasics.object_value_signature ~jvm:true (TClass cn)
 
 let string_of_class_flags flags =
   let to_string flag = match flag with
@@ -74,28 +72,18 @@ let string_of_method_flags flags =
     | _ -> ""
   in String.concat " " (List.map to_string flags)
 
-let string_of_java_basic_type jbt = match jbt with
-  | `Int -> "I"
-  | `Short -> "S"
-  | `Char -> "C"
-  | `Byte -> "B"
-  | `Bool -> "Z"
-  | `Long -> "J"
-  | `Float -> "F"
-  | `Double -> "D"
+let string_of_value_type = JDumpBasics.value_signature ~jvm:true
 
-let rec (string_of_value_type : value_type -> string) = fun vt ->
-  match vt with
-    | TBasic jbt -> string_of_java_basic_type jbt
-    | TObject ot -> string_of_object_type ot
-and (string_of_object_type : object_type -> string) = fun ot ->
-  match ot with
-    | TClass cn -> ("L"^(string_of_classname cn)^";")
-    | TArray vt -> ("["^(string_of_value_type vt))
+let string_of_object_type = JDumpBasics.object_value_signature ~jvm:true
+
+let string_objtype_2_classname = 
+  function 
+      TClass cn -> string_of_classname cn
+    | TArray _ as ot -> string_of_object_type ot
 
 let string_of_method_descriptor (l,r) =
   let params = String.concat "" (List.map string_of_value_type l)
-  and return = match r with | None -> "V" | Some vt -> string_of_value_type vt
+  and return = JDumpBasics.rettype2shortstring ~jvm:true r
   in "("^params^")"^return
 
 let string_of_constant_value v = match v with
@@ -104,7 +92,7 @@ let string_of_constant_value v = match v with
   | ConstFloat f | ConstDouble f -> string_of_float f
   | ConstString str -> "\""^str^"\""
   | ConstClass (TClass cn) -> string_of_classname cn
-  | ConstClass (TArray _) -> raise (JDumpJasminException "array constant value")
+  | ConstClass (TArray _ as ot) -> string_of_object_type ot
 
 let string_of_constant c = match c with
   | ConstValue(c) -> string_of_constant_value c
@@ -113,7 +101,7 @@ let string_of_constant c = match c with
       and fielddesc' = string_of_value_type (fs_type fs)
       in classname'^"/"^fs_name fs^" "^fielddesc'
   | ConstMethod(objecttype,ms) ->
-      let objecttype' = string_of_object_type objecttype
+      let objecttype' = string_objtype_2_classname objecttype
       and methoddesc' = string_of_method_descriptor (ms_args ms, ms_rtype ms)
       in objecttype'^"/"^(ms_name ms)^methoddesc'
   | ConstInterfaceMethod(classname, ms) ->
@@ -129,10 +117,7 @@ let string_of_constant c = match c with
   | ConstStringUTF8(str) -> str
   | ConstUnusable -> "##### Unusable Constant #####"
 
-let string_of_opcode i opcode constants pos =
-  let prefix_of_jvm_basic_type jbt = match jbt with
-    |`Long -> "l"  |`Float -> "f" |`Double -> "d"  | _ -> "i"
-  in
+let string_of_opcode opcode constants pos =
     match opcode with
       | OpNop -> "nop"
       | OpAConstNull -> "aconst_null"
@@ -145,8 +130,8 @@ let string_of_opcode i opcode constants pos =
       | OpBIPush(i) -> "bipush "^(string_of_int i)
       | OpSIPush(i) -> "sipush "^(string_of_int i)
       | OpLdc1(i) -> "ldc "^(string_of_constant constants.(i))
-      | OpLdc1w(i) -> "ldc2_w "^(string_of_constant constants.(i))
-      | OpLdc2w(i) -> "ldc_w "^(string_of_constant constants.(i))
+      | OpLdc1w(i) -> "ldc_w "^(string_of_constant constants.(i))
+      | OpLdc2w(i) -> "ldc2_w "^(string_of_constant constants.(i))
 
       | OpLoad(jbt,i) ->
 	  begin
@@ -210,12 +195,12 @@ let string_of_opcode i opcode constants pos =
       | OpDup2X2  -> "dup2_x2"
       | OpSwap  -> "swap"
 
-      | OpAdd(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"add"
-      | OpSub(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"sub"
-      | OpMult(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"mult"
-      | OpDiv(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"div"
-      | OpRem(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"rem"
-      | OpNeg(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"neg"
+      | OpAdd(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"add"
+      | OpSub(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"sub"
+      | OpMult(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"mult"
+      | OpDiv(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"div"
+      | OpRem(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"rem"
+      | OpNeg(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"neg"
 
       | OpIShl  -> "ishl"
       | OpLShl  -> "lshl"
@@ -272,22 +257,22 @@ let string_of_opcode i opcode constants pos =
       | OpRet(i) -> "ret "^(string_of_int (i+pos))
 
       | OpTableSwitch(d,l,_,jumps) ->
-	  "tableswith "^(Int32.to_string l)^"\n"^
+	  "tableswitch "^(Int32.to_string l)^"\n"^
 	    (String.concat "\n" (List.map
 				   (fun x -> "\t\t\t\t\t"^
-				      (string_of_int (i+x)))
+				      (string_of_int (x)))
 				   (Array.to_list jumps)))^"\n"^
-	    "\t\t\tdefault : \t"^(string_of_int (i+d))
+	    "\t\t\tdefault : \t"^(string_of_int (d))
       | OpLookupSwitch(d,jumps) ->
 	  "lookupswitch \n"^
 	    (String.concat "\n" (List.map
 				   (fun (x,y) -> "\t\t\t"^
 				      (Int32.to_string x )^" : \t\t"^
-				      (string_of_int (i+y)))
+				      (string_of_int (y)))
 				   jumps))^"\n"^
-	    "\t\t\tdefault : \t"^(string_of_int (i+d))
+	    "\t\t\tdefault : \t"^(string_of_int (d))
 
-      | OpReturn(jvmbt) -> (prefix_of_jvm_basic_type jvmbt)^"return"
+      | OpReturn(jvmbt) -> Char.escaped (JDumpBasics.jvm_basic_type jvmbt)^"return"
       | OpAReturn -> "areturn"
       | OpReturnVoid -> "return"
 
@@ -301,7 +286,7 @@ let string_of_opcode i opcode constants pos =
       | OpInvokeInterface(i,_) -> "invokeinterface "^(string_of_constant constants.(i))
 
       | OpNew(i) -> "new "^(string_of_constant constants.(i))
-      | OpNewArray(jbt) -> "newarray "^(string_of_java_basic_type jbt)
+      | OpNewArray(jbt) -> "newarray "^(JDumpBasics.basic_type jbt)
       | OpANewArray(i)-> "anewarray "^(string_of_constant constants.(i))
       | OpArrayLength -> "arraylength"
       | OpThrow -> "athrow"
@@ -309,7 +294,7 @@ let string_of_opcode i opcode constants pos =
       | OpInstanceOf(i) -> "instanceof "^(string_of_constant constants.(i))
       | OpMonitorEnter -> "monitorenter"
       | OpMonitorExit -> "monitorexit"
-      | OpAMultiNewArray(i,j) -> "multinewarray "^
+      | OpAMultiNewArray(i,j) -> "multianewarray "^
 	  (string_of_constant constants.(i))^(" ")^(string_of_int j)
       | OpIfNull(i) -> "ifnull "^(string_of_int (i+pos))
       | OpIfNonNull(i) -> "ifnonnull "^(string_of_int i)
@@ -318,7 +303,9 @@ let string_of_opcode i opcode constants pos =
       | OpBreakpoint -> "breakpoint"
       (* | OpRetW(i) -> "retw "^(string_of_int (i+pos)) *)
       | OpInvalid -> "Invalid"
-      | _ -> "notYet"
+      | OpArrayStore ar_t -> (Char.escaped (JDumpBasics.jvm_basic_type ar_t))^"astore"
+      | OpArrayLoad ar_t -> (Char.escaped (JDumpBasics.jvm_basic_type ar_t))^"aload"
+
 
 (* Extract Attributes *)
 
@@ -346,12 +333,12 @@ let string_of_attribute a = match a with
   | AttributeUnknown(s,s') -> s^" "^(string_of_int (String.length s'))
   | _ -> "Unkown attribute"
 
-let find_stack_map x =
+(*let find_stack_map x =
   let rec f = function
     | AttributeStackMapTable sm::_ -> sm
     | _::l ->f l
     | [] -> []
-  in  f x
+  in  f x*)
 
 let rec find_lines x = match x with
   | AttributeLineNumberTable lines::_ -> lines
@@ -368,7 +355,7 @@ let get_line attributes i =
     Some (List.assoc i (find_lines attributes))
   with _ -> None
 
-let string_of_vtype _consts vtype = match vtype with
+(*let string_of_vtype _consts vtype = match vtype with
   | VTop -> "Top"
   | VInteger -> "Integer"
   | VFloat -> "Float"
@@ -376,7 +363,7 @@ let string_of_vtype _consts vtype = match vtype with
   | VLong -> "Long"
   | VNull -> "Null"
   | VUninitializedThis -> "UninitializedThis"
-  | VObject(i) -> "Object "^(string_of_object_type i)
+  | VObject(i) -> "Object "^(string_objtype_2_classname i)
   | VUninitialized(_i) -> "Uninitialized"
 
 let string_of_stack_map_frame consts sm last = match sm with
@@ -405,10 +392,9 @@ let string_of_stack_map_frame consts sm last = match sm with
   | ChopFrame(k,i) ->
       let offset = !last + i + 1 in
 	last := offset;
-	( "\t.stack use [?]locals ; chop_frame("^
+	( "\t.stack use locals ; chop_frame("^
 	    (string_of_int k)^","^(string_of_int i)^")\n"^
 	    "\t\toffset "^(string_of_int offset)^"\n"^
-	    (*"\t stack "^(string_of_vtype consts vtype)^"\n"^*)
 	    "\t.end stack\n")
   | SameFrameExtended(k,i) ->
       let offset = !last + i + 1 in
@@ -441,7 +427,7 @@ let string_of_stack_map_frame consts sm last = match sm with
 	      "\t\toffset "^(string_of_int offset)^"\n"^
 	      locals^"\n"^
 	      "\t\t"^stack^"\n"^
-	      "\t.end stack\n")
+	      "\t.end stack\n")*)
 
 let dump ch cl =
   let version = string_of_version cl.j_version
@@ -452,8 +438,8 @@ let dump ch cl =
   in let class_flags = string_of_class_flags cl.j_flags
   in let class_name = string_of_classname cl.j_name
   in let super = match cl.j_super with
-    | Some cn -> string_of_classname cn
-    | _ -> "java/lang/Object"
+    | Some cn -> JDumpBasics.class_name cn
+    | _ -> "java.lang.Object"
   in let interfaces = List.map string_of_classname cl.j_interfaces
   in
     begin
@@ -484,11 +470,11 @@ let dump ch cl =
 	       begin
 		 match find_Code meth with
 		   | Some code ->
-		       let last = ref (-1) in
+		       (*let last = ref (-1) in
 			 (List.iter
 			    (fun x -> IO.printf ch "%s"
 			       (string_of_stack_map_frame cl.j_consts x last))
-			    (find_stack_map (code.c_attributes)));
+			    (find_stack_map (code.c_attributes)));*)
 			 IO.printf ch "\t.limit stack %s\n" (string_of_int code.c_max_stack);
 			 IO.printf ch "\t.limit locals %s\n" (string_of_int code.c_max_locals);
 			 List.iter (fun (start,length,name,typ,index) ->
@@ -504,7 +490,7 @@ let dump ch cl =
 			       | None -> ()
 			   in
 			   let _ =
-			     match string_of_opcode i code.c_code.(i) cl.j_consts i with
+			     match string_of_opcode code.c_code.(i) cl.j_consts i with
 			       | "Invalid" -> ()
 			       | str -> IO.printf ch "\t\t%s: \t%s\n" (string_of_int i) str
 			   in ()
