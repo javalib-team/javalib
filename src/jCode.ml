@@ -187,7 +187,7 @@ let get_local_variable_info i pp code =
 	      List.find
 		(fun (start,len,_,_,index) ->
 		   pp + offset >= start
-                   && pp + offset <= start + len
+                   && pp + offset < start + len
                    && index = i
                 ) lvt
             in
