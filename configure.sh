@@ -51,7 +51,7 @@ FINDER=`which ocamlfind`
 # The path to recode (used to fix accents in the documentation)
 RECODEBIN=`which recode`
 # The debug flag
-DEBUG=yes
+DEBUG=no
 # The shared option flag
 SHARED=
 # The ocamlopt flags (depends on DEBUG)
@@ -129,7 +129,7 @@ Usage: `basename $0` [-l [PATH|default]] [-d [yes|no|prof]] [-h]
 Options:
   -l PATH \t Perform a local installation at PATH.
   -l default \t Perform a local installation in the default directory.
-  -d FLAG \t Use the debug flag when compiling.
+  -d FLAG \t Use the debug flag when compiling (default: no).
   -h  \t\t Print this message and exit."
 }
 #  -s  \t\t Complile a dynamically loadable plugin (cmxs).
@@ -316,22 +316,23 @@ if [ "$MAKEDEP" ]; then
   echo "Once the packages have been installed, rerun `basename $0` to update the Javalib Makefiles." | fmt
 else
     JAVALIB=`$FINDER query javalib 2>/dev/null`
+    ALR_INST=$?
     echo ""
     echo "WHAT'S NEXT: all dependencies are satisfied."
-    if [ $? = 0 ]; then
+    if [ $ALR_INST = 0 ]; then
 	echo " A version of Javalib is already installed."
 	echo " Compile, remove and install Javalib with the following commands:" | fmt
     else echo " Compile and install Javalib with the following commands:" | fmt
     fi   
     if [ "$LOCALDEST" ]; then
-	if [ $? = 0 ]; then
+	if [ $ALR_INST = 0 ]; then
 	    echo "    make && make remove install"
 	else echo "    make && make install"
 	fi   
     else
-	if [ $? = 0 ]; then
+	if [ $ALR_INST = 0 ]; then
 	    echo "    make && sudo make remove install"
-	else echo "    make && sudo make remove install"
+	else echo "    make && sudo make install"
 	fi   
     fi
 fi
