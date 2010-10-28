@@ -58,9 +58,8 @@ SHARED=
 OPT_FLAGS=
 # The camlp4o pretty-printer
 PP=
-
 # The following variables are constants
-FLAGS="-g -w Ae -annot"
+FLAGS="-g -w Ae"
 
 
 # Differentiated error numbers make for easier bug hunting. Hopefully we won't
@@ -186,7 +185,20 @@ fi
 if [ -z $LOCALDEST ]; then 
   msg "inf" "System-wide installation, in `$FINDER printconf destdir`" 
 fi
-        
+
+#
+# Check Ocaml version and add the correct flag in function
+#
+V=`$FINDER ocamlc -version`
+OCAML_VERSION=${V:0:4}
+
+if [ -z $OCAML_VERSION ] || [[ "$OCAML_VERSION" < "3.11" ]]; then
+  FLAGS="$FLAGS -dtypes"
+else
+  FLAGS="$FLAGS -annot"
+fi
+
+      
 #
 # Check Camlzip, Ptrees, and Extlib. Set them to compile if necessary.
 #
