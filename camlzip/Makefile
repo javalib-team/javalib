@@ -61,13 +61,13 @@ install:
 
 
 remove:
-	ocamlfind remove camlzip
+	$(FINDER) remove camlzip
 
 
 .DELETE_ON_ERROR:.depend
 
 .depend:
 	gcc -MM -I`ocamlc -where` -I$(ZLIB_INCLUDE) *.c > .depend
-	ocamldep *.mli *.ml >> .depend
+	$(OCAMLDEP) *.mli *.ml >> .depend
 
 -include .depend

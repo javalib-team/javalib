@@ -29,7 +29,7 @@ all:ptrees.cma ptrees.cmxa
 install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.mli=.cmi)
 	$(INSTALL) ptrees $^ ptrees.a
 remove:
-	ocamlfind remove ptrees
+	$(FINDER) remove ptrees
 ptrees.cma:$(MODULES:.ml=.cmo)
 	$(OCAMLC) $(FLAGS) -o $@ -a $^
 

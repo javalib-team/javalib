@@ -13,21 +13,21 @@ SRC = $(MLI) $(MODULES:=.ml) extLib.ml
 
 all:bc opt
 bc: 
-	ocamlc -g -a -o extLib.cma $(SRC)
+	$(FINDER) ocamlc -g -a -o extLib.cma $(SRC)
 opt: 
-	ocamlopt -g -a -o extLib.cmxa $(SRC)
+	$(FINDER) ocamlopt -g -a -o extLib.cmxa $(SRC)
 doc:
-	ocamlc -c $(MODULES:=.mli)
+	$(FINDER) ocamlc -c $(MODULES:=.mli)
 	mkdir -p doc/
-	ocamldoc -sort -html -d doc/ $(MODULES:=.mli)
+	$(FINDER) ocamldoc -sort -html -d doc/ $(MODULES:=.mli)
 	cp odoc_style.css doc/style.css
 
 install:
 	cp META.txt META
-	ocamlfind install extlib META *.cmi *.cma $(MLI) $(wildcard *.cmxa) $(wildcard *.a)
+	$(INSTALL) extlib META *.cmi *.cma $(MLI) $(wildcard *.cmxa) $(wildcard *.a)
 
 remove:
-	ocamlfind remove extlib
+	$(FINDER) remove extlib
 
 clean:
 	rm -f *.cmo *~ *.cmx *.o

@@ -47,7 +47,7 @@ OCAMLPATH=
 # The packages that need to be made in addition to Savalib / Sawja
 MAKEDEP=
 # The path to ocamlfind
-FINDER=`which ocamlfind` #/home/vmonfort/local/bin/ocamlfind
+FINDER=`which ocamlfind`
 # The path to recode (used to fix accents in the documentation)
 RECODEBIN=`which recode`
 # The debug flag
