@@ -57,7 +57,7 @@ SHARED=
 # The ocamlopt flags (depends on DEBUG)
 OPT_FLAGS=
 # The ocamlc flags (depends on DEBUG)
-FLAGS="-w Ae"
+FLAGS="-w Aer"
 # The camlp4o pretty-printer
 PP=
 

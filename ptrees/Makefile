@@ -31,7 +31,7 @@ install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.m
 remove:
 	$(FINDER) remove ptrees
 ptrees.cma:$(MODULES:.ml=.cmo)
-	$(OCAMLC) $(FLAGS) -o $@ -a $^
+	$(OCAMLC) -o $@ -a $^
 
 ptrees.cmxa:$(MODULES:.ml=.cmx)
 	$(OCAMLOPT) -o $@ -a $^
@@ -39,9 +39,9 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .cma .cmxa
 
 .ml.cmo:.depend Makefile
-	$(OCAMLC) $(FLAGS) -c $< 
+	$(OCAMLC) -c $< 
 .mli.cmi:.depend Makefile
-	$(OCAMLC) $(FLAGS) -c $<
+	$(OCAMLC) -c $<
 .ml.cmx:.depend Makefile
 	$(OCAMLOPT) -c $< 
 
