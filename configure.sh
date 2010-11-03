@@ -51,7 +51,7 @@ FINDER=`which ocamlfind`
 # The path to recode (used to fix accents in the documentation)
 RECODEBIN=`which recode`
 # The debug flag
-DEBUG=no
+DEBUG=yes
 # The shared option flag
 SHARED=
 # The ocamlopt flags (depends on DEBUG)
@@ -134,7 +134,7 @@ Usage: `basename $0` [-l [PATH|default]] [-d [yes|no|prof]] [-h]
 Options:
   -l PATH \t Perform a local installation at PATH.
   -l default \t Perform a local installation in the default directory.
-  -d FLAG \t Use the debug flag when compiling (default: no).
+  -d FLAG \t Use the debug flag when compiling (default: yes).
   -h  \t\t Print this message and exit."
 }
 #  -s  \t\t Complile a dynamically loadable plugin (cmxs).

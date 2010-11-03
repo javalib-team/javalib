@@ -33,4 +33,4 @@ clean:
 	rm -f *.cmo *~ *.cmx *.o
 	rm -Rf doc
 cleanall:clean
-	$(RM) *.cmi *.cma *.cmxa *.a META
+	$(RM) *.cmi *.cma *.cmxa *.a *.annot META
