@@ -324,7 +324,11 @@ if [ "$MAKEDEP" ]; then
       echo "    make $dep && sudo make install$dep"
     fi
   done
-  echo "Once the packages have been installed, rerun `basename $0` to update the Javalib Makefiles." | fmt
+  if [ "$LOCALDEST" ]; then
+    echo "These packages will be installed in:" | fmt
+    echo "    $LOCALDEST"
+  fi
+  echo "Once the packages have been installed, rerun your `basename $0` command to update the Javalib Makefiles." | fmt
 else
     JAVALIB=`$FINDER query javalib 2>/dev/null`
     ALR_INST=$?
