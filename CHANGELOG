@@ -1,7 +1,22 @@
 From 2.1.1 to 2.2
 -----------------
 New feature:
-* adding support for the attribute LocalVariableTypeTable which is the LocalVariableTable for generics added in Java 5
+* adding support for the attribute LocalVariableTypeTable which is the
+  LocalVariableTable for generics added in Java 5
+
+Bug fixes:
+* JPrint: the function [class_name ~jvm:true cn] was returning the
+  type of an object of class cn (e.g. "Ljava/lang/Object;") instead of
+  the name of class cn (e.g. "java/lang/Object") in the JVM
+  representation. Now it returns the class's name format, to obtain
+  the type of an object use the [value_type ~jvm:true] function.
+* JDumpJasmin: the Jasmin output has been corrected, see bug report #11314
+
+Minor change: 
+* JCode: modifying function [get_local_variable_info] that uses the
+local_variable_table: JVM specification has been corrected and
+indicates that variable name scope is [start,start+length) instead of
+[start,start+length]
 
 From 2.1 to 2.1.1
 -----------------

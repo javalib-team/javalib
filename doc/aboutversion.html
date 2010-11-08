@@ -1,14 +1,9 @@
 <h2>About this Version</h2>
 <p>
-This version (2.1.1) contains only 2 minors changes: removing some debugging
-messages and fix version number in META file.
-</p>
-<p>
-The major difference brought by version 2.1 is the parsing and
-unparsing of Java 5 annotations. All modules of <em>Javalib</em> are now
-sub-modules of the module Javalib_pack in order to avoid namespace
-conflicts. Compilation and installation processes changes: a configure
-script has been added, installation process now rely on FindLib. Some
-bufixes were done (see CHANGELOG for details).
+This version (2.2) adds support for the attribute
+LocalVariableTypeTable which is the LocalVariableTable for generics
+added in Java 5. It also fixes some minor bugs detailled in the
+CHANGELOG file (Caution: string output of function JPrint.class_name with
+option ~jvm:true has changed).
 </p>
 
