@@ -283,7 +283,7 @@ let string_of_opcode opcode constants pos =
       | OpInvokeVirtual(i) -> "invokevirtual "^(string_of_constant constants.(i))
       | OpInvokeNonVirtual(i) -> "invokenonvirtual "^(string_of_constant constants.(i))
       | OpInvokeStatic(i) -> "invokestatic "^(string_of_constant constants.(i))
-      | OpInvokeInterface(i,_) -> "invokeinterface "^(string_of_constant constants.(i))
+      | OpInvokeInterface(i,c) -> "invokeinterface "^(string_of_constant constants.(i))^" "^(string_of_int c)
 
       | OpNew(i) -> "new "^(string_of_constant constants.(i))
       | OpNewArray(jbt) -> "newarray "^(JDumpBasics.basic_type jbt)
@@ -297,7 +297,7 @@ let string_of_opcode opcode constants pos =
       | OpAMultiNewArray(i,j) -> "multianewarray "^
 	  (string_of_constant constants.(i))^(" ")^(string_of_int j)
       | OpIfNull(i) -> "ifnull "^(string_of_int (i+pos))
-      | OpIfNonNull(i) -> "ifnonnull "^(string_of_int i)
+      | OpIfNonNull(i) -> "ifnonnull "^(string_of_int (i+pos))
       | OpGotoW(i) -> "goto_w "^(string_of_int (i+pos))
       | OpJsrW(i) -> "jsr_w "^(string_of_int (i+pos))
       | OpBreakpoint -> "breakpoint"
