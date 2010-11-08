@@ -254,7 +254,7 @@ let string_of_opcode opcode constants pos =
       | OpACmpNe(i) -> "if_acmpne "^(string_of_int (i+pos))
       | OpGoto(i) -> "goto "^(string_of_int (i+pos))
       | OpJsr(i) -> "jsr "^(string_of_int (i+pos))
-      | OpRet(i) -> "ret "^(string_of_int (i+pos))
+      | OpRet(i) -> "ret "^(string_of_int i)
 
       | OpTableSwitch(d,l,_,jumps) ->
 	  "tableswitch "^(Int32.to_string l)^"\n"^
