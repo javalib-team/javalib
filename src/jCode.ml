@@ -194,15 +194,18 @@ let get_local_variable_info i pp code =
               Some (s,sign)
           with _ -> None
 
+let get_source_line_number' pp lnt =
+  let rec find_line prev = function
+    | (start_pc,line_number)::r ->
+	if (start_pc > pp) then Some prev
+	else find_line line_number r
+    | [] -> Some prev
+  in
+    try find_line (snd (List.hd lnt)) lnt
+    with _ -> None
+
 let get_source_line_number pp code =
   match code.c_line_number_table with
     | None -> None
     | Some lnt ->
-        let rec find_line prev = function
-          | (start_pc,line_number)::r ->
-	      if (start_pc > pp) then Some prev
-	      else find_line line_number r
-          | [] -> Some prev
-        in
-          try find_line (snd (List.hd lnt)) lnt
-          with _ -> None
+        get_source_line_number' pp lnt

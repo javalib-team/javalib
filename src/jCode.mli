@@ -185,11 +185,17 @@ type jcode = {
 
 (** {2 Access functions.} *)
 
-(** [get_source_line_number pp m] returns the source line number
-    corresponding the program point [pp] of the method code [m].  The
-    line number give a rough idea and may be wrong.  It uses the
-    attribute LineNumberTable (cf. JVMS §4.7.8). *)
+(** [get_source_line_number pp m] returns the source line number corresponding
+    to the program point [pp] of the method code [m].  The line number give a
+    rough idea and may be wrong.  It uses the attribute LineNumberTable
+    (cf. JVMS §4.7.8). *)
 val get_source_line_number : int -> jcode -> int option
+
+(** [get_source_line_number pp lnt] returns the source line number corresponding
+    to the program point [pp] given the LineNumberTable attribute [lnt]. The
+    line number give a rough idea and may be wrong.  It uses the attribute
+    LineNumberTable (cf. JVMS §4.7.8).  *)
+val get_source_line_number' : int -> (int * int) list -> int option
 
 (** [get_local_variable_info i pp m] returns the name and signature of
     the local variable [i] at program point [pp] in the method code

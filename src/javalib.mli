@@ -284,6 +284,10 @@ val get_sourcefile : 'a interface_or_class -> string option
     [false] otherwise. *)
 val is_deprecated : 'a interface_or_class -> bool
 
+(** Returns [true] if the given interface or class is final, [false]
+    otherwise. *)
+val is_final : 'a interface_or_class -> bool
+
 (** Returns the list of inner classes defined in the given class or interface. *)
 val get_inner_classes : 'a interface_or_class -> inner_class list
 

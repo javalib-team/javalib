@@ -254,6 +254,7 @@ val get_consts : 'a interface_or_class -> constant array
 val get_access : 'a interface_or_class -> [`Default | `Public]
 val get_sourcefile : 'a interface_or_class -> string option
 val is_deprecated : 'a interface_or_class -> bool
+val is_final : 'a interface_or_class -> bool
 val get_inner_classes : 'a interface_or_class -> inner_class list
 val get_other_attributes : 'a interface_or_class -> (string * string) list
 val get_initializer : 'a interface_or_class -> 'a concrete_method option

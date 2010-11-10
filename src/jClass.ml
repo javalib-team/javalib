@@ -223,6 +223,10 @@ let is_deprecated = function
   | JInterface i -> i.i_deprecated
   | JClass c -> c.c_deprecated
 
+let is_final = function
+  | JInterface _ -> false
+  | JClass c -> c.c_final
+
 let get_inner_classes = function
   | JInterface i -> i.i_inner_classes
   | JClass c -> c.c_inner_classes
