@@ -323,6 +323,22 @@ val get_field : 'a interface_or_class -> field_signature -> any_field
 (** Returns the map of all the fields defined in the given class or interface. *)
 val get_fields : 'a interface_or_class -> any_field FieldMap.t
 
+(** {2 Iterators}  *)
+
+val cf_iter : (class_field -> unit) -> 'a interface_or_class -> unit
+val if_iter : (interface_field -> unit) -> 'a interface_or_class -> unit
+val f_iter : (any_field -> unit) -> 'a interface_or_class -> unit
+val cf_fold : (class_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val if_fold : (interface_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val f_fold : (any_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+
+val cm_iter : ('a concrete_method -> unit) -> 'a interface_or_class -> unit
+val am_iter : (abstract_method -> unit) -> 'a interface_or_class -> unit
+val m_iter : ('a jmethod -> unit) -> 'a interface_or_class -> unit
+val cm_fold : ('a concrete_method -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val am_fold : (abstract_method -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val m_fold : ('a jmethod -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+
 
 (** {2 Transforming code representation.} *)
 

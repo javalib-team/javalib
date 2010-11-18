@@ -287,13 +287,27 @@ val defines_field : 'a interface_or_class -> field_signature -> bool
 
 (** {2 Iterators.} *)
 
-(** The following functions iterate over all methods of a class or interface
-    (including the static initializer, if any). *)
 
-val iter_methods : (method_signature -> 'a jmethod -> unit) -> 'a interface_or_class -> unit
-val iter_concrete_methods : (method_signature -> 'a concrete_method -> unit) -> 'a interface_or_class -> unit
+(** The following functions iterate over all fields of a class or interface. *)
 
-val iter_fields : (field_signature -> any_field -> unit) -> 'a interface_or_class -> unit
+val cf_iter : (class_field -> unit) -> 'a interface_or_class -> unit
+val if_iter : (interface_field -> unit) -> 'a interface_or_class -> unit
+val f_iter : (any_field -> unit) -> 'a interface_or_class -> unit
+val cf_fold : (class_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val if_fold : (interface_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val f_fold : (any_field -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+
+
+(** The following functions iterate over all methods of a class or interface.
+    When iterating over concrete method, [m_iter], [cm_iter], [m_fold] and
+    [cm_fold] take passes the class initializer, if any, to their argument. *)
+val cm_iter : ('a concrete_method -> unit) -> 'a interface_or_class -> unit
+val am_iter : (abstract_method -> unit) -> 'a interface_or_class -> unit
+val m_iter : ('a jmethod -> unit) -> 'a interface_or_class -> unit
+val cm_fold : ('a concrete_method -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val am_fold : (abstract_method -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+val m_fold : ('a jmethod -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
+
 
 (** {2 Transforming code representation.} *)
 

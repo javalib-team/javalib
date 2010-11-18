@@ -360,32 +360,129 @@ let get_class_field_signature = function
   | ClassField {cf_class_signature = cfs}
     -> cfs
 
-let iter_methods f = function
-  | JInterface i ->
-      (match i.i_initializer with
-	 | Some i -> f i.cm_signature (ConcreteMethod i)
-	 | None -> ())
-  | JClass c -> MethodMap.iter f c.c_methods
+(* let iter_methods f = function *)
+(*   | JInterface i -> *)
+(*       (match i.i_initializer with *)
+(* 	 | Some i -> f i.cm_signature (ConcreteMethod i) *)
+(* 	 | None -> ()) *)
+(*   | JClass c -> MethodMap.iter f c.c_methods *)
 
-let iter_concrete_methods f = function
+(* let iter_concrete_methods f = function *)
+(*   | JInterface i -> *)
+(*       (match i.i_initializer with *)
+(* 	 | Some i -> f i.cm_signature i *)
+(* 	 | None -> ()) *)
+(*   | JClass c -> *)
+(*       MethodMap.iter *)
+(* 	(fun s m -> match m with ConcreteMethod m -> f s m | AbstractMethod _ -> ()) *)
+(* 	c.c_methods *)
+
+(* let iter_fields f = function *)
+(*   | JInterface i -> *)
+(*       FieldMap.iter *)
+(* 	(fun s fi -> f s (InterfaceField fi )) *)
+(* 	i.i_fields *)
+(*   | JClass c -> *)
+(*       FieldMap.iter *)
+(* 	(fun s fi -> f s (ClassField fi )) *)
+(* 	c.c_fields *)
+
+let identity = fun x -> x
+
+let cf_iter f = function
+  | JInterface _ -> ()
+  | JClass c -> FieldMap.iter (fun _ fi -> f fi) c.c_fields
+let if_iter f = function
+  | JInterface i -> FieldMap.iter (fun _ fi -> f fi) i.i_fields
+  | JClass _ -> ()
+let f_iter f = function
+  | JInterface i -> FieldMap.iter (fun _ fi -> f (InterfaceField fi)) i.i_fields
+  | JClass c -> FieldMap.iter (fun _ fi -> f (ClassField fi)) c.c_fields
+
+
+let f_fold f = function
+  | JInterface i -> FieldMap.fold (fun _ fi v -> f (InterfaceField fi) v) i.i_fields
+  | JClass c -> FieldMap.fold (fun _ fi v -> f (ClassField fi) v) c.c_fields
+let if_fold f = function
+  | JInterface i -> FieldMap.fold (fun _ fi v -> f fi v) i.i_fields
+  | JClass _ -> identity
+let cf_fold f = function
+  | JInterface _ -> identity
+  | JClass c -> FieldMap.fold (fun _ fi v -> f fi v) c.c_fields
+
+
+let m_iter f = function
   | JInterface i ->
-      (match i.i_initializer with
-	 | Some i -> f i.cm_signature i
-	 | None -> ())
+      Option.may (fun m -> f (ConcreteMethod m)) i.i_initializer;
+      MethodMap.iter
+        (fun _ m -> f (AbstractMethod m))
+        i.i_methods
   | JClass c ->
       MethodMap.iter
-	(fun s m -> match m with ConcreteMethod m -> f s m | AbstractMethod _ -> ())
-	c.c_methods
+        (fun _ m -> f m)
+        c.c_methods
 
-let iter_fields f = function
-  | JInterface i ->
-      FieldMap.iter
-	(fun s fi -> f s (InterfaceField fi ))
-	i.i_fields
+let cm_iter f = function
+  | JInterface i -> Option.may (fun m -> f m) i.i_initializer;
   | JClass c ->
-      FieldMap.iter
-	(fun s fi -> f s (ClassField fi ))
-	c.c_fields
+      MethodMap.iter
+        (fun _ -> function
+           | AbstractMethod _ -> ()
+           | ConcreteMethod m -> f m)
+        c.c_methods
+
+let am_iter f = function
+  | JInterface i -> MethodMap.iter (fun _ m -> f m) i.i_methods
+  | JClass c ->
+      MethodMap.iter
+        (fun _ -> function
+           | AbstractMethod m -> f m
+           | ConcreteMethod _ -> ())
+        c.c_methods
+
+
+let am_fold f = function
+  | JInterface i ->
+      MethodMap.fold
+        (fun _ m acc -> f m acc)
+        i.i_methods
+  | JClass c ->
+      MethodMap.fold
+        (fun _ -> function
+           | AbstractMethod m -> f m
+           | ConcreteMethod _ -> (fun acc -> acc))
+        c.c_methods
+
+let cm_fold f = function
+  | JInterface {i_initializer = Some m} -> f m
+  | JInterface _ -> identity
+  | JClass c ->
+      MethodMap.fold
+        (fun _ -> function
+           | AbstractMethod _ -> (fun acc -> acc)
+           | ConcreteMethod m -> f m)
+        c.c_methods
+
+let m_fold f = function
+  | JInterface i ->
+      (fun d ->
+         MethodMap.fold
+           (fun _ m acc -> f (AbstractMethod m) acc)
+           i.i_methods
+           (Option.map_default
+              (fun m -> f (ConcreteMethod m) d)
+              d
+              i.i_initializer))
+  | JClass c ->
+      MethodMap.fold
+        (fun _ m acc -> f m acc)
+        c.c_methods
+
+(* val cm_fold : ('b -> 'a concrete_method -> 'b) -> 'b -> 'a node -> 'b *)
+(* val am_fold : ('b -> 'a abstract_method -> 'b) -> 'b -> 'a node -> 'b *)
+(* val m_fold : ('b -> 'a jmethod -> 'b) -> 'b -> 'a node -> 'b *)
+
+
 
 let map_concrete_method ?(force=false) f cm =
   {
