@@ -26,6 +26,18 @@ open JBasics
 (** {2 Bytecode instructions.} *)
 (********************************)
 
+type jconst = [
+  | `ANull                            (** AConstNull  *)
+  | `Int of int32                     (** IConst / ldc / ldc_w *)
+  | `Long of int64                    (** LConst / ldc2w  *)
+  | `Float of float                   (** FConst / ldc / ldc_w *)
+  | `Double of float                  (** DConst / ldc2w  *)
+  | `Byte of int                      (** BIPush *)
+  | `Short of int                     (** SIPush *)
+  | `String of jstr                   (** ldc / ldc_w  *)
+  | `Class of object_type             (** ldc / ldc_w *)
+]
+
 type jopcode =
 
   (* Access to a local variable *)
@@ -45,17 +57,7 @@ type jopcode =
   | OpSwap
 
   (* Constant loading / it corresponds to instructions *const* and ldc* *)
-  | OpConst of [
-    | `ANull                            (** AConstNull  *)
-    | `Int of int32                     (** IConst / ldc / ldc_w *)
-    | `Long of int64                    (** LConst / ldc2w  *)
-    | `Float of float                   (** FConst / ldc / ldc_w *)
-    | `Double of float                  (** DConst / ldc2w  *)
-    | `Byte of int                      (** BIPush *)
-    | `Short of int                     (** SIPush *)
-    | `String of string                 (** ldc / ldc_w  *)
-    | `Class of object_type             (** ldc / ldc_w *)
-    ]
+  | OpConst of jconst
 
   (* Arithmetic *)
   | OpAdd of jvm_basic_type

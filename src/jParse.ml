@@ -569,7 +569,7 @@ let rec expand_constant consts n =
 	     | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
       | ConstantString i ->
 	  (match expand_constant consts i with
-	     | ConstStringUTF8 s -> ConstValue (ConstString s)
+	     | ConstStringUTF8 s -> ConstValue (ConstString (make_jstr s))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a String constant")))
       | ConstantInt i -> ConstValue (ConstInt i)
       | ConstantFloat f -> ConstValue (ConstFloat f)

@@ -127,7 +127,7 @@ let jvm_array_type = function
   | `Object -> 'a'
 
 let dump_constant_value ch = function
-  | ConstString s -> IO.printf ch "string '%s'" s
+  | ConstString s -> IO.printf ch "string '%s'" (jstr_pp s)
   | ConstInt i -> IO.printf ch "int %ld" i
   | ConstFloat f -> IO.printf ch "float %f" f
   | ConstLong i -> IO.printf ch "long %Ld" i

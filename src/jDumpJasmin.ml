@@ -90,7 +90,7 @@ let string_of_constant_value v = match v with
   | ConstInt i -> Int32.to_string i
   | ConstLong i -> Int64.to_string i
   | ConstFloat f | ConstDouble f -> string_of_float f
-  | ConstString str -> "\""^str^"\""
+  | ConstString str -> "\""^(jstr_pp str)^"\""
   | ConstClass (TClass cn) -> string_of_classname cn
   | ConstClass (TArray _ as ot) -> string_of_object_type ot
 

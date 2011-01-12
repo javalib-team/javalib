@@ -102,8 +102,14 @@ type descriptor =
   | SMethod of method_descriptor
 
 (* Constant value. *)
+type jstr = string
+let make_jstr s = s
+let jstr_pp s   = String.escaped s
+let jstr_raw s  = s
+
+
 type constant_value =
-  | ConstString of string
+  | ConstString of jstr
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64

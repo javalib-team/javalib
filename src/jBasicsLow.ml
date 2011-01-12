@@ -57,10 +57,10 @@ let write_with_size (size:'a IO.output -> int -> unit) ch write l =
 (*****************)
 
 let get_constant c n =
-	if n < 0 || n >= Array.length c then raise (Class_structure_error ("Illegal constant index:" ^ string_of_int n));
-	match c.(n) with
-	| ConstUnusable -> raise (Class_structure_error ("Illegal constant: unusable"))
-	| x -> x
+  if n < 0 || n >= Array.length c then raise (Class_structure_error ("Illegal constant index:" ^ string_of_int n));
+  match c.(n) with
+    | ConstUnusable -> raise (Class_structure_error ("Illegal constant: unusable"))
+    | x -> x
 
 let get_constant_value c n =
   match get_constant c n with
@@ -68,9 +68,9 @@ let get_constant_value c n =
     | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value)"))
 
 let get_object_type consts i =
-	match get_constant consts i with
-	  | ConstValue (ConstClass n) -> n
-	  | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
+  match get_constant consts i with
+    | ConstValue (ConstClass n) -> n
+    | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 
 let get_class consts i =
   match get_object_type consts i with
@@ -83,9 +83,9 @@ let get_field consts i =
     | _ -> raise (Class_structure_error ("Illegal field index (does not refer to a constant field)"))
 
 let get_method consts i =
-	match get_constant consts i with
-	| ConstMethod (ot, ms) -> ot,ms
-	| _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
+  match get_constant consts i with
+    | ConstMethod (ot, ms) -> ot,ms
+    | _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
 
 let get_interface_method consts i =
   match get_constant consts i with

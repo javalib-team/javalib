@@ -122,7 +122,7 @@ let signature ?(jvm=false) name d =
 	  method_signature ~jvm:jvm ms
 
 let constant_value = function
-  | ConstString s -> "string '" ^ s ^ "'"
+  | ConstString s -> "string '" ^ (jstr_pp s) ^ "'"
   | ConstInt i -> "int " ^ (Int32.to_string i)
   | ConstFloat f -> "float " ^ (string_of_float f)
   | ConstLong i -> "long " ^ (Int64.to_string i)
@@ -192,11 +192,11 @@ let jopcode_jvm =
 	     | `Int i -> "iconst " ^ (Int32.to_string i)
 	     | `Long i -> "lconst %Ld" ^ (Int64.to_string i)
 	     | `Float f -> "fconst " ^ (string_of_float f)
-	     | `Double f -> "dconst " ^(string_of_float f)
+	     | `Double f -> "dconst " ^ (string_of_float f)
 	     | `Byte n -> "bipush " ^ (string_of_int n)
 	     | `Short a -> "sipush " ^ (string_of_int a)
 	     | `Class c -> "ldc class " ^ (object_type ~jvm:true c)
-	     | `String s -> "ldc string '"^s^"'")
+	     | `String s -> "ldc string '"^ (jstr_pp s) ^"'")
 
       | OpLoad (k,n) ->
           (match k with

@@ -57,7 +57,7 @@ val method_to_int : constant DynArray.t ->
   object_type * method_signature -> int
 val string_to_int : constant DynArray.t -> string -> int
 
-(** Same thing, bu writes the index to a channel. *)
+(** Same thing, but writes the index to a channel. *)
 
 val write_constant :
   'a IO.output -> constant DynArray.t -> constant -> unit

@@ -231,9 +231,15 @@ type descriptor =
   | SValue of value_type
   | SMethod of method_descriptor
 
+(** Abstract datatype for Java strings *)
+type jstr
+val make_jstr : string -> jstr
+val jstr_pp   : jstr -> string
+val jstr_raw  : jstr -> string
+
 (** Constant value. *)
 type constant_value =
-  | ConstString of string
+  | ConstString of jstr
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64

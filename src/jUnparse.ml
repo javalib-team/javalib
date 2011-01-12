@@ -33,7 +33,7 @@ open JUnparseSignature
 let unparse_constant_value ch consts = function
   | ConstString s ->
       write_ui8 ch 8;
-      (write_string ch consts s)
+      (write_string ch consts (jstr_raw s))
   | ConstInt i ->
       write_ui8 ch 3;
       write_real_i32 ch i

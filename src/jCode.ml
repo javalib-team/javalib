@@ -21,6 +21,18 @@
 
 open JBasics
 
+type jconst = [
+  | `ANull (* AConstNull  *)
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `Byte of int (* BIPush *)
+  | `Short of int
+  | `String of jstr
+  | `Class of object_type
+]
+
 type jopcode =
 
   (* Access to a local variable *)
@@ -40,17 +52,7 @@ type jopcode =
   | OpSwap
 
   (* Constant loading / it corresponds to instructions *const* and ldc* *)
-  | OpConst of [
-    | `ANull (* AConstNull  *)
-    | `Int of int32
-    | `Long of int64
-    | `Float of float
-    | `Double of float
-    | `Byte of int (* BIPush *)
-    | `Short of int
-    | `String of string
-    | `Class of object_type
-    ]
+  | OpConst of jconst
 
   (* Arithmetic *)
   | OpAdd of jvm_basic_type
@@ -119,14 +121,13 @@ type jopcode =
   | OpArrayStore of jvm_array_type
 
   (* Method invocation and return *)
-  | OpInvoke
-      of [
-	`Virtual of object_type
-      | `Special of class_name
-      | `Static of class_name
-      | `Interface of class_name
-      ]
-	* method_signature
+  | OpInvoke of [
+    | `Virtual of object_type
+    | `Special of class_name
+    | `Static of class_name
+    | `Interface of class_name
+    ]
+    * method_signature
   | OpReturn of jvm_return_type
 
   (* Exceptions and threads *)
