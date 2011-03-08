@@ -158,7 +158,8 @@ do
           if [ $? != 0 ]; then
             msg "inf" "Local installation, but directory $tmpdest was not found"
             echo -n "  Creating directory... "
-            mkdir -p $tmpdest/stublibs
+            #mkdir -p $tmpdest/stublibs
+            mkdir -p $tmpdest
             echo "done."
             LOCALDEST=`(cd $tmpdest && pwd)` # This one can't fail!
           fi
