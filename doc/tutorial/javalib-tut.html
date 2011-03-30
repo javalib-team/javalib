@@ -3,18 +3,16 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta name="generator" content=
-"HTML Tidy for Linux/x86 (vers 25 March 2009), see www.w3.org" />
+"HTML Tidy for Linux (vers 25 March 2009), see www.w3.org" />
 <title>Javalib tutorial -</title>
 <meta http-equiv="Content-Type" content=
 "text/html; charset=us-ascii" />
 <meta name="generator" content="pandoc" />
-<meta name="date" content="" />
 <link rel="stylesheet" href="style-tut.css" type="text/css" />
 </head>
 <body>
 <h1 class="tutorial-title">Javalib tutorial<br />
-<img src="http://www.inria.fr/images/ti_dessous.gif" width="329"
-height="18" alt="-----------------------" /></h1>
+-----------------------</h1>
 <div id="TOC">
 <ul>
 <li><a href="#introduction">Introduction</a></li>
@@ -42,8 +40,7 @@ example</a></li>
 </li>
 </ul>
 </div>
-<div id="introduction">
-<h1><a href="#TOC">Introduction</a></h1>
+<h1 id="introduction"><a href="#TOC">Introduction</a></h1>
 <p><em>Javalib</em> is a library written in <em>OCaml</em> with the
 aim to provide a high level representation of <em>Java</em>
 <strong>.class</strong> files. Thus it stands for a good starting
@@ -53,9 +50,8 @@ point for people who want to develop static analysis for
 <p>This document briefly presents the API provided by
 <em>Javalib</em> and gives some samples of code in
 <em>OCaml</em>.</p>
-</div>
-<div id="global-architecture">
-<h1><a href="#TOC">Global architecture</a></h1>
+<h1 id="global-architecture"><a href="#TOC">Global
+architecture</a></h1>
 <p>All modules of <em>Javalib</em> are sub-modules of the package
 module <em>Javalib_pack</em> in order to avoid possible namespace
 conflicts. The user interface consists of three modules,
@@ -63,8 +59,8 @@ conflicts. The user interface consists of three modules,
 modules are the only ones someone should need to write static
 analysis. The other ones provide lower level functions and should
 not be used.</p>
-<div id="jbasics-module">
-<h2><a href="#TOC"><em>JBasics</em> module</a></h2>
+<h2 id="jbasics-module"><a href="#TOC"><em>JBasics</em>
+module</a></h2>
 <p>This module gives a representation of all the basic types that
 appear at the byte-code level.</p>
 <p>These types are:</p>
@@ -85,9 +81,7 @@ rely on the hidden indexation of each abstract type, thereby
 reducing the cost of comparison operations between types. Moreover
 the maps are based on <em>Patricia Trees</em> implementation, that
 is known to be really fast.</p>
-</div>
-<div id="jcode-module">
-<h2><a href="#TOC"><em>JCode</em> module</a></h2>
+<h2 id="jcode-module"><a href="#TOC"><em>JCode</em> module</a></h2>
 <p>This module provides a representation of the JVM opcodes and of
 the code structure at the byte-code level.</p>
 <p>It is important to notice that the code is represented by an
@@ -97,18 +91,14 @@ corresponds to its relative address in the original binary file
 <em>Javalib</em> representation, an opcode includes an instruction
 and its arguments. That's why we needed to introduce a dummy opcode
 <strong>OpInvalid</strong> to keep the correct numbering.</p>
-</div>
-<div id="javalib-module">
-<h2><a href="#TOC"><em>Javalib</em> module</a></h2>
+<h2 id="javalib-module"><a href="#TOC"><em>Javalib</em>
+module</a></h2>
 <p>This is the main module of <em>Javalib</em> which contains the
 definition of classes, fields and methods types, some methods to
 get a high level representation from binary classes and an internal
 module <em>JPrint</em> to pretty-print or dump every type defined
 in the three user modules.</p>
-</div>
-</div>
-<div id="tutorial">
-<h1><a href="#TOC">Tutorial</a></h1>
+<h1 id="tutorial"><a href="#TOC">Tutorial</a></h1>
 <p>To begin this tutorial, open an <em>OCaml</em> toplevel, for
 instance using the <em>Emacs</em> <strong>tuareg-mode</strong>, and
 load the following libraries in the given order:</p>
@@ -138,9 +128,8 @@ using the command <strong>make ocaml</strong> in the sources
 repository of <em>Javalib</em>. This command builds an executable
 named <strong>ocaml</strong> which is the result of the
 <strong>ocamlmktop</strong> command.</p>
-<div id=
-"making-class-names-field-signatures-and-method-signatures">
-<h2><a href="#TOC">Making class names, field signatures and method
+<h2 id="making-class-names-field-signatures-and-method-signatures">
+<a href="#TOC">Making class names, field signatures and method
 signatures</a></h2>
 <p>Imagine you want to access the method
 <strong>m:(Ljava.lang.String;)V</strong> and the field
@@ -156,10 +145,9 @@ entity. According to the <em>Javalib</em> API you will write:</p>
     make_ms "m" [TObject (TClass java_lang_string)] None
     let fs = make_fs "f" (TBasic `Int)
 </code>
-</pre></div>
-<div id="getting-a-class-representation-from-a-binary-file">
-<h2><a href="#TOC">Getting a class representation from a binary
-file</a></h2>
+</pre>
+<h2 id="getting-a-class-representation-from-a-binary-file"><a href=
+"#TOC">Getting a class representation from a binary file</a></h2>
 <p>The methods you need are in the <em>Javalib</em> module. You can
 open this module cause you will need it very often.</p>
 <pre>
@@ -181,9 +169,8 @@ corresponding to <strong>aname</strong>.</p>
 <p>When you don't need a classpath any more, close it with
 <strong>close_class_path</strong> if you don't want to get file
 descriptors exceptions in a near futur.</p>
-</div>
-<div id="getting-fields-and-methods-from-a-class">
-<h2><a href="#TOC">Getting fields and methods from a class</a></h2>
+<h2 id="getting-fields-and-methods-from-a-class"><a href=
+"#TOC">Getting fields and methods from a class</a></h2>
 <p>You now have the class <strong>a</strong> of type
 <em>Javalib.interface_or_class</em>. You might want to recover its
 method <strong>m</strong> of type <em>Javalib.jmethod</em> and
@@ -210,9 +197,8 @@ of type <em>any_field</em> which can be <em>ClassField of
 class_field</em> or <em>Interface_field of interface_field</em>.
 Indeed, according to the JVM specification, we need to make the
 distinction between interface fields and class fields.</p>
-</div>
-<div id="a-more-sophisticated-example">
-<h2><a href="#TOC">A more sophisticated example</a></h2>
+<h2 id="a-more-sophisticated-example"><a href="#TOC">A more
+sophisticated example</a></h2>
 <p>Now we would like to write a function that takes a
 <strong>classpath</strong> and a <strong>classname</strong> as
 parameters and that returns, for each method of this class, a set
@@ -274,9 +260,8 @@ of the fields accessed for reading (instructions
 <code>    Javalib.class_path -&gt;
       JBasics.class_name -&gt; JBasics.FieldSet.t JBasics.MethodMap.t
 </code>
-</pre></div>
-<div id="another-use-case">
-<h2><a href="#TOC">Another use case</a></h2>
+</pre>
+<h2 id="another-use-case"><a href="#TOC">Another use case</a></h2>
 <p>Consider the following class written in java:</p>
 <pre>
 <code>    public class TestString{
@@ -421,7 +406,6 @@ the program points and the strings on which the
 
     # let () = close_class_path cp;;
 </code>
-</pre></div>
-</div>
+</pre>
 </body>
 </html>
