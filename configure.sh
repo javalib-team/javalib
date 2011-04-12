@@ -58,9 +58,6 @@ SHARED=
 OPT_FLAGS=
 # The ocamlc flags (depends on DEBUG)
 FLAGS="-w Aer"
-# The camlp4o pretty-printer
-PP=
-
 
 
 
@@ -229,9 +226,9 @@ done
 
 
 #
-# Check Unix, and Str
+# Check Camlp4, Unix, and Str
 #
-for pkg in unix str; do
+for pkg in unix str camlp4; do
 location=`$FINDER query $pkg 2> /dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
@@ -250,22 +247,6 @@ if [ $RECODEBIN ]; then
 else
   msg "inf" "Recode not found, proceeding anyway"
 fi
-
-
-#
-# Check camlp4o
-#
-cp4=`which camlp4o.opt`
-if [ -z "$cp4" ]; then
-  msg "inf" "No camlp4o.opt executable found: trying vanilla camlp4o"
-  cp4=`which camlp4o`
-  if [ -z "$cp4" ]; then
-    msg "err" "No camlp4o executable found"
-  fi
-fi
-msg "inf" "Camlp4o found at $cp4"
-PP="-pp $cp4"
-
 
 #
 # Infer the value of the DESTDIR and OPT_FLAGS variables
@@ -290,7 +271,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $makeconfig
 echo "# Variables detected at configure-time" >> $makeconfig
-for var in FLAGS OPT_FLAGS LOCALDEST MAKEDEP FINDER RECODE DEBUG SHARED PP; do
+for var in FLAGS OPT_FLAGS LOCALDEST MAKEDEP FINDER RECODE DEBUG SHARED; do
   echo "$var=${!var}" >> $makeconfig
 done
 echo -n "."

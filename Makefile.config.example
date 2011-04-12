@@ -12,7 +12,7 @@ OCAMLLEX = ocamllex
 DOCDIR := doc/api
 
 INCLUDE := -package unix,str,extlib,camlzip,ptrees
-
+PP := -package camlp4 -syntax camlp4o
 
 INSTALL = $(FINDER) install
 
