@@ -1,6 +1,9 @@
 # This is the tutorial Makefile
 # You need to install pandoc
 
+# Just for test on tutorial code
+-include ../../Makefile.config
+
 all: javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html
 
 .DELETE_ON_ERROR:javalib_tutorial.tex javalib-tut.html
@@ -22,6 +25,11 @@ javalib_tutorial.pdf: javalib_tutorial.tex
 	rm -f javalib_tutorial.log 
 	rm -f javalib_tutorial.toc 
 
+test: tutorial.ml
+	$(OCAMLC) -package javalib -c $^
+	@echo "tutorial.ml file is compiling with version of Javalib installed."
+	@echo "please check javalib_tutorial.md correspond to the same code."
+	rm tutorial.cmi tutorial.cmo tutorial.annot
 
 clean:
 	rm -f javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html
