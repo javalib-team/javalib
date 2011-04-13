@@ -16,6 +16,7 @@
 ###     
 ###     
 ### Copyright (c)2010 Florent Kirchner
+### Copyright (c)2010 Vincent Monfort
 ### 
 ### This program is free software: you can redistribute it and/or
 ### modify it under the terms of the GNU Lesser General Public License

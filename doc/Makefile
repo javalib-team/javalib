@@ -1,6 +1,6 @@
 DEST=..
-doc: $(DEST)/INSTALL $(DEST)/README
-all:doc
+docr: $(DEST)/INSTALL $(DEST)/README
+all:docr
 
 .DELETE_ON_ERROR:$(DEST)/INSTALL $(DEST)/README
 
@@ -13,6 +13,8 @@ $(DEST)/README:intro.html aboutversion.html history.html documentation.html cont
 
 clean:
 	rm -f *~
-cleanall:clean
-cleandoc:clean
+
+cleandocr:clean
 	rm -f $(DEST)/INSTALL $(DEST)/README
+
+cleanall:clean
