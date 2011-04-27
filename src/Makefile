@@ -101,7 +101,7 @@ clean:
 	jManifest.ml
 
 cleanall: clean
-	$(RM) -r ocaml tests tests.opt sample sample.opt *.cmi	\
+	$(RM) -r ocaml *.cmi	\
 		*.cma *.cmxa *.cmxs 
 cleandoc:
 	$(RM) -r $(DOCDIR)
