@@ -263,6 +263,16 @@ let get_method ioc ms =
     | JClass c ->
 	MethodMap.find ms c.c_methods
 
+let get_concrete_method ioc ms =
+  match ioc with
+    | JInterface {i_initializer = Some cm}
+	when (ms_equal cm.cm_signature ms) -> cm
+    | JInterface _ -> raise Not_found
+    | JClass c -> 
+	(match MethodMap.find ms c.c_methods with
+	    ConcreteMethod cm -> cm
+	  | AbstractMethod _ -> raise Not_found)
+
 let get_methods = function
   | JInterface i ->
       let mmap =

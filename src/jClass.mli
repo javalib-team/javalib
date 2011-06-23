@@ -269,6 +269,7 @@ val is_static_method : 'a jmethod -> bool
 val is_final_method : 'a jmethod -> bool
 val is_synchronized_method : 'a jmethod -> bool
 val get_method : 'a interface_or_class -> method_signature -> 'a jmethod
+val get_concrete_method : 'a interface_or_class -> method_signature -> 'a concrete_method
 val get_methods : 'a interface_or_class -> 'a jmethod MethodMap.t
 val get_concrete_methods : 'a interface_or_class -> 'a concrete_method MethodMap.t
 val defines_method : 'a interface_or_class -> method_signature -> bool

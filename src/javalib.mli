@@ -306,6 +306,11 @@ val defines_method : 'a interface_or_class -> method_signature -> bool
     interface or class [ioc]. @raise Not_found if such a method can't be found. *)
 val get_method : 'a interface_or_class -> method_signature -> 'a jmethod
 
+(** [get_concrete_method ioc ms] returns the method with the signature
+    [ms] in the interface or class [ioc]. @raise Not_found if such a
+    method can't be found or if the method is not concrete. *)
+val get_concrete_method : 'a interface_or_class -> method_signature -> 'a concrete_method
+
 (** Returns the map of all the methods defined in the given class or interface. *)
 val get_methods : 'a interface_or_class -> 'a jmethod MethodMap.t
 

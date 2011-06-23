@@ -1,3 +1,20 @@
+From 2.2 to 2.2.1
+-----------------
+Minor changes:
+* Javalib: 
+  - add several iterators for methods and fields
+  - add the is_final function to test if a class is final
+
+* JCode: add get_source_line_number' function which takes the
+  LineNumberTable instead of the code
+
+Bug fixes:
+* The Java string constants were not escaped before manipulation. We
+  now have an abstract datatype JBasics.jstr, and the corresponding
+  setter and getter functions.
+* Fix some checks in configure script
+* Fix some broken links in documentation
+
 From 2.1.1 to 2.2
 -----------------
 New feature:
