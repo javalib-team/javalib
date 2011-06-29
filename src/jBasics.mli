@@ -219,9 +219,10 @@ val cms_equal : class_method_signature -> class_method_signature -> bool
 
 (** {2 Constant pool.} *)
 
-(** You should not need this for normal usage, as the parsing/unparsing functions
-    take care of the constant pool. This is typically usefull for user-defined
-    attributes that refer to the constant pool. *)
+(** You should not need this for normal usage, as the
+    parsing/unparsing functions take care of the constant pool. This
+    is typically useful for user-defined attributes that refer to the
+    constant pool. *)
 
 (** Method descriptor. *)
 type method_descriptor = value_type list * value_type option
