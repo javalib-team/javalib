@@ -1,5 +1,5 @@
 h1 {
-    color: #0080c0;
+    color:#434343;
     font-family: serif;
     font-weight: bold;
     margin-top: 15px;
@@ -68,4 +68,25 @@ body {
 
 li {
     text-align:left;
+}
+
+
+p.code {
+    width:60em;
+    margin: 5px;
+    padding: 5px;
+    border: solid 1px black;
+    background-color: #E0E0E0;
+}
+.code {
+    font: 11px Monaco,monospace;
+}
+pre {
+    background: #e0e0e0;
+    border: solid 1px black;
+    font: 11px monospace;
+    width: 60em;
+    padding: 1em;
+    margin:5px;
+    overflow: hidden
 }
