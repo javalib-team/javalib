@@ -6,6 +6,10 @@ h1 {
     margin-bottom: 15px;
 }
 
+h1 a:link {
+    text-decoration: none;
+}
+
 .tutorial-title {
     text-align: center;
     margin-top: 2em;
