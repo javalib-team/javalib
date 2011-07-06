@@ -1,5 +1,8 @@
 DEST=..
+
 docr: $(DEST)/INSTALL $(DEST)/README
+	$(MAKE) -C tutorial release
+
 all:docr
 
 .DELETE_ON_ERROR:$(DEST)/INSTALL $(DEST)/README
