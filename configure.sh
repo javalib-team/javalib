@@ -59,6 +59,8 @@ SHARED=
 OPT_FLAGS=
 # The ocamlc flags (depends on DEBUG)
 FLAGS="-w Aer"
+# The flag signalling the absence of ZLIB (used to warn before camlzip compiles)
+ZLIBFLAG=
 
 
 
@@ -224,6 +226,11 @@ else
 fi
 done
 
+#
+# Check for zlib, set flag if not found
+#
+gcc -lz 2>&1 | grep "undefined reference to .main." > /dev/null
+ZLIBFLAG=$?
 
 #
 # Check Camlp4, Unix, and Str
@@ -299,6 +306,10 @@ if [ "$MAKEDEP" ]; then
   echo "    $MAKEDEP"
   echo "In short, you will need to execute the following commands:" | fmt
   for dep in $MAKEDEP; do
+    # If $dep is camlzip, check the zlib.h presence.
+    if [ $dep -eq "camlzip" ] && [ $ZLIBFLAG -ne 0 ]
+      echo " !! install the development headers for the \'zlip\' library on your system. Then:"
+    fi
     # Use sudo only if it's a nonlocal installation.
     if [ "$LOCALDEST" ]; then
       echo "    make $dep && make install$dep"
