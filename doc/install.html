@@ -62,12 +62,16 @@ For a list of options accepted by the configuration script,
 run <span class="code">./configure.sh -h</span>. The main options are:
 <dl>
   <dt>
-    <span class="code">-l [&lt;dir&gt;]</span>
+    <span class="code">-l &lt;dir&gt;</span>
   </dt>
-  <dd>Proceed to install in the local
-    directory <span class="code">&lt;dir&gt;</span>.</dd>
-  <dt><span class="code">-l default</span></dt>
-  <dd>Proceed to install in the default local directory ('./lib').</dd>
+  <dd>Proceed to install in the local directory <span
+    class="code">&lt;dir&gt;</span>. Note that if you use Ocamlfind to
+  compile an analysis later on, you will need to set the shell variable
+  OCAMLPATH to <span class="code">&lt;dir&gt;</span> to be able to use the
+  Javalib libraries (see <em>man findlib</em> for more info on OCAMLPATH).
+  </dd>
+  <!--<dt><span class="code">-l default</span></dt>
+  <dd>Proceed to install in the default local directory ('./lib').</dd>-->
   <dt>
     <span class="code">-d yes|no|prof</span> (default:
     <span class="code">yes</span>)
