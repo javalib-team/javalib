@@ -307,7 +307,7 @@ if [ "$MAKEDEP" ]; then
   echo "In short, you will need to execute the following commands:" | fmt
   for dep in $MAKEDEP; do
     # If $dep is camlzip, check the zlib.h presence.
-    if [ $dep -eq "camlzip" ] && [ $ZLIBFLAG -ne 0 ]; then
+    if [ $dep = "camlzip" ] && [ $ZLIBFLAG -ne 0 ]; then
       echo " !! install the development headers for the \'zlib\' library on your system. Then:"
     fi
     # Use sudo only if it's a nonlocal installation.
