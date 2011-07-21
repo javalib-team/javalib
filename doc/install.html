@@ -84,7 +84,7 @@ run <span class="code">./configure.sh -h</span>. The main options are:
 </dl>
 
 <em>Note: The configure script assumes that, if the ptrees and camlzip
-installations are local, then the Javalib install will also be local.  Moreover,
+installations are local, then the Javalib installation will also be local.  Moreover,
 it assumes that all of them will reside in the same ./lib folder.</em>
 <br /><br />
 
@@ -101,6 +101,11 @@ following commands:
   <dd><span class="code">make installLIBRARYNAME</span> (if configure was run with the --local option)</dd>
   <dd><span class="code">sudo make installLIBRARYNAME</span> (else)</dd>
 </dl>
+<em>Note: CamlZip is a binding to the <a href="http://zlib.net/">Zlib
+library</a>, as a consequence it requires that the Zlib library was
+installed precedently (the development package is necessary if you use
+your OS package manager).
+</em>
 </li>
 
 <li> Now we can check if the dependencies are correctly found---remember to run
