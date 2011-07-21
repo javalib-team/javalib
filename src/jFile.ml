@@ -361,11 +361,20 @@ let read_low directories f accu files =
     ! accu
 
 let read directories f accu files =
+  let class_struct_err = ref false in
   let accu = ref accu in
     fold directories
       (`read
-	 (function classe -> accu := f ! accu (JLow2High.low2high_class classe)))
+	 (function classe -> 
+	    try
+	      accu := f ! accu (JLow2High.low2high_class classe)
+	    with Class_structure_error _ as e -> 
+	      prerr_endline (Printexc.to_string e);
+	      class_struct_err := true
+	 ))
       files;
+    if !class_struct_err then
+      prerr_endline "Some class files of the archive have been rejected because the specification of a class structure is broken. You could use 'JBasics.set_permissive true' to accept anyway these classes.";
     ! accu
 
 let transform_low directories output_dir f files =
@@ -405,12 +414,10 @@ let iter ?(debug=false) f filename =
       let cp = Filename.dirname filename in
       let filename = Filename.basename filename in
       let nb_class = ref 0 in
-      let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () [filename]
-      in
+      let _ = read (make_directories cp) (fun _ -> incr nb_class; f) () [filename] in
 	if debug then
           begin
-            print_int !nb_class;
-            print_endline " classes"
+            prerr_endline (string_of_int !nb_class^" classes")
           end;
     end
   else if is_dir filename then
