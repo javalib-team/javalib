@@ -56,8 +56,8 @@ cleanall:clean
 
 install:
 	$(INSTALL) \
-		camlzip META zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
-		libcamlzip.a $(wildcard dll*.so) zip.cmxa zip.a zip.cmx gzip.cmx
+		camlzip META zlib.cmi zlib.mli zip.cma zip.cmi gzip.cmi zip.mli gzip.mli \
+		libcamlzip.a $(wildcard dll*.so) zip.cmxa zip.a zlib.cmx zip.cmx gzip.cmx
 
 
 remove:
