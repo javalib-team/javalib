@@ -261,11 +261,6 @@ let h2l_amethod _consts m =
   let ms = m.am_signature in
   let mname = ms_name ms in
   let mdesc = (ms_args ms, ms_rtype ms) in
-    (* TODO: implement conversion of Java 5 annotations *)
-    if (m.am_annotations <> {ma_global=[];ma_parameters=[];}
-        || m.am_annotation_default <> None)
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
       {m_name = mname;
        m_descriptor = mdesc;
        m_flags =
