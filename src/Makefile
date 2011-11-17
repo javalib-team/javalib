@@ -47,7 +47,7 @@ all: javalib.cma javalib.cmxa $(SHARED)
 install: META javalib.cm[ia] javalib.cmxa $(MODULE_INTERFACES:=.mli) javalib_pack.cm[iox] javalib_pack.o 
 	$(INSTALL) javalib $^ javalib.a
 remove:
-	ocamlfind remove javalib
+	$(FINDER) remove javalib
 
 ocaml:javalib.cma
 	$(OCAMLMKTOP) $(INCLUDE) -linkpkg -o $@ ptrees.cma javalib.cma
