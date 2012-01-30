@@ -64,6 +64,7 @@ module type S = sig
   val max_elt : t -> int
   val intersect : t -> t -> bool
   val choose_and_remove : t -> int*t
+  val to_string : t -> string
 end
 
 
@@ -392,6 +393,19 @@ let rec intersect s1 s2 = match (s1,s2) with
         false
 
 
+let to_string_aux elements s =
+  let l = elements s in
+  let rec aux acc = function
+    | [] -> acc
+    | x::q -> aux (","^(string_of_int x)^acc) q in
+    match l with
+      | [] -> "{}"
+      | x::q -> Printf.sprintf "{%d%s}" x (aux "" q)
+
+let to_string = to_string_aux elements
+	  
+
+
 (*s Big-endian Patricia trees *)
 
 module Big = struct
@@ -625,6 +639,8 @@ module Big = struct
 	else
           false
 
+  let to_string = to_string_aux elements
+
 end
 
 (*s Big-endian Patricia trees with non-negative elements only *)
@@ -662,6 +678,8 @@ module BigPos = struct
       | Branch (_,_,l,r) -> elements_aux (elements_aux acc r) l
     in
     elements_aux [] s
+
+  let to_string = to_string_aux elements
 
 end
 
@@ -709,6 +727,8 @@ module Bigo = struct
     | Empty -> raise Not_found
     | Leaf k -> swap k
     | Branch (_,_,_,t) -> max_elt t
+
+  let to_string = to_string_aux elements
 
 end
 

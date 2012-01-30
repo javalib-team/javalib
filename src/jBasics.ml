@@ -420,6 +420,8 @@ sig
   (* val choose_and_remove : t -> elt * t *)
   (* val subset : t -> t -> bool *)
   val inter : t -> t -> t
+  val of_list : elt list -> t
+  val of_array : elt array -> t
   (* val choose : t -> int *)
   (* val compare : t -> t -> int *)
   (* val for_all : (int -> bool) -> t -> bool *)
@@ -447,6 +449,9 @@ struct
   let exists f m = Ptmap.exists (fun _ e -> f e) m
   let filter f m = Ptmap.filter f m
   let inter m1 m2 = Ptmap.inter m1 m2
+  let of_array l = Array.fold_right add l empty		     
+  let of_list l = List.fold_right add l empty		     
+
   (* val partition : ('a -> bool) -> 'a t -> 'a t * 'a t *)
   (* val choose_and_remove : *)
 end
@@ -521,6 +526,9 @@ module MaptoSet ( S : sig type t end )
 struct
   let to_set m =
     GMap.fold (fun k _ s -> GSet.add k s) m GSet.empty
+  let of_array l = Array.fold_right GSet.add l GSet.empty		     
+  let of_list l = List.fold_right GSet.add l GSet.empty		     
+
 end
 
 module ClassSet = GenericSet(struct type t = string end)

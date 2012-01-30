@@ -107,6 +107,10 @@ module type S = sig
       @author Laurent Hubert*)
   val choose_and_remove : t -> int*t
 
+  (** [to_string s] return a string representation of [s]
+      @author David Pichardie *)
+  val to_string : t -> string
+
 end
 
 include S

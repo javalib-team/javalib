@@ -344,6 +344,8 @@ sig
   val exists : (elt -> bool) -> t -> bool
   val filter : (elt -> bool) -> t -> t
   val inter : t -> t -> t
+  val of_list : elt list -> t
+  val of_array : elt array -> t
   (* val partition : (elt -> bool) -> t -> t * t *)
   (* val choose_and_remove : t -> elt * t *)
 end
