@@ -47,6 +47,14 @@ module type S = sig
 
   val find : int -> 'a t -> 'a
 
+(** [findi_element f t] returns the first couple (index,element) in map [t] for which [f ind elt], with [ind] an index and [elt] the corresponding element, returns true.
+
+    @raise Not_found if [t] is empty or if [f] returns false for all
+    elements.*)
+  val findi_element : (int -> 'a -> bool) -> 'a t -> int * 'a
+
+  val find_element : ('a -> bool) -> 'a t -> 'a
+
   val remove : int -> 'a t -> 'a t
 
   val mem :  int -> 'a t -> bool

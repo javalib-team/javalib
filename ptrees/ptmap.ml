@@ -28,6 +28,8 @@ module type S = sig
   val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
   val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
   val find : int -> 'a t -> 'a
+  val findi_element: (int -> 'a -> bool) -> 'a t -> int * 'a
+  val find_element: ('a -> bool) -> 'a t -> 'a
   val remove : int -> 'a t -> 'a t
   val mem :  int -> 'a t -> bool
   val iter : (int -> 'a -> unit) -> 'a t -> unit
@@ -359,6 +361,24 @@ let rec exists p = function
   | Empty -> false
   | Leaf (k,a) -> p k a
   | Branch (_,_,t0,t1) -> exists p t0 || exists p t1
+
+let rec findi_element p = function
+  | Empty -> raise Not_found
+  | Leaf (k,a) -> if p k a then (k,a) else raise Not_found
+  | Branch (_,_,t0,t1) -> 
+      try 
+	findi_element p t0 
+      with Not_found -> 
+	findi_element p t1
+
+let rec find_element p = function
+  | Empty -> raise Not_found
+  | Leaf (_,a) -> if p a then a else raise Not_found
+  | Branch (_,_,t0,t1) -> 
+      try 
+	find_element p t0 
+      with Not_found -> 
+	find_element p t1
 
 (* old implementation *)
 (* let rec filter pr = function *)

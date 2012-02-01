@@ -47,6 +47,8 @@ DESTDIR=
 OCAMLPATH=
 # The packages that need to be made in addition to Savalib / Sawja
 MAKEDEP=
+# The packages that need to be made in addition to Savalib / Sawja
+MAKEDEPREMOVE=
 # The path to ocamlfind
 FINDER=`which ocamlfind`
 # The path to recode (used to fix accents in the documentation)
@@ -216,14 +218,29 @@ fi
 #
 # Check Camlzip, Ptrees, and Extlib. Set them to compile if necessary.
 #
-for pkg in camlzip ptrees extlib; do
-location=`$FINDER query $pkg 2>/dev/null`
-if [ $location ]; then
-  msg "inf" "Package $pkg found at $location"
-else 
-  msg "inf" "Package $pkg not found, will need to be compiled"
-  push "$pkg" MAKEDEP
-fi
+
+declare packages=(camlzip ptrees extlib)
+declare versions=("1.04" "1.2" "1.51")
+
+for (( i=0 ; i<3 ; i++ )) 
+do
+    pkg=${packages[i]}
+    location=`$FINDER query $pkg 2>/dev/null`
+    if [ $location ]; then
+	aversion=`$FINDER query $pkg -format %v`
+	rversion=${versions[i]}
+	if [[ ${aversion} == ${rversion} || ${aversion} > ${rversion} ]]; then
+	    msg "inf" "Package $pkg v$aversion found at $location"
+	else
+	    msg "inf" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled"
+	    push "$pkg" MAKEDEP
+	    push true MAKEDEPREMOVE
+	fi
+    else 
+	msg "inf" "Package $pkg not found, will need to be compiled"
+	push "$pkg" MAKEDEP
+	push false MAKEDEPREMOVE
+    fi
 done
 
 #
@@ -296,25 +313,29 @@ echo " done."
 # - if MAKEDEP is non-empty, then compile and install the dependencies.
 # - else compile and install Javalib 
 #
-#
-# Check for Javalib and Buddy.
-#
 
 if [ "$MAKEDEP" ]; then
   echo ""
   echo "WHAT'S NEXT: the following packages need to be compiled and installed:" | fmt
   echo "    $MAKEDEP"
   echo "In short, you will need to execute the following commands:" | fmt
-  for dep in $MAKEDEP; do
+  for (( i=0 ; i<${#MAKEDEP[@]} ; i++ )) do
+  dep=${MAKEDEP[i]}
+  remove=${MAKEDEPREMOVE[i]}
     # If $dep is camlzip, check the libz.so presence.
     if [ $dep = "camlzip" ] && [ $ZLIBFLAG -ne 0 ]; then
       echo " !! install the development package of 'zlib' library on your system. Then:"
     fi
     # Use sudo only if it's a nonlocal installation.
     if [ "$LOCALDEST" ]; then
-      echo "    make $dep && make install$dep"
+	sudo=""
     else
-      echo "    make $dep && sudo make install$dep"
+	sudo="sudo "
+    fi
+    if [ "${remove}" ]; then
+	echo "   make $dep && ${sudo}make remove$dep && ${sudo}make install$dep"
+    else
+	echo "     make $dep && ${sudo}make install$dep"
     fi
   done
   if [ "$LOCALDEST" ]; then
