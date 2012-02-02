@@ -71,6 +71,7 @@ ZLIBFLAG=
 E_MAKERERROR=83
 E_SCRIPTERROR=84
 
+
 #
 # The msg recursive function takes care of the pretty-printing.
 # It uses "fmt" to stick to 75 characters columns.
@@ -107,21 +108,9 @@ function msg()
 #
 function push ()
 {
-  if [ $# -ne 2 ]; then
-    msg "ser" "push" "incorrect number of message arguments"
-  fi
-  atom=$1
-  list=$2
-  if [ -z "${!list}" ]; then
-    eval $list=$atom
-  else
-      newlist=""
-      for elt in ${!list}; do
-	  newlist=$newlist"\ $elt"
-      done
-    eval $list="$atom$newlist"
-  fi
-  return 0
+    cmd="$2=(\${$2[@]} $1)"
+    eval $cmd
+    return 0
 }
 
 
@@ -332,10 +321,10 @@ if [ "$MAKEDEP" ]; then
     else
 	sudo="sudo "
     fi
-    if [ "${remove}" ]; then
+    if ${remove} ; then
 	echo "   make $dep && ${sudo}make remove$dep && ${sudo}make install$dep"
     else
-	echo "     make $dep && ${sudo}make install$dep"
+	echo "   make $dep && ${sudo}make install$dep"
     fi
   done
   if [ "$LOCALDEST" ]; then
