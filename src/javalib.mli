@@ -597,7 +597,13 @@ sig
 
   val print_method : ?jvm:bool -> 'a jmethod -> ('a -> string list) -> out_channel -> unit
 
+  val print_method' : ?jvm:bool -> 'a jmethod -> ('a -> Format.formatter -> unit) 
+    -> Format.formatter -> unit
+
   val print_class : ?jvm:bool -> 'a interface_or_class -> ('a -> string list) -> out_channel -> unit
+
+  val print_class' : ?jvm:bool -> 'a interface_or_class ->
+    ('a -> Format.formatter -> unit) -> Format.formatter -> unit
 
   (** {2 Outputting classes in Jasmin format.} *)
 
