@@ -494,7 +494,7 @@ let method_synchronized m =
   if (is_synchronized_method m) then Some "synchronized"
   else None
 
-let acmethod ?(jvm=false) (m:'a jmethod) (f:'a -> string list) =
+let acmethod ?(jvm=false) (f:'a -> string list) (m:'a jmethod) =
   let ms = get_method_signature m in
   let header =
     String.concat " " (ExtList.List.filter_map
@@ -537,36 +537,81 @@ let any_field ?(jvm=false) (f : any_field) : string =
     else
       Printf.sprintf "%s%s" header (field_signature fs)
 
-let print_method_fmt indent_val header instructions fmt =
-  Format.pp_open_vbox fmt indent_val;
-  Format.pp_print_string fmt (header ^ " {");
-  Format.pp_force_newline fmt ();
+(* TODO: print other things that code ?*)
+let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
+  let indent_val = 3 in
+  let ms = get_method_signature m in
+  let header =
+    String.concat " " (ExtList.List.filter_map
+			 (fun x -> x)
+			 [method_access m; method_static m;
+			  method_final m; method_synchronized m;
+			  method_kind m]) in
+  let header = if header = "" then header else header ^ " " in
+    (match m with
+       | AbstractMethod _ ->
+	   let header = 
+	     if jvm then
+	       method_signature ~jvm:true ms
+	     else
+	       Printf.sprintf "%s%s" header (method_signature ms)
+	   in
+	     Format.pp_print_string fmt (header^"{}");
+	     Format.pp_force_newline fmt ();
+	     ()
+       | ConcreteMethod cm ->
+	   (match cm.cm_implementation with
+	      | Native ->
+		  let header =
+		    if jvm then
+		      method_signature ~jvm:true ms
+		    else
+		      Printf.sprintf "%s%s" header (method_signature ms)
+		  in
+		    Format.pp_print_string fmt (header^"{Native Code}");
+		    Format.pp_force_newline fmt ();
+		    ()
+	      | Java impl ->
+                  let impl = Lazy.force impl in
+		  let header = 
+		    if jvm then
+		      method_signature ~jvm:true ms
+		    else
+		      Printf.sprintf "%s%s" header (method_signature ms)
+		  in
+		    Format.pp_open_vbox fmt indent_val;
+		    Format.pp_print_string fmt (header^"{");
+		    Format.pp_force_newline fmt ();
+		    print_code impl fmt;
+		    Format.pp_close_box fmt ();
+		    Format.pp_force_newline fmt ();
+		    Format.pp_print_string fmt "}";
+		    Format.pp_force_newline fmt ();
+		    ()));
+    Format.pp_print_flush fmt ()
+
+let print_code (f: 'a -> string list) code fmt =
+  let instructions = f code in
   let len = List.length instructions in
     ExtList.List.iteri
       (fun i s ->
 	 Format.pp_print_string fmt s;
 	 if (i < len - 1) then Format.pp_force_newline fmt ()) instructions;
-    Format.pp_close_box fmt ();
-    Format.pp_force_newline fmt ();
-    Format.pp_print_string fmt "}";
-    Format.pp_force_newline fmt ();
-    Format.pp_print_flush fmt ()
+    ()
 
 let print_method ?(jvm=false) (m:'a jmethod) (f:'a -> string list)
     (out:out_channel) =
-  let indent_val = 3 in
-  let (header,instructions) = acmethod ~jvm:jvm m f in
   let fmt = Format.formatter_of_out_channel out in
-    print_method_fmt indent_val header instructions fmt
+    print_method_fmt jvm m (print_code f) fmt
+
+let print_method' ?(jvm=false) (m:'a jmethod) 
+    (print_code: 'a -> Format.formatter -> unit) fmt =
+  print_method_fmt jvm m print_code fmt
 
 (* TODO: maybe add implemented interfaces and extended classes in class
    description. *)
-(* TODO: using a string list for instruction is not efficient (string
-   concatenation is expensive) *)
-let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
-    (out:out_channel) =
-  let indent_val = 3 in
-  let fmt = Format.formatter_of_out_channel out in
+let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
+    print_code fmt =
   let name = cn_name (get_name ioc) in
   let header = String.concat " "
     (ExtList.List.filter_map
@@ -596,10 +641,8 @@ let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
 	    (fun _ m ->
 	       Format.pp_open_vbox fmt indent_val;
 	       Format.pp_force_newline fmt ();
-	       let (header,instructions) =
-		 acmethod ~jvm:jvm (AbstractMethod m) f in
-		 print_method_fmt indent_val header instructions fmt;
-		 Format.pp_close_box fmt ()
+	       print_method_fmt jvm (AbstractMethod m) print_code fmt;
+	       Format.pp_close_box fmt ()
 	    ) i.i_methods;
 	  Format.pp_force_newline fmt ();
 	  Format.pp_print_string fmt "}";
@@ -624,15 +667,28 @@ let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
 	  MethodMap.iter
 	    (fun _ m ->
 	       Format.pp_open_vbox fmt indent_val;
-	       Format.pp_force_newline fmt ();
-	       let (header,instructions) = acmethod ~jvm:jvm m f in
-		 print_method_fmt indent_val header instructions fmt;
-		 Format.pp_close_box fmt ()
+	       Format.pp_force_newline fmt ();     
+	       print_method_fmt jvm m print_code fmt;
+	       Format.pp_close_box fmt ()
 	    ) c.c_methods;
 	  Format.pp_force_newline fmt ();
 	  Format.pp_print_string fmt "}";
 	  Format.pp_force_newline fmt ();
 	  Format.pp_print_flush fmt ()
+
+(* TODO: using a string list for instruction is not efficient (string
+   concatenation is expensive) *)
+let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
+    (out:out_channel) =
+  let indent_val = 3 in
+  let fmt = Format.formatter_of_out_channel out in
+    print_class_fmt ~jvm indent_val ioc (print_code f) fmt
+
+let print_class' ?(jvm=false) (ioc:'a interface_or_class) 
+    (print_code:'a -> Format.formatter -> unit)
+    (fmt:Format.formatter) =
+  let indent_val = 3 in
+    print_class_fmt ~jvm indent_val ioc print_code fmt
 
 let print_jasmin c ch =
   let ioch = IO.output_channel ch in
