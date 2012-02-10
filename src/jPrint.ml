@@ -149,6 +149,20 @@ let constant_pool p =
 	   !s ^ "    " ^ (string_of_int i) ^ "  " ^ (constant c) ^ "\n") p;
     !s
 
+let rec constant_field_value = function
+  | CString jstr -> jstr_pp jstr
+  | CFloat float -> string_of_float float
+  | CLong int64 -> Int64.to_string int64
+  | CDouble float -> string_of_float float
+  | CInt int32 -> Int32.to_string int32
+  | CShort int -> string_of_int int
+  | CArray array -> 
+      (Array.fold_left
+	 (fun msg cfv -> 
+	    msg^" "^constant_field_value cfv^";")
+	 "["
+	 array)^"]"
+
 let stack_map (offset,locals,stack) =
   let verif_info = function
     | VTop -> "Top"
@@ -533,9 +547,19 @@ let any_field ?(jvm=false) (f : any_field) : string =
 			 [field_access f; field_static f;
 			  field_kind f]) in
   let header = if header = "" then header else header ^ " " in
+  let init_value = 
+    let value =
+      match f with
+	  InterfaceField ifd -> ifd.if_value
+	| ClassField cf -> cf.cf_value
+    in
+      match value with
+	  None -> ""
+	| Some cfv -> " = "^constant_field_value cfv
+  in
     if jvm then field_signature ~jvm:true fs
     else
-      Printf.sprintf "%s%s" header (field_signature fs)
+      Printf.sprintf "%s%s%s" header (field_signature fs) init_value
 
 (* TODO: print other things that code ?*)
 let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
@@ -613,6 +637,30 @@ let print_method' ?(jvm=false) (m:'a jmethod)
 let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
     print_code fmt =
   let name = cn_name (get_name ioc) in
+  let impl_ext = 
+    let extends = 
+      match ioc with
+	  JClass jc -> 
+	    (match jc.c_super_class with
+		 None -> ""
+	       | Some cn -> "extends "^cn_name cn)
+	| _ -> ""
+    in
+    let get_output = function
+	[] -> extends^""
+      | l -> 
+	  List.fold_left
+	    (fun msg cn -> msg^" "^cn_name cn)
+	    (extends^" implements")
+	    l
+    in
+    let interf_l = 
+      match ioc with
+	  JClass jc -> jc.c_interfaces
+	| JInterface ji -> ji.i_interfaces
+    in
+      get_output interf_l
+  in
   let header = String.concat " "
     (ExtList.List.filter_map
        (fun x -> x)
@@ -623,7 +671,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
     match ioc with
       | JInterface i ->
 	  Format.pp_print_string fmt
-	    (Printf.sprintf "%sinterface %s {" header name);
+	    (Printf.sprintf "%sinterface %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
 	  if not(fields = FieldMap.empty) then
 	    begin
@@ -650,7 +698,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  Format.pp_print_flush fmt ()
       | JClass c ->
 	  Format.pp_print_string fmt
-	    (Printf.sprintf "%s class %s {" header name);
+	    (Printf.sprintf "%sclass %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
 	  if not(fields = FieldMap.empty) then
 	    begin

@@ -216,6 +216,16 @@ let low2high_code consts = function c ->
 	 c.JClassLow.c_attributes);
   }
 
+let const_value2const_field_value = function
+  | ConstString jstr -> CString jstr
+  | ConstInt int32 -> CInt int32
+  | ConstFloat float -> CFloat float
+  | ConstLong int64 -> CLong int64
+  | ConstDouble float -> CDouble float 
+  | ConstClass _ -> 
+      raise (Class_structure_error 
+	       "A field cannot be initialized with a CONSTANT_Class.")
+
 let low2high_cfield cn consts fs = function f ->
   let flags = f.f_flags in
   let (is_static,flags) = get_flag `AccStatic flags in
@@ -255,14 +265,14 @@ let low2high_cfield cn consts fs = function f ->
                ^ fs_name fs ^ " has been found with a constant value associated.");
 	  None, (AttributeConstant c::(oc@other_att))
       | AttributeConstant c::[] ->
-	  Some c, other_att
+	  Some (const_value2const_field_value c), other_att
       | AttributeConstant c::oc ->
 	  if !debug > 0
           then
             prerr_endline
               ("Warning: Field " ^ JDumpBasics.class_name cn ^ "."
                ^ fs_name fs ^ " contains more than one constant value associated.");
-	  Some c, (oc@other_att)
+	  Some (const_value2const_field_value c), (oc@other_att)
       | _ -> assert false
   in
   let (generic_signature,other_att) =
@@ -362,7 +372,7 @@ let low2high_ifield cn consts fs = function f ->
       List.partition (function AttributeConstant _ -> true | _ -> false) other_att in
     let cst = match csts with
       | [] -> None
-      | [AttributeConstant c] -> Some c
+      | [AttributeConstant c] -> Some (const_value2const_field_value c)
       | _ -> raise (Class_structure_error "An interface field contains more than one Constant Attribute.")
     in
     let (annotations,other_att) =
@@ -961,6 +971,7 @@ let low2high_class cl =
 		       map)
 		MethodMap.empty
 		methods;
+	      i_javacard = None;
 	    }
 	end
       else
@@ -1043,6 +1054,7 @@ let low2high_class cl =
 	      c_other_attributes = my_other_attributes;
 	      c_fields = my_fields;
 	      c_methods = my_methods;
+	      c_javacard = None;
 	    }
 	end
 

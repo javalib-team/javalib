@@ -39,6 +39,16 @@ type attributes = {
   other : (string * string) list
 }
 
+(** Constant value for fields. *)
+type constant_field_value =
+  | CString of jstr
+  | CFloat of float
+  | CLong of int64
+  | CDouble of float
+  | CInt of int32 (** Can be used by Javacard *)
+  | CShort of int (** Javacard specific *)
+  | CArray of constant_field_value array (** Javacard specific *)
+
 type visibility = RTVisible | RTInvisible
 
 type method_annotations = {
@@ -63,7 +73,7 @@ type class_field = {
   cf_synthetic : bool;
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option; (* Only if the field is static final. *)
+  cf_value : constant_field_value option; (* Only if the field is static final. *)
   cf_transient : bool;
   cf_annotations : (annotation*visibility) list;
   cf_other_flags : int list;
@@ -77,7 +87,7 @@ type interface_field = {
   if_class_signature : class_field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
-  if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_value : constant_field_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
   if_annotations : (annotation*visibility) list;
   if_other_flags : int list;
   if_attributes : attributes
@@ -135,6 +145,33 @@ type abstract_method = {
 (* {2 Classes and interfaces.} *)
 (***************************)
 
+(* {3 Javacard specific properties} *)
+type remote_info = {
+  ri_name : string; (** Java simple class name (no package)*)
+  ri_hash_modifier : string;
+  ri_interfaces : ClassSet.t;
+  ri_methods : int MethodMap.t; (** method hash *)
+}  
+
+type javacard_class = {
+  jc_name : class_name option; (** Java class name *)
+  jc_init_methods : MethodSet.t; (** <init> methods of class *)
+  jc_interf_impl : MethodSet.t MethodMap.t; 
+  (** For a method signature of the class, returns method signatures
+      (pointing to same method in the class' method map) of implemented
+      interface methods *)
+  jc_is_shareable : bool;
+  jc_is_remote : bool;
+  jc_remote_impl : remote_info option;
+}
+
+type javacard_interface = {
+  ji_name : class_name option;
+  ji_is_shareable : bool;
+  ji_is_remote : bool;
+}
+
+(* {3 Java representation} *)
 type 'a jmethod =
     | AbstractMethod of abstract_method
     | ConcreteMethod of 'a concrete_method
@@ -175,6 +212,7 @@ type 'a jclass = {
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
   c_methods : 'a jmethod MethodMap.t;
+  c_javacard : javacard_class option;
 }
 
 (* Interfaces cannot be final and can only contains abstract
@@ -196,7 +234,8 @@ type 'a jinterface = {
   i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t
+  i_methods : abstract_method MethodMap.t;
+  i_javacard : javacard_interface option;
 }
 
 type 'a interface_or_class =
@@ -554,6 +593,7 @@ let map_class_gen map_method f c =
     c_other_flags = c.c_other_flags;
     c_other_attributes = c.c_other_attributes;
     c_methods = MethodMap.map (map_method f) c.c_methods;
+    c_javacard = c.c_javacard;
   }
 
 let map_class_context ?(force=false) f c = map_class_gen (map_method_context ~force:force) f c
@@ -582,6 +622,7 @@ let map_interface_gen map_concrete_method f i =
     i_other_flags = i.i_other_flags;
     i_fields = i.i_fields;
     i_methods = i.i_methods;
+    i_javacard = i.i_javacard;
   }
 
 let map_interface_context ?(force=false) f i =

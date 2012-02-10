@@ -185,6 +185,15 @@ let h2l_parameter_annotation param_annots =
     then (AttributeRuntimeInvisibleParameterAnnotations invisible)::vis
     else []
 
+let const_field_value2const_value = function
+  | CString jstr -> ConstString jstr
+  | CInt int32 -> ConstInt int32
+  | CFloat float -> ConstFloat float
+  | CLong int64 -> ConstLong int64
+  | CDouble float  -> ConstDouble float
+  | _ -> raise (Class_structure_error 
+		  "Trying to convert a JavaCard high-level code to a Java low-level code")
+
 let h2l_cfield _consts f =
   let fs = f.cf_signature in
   let fname = fs_name fs in
@@ -203,7 +212,9 @@ let h2l_cfield _consts f =
 	@ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
 	@ (access2flags f.cf_access);
      f_attributes =
-	(match f.cf_value with Some c -> [AttributeConstant c] | None -> [] )
+	(match f.cf_value with 
+	     Some c -> [AttributeConstant (const_field_value2const_value c)]
+	   | None -> [] )
         @ (h2l_annotations f.cf_annotations)
 	@ (field_generic_signature_to_attribute f.cf_generic_signature)
 	@ (h2l_attributes f.cf_attributes);
@@ -220,7 +231,9 @@ let h2l_ifield _consts f =
 	@ (List.map (fun i -> `AccRFU i) f.if_other_flags)
 	@ [`AccPublic;`AccStatic;`AccFinal];
      f_attributes =
-	(match f.if_value with Some c -> [AttributeConstant c] | None -> [] )
+	(match f.if_value with 
+	     Some c -> [AttributeConstant (const_field_value2const_value c)] 
+	   | None -> [] )
         @ (h2l_annotations f.if_annotations)
 	@ (field_generic_signature_to_attribute f.if_generic_signature)
 	@ (h2l_attributes f.if_attributes);
@@ -261,6 +274,11 @@ let h2l_amethod _consts m =
   let ms = m.am_signature in
   let mname = ms_name ms in
   let mdesc = (ms_args ms, ms_rtype ms) in
+    (* TODO: implement conversion of Java 5 annotations *)
+    if (m.am_annotations <> {ma_global=[];ma_parameters=[];}
+        || m.am_annotation_default <> None)
+    then failwith "Conversion of Java 5 annotations not yet implemented"
+    else
       {m_name = mname;
        m_descriptor = mdesc;
        m_flags =

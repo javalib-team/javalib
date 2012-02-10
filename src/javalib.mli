@@ -43,6 +43,15 @@ type attributes = {
   other : (string * string) list
 }
 
+(** Constant value for fields. *)
+type constant_field_value =
+  | CString of jstr
+  | CFloat of float
+  | CLong of int64
+  | CDouble of float
+  | CInt of int32 (** Can be used by Javacard *)
+  | CShort of int (** Javacard specific *)
+  | CArray of constant_field_value array (** Javacard specific *)
 
 (** visibility modifiers for annotations. An annotation may either be visible at
     run-time ([RTVisible]) or only present in the class file without being
@@ -73,7 +82,7 @@ type class_field = {
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option;
+  cf_value : constant_field_value option;
   cf_transient : bool;
   cf_annotations : (JBasics.annotation * visibility) list;
   cf_other_flags : int list;
@@ -89,7 +98,7 @@ type interface_field = {
   if_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
-  if_value : constant_value option;
+  if_value : constant_field_value option;
   (** a constant_value is not mandatory, especially as it can be
       initialized by the class initializer <clinit>. *)
   if_annotations: (annotation*visibility) list;
@@ -183,6 +192,35 @@ val is_synchronized_method : 'a jmethod -> bool
 
 (** {2 Classes and interfaces.} *)
 
+(** {3 Javacard specific properties} *)
+
+type remote_info = {
+  ri_name : string; (** Java simple class name (no package)*)
+  ri_hash_modifier : string;
+  ri_interfaces : ClassSet.t;
+  ri_methods : int MethodMap.t; (** method hash *)
+}  
+
+type javacard_class = {
+  jc_name : class_name option; (** Java class name *)
+  jc_init_methods : MethodSet.t; (** <init> methods of class *)
+  jc_interf_impl : MethodSet.t MethodMap.t; 
+  (** For a method signature of the class, returns method signatures
+      (pointing to same method in the class' method map) of implemented
+      interface methods *)
+  jc_is_shareable : bool;
+  jc_is_remote : bool;
+  jc_remote_impl : remote_info option;
+}
+
+type javacard_interface = {
+  ji_name : class_name option;
+  ji_is_shareable : bool;
+  ji_is_remote : bool;
+}
+
+(** {3 Java representation} *)
+
 type inner_class = {
   ic_class_name : class_name option;
   ic_outer_class_name : class_name option;
@@ -232,6 +270,7 @@ type 'a jclass = {
   c_other_flags : int list;
   c_other_attributes : (string * string) list;
   c_methods : 'a jmethod MethodMap.t;
+  c_javacard : javacard_class option;
 }
 
 (** Interfaces cannot be final and can only contains abstract
@@ -258,7 +297,8 @@ type 'a jinterface = {
   i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t
+  i_methods : abstract_method MethodMap.t;
+  i_javacard : javacard_interface option;
 }
 
 type 'a interface_or_class =
