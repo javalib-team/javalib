@@ -184,6 +184,9 @@ type remote_info = {
 
 type javacard_class = {
   jc_name : class_name option; (** Java class name *)
+  jc_from_export_file : bool; 
+  (** Class extracted from an export file, as a consequence it does not
+      have method implementation *)
   jc_init_methods : MethodSet.t; (** <init> methods of class *)
   jc_interf_impl : MethodSet.t MethodMap.t; 
   (** For a method signature of the class, returns method signatures
@@ -196,6 +199,7 @@ type javacard_class = {
 
 type javacard_interface = {
   ji_name : class_name option;
+  ji_from_export_file : bool; 
   ji_is_shareable : bool;
   ji_is_remote : bool;
 }
