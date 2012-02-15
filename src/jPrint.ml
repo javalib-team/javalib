@@ -156,12 +156,18 @@ let rec constant_field_value = function
   | CDouble float -> string_of_float float
   | CInt int32 -> Int32.to_string int32
   | CShort int -> string_of_int int
-  | CArray array -> 
+  | CArrayInt iarray -> 
       (Array.fold_left
-	 (fun msg cfv -> 
-	    msg^" "^constant_field_value cfv^";")
+	 (fun msg i32 -> 
+	    msg^" "^Int32.to_string i32^";")
 	 "["
-	 array)^"]"
+	 iarray)^"]"
+  | CArrayShort sarray -> 
+      (Array.fold_left
+	 (fun msg s -> 
+	    msg^" "^string_of_int s^";")
+	 "["
+	 sarray)^"]"
 
 let stack_map (offset,locals,stack) =
   let verif_info = function
@@ -580,7 +586,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
 	     else
 	       Printf.sprintf "%s%s" header (method_signature ms)
 	   in
-	     Format.pp_print_string fmt (header^"{}");
+	     Format.pp_print_string fmt (header^";");
 	     Format.pp_force_newline fmt ();
 	     ()
        | ConcreteMethod cm ->
@@ -592,7 +598,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
 		    else
 		      Printf.sprintf "%s%s" header (method_signature ms)
 		  in
-		    Format.pp_print_string fmt (header^"{Native Code}");
+		    Format.pp_print_string fmt (header^";");
 		    Format.pp_force_newline fmt ();
 		    ()
 	      | Java impl ->
@@ -643,7 +649,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  JClass jc -> 
 	    (match jc.c_super_class with
 		 None -> ""
-	       | Some cn -> "extends "^cn_name cn)
+	       | Some cn -> "extends "^cn_name cn^" ")
 	| _ -> ""
     in
     let get_output = function
@@ -651,7 +657,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
       | l -> 
 	  List.fold_left
 	    (fun msg cn -> msg^" "^cn_name cn)
-	    (extends^" implements")
+	    (extends^"implements")
 	    l
     in
     let interf_l = 

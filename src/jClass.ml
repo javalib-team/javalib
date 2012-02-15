@@ -47,7 +47,8 @@ type constant_field_value =
   | CDouble of float
   | CInt of int32 (** Can be used by Javacard *)
   | CShort of int (** Javacard specific *)
-  | CArray of constant_field_value array (** Javacard specific *)
+  | CArrayInt of int32 array (** Javacard specific *)
+  | CArrayShort of int array (** Javacard specific *)
 
 type visibility = RTVisible | RTInvisible
 
