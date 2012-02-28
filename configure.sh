@@ -86,6 +86,9 @@ function msg()
     elif [ $1 = "inf" ]; then
       echo "* $2." | fmt
       return 0
+    elif [ $1 = "maj" ]; then
+	echo "! $2." | fmt
+	return 0
     fi
   elif [ $# -eq 3 ]; then
     if [ $1 = "ser" ]; then
@@ -111,6 +114,17 @@ function push ()
     cmd="$2=(\${$2[@]} $1)"
     eval $cmd
     return 0
+}
+
+#
+# Compare version numbers
+#
+function isLowerVersion(){
+    lowest=$(echo -e "$1\n$2" | sort --version-sort | head -1)
+    if [ "$2" != "$lowest" ]
+    then return 0
+    else return 1
+    fi
 }
 
 
@@ -209,7 +223,7 @@ fi
 #
 
 declare packages=(camlzip ptrees extlib)
-declare versions=("1.04" "1.2" "1.51")
+declare versions=("1.04" "1.2" "1.5.1")
 
 for (( i=0 ; i<3 ; i++ )) 
 do
@@ -218,12 +232,14 @@ do
     if [ $location ]; then
 	aversion=`$FINDER query $pkg -format %v`
 	rversion=${versions[i]}
-	if [[ ${aversion} == ${rversion} || ${aversion} > ${rversion} ]]; then
-	    msg "inf" "Package $pkg v$aversion found at $location"
-	else
-	    msg "inf" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled"
+	isLowerVersion $aversion $rversion
+	if [ $? -eq 0 ]; 
+	then
+	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled and installed"
 	    push "$pkg" MAKEDEP
 	    push true MAKEDEPREMOVE
+	else
+	    msg "inf" "Package $pkg v$aversion found at $location"
 	fi
     else 
 	msg "inf" "Package $pkg not found, will need to be compiled"
