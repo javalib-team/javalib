@@ -618,7 +618,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
 		    Format.pp_print_string fmt "}";
 		    Format.pp_force_newline fmt ();
 		    ()));
-    Format.pp_print_flush fmt ()
+    ()
 
 let print_code (f: 'a -> string list) code fmt =
   let instructions = f code in
@@ -632,17 +632,35 @@ let print_code (f: 'a -> string list) code fmt =
 let print_method ?(jvm=false) (m:'a jmethod) (f:'a -> string list)
     (out:out_channel) =
   let fmt = Format.formatter_of_out_channel out in
-    print_method_fmt jvm m (print_code f) fmt
+    print_method_fmt jvm m (print_code f) fmt;
+    Format.pp_print_flush fmt ()
 
 let print_method' ?(jvm=false) (m:'a jmethod) 
     (print_code: 'a -> Format.formatter -> unit) fmt =
-  print_method_fmt jvm m print_code fmt
+  print_method_fmt jvm m print_code fmt;
+  ()
 
 (* TODO: maybe add implemented interfaces and extended classes in class
    description. *)
 let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
     print_code fmt =
-  let name = cn_name (get_name ioc) in
+  let name = 
+    let name = cn_name (get_name ioc) in
+    let java_name = 
+      match ioc with
+          JInterface i -> 
+            (match i.i_javacard with
+                 None -> None
+               | Some ijc -> ijc.ji_name)
+        | JClass c -> 
+            (match c.c_javacard with
+                 None -> None
+               | Some cjc -> cjc.jc_name)
+    in
+      match java_name with
+          None -> name
+        | Some jname -> name^" ("^cn_name jname^")"
+  in
   let impl_ext = 
     let extends = 
       match ioc with
@@ -679,56 +697,146 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  Format.pp_print_string fmt
 	    (Printf.sprintf "%sinterface %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
-	  if not(fields = FieldMap.empty) then
+          (match i.i_javacard with
+               None -> ()
+             | Some jc -> 
+                 Format.pp_open_vbox fmt indent_val;
+                 Format.pp_print_string fmt "javacard_infos{";
+                 Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_in_export_file: %B" 
+                      jc.ji_from_export_file);
+	         Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_shareable: %B" jc.ji_is_shareable);
+	         Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_remote: %B" jc.ji_is_remote);
+                 
+                 Format.pp_close_box fmt ();
+	         Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt "}" ;
+                 Format.pp_force_newline fmt ();
+          );
+	  if not(FieldMap.is_empty fields) then
 	    begin
 	      Format.pp_open_vbox fmt indent_val;
+	      Format.pp_force_newline fmt ();
 	      FieldMap.iter
 		(fun _ f ->
-		   Format.pp_force_newline fmt ();
 		   Format.pp_print_string fmt (any_field ~jvm:jvm f);
-		   Format.pp_force_newline fmt ()
+		   Format.pp_force_newline fmt ();
 		) fields;
 	      Format.pp_close_box fmt ();
 	      Format.pp_force_newline fmt ()
 	    end;
-	  MethodMap.iter
-	    (fun _ m ->
-	       Format.pp_open_vbox fmt indent_val;
-	       Format.pp_force_newline fmt ();
-	       print_method_fmt jvm (AbstractMethod m) print_code fmt;
-	       Format.pp_close_box fmt ()
-	    ) i.i_methods;
-	  Format.pp_force_newline fmt ();
+	  if not(MethodMap.is_empty i.i_methods)
+	  then
+	    begin
+	      Format.pp_open_vbox fmt indent_val;
+	      Format.pp_force_newline fmt ();
+	      MethodMap.iter
+		(fun _ m ->
+		   print_method_fmt jvm (AbstractMethod m) print_code fmt;
+		   Format.pp_force_newline fmt ();
+		) i.i_methods;
+	      Format.pp_close_box fmt ();
+	      Format.pp_force_newline fmt ();
+	    end;
 	  Format.pp_print_string fmt "}";
 	  Format.pp_force_newline fmt ();
-	  Format.pp_print_flush fmt ()
+	  ()
       | JClass c ->
 	  Format.pp_print_string fmt
 	    (Printf.sprintf "%sclass %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
+          (match c.c_javacard with
+               None -> ()
+             | Some jc -> 
+                 Format.pp_open_vbox fmt indent_val;
+                 Format.pp_print_string fmt "javacard_infos{";
+                 Format.pp_force_newline fmt ();
+                 if MethodSet.is_empty jc.jc_init_methods 
+                 then ()
+                 else 
+                   (Format.pp_open_vbox fmt indent_val;
+	            Format.pp_print_string fmt "<init> methods: ";
+                    MethodSet.iter 
+                      (fun ms -> 
+                         Format.pp_print_string fmt 
+                           (Printf.sprintf "%s; " (method_signature ms)))
+                      jc.jc_init_methods;
+                    Format.pp_close_box fmt ();
+                    Format.pp_force_newline fmt ();
+                   );
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_in_export_file: %B" 
+                      jc.jc_from_export_file);
+	         Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_shareable: %B" jc.jc_is_shareable);
+	         Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt
+	           (Printf.sprintf "is_remote: %B" jc.jc_is_remote);
+                 if MethodMap.is_empty jc.jc_interf_impl
+                 then ()
+                 else 
+                   (Format.pp_force_newline fmt ();
+                    Format.pp_open_vbox fmt indent_val;
+	            Format.pp_print_string fmt 
+                      "Copies of a method for interface method implementation: ";
+                    Format.pp_force_newline fmt ();
+                    MethodMap.iter
+                      (fun ms mset -> 
+                         Format.pp_open_vbox fmt indent_val;
+                         Format.pp_print_string fmt 
+                           (Printf.sprintf "%s: " (method_signature ms));
+                         MethodSet.iter 
+                           (fun ms -> 
+                              Format.pp_print_string fmt 
+                                (Printf.sprintf "%s; " (method_signature ms)))
+                           mset;
+                         Format.pp_close_box fmt ();
+                         Format.pp_force_newline fmt ();
+                      )
+                      jc.jc_interf_impl;
+                    Format.pp_close_box fmt ();
+                   );
+                 (* TODO: print remote info (print_newline before and
+                    do not after)*)
+                 Format.pp_close_box fmt ();
+                 Format.pp_force_newline fmt ();
+                 Format.pp_print_string fmt "}" ;
+                 Format.pp_force_newline fmt ();
+          );
 	  if not(fields = FieldMap.empty) then
 	    begin
 	      Format.pp_open_vbox fmt indent_val;
+	      Format.pp_force_newline fmt ();
 	      FieldMap.iter
 		(fun _ f ->
-		   Format.pp_force_newline fmt ();
 		   Format.pp_print_string fmt (any_field ~jvm:jvm f);
-		   Format.pp_force_newline fmt ()
+		   Format.pp_force_newline fmt ();
 		) fields;
 	      Format.pp_close_box fmt ();
 	      Format.pp_force_newline fmt ()
 	    end;
-	  MethodMap.iter
-	    (fun _ m ->
-	       Format.pp_open_vbox fmt indent_val;
-	       Format.pp_force_newline fmt ();     
-	       print_method_fmt jvm m print_code fmt;
-	       Format.pp_close_box fmt ()
-	    ) c.c_methods;
-	  Format.pp_force_newline fmt ();
+	  if not(MethodMap.is_empty c.c_methods)
+	  then
+	    begin
+	      Format.pp_open_vbox fmt indent_val;
+	      Format.pp_force_newline fmt ();     
+	      MethodMap.iter
+		(fun _ m ->
+		   print_method_fmt jvm m print_code fmt;
+		   Format.pp_force_newline fmt ();
+		) c.c_methods;
+	      Format.pp_close_box fmt ();
+	      Format.pp_force_newline fmt ();
+	    end;
 	  Format.pp_print_string fmt "}";
 	  Format.pp_force_newline fmt ();
-	  Format.pp_print_flush fmt ()
+	  ()
 
 (* TODO: using a string list for instruction is not efficient (string
    concatenation is expensive) *)
@@ -736,7 +844,8 @@ let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
     (out:out_channel) =
   let indent_val = 3 in
   let fmt = Format.formatter_of_out_channel out in
-    print_class_fmt ~jvm indent_val ioc (print_code f) fmt
+    print_class_fmt ~jvm indent_val ioc (print_code f) fmt;
+    Format.pp_print_flush fmt ()
 
 let print_class' ?(jvm=false) (ioc:'a interface_or_class) 
     (print_code:'a -> Format.formatter -> unit)

@@ -412,6 +412,36 @@ val map_interface_or_class :
 val map_interface_or_class_context :
   ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
 
+(** {3 Alternative transforming functions} *)
+
+(** [map_concrete_method_with_native f cm] is equivalent to
+    {!map_concrete_method} but allows to transform not only the code
+    representation but also the implementation type. It provides a way
+    to modify the nature of implementation to [Native] if the code
+    could not be transformed or conversly to provide a generated code
+    for [Native] implementation. *)
+val map_concrete_method_with_native :
+  ('a implementation -> 'b implementation) -> 'a concrete_method -> 'b concrete_method
+
+(** [map_interface_or_class_with_native f ioc] is equivalent to
+    {!map_interface_or_class} but allows to transform not
+    only the code representation but also the implementation type. It
+    provides a way to modify the nature of implementation to [Native]
+    if the code could not be transformed or conversly to provide a
+    generated code for [Native] implementation. *)
+val map_interface_or_class_with_native :
+  ('a implementation -> 'b implementation) -> 'a interface_or_class -> 'b interface_or_class
+
+(** [map_interface_or_class_with_native_context f ioc] is equivalent to
+    {!map_interface_or_class_context} but allows to transform not
+    only the code representation but also the implementation type. It
+    provides a way to modify the nature of implementation to [Native]
+    if the code could not be transformed or conversly to provide a
+    generated code for [Native] implementation. *)
+val map_interface_or_class_with_native_context :
+  ('a concrete_method -> 'a implementation -> 'b implementation) -> 
+  'a interface_or_class -> 'b interface_or_class
+
 (** {2 Files manipulations.} *)
 
 (** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)

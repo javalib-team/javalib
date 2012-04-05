@@ -361,10 +361,18 @@ val m_fold : ('a jmethod -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
 val map_concrete_method :
   ?force:bool -> ('a -> 'b) -> 'a concrete_method -> 'b concrete_method
 
+val map_concrete_method_with_native :
+  ('a implementation -> 'b implementation) -> 'a concrete_method -> 'b concrete_method
+
 val map_class : ?force:bool -> ('a -> 'b) -> 'a jclass -> 'b jclass
 val map_interface : ?force:bool -> ('a -> 'b) -> 'a jinterface -> 'b jinterface
 val map_interface_or_class :
   ?force:bool -> ('a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+
+val map_class_with_native : ('a implementation -> 'b implementation) -> 'a jclass -> 'b jclass
+val map_interface_with_native : ('a implementation -> 'b implementation) -> 'a jinterface -> 'b jinterface
+val map_interface_or_class_with_native :
+  ('a implementation -> 'b implementation) -> 'a interface_or_class -> 'b interface_or_class
 
 val map_class_context :
   ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a jclass -> 'b jclass
@@ -372,3 +380,13 @@ val map_interface_context :
   ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a jinterface -> 'b jinterface
 val map_interface_or_class_context :
   ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
+
+val map_class_with_native_context :
+  ('a concrete_method -> 'a implementation -> 'b implementation) -> 'a jclass -> 'b jclass
+val map_interface_with_native_context :
+  ('a concrete_method -> 'a implementation -> 'b implementation) -> 'a jinterface -> 'b jinterface
+val map_interface_or_class_with_native_context :
+  ('a concrete_method -> 'a implementation -> 'b implementation) -> 
+  'a interface_or_class -> 'b interface_or_class
+
+

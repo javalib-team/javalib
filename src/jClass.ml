@@ -534,9 +534,7 @@ let m_fold f = function
 (* val am_fold : ('b -> 'a abstract_method -> 'b) -> 'b -> 'a node -> 'b *)
 (* val m_fold : ('b -> 'a jmethod -> 'b) -> 'b -> 'a node -> 'b *)
 
-
-
-let map_concrete_method ?(force=false) f cm =
+let map_concrete_method_with_native f cm =
   {
     cm_signature = cm.cm_signature;
     cm_class_method_signature = cm.cm_class_method_signature;
@@ -553,17 +551,24 @@ let map_concrete_method ?(force=false) f cm =
     cm_exceptions = cm.cm_exceptions;
     cm_attributes = cm.cm_attributes;
     cm_annotations = cm.cm_annotations;
-    cm_implementation = (match cm.cm_implementation with
-			   | Native -> Native
-			   | Java c -> 
-			       if force then
-				 let new_c = f (Lazy.force c) in
-				   Java (lazy new_c)
-			       else Java (lazy (f (Lazy.force c)))
-			)
+    cm_implementation = f cm.cm_implementation
   }
 
-let map_concrete_method_context ?(force=false) f cm = map_concrete_method ~force:force  (f cm) cm
+let map_concrete_method ?(force=false) f =
+  map_concrete_method_with_native 
+    (function
+       | Native -> Native
+       | Java c -> 
+	   if force then
+	     let new_c = f (Lazy.force c) in
+	       Java (lazy new_c)
+	   else Java (lazy (f (Lazy.force c))))
+
+let map_concrete_method_with_native_context f cm = 
+  map_concrete_method_with_native (f cm) cm
+
+let map_concrete_method_context ?(force=false) f cm = 
+  map_concrete_method ~force:force  (f cm) cm
 
 let map_method ?(force=false) f = function
   | AbstractMethod am -> AbstractMethod am
@@ -572,6 +577,15 @@ let map_method ?(force=false) f = function
 let map_method_context ?(force=false) f = function
   | AbstractMethod am -> AbstractMethod am
   | ConcreteMethod cm -> ConcreteMethod (map_concrete_method_context ~force:force f cm)
+
+let map_method_with_native f = function
+  | AbstractMethod am -> AbstractMethod am
+  | ConcreteMethod cm -> ConcreteMethod (map_concrete_method_with_native f cm)
+
+let map_method_with_native_context f = function
+  | AbstractMethod am -> AbstractMethod am
+  | ConcreteMethod cm -> 
+      ConcreteMethod (map_concrete_method_with_native_context f cm)
 
 let map_class_gen map_method f c =
   {
@@ -598,6 +612,11 @@ let map_class_gen map_method f c =
     c_methods = MethodMap.map (map_method f) c.c_methods;
     c_javacard = c.c_javacard;
   }
+
+let map_class_with_native_context f c = 
+  map_class_gen map_method_with_native_context f c
+let map_class_with_native f c  = 
+  map_class_gen map_method_with_native f c
 
 let map_class_context ?(force=false) f c = map_class_gen (map_method_context ~force:force) f c
 let map_class ?(force=false) f c = map_class_gen (map_method ~force:force) f c
@@ -630,7 +649,21 @@ let map_interface_gen map_concrete_method f i =
 
 let map_interface_context ?(force=false) f i =
   map_interface_gen (map_concrete_method_context ~force:force) f i
-let map_interface ?(force=false) f i = map_interface_gen (map_concrete_method ~force:force) f i
+let map_interface ?(force=false) f i = 
+  map_interface_gen (map_concrete_method ~force:force) f i
+
+let map_interface_with_native_context f i = 
+  map_interface_gen map_concrete_method_with_native_context f i
+let map_interface_with_native f i  = 
+  map_interface_gen map_concrete_method_with_native f i
+
+let map_interface_or_class_with_native f = function
+  | JInterface i -> JInterface (map_interface_with_native f i)
+  | JClass c -> JClass (map_class_with_native f c)
+
+let map_interface_or_class_with_native_context f = function
+  | JInterface i -> JInterface (map_interface_with_native_context f i)
+  | JClass c -> JClass (map_class_with_native_context f c)
 
 let map_interface_or_class ?(force=false) f = function
   | JInterface i -> JInterface (map_interface ~force f i)
