@@ -396,7 +396,7 @@ let get_field_signature = function
     -> fs
 
 let is_final_field = function
-  | InterfaceField _ -> false
+  | InterfaceField _ -> true
   | ClassField f -> f.cf_kind = Final
 
 let is_static_field = function

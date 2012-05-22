@@ -640,8 +640,6 @@ let print_method' ?(jvm=false) (m:'a jmethod)
   print_method_fmt jvm m print_code fmt;
   ()
 
-(* TODO: maybe add implemented interfaces and extended classes in class
-   description. *)
 let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
     print_code fmt =
   let name = 
