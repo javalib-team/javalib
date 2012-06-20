@@ -94,7 +94,11 @@ module type S = sig
 
   (** [inter m1 m2] returns a map with all the bindings [(k,d)] of [m1] such
       that [mem k m2]. *)
-  val inter : 'a t -> 'b t -> 'a t
+  val inter : 'a t -> 'a t -> 'a t
+
+  (** [subset m1 m2] returns [true] if [m1] is a subset of [m2], [false]
+      otherwise. *)
+  val subset : 'a t -> 'a t -> bool
 
   val cardinal: 'a t -> int
 

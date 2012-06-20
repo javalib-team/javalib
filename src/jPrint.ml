@@ -149,26 +149,6 @@ let constant_pool p =
 	   !s ^ "    " ^ (string_of_int i) ^ "  " ^ (constant c) ^ "\n") p;
     !s
 
-let rec constant_field_value = function
-  | CString jstr -> jstr_pp jstr
-  | CFloat float -> string_of_float float
-  | CLong int64 -> Int64.to_string int64
-  | CDouble float -> string_of_float float
-  | CInt int32 -> Int32.to_string int32
-  | CShort int -> string_of_int int
-  | CArrayInt iarray -> 
-      (Array.fold_left
-	 (fun msg i32 -> 
-	    msg^" "^Int32.to_string i32^";")
-	 "["
-	 iarray)^"]"
-  | CArrayShort sarray -> 
-      (Array.fold_left
-	 (fun msg s -> 
-	    msg^" "^string_of_int s^";")
-	 "["
-	 sarray)^"]"
-
 let stack_map (offset,locals,stack) =
   let verif_info = function
     | VTop -> "Top"
@@ -561,7 +541,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
     in
       match value with
 	  None -> ""
-	| Some cfv -> " = "^constant_field_value cfv
+	| Some cfv -> " = "^constant_value cfv
   in
     if jvm then field_signature ~jvm:true fs
     else
@@ -642,23 +622,7 @@ let print_method' ?(jvm=false) (m:'a jmethod)
 
 let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
     print_code fmt =
-  let name = 
-    let name = cn_name (get_name ioc) in
-    let java_name = 
-      match ioc with
-          JInterface i -> 
-            (match i.i_javacard with
-                 None -> None
-               | Some ijc -> ijc.ji_name)
-        | JClass c -> 
-            (match c.c_javacard with
-                 None -> None
-               | Some cjc -> cjc.jc_name)
-    in
-      match java_name with
-          None -> name
-        | Some jname -> name^" ("^cn_name jname^")"
-  in
+  let name = cn_name (get_name ioc) in
   let impl_ext = 
     let extends = 
       match ioc with
@@ -695,27 +659,6 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  Format.pp_print_string fmt
 	    (Printf.sprintf "%sinterface %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
-          (match i.i_javacard with
-               None -> ()
-             | Some jc -> 
-                 Format.pp_open_vbox fmt indent_val;
-                 Format.pp_print_string fmt "javacard_infos{";
-                 Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_in_export_file: %B" 
-                      jc.ji_from_export_file);
-	         Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_shareable: %B" jc.ji_is_shareable);
-	         Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_remote: %B" jc.ji_is_remote);
-                 
-                 Format.pp_close_box fmt ();
-	         Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt "}" ;
-                 Format.pp_force_newline fmt ();
-          );
 	  if not(FieldMap.is_empty fields) then
 	    begin
 	      Format.pp_open_vbox fmt indent_val;
@@ -748,65 +691,6 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  Format.pp_print_string fmt
 	    (Printf.sprintf "%sclass %s %s{" header name impl_ext);
 	  Format.pp_force_newline fmt ();
-          (match c.c_javacard with
-               None -> ()
-             | Some jc -> 
-                 Format.pp_open_vbox fmt indent_val;
-                 Format.pp_print_string fmt "javacard_infos{";
-                 Format.pp_force_newline fmt ();
-                 if MethodSet.is_empty jc.jc_init_methods 
-                 then ()
-                 else 
-                   (Format.pp_open_vbox fmt indent_val;
-	            Format.pp_print_string fmt "<init> methods: ";
-                    MethodSet.iter 
-                      (fun ms -> 
-                         Format.pp_print_string fmt 
-                           (Printf.sprintf "%s; " (method_signature ms)))
-                      jc.jc_init_methods;
-                    Format.pp_close_box fmt ();
-                    Format.pp_force_newline fmt ();
-                   );
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_in_export_file: %B" 
-                      jc.jc_from_export_file);
-	         Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_shareable: %B" jc.jc_is_shareable);
-	         Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt
-	           (Printf.sprintf "is_remote: %B" jc.jc_is_remote);
-                 if MethodMap.is_empty jc.jc_interf_impl
-                 then ()
-                 else 
-                   (Format.pp_force_newline fmt ();
-                    Format.pp_open_vbox fmt indent_val;
-	            Format.pp_print_string fmt 
-                      "Copies of a method for interface method implementation: ";
-                    Format.pp_force_newline fmt ();
-                    MethodMap.iter
-                      (fun ms mset -> 
-                         Format.pp_open_vbox fmt indent_val;
-                         Format.pp_print_string fmt 
-                           (Printf.sprintf "%s: " (method_signature ms));
-                         MethodSet.iter 
-                           (fun ms -> 
-                              Format.pp_print_string fmt 
-                                (Printf.sprintf "%s; " (method_signature ms)))
-                           mset;
-                         Format.pp_close_box fmt ();
-                         Format.pp_force_newline fmt ();
-                      )
-                      jc.jc_interf_impl;
-                    Format.pp_close_box fmt ();
-                   );
-                 (* TODO: print remote info (print_newline before and
-                    do not after)*)
-                 Format.pp_close_box fmt ();
-                 Format.pp_force_newline fmt ();
-                 Format.pp_print_string fmt "}" ;
-                 Format.pp_force_newline fmt ();
-          );
 	  if not(fields = FieldMap.empty) then
 	    begin
 	      Format.pp_open_vbox fmt indent_val;

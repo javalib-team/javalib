@@ -185,15 +185,6 @@ let h2l_parameter_annotation param_annots =
     then (AttributeRuntimeInvisibleParameterAnnotations invisible)::vis
     else []
 
-let const_field_value2const_value = function
-  | CString jstr -> ConstString jstr
-  | CInt int32 -> ConstInt int32
-  | CFloat float -> ConstFloat float
-  | CLong int64 -> ConstLong int64
-  | CDouble float  -> ConstDouble float
-  | _ -> raise (Class_structure_error 
-		  "Trying to convert a JavaCard high-level code to a Java low-level code")
-
 let h2l_cfield _consts f =
   let fs = f.cf_signature in
   let fname = fs_name fs in
@@ -213,7 +204,7 @@ let h2l_cfield _consts f =
 	@ (access2flags f.cf_access);
      f_attributes =
 	(match f.cf_value with 
-	     Some c -> [AttributeConstant (const_field_value2const_value c)]
+	     Some c -> [AttributeConstant  c]
 	   | None -> [] )
         @ (h2l_annotations f.cf_annotations)
 	@ (field_generic_signature_to_attribute f.cf_generic_signature)
@@ -232,7 +223,7 @@ let h2l_ifield _consts f =
 	@ [`AccPublic;`AccStatic;`AccFinal];
      f_attributes =
 	(match f.if_value with 
-	     Some c -> [AttributeConstant (const_field_value2const_value c)] 
+	     Some c -> [AttributeConstant c] 
 	   | None -> [] )
         @ (h2l_annotations f.if_annotations)
 	@ (field_generic_signature_to_attribute f.if_generic_signature)

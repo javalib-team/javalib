@@ -16,7 +16,7 @@
 ###     
 ###     
 ### Copyright (c)2010 Florent Kirchner
-### Copyright (c)2010 Vincent Monfort
+### Copyright (c)2010, 2012 Vincent Monfort
 ### 
 ### This program is free software: you can redistribute it and/or
 ### modify it under the terms of the GNU Lesser General Public License
@@ -33,7 +33,7 @@
 ### <http://www.gnu.org/licenses/>.
 ### 
 ### This file: began on         march-18-2010,
-###            last updated on  may-2-2010.
+###            last updated on  june-20-2012.
 ###
 
 
@@ -63,8 +63,8 @@ OPT_FLAGS=
 FLAGS="-w Aer"
 # The flag signalling the absence of ZLIB (used to warn before camlzip compiles)
 ZLIBFLAG=
-
-
+# Do version check for packages 
+VCHECK="true"
 
 # Differentiated error numbers make for easier bug hunting. Hopefully we won't
 # have to use them.
@@ -87,7 +87,9 @@ function msg()
       echo "* $2." | fmt
       return 0
     elif [ $1 = "maj" ]; then
+        echo ""
 	echo "! $2." | fmt
+        echo ""
 	return 0
     fi
   elif [ $# -eq 3 ]; then
@@ -117,14 +119,29 @@ function push ()
 }
 
 #
-# Compare version numbers
+# Compare version numbers: return 10 if ==, 11 if v1 > v2 and 9 if v1 < v2
 #
-function isLowerVersion(){
-    lowest=$(echo -e "$1\n$2" | sort --version-sort | head -1)
-    if [ "$2" != "$lowest" ]
-    then return 0
-    else return 1
-    fi
+function do_version_check() {
+
+   [ "$1" == "$2" ] && return 10
+
+   ver1front=`echo $1 | cut -d "." -f -1`
+   ver1back=`echo $1 | cut -d "." -f 2-`
+
+   ver2front=`echo $2 | cut -d "." -f -1`
+   ver2back=`echo $2 | cut -d "." -f 2-`
+
+   if [ "$ver1front" != "$1" ] || [ "$ver2front" != "$2" ]; then
+       [ "$ver1front" -gt "$ver2front" ] && return 11
+       [ "$ver1front" -lt "$ver2front" ] && return 9
+
+       [ "$ver1front" == "$1" ] || [ -z "$ver1back" ] && ver1back=0
+       [ "$ver2front" == "$2" ] || [ -z "$ver2back" ] && ver2back=0
+       do_version_check "$ver1back" "$ver2back"
+       return $?
+   else
+           [ "$1" -gt "$2" ] && return 11 || return 9
+   fi
 }
 
 
@@ -139,6 +156,7 @@ Usage: `basename $0` [-l [PATH|default]] [-d [yes|no|prof]] [-h]
 Options:
   -l PATH \t Perform a local installation at PATH.
   -d FLAG \t Use the debug flag when compiling (default: yes).
+  -v  \t\t Deactivate version check for ocaml packages.
   -h  \t\t Print this message and exit."
 }
 #  -s  \t\t Complile a dynamically loadable plugin (cmxs).
@@ -148,11 +166,12 @@ Options:
 # The option parsing function. Uses getopts, a bash built-in function.
 #
 
-while getopts "d:l:h" opt
+while getopts "d:l:vh" opt
 do
   case $opt in 
     h   ) print_usage
           exit 0;;
+    v   ) VCHECK="false";;
     d   ) DEBUG=$OPTARG;;
     l   ) case "$OPTARG" in
             default)    tmpdest="`pwd`/lib";;
@@ -171,11 +190,13 @@ do
           # For the rest of this configure, set OCAMLPATH to $LOCALDEST
           # NB: only children of this script are in the scope of 'export'.
           export OCAMLPATH=$LOCALDEST;;
-    s   ) SHARED="javalib.cmxs"
-           msg "inf" "Plugin version of javalib will be generated at compilation (ocamlopt -shared)";;
     *   ) msg "err" "unrecognized option '$OPTARG'. Type '`basename $0` -h' to list available options";;
   esac
 done
+
+#    s   ) SHARED="javalib.cmxs"
+#           msg "inf" "Plugin version of javalib will be generated at compilation (ocamlopt -shared)";;
+
 
 shift $(($OPTIND - 1))
 
@@ -223,7 +244,7 @@ fi
 #
 
 declare packages=(camlzip ptrees extlib)
-declare versions=("1.04" "1.2" "1.5.1")
+declare versions=("1.04" "1.3" "1.5.1")
 
 for (( i=0 ; i<3 ; i++ )) 
 do
@@ -232,10 +253,10 @@ do
     if [ $location ]; then
 	aversion=`$FINDER query $pkg -format %v`
 	rversion=${versions[i]}
-	isLowerVersion $aversion $rversion
-	if [ $? -eq 0 ]; 
+	do_version_check $aversion $rversion
+	if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
 	then
-	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled and installed"
+	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled and installed."
 	    push "$pkg" MAKEDEP
 	    push true MAKEDEPREMOVE
 	else

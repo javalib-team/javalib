@@ -42,7 +42,8 @@ module type S = sig
   val merge_first : 'a t -> 'a t -> 'a t
   val diff : ('a -> 'a -> bool) -> 'a t -> 'a t -> 'a t
   val choose_and_remove : 'a t -> int * 'a * ('a t)
-  val inter : 'a t -> 'b t -> 'a t
+  val inter : 'a t -> 'a t -> 'a t
+  val subset : 'a t -> 'a t -> bool
   val cardinal: 'a t -> int
   val exists: (int -> 'a -> bool) -> 'a t -> bool
   val filter: ('a -> bool) -> 'a t -> 'a t
@@ -293,7 +294,7 @@ let merge_first t1 t2 =
     snd (merge_first t1 t2)
 
 let rec inter s1 s2 =
-  if s1 == Obj.magic s2 then s1 else
+  if s1 == s2 then s1 else
     match s1, s2 with
       | Empty , _ -> Empty
       | _, Empty -> Empty
@@ -313,6 +314,24 @@ let rec inter s1 s2 =
           else
             Empty
 
+let rec subset s1 s2 =
+  if s1 == s2 then true else
+    match s1, s2 with
+      | Empty , _ -> true
+      | _, Empty -> false
+      | Leaf (k1,_), Leaf (k2,_) ->
+          if k1 == k2 then true else false
+      | Leaf (k,_), t -> if mem k t then true else false
+      | _ , Leaf (_,_) -> false
+      | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
+          if m1 == m2 && p1 == p2 then
+            (subset l1 l2) && (subset r1 r2)
+          else if m1 < m2 && match_prefix p2 p1 m1 then
+            false
+          else if m1 > m2 && match_prefix p1 p2 m2 then
+            subset s1 (if zero_bit p1 m2 then l2 else r2)
+          else
+            false
 
 let diff f t1 t2 =
   let remove_eq k a f t =
