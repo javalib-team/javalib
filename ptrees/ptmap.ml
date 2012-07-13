@@ -43,6 +43,7 @@ module type S = sig
   val diff : ('a -> 'a -> bool) -> 'a t -> 'a t -> 'a t
   val choose_and_remove : 'a t -> int * 'a * ('a t)
   val inter : 'a t -> 'a t -> 'a t
+  val inter_map2 : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
   val subset : 'a t -> 'a t -> bool
   val cardinal: 'a t -> int
   val exists: (int -> 'a -> bool) -> 'a t -> bool
@@ -311,6 +312,29 @@ let rec inter s1 s2 =
             inter (if zero_bit p2 m1 then l1 else r1) s2
           else if m1 > m2 && match_prefix p1 p2 m2 then
             inter s1 (if zero_bit p1 m2 then l2 else r2)
+          else
+            Empty
+
+let rec inter_map2 f s1 s2 =
+  if s1 == s2 then s1 else
+    match s1, s2 with
+      | Empty , _ -> Empty
+      | _, Empty -> Empty
+      | Leaf (k1,v1), Leaf (k2,v2) ->
+          if k1 == k2 then Leaf (k2,f v1 v2) else Empty
+      | Leaf (k,v), t -> 
+          (try Leaf (k,f v (find k t))
+           with Not_found -> Empty)
+      | t, Leaf (k,v) ->
+          (try Leaf (k,f (find k t) v)
+           with Not_found -> Empty)
+      | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
+          if m1 == m2 && p1 == p2 then
+            merge_first (inter_map2 f l1 l2) (inter_map2 f r1 r2)
+          else if m1 < m2 && match_prefix p2 p1 m1 then
+            inter_map2 f (if zero_bit p2 m1 then l1 else r1) s2
+          else if m1 > m2 && match_prefix p1 p2 m2 then
+            inter_map2 f s1 (if zero_bit p1 m2 then l2 else r2)
           else
             Empty
 

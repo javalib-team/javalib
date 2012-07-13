@@ -96,6 +96,14 @@ module type S = sig
       that [mem k m2]. *)
   val inter : 'a t -> 'a t -> 'a t
 
+  (* [inter_map2 f m1 m2] returns a map that binds only the keys [k]
+     that are binded both in [m1] and [m2]. The associated value is
+     [f (find k m1) (find k m2)]. [f] must satisfy [f x x = x] for all
+     [x].
+
+     @author David Pichardie *)
+  val inter_map2 : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
+
   (** [subset m1 m2] returns [true] if [m1] is a subset of [m2], [false]
       otherwise. *)
   val subset : 'a t -> 'a t -> bool
