@@ -93,7 +93,7 @@ let h2l_inner_classes = function
 	       | `ConcreteClass -> [])
 	in (inner_class_info,outer_class_info,inner_name,inner_class_access_flags)
       in
-	[AttributeInnerClasses (List.map h2l_ic icl)]
+	[AttributeInnerClasses (List.rev_map h2l_ic icl)]
 
 (* This function only build full frames. We don't try to compress the stackmap
    information like javac. *)
@@ -159,12 +159,12 @@ let split_vis_invis annots =
 let h2l_annotations annots =
   let visible,invisible = split_vis_invis annots in
   let vis =
-    if visible <> []
-    then [AttributeRuntimeVisibleAnnotations visible]
+    if invisible <> []
+    then [AttributeRuntimeInvisibleAnnotations invisible]
     else []
   in
-    if invisible <> []
-    then (AttributeRuntimeInvisibleAnnotations invisible)::vis
+    if visible <> []
+    then (AttributeRuntimeVisibleAnnotations visible)::vis
     else vis
 
 let h2l_parameter_annotation param_annots =
@@ -177,13 +177,13 @@ let h2l_parameter_annotation param_annots =
       ([],[])
   in
   let vis =
-    if List.exists ((<>)[]) visible
-    then [AttributeRuntimeVisibleParameterAnnotations visible]
+    if List.exists ((<>)[]) invisible
+    then [AttributeRuntimeInvisibleParameterAnnotations invisible]
     else []
   in
-    if List.exists ((<>)[]) invisible
-    then (AttributeRuntimeInvisibleParameterAnnotations invisible)::vis
-    else []
+    if List.exists ((<>)[]) visible
+    then (AttributeRuntimeVisibleParameterAnnotations visible)::vis
+    else vis
 
 let h2l_cfield _consts f =
   let fs = f.cf_signature in
@@ -265,29 +265,24 @@ let h2l_amethod _consts m =
   let ms = m.am_signature in
   let mname = ms_name ms in
   let mdesc = (ms_args ms, ms_rtype ms) in
-    (* TODO: implement conversion of Java 5 annotations *)
-    if (m.am_annotations <> {ma_global=[];ma_parameters=[];}
-        || m.am_annotation_default <> None)
-    then failwith "Conversion of Java 5 annotations not yet implemented"
-    else
-      {m_name = mname;
-       m_descriptor = mdesc;
-       m_flags =
-	  (if m.am_bridge then [`AccBridge] else [])
-	  @ (if m.am_varargs then [`AccVarArgs] else [])
-	  @ (if m.am_synthetic then [`AccSynthetic] else [])
-	  @ (List.map (fun i -> `AccRFU i) m.am_other_flags)
-	  @ (`AccAbstract::access2flags m.am_access);
-       m_attributes =
-	  (match m.am_exceptions with
-	     | [] -> []
-	     | l -> [AttributeExceptions l]
-	  )
-	  @ method_generic_signature_to_attribute m.am_generic_signature
-          @ h2l_annotations m.am_annotations.ma_global
-          @ h2l_parameter_annotation m.am_annotations.ma_parameters
-	  @ h2l_attributes m.am_attributes;
-      }
+    {m_name = mname;
+     m_descriptor = mdesc;
+     m_flags =
+	(if m.am_bridge then [`AccBridge] else [])
+	@ (if m.am_varargs then [`AccVarArgs] else [])
+	@ (if m.am_synthetic then [`AccSynthetic] else [])
+	@ (List.map (fun i -> `AccRFU i) m.am_other_flags)
+	@ (`AccAbstract::access2flags m.am_access);
+     m_attributes =
+	(match m.am_exceptions with
+	   | [] -> []
+	   | l -> [AttributeExceptions l]
+	)
+	@ method_generic_signature_to_attribute m.am_generic_signature
+        @ h2l_annotations m.am_annotations.ma_global
+        @ h2l_parameter_annotation m.am_annotations.ma_parameters
+	@ h2l_attributes m.am_attributes;
+    }
 
 let h2l_acmethod consts = function
   | AbstractMethod m -> h2l_amethod consts m

@@ -1,3 +1,40 @@
+From 2.2.1 to 2.2.2
+-----------------
+Minor changes:
+* Ptmap:
+  - add find_element and findi_element functions
+  - add inter_map2 function
+
+* Camlzip: add zlib interfaces in camlzip findlib installation
+
+* JBasics: 
+  - add of_list and of_array functions in Maps
+
+* Javalib: 
+  - add functions map_*_with_native* which provide a way to transform
+    the implementation type
+  - add Java method printing functions using a formatter in JPrint
+    module
+  
+* configure script:
+  - add check of versions for camlzip, ptrees, extlib to configure.sh
+  - add a check on presence of zlib C library necessary for camlzip
+  - remove option '-l default'.
+
+Bug fixes: 
+* JClass/Javalib: is_final_field was returning always false for fields
+of interface but it is the opposite (w.r.t. JVM specification and the
+ocamldoc of interface_field)
+
+* JUnparse/Javalib: several bugfixes in unparse_class function
+ regarding Java annotations (if present):
+  - unparsing was failing when annotations were present on an abstract
+    method
+  - unparsing of annotations was not correct (annotation type index
+    was referencing a wrong element in the constant pool)
+  - runtime visible annotations were not unparsed if no runtime
+    invisible annotation was present (on a method parameters only)
+
 From 2.2 to 2.2.1
 -----------------
 Minor changes:

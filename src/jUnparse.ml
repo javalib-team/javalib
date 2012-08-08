@@ -48,7 +48,7 @@ let unparse_constant_value ch consts = function
       write_double ch d
   | ConstClass c ->
       write_ui8 ch 7;
-      write_string ch consts (unparse_objectType c)
+      write_string ch consts (unparse_constClass c)
 
 let unparse_constant ch consts =
   function
@@ -186,7 +186,7 @@ let unparse_stackmap_table_attribute consts stackmap_attribute =
       ) stackmap_attribute;
     ("StackMapTable",close_out ch)
 
-(* TODO:not tested *)
+
 let rec unparse_element_value =
   let char_B = Char.code 'B'
   and char_C = Char.code 'C'
@@ -233,7 +233,7 @@ let rec unparse_element_value =
         let type_name_index =
           constant_to_int
             consts
-            (ConstStringUTF8 (unparse_objectType (TClass cn)))
+            (ConstStringUTF8 (unparse_object_type (TClass cn)))
         and const_name_index =
           constant_to_int consts (ConstStringUTF8 constructor)
         in
@@ -255,13 +255,12 @@ let rec unparse_element_value =
         write_ui8 ch char_sqbraket;
         write_ui16 ch (List.length elements);
         List.iter (unparse_element_value consts ch) elements
-
-(* TODO:not tested *)
 and unparse_annotation consts ch annot =
   let type_index =
-    constant_to_int
-      consts
-      (ConstStringUTF8 (unparse_objectType (TClass annot.kind)))
+    let string_type = unparse_object_type (TClass annot.kind) in
+      constant_to_int
+        consts
+        (ConstStringUTF8 string_type)
   and nb_ev_pairs = List.length annot.element_value_pairs
   in
     write_ui16 ch type_index;

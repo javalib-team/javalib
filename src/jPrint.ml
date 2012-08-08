@@ -547,7 +547,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
     else
       Printf.sprintf "%s%s%s" header (field_signature fs) init_value
 
-(* TODO: print other things that code ?*)
+(* TODO: print other things than code ?*)
 let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
   let indent_val = 3 in
   let ms = get_method_signature m in

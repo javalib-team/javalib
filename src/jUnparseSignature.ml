@@ -67,9 +67,9 @@ let rec unparse_descriptor = function
   | SValue v -> unparse_value_type v
   | SMethod m -> unparse_method_descriptor m
 
-(* Unparse a type that must be an object. Therefore, there is no 'L'
+(* Unparse a type that must be a constant of type class. Therefore, there is no 'L'
    and ';' around the class name (if this is a class). *)
-let unparse_objectType = function
+let unparse_constClass = function
   | TClass c -> encode_class_name c
   | TArray _ as s -> unparse_object_type s
 
