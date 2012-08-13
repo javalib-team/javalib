@@ -132,7 +132,8 @@ type 'a concrete_method = {
   cm_static : bool;
   cm_final : bool;
   cm_synchronized : bool;
-  cm_strict : bool;
+  cm_strict : bool; (* Correspond to flag ACC_STRICT, which shows if we are in
+                    FP-strict mod or not. *)
   cm_access: access;
   cm_generic_signature : JSignature.methodTypeSignature option;
   cm_bridge: bool;
