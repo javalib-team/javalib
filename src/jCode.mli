@@ -158,8 +158,8 @@ type jopcodes = jopcode array
 
 (** Exception handler. *)
 type exception_handler = {
-	e_start : int;
-	e_end : int;
+	e_start : int; (*Inclusive, first instr in the try block. *)
+	e_end : int; (*Exclusive, first instr after try block. *)
 	e_handler : int;
 	e_catch_type : class_name option
 }
