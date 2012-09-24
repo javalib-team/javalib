@@ -42,15 +42,19 @@ management of OCaml libraries. Make sure you have an Objective Caml compiler
 
 <li> Javalib depends on three unrelated libraries: ExtLib (&gt;=1.5.1), CamlZip
 (&gt;=1.04), and PTrees.  Some or all of these libraries might be provided as
-precompiled packages or ports in your operating system. E.g., for ExtLib, one
+precompiled packages or ports in your operating system. E.g., for CamlZip, one
 can use:
 <ul>
-  <li>the 'libextlib-ocaml-dev' package in Debian, Ubuntu &amp; Co.,</li>
-  <li>the 'ocaml-extlib' package in Fedora or in Mac/Darwin Ports.</li>
+  <li>the 'libzip-ocaml-dev' package in Debian, Ubuntu &amp; Co.,</li>
+  <li>the 'ocaml-zip-devel' package in Fedora.</li>
 </ul>
 If your operating system provides none (or only part of) these libraries, fret
 not: all three are included in the Javalib distribution, and the installation
 procedure will guide you through compiling and installing them.
+
+<em>Note: If you are using OCaml 4.0 or higher, you need at least ExtLib 1.5.3
+  while only the version 1.5.1 is included in Javalib. So you need to install
+  it separatly.</em>
 </li>
 
 <li> First you need to configure the system. It is done automatically with the
