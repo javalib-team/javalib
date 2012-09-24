@@ -86,7 +86,7 @@ Don't forget the associated **#directory** directives that allow you
 to specify the paths where to find these libraries.
 If you installed javalib with FindLib you should do:
 
-~~~~~{#load .ocaml}
+~~~~~{#asso_dir .ocaml}
 #directory "<package_install_path>extlib"
 #directory "<package_install_path>camlzip"
 #directory "<package_install_path>ptrees"
@@ -109,7 +109,7 @@ the field **f:I** of the class **A**.
 You first need to build the signatures associated to each entity.
 According to the *Javalib* API you will write:
 
-~~~~~{#load .ocaml}
+~~~~~{#make_cn_ms_fs .ocaml}
 open Javalib_pack
 open JBasics
 let aname = make_cn "A"
@@ -125,20 +125,20 @@ Getting a class representation from a binary file
 The methods you need are in the *Javalib* module. You can open this
 module cause you will need it very often.
 
-~~~~~{#load .ocaml}
+~~~~~{#op_javalib .ocaml}
 open Javalib
 ~~~~~
 
 Then, you need to build a **class_path** to specify where the classes
 you want to load have to be found:
 
-~~~~~{#load .ocaml}
+~~~~~{#cp .ocaml}
 let class_path = class_path "./" (* for instance *)
 ~~~~~
 
 You can now load the class **./A.class** corresponding to **aname**.
 
-~~~~~{#load .ocaml}
+~~~~~{#load_a .ocaml}
 let a = get_class class_path aname
 ~~~~~
 
@@ -155,7 +155,7 @@ field **f** of type *Javalib.any_field*.
 
 Simply do:
 
-~~~~~{#load .ocaml}
+~~~~~{#load_m_f .ocaml}
 let m = get_method a ms
 let f = get_field a fs
 ~~~~~
@@ -181,7 +181,7 @@ this class, a set of the fields accessed for reading (instructions
 
 Here is the code:
 
-~~~~~{#load .ocaml}
+~~~~~{#exemple1 .ocaml}
 open Javalib_pack
 open Javalib
 open JBasics
@@ -233,7 +233,7 @@ let get_accessed_fields (class_path : class_path)
 
 This method has the signature
 
-~~~~~{#load .ocaml}
+~~~~~{#cp_sig .ocaml}
 Javalib.class_path ->
   JBasics.class_name -> JBasics.FieldSet.t JBasics.MethodMap.t
 ~~~~~
@@ -243,7 +243,7 @@ Another use case
 
 Consider the following class written in java:
 
-~~~~~{#load .java}
+~~~~~{#TestString .java}
 public class TestString{
    public boolean m(String s){
       if (s.equals("str")){
@@ -280,7 +280,7 @@ We first need to write a function that returns the next instruction
 and its program point in a code, given this code and a current program
 point:
 
-~~~~~{#load .ocaml}
+~~~~~{#next_instr .ocaml}
 let rec next_instruction (code : jopcodes) (pp : int)
   : (jopcode * int) option =
  try
@@ -296,7 +296,7 @@ signature to a list of (**int**,**string**) couples representing the
 program points and the strings on which the *java.lang.String.equals*
 method is called.
 
-~~~~~{#load .ocaml}
+~~~~~{#get_equals .ocaml}
 let get_equals_calls (class_path : class_path)
   (cn : class_name) =
  (* We first recover the interface or class associated to the
@@ -361,14 +361,14 @@ let get_equals_calls (class_path : class_path)
 
 This method has the signature
 
-~~~~~{#load .ocaml}
+~~~~~{#cp_sig2 .ocaml}
     Javalib.class_path ->
       JBasics.class_name -> (int * string) list JBasics.MethodMap.t
 ~~~~~
 
 We obtain the expected result on the previous class *TestString*:
 
-~~~~~{#load .ocaml}
+~~~~~{#run_cp .ocaml}
 # let cp = class_path ".";;
 val cp : Javalib.class_path = <abstr>
 

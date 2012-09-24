@@ -4,18 +4,11 @@
 # Just for test on tutorial code
 -include ../../Makefile.config
 
-all: javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html
+all: javalib_tut.pdf javalib-tut.html
 
-release: javalib_tutorial.tex javalib_tutorial.pdf javalib-tut-release.html
+release: javalib_tut.pdf javalib-tut-release.html
 
-.DELETE_ON_ERROR:javalib_tutorial.tex javalib-tut.html
-
-javalib_tutorial.tex: javalib_tutorial.md
-	cat header.tex > javalib_tutorial.tex
-	pandoc -f markdown -t latex -o javalib_tutorial_part.tex javalib_tutorial.md
-	cat javalib_tutorial_part.tex >> javalib_tutorial.tex
-	cat footer.tex >> javalib_tutorial.tex
-	rm javalib_tutorial_part.tex
+.DELETE_ON_ERROR: javalib-tut.html
 
 javalib-tut.html: javalib_tutorial.md header.html
 	pandoc -s --base-header-level 2 -c http://javalib.gforge.inria.fr/style.css \
@@ -28,12 +21,8 @@ javalib-tut-release.html: javalib_tutorial.md header.html
 	--toc -T 'Javalib tutorial' -f \
 		markdown -t html javalib_tutorial.md | tidy -utf8 -q > javalib-tut.html
 
-javalib_tutorial.pdf: javalib_tutorial.tex
-	pdflatex javalib_tutorial.tex
-	pdflatex javalib_tutorial.tex
-	rm -f javalib_tutorial.aux 
-	rm -f javalib_tutorial.log 
-	rm -f javalib_tutorial.toc 
+javalib_tut.pdf: 
+	pandoc -T 'Javalib tutorial' --toc header.md javalib_tutorial.md -o javalib-tut.pdf
 
 test: tutorial.ml
 	$(OCAMLC) -package javalib -c $^
@@ -42,4 +31,4 @@ test: tutorial.ml
 	rm tutorial.cmi tutorial.cmo tutorial.annot
 
 clean:
-	rm -f javalib_tutorial.tex javalib_tutorial.pdf javalib-tut.html style.css
+	rm -f javalib_tut.pdf javalib-tut.html style.css
