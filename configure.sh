@@ -330,7 +330,7 @@ echo " done."
 if [ "$MAKEDEP" ]; then
   echo ""
   echo "WHAT'S NEXT: the following packages need to be compiled and installed:" | fmt
-  echo "    $MAKEDEP"
+  echo "    ${MAKEDEP[@]}"
   echo "In short, you will need to execute the following commands:" | fmt
   for (( i=0 ; i<${#MAKEDEP[@]} ; i++ )) do
   dep=${MAKEDEP[i]}
