@@ -102,7 +102,15 @@ type jopcode =
 
   (* Conditional jump *)
   | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
-  | OpIfCmp of [`IEq | `INe | `ILt | `IGe | `IGt | `ILe | `AEq | `ANe] * int
+  | OpIfCmp of [`IEq 
+               | `INe 
+               | `ILt 
+               | `IGe 
+               | `IGt 
+               | `ILe 
+               | `AEq (*reference equality*)
+               | `ANe] (*reference inequality*) 
+    * int
 
   (* Unconditional jump *)
   | OpGoto of int
