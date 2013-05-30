@@ -148,7 +148,7 @@ type 'a concrete_method = {
   cm_implementation : 'a implementation;
 }
 
-(** An abstract method cannot not be final, synchronized, strict or private. *)
+(** An abstract method cannot be final, synchronized, strict or private. *)
 type abstract_method = {
   am_signature : method_signature;
   am_class_method_signature : class_method_signature;
