@@ -98,7 +98,16 @@ type jopcode =
   | OpI2C
   | OpI2S
 
-  | OpCmp of [`L | `FL | `FG | `DL | `DG]
+  | OpCmp of [`L   (*Compare long value. See lcmp in jvm spec.*)
+             |`FL  (*Compare float value. Push -1 as result if one of the 
+                     compared value is NaN. See fcmp in jvm spec.*)
+             |`FG  (*Compare float value. Same as `FL but push 1 as result if
+                     one of the compared value is NaN. See fcmp in jvm spec.*)
+             |`DL  (*Compare double value. Push -1 as result if one of the 
+                     compared value is NaN. See dcmp in jvm spec.*)
+             |`DG  (*Compare double value. Same as `DL but push 1 as result of
+                     one of the compared value is NaN. See dcmp in jvm spec.*)
+    ]
 
   (* Conditional jump *)
   | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
