@@ -18,8 +18,8 @@
 
 -include ../Makefile.config
 
-MODULES=ptmap.ml ptset.ml
-MODULE_INTERFACES=ptmap.mli ptset.mli
+MODULES=ptmap.ml ptset.ml genericSet.ml genericMap.ml
+MODULE_INTERFACES=ptmap.mli ptset.mli genericSet.mli genericMap.mli
 
 .PHONY : all clean cleanall cleandoc doc install remove
 .DELETE_ON_ERROR:.depend
