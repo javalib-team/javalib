@@ -188,7 +188,8 @@ type jcode = {
   c_max_stack : int;
   c_max_locals : int;
   c_code : jopcodes;
-  c_exc_tbl : exception_handler list;
+  c_exc_tbl : exception_handler list; 
+  (** The list is ordered in the same way as in the bytecode (See JVM Spec 7 $2.10). *)
   c_line_number_table : (int * int) list option;
   (** (start_pc, line_number) *)
   c_local_variable_table : (int * int * string * value_type * int) list option;
