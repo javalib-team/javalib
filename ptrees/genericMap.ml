@@ -1,14 +1,14 @@
 module type S = 
 sig 
   type t
+  val get_hash : t -> int
 end 
 
 
 
 module type GenericMapSig =
 sig
-  type f
-  type key = int * f
+  type key 
   type 'a t = (key * 'a) Ptmap.t
   val empty : 'a t
   val is_empty : 'a t -> bool
@@ -41,23 +41,26 @@ sig
 end
 
 
-module Make ( S : sig type t end ) =
+module Make ( S : sig 
+                type t 
+                val get_hash : t -> int
+              end ) =
 struct
   type f = S.t
-  type key = int * f
+  type key = f
   type 'a t = (key * 'a) Ptmap.t
 
   let empty = Ptmap.empty
   let is_empty = Ptmap.is_empty
-  let add key o m = Ptmap.add (fst key) (key, o) m
-  let modify key f m = Ptmap.modify (fst key)
+  let add key o m = Ptmap.add (S.get_hash key) (key, o) m
+  let modify key f m = Ptmap.modify (S.get_hash key)
     (fun x -> match x with
        | None -> (key, f None)
        | Some (_,a) -> (key, f (Some a))
     ) m
-  let find key m = snd (Ptmap.find (fst key) m)
-  let remove key m = Ptmap.remove (fst key) m
-  let mem key m = Ptmap.mem (fst key) m
+  let find key m = snd (Ptmap.find (S.get_hash key) m)
+  let remove key m = Ptmap.remove (S.get_hash key) m
+  let mem key m = Ptmap.mem (S.get_hash key) m
   let iter f m = Ptmap.iter (fun _ (k,d) -> f k d) m
   let map f m = Ptmap.map (fun (k,d) -> (k, f d)) m
   let mapi f m = Ptmap.mapi (fun _ (k,d) -> (k, f k d)) m

@@ -1,16 +1,15 @@
 module type S = 
 sig 
   type t
+  val get_hash : t -> int
 end 
 
 
 
 module type GenericSetSig =
 sig
-  type f
   type t
-  type elt = int * f
-
+  type elt 
   val empty : t
   val is_empty : t -> bool
   val singleton : elt -> t
@@ -34,18 +33,21 @@ end
 
 
 
-module Make ( S : sig type t end ) =
+module Make ( S : sig 
+                type t 
+                val get_hash : t -> int
+              end ) =
 struct
   type f = S.t
-  type elt = int * f
+  type elt = f
   type t = elt Ptmap.t
 
   let empty = Ptmap.empty
   let is_empty = Ptmap.is_empty
-  let mem e m = Ptmap.mem (fst e) m
-  let add e m = Ptmap.add (fst e) e m
-  let singleton e = Ptmap.add (fst e) e empty
-  let remove e m = Ptmap.remove (fst e) m
+  let mem e m = Ptmap.mem (S.get_hash e) m
+  let add e m = Ptmap.add (S.get_hash e) e m
+  let singleton e = Ptmap.add (S.get_hash e) e empty
+  let remove e m = Ptmap.remove (S.get_hash e) m
   let union m1 m2 = Ptmap.merge_first m1 m2
   let diff m1 m2 = Ptmap.diff (fun _ _ -> true) m1 m2
   let equal m1 m2 = 0 == (compare m1 m2)

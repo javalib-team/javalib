@@ -1,13 +1,13 @@
 module type S = 
 sig 
   type t
+  val get_hash : t -> int
 end 
 
 module type GenericSetSig =
 sig
-  type f
   type t
-  type elt= int * f
+  type elt 
 
   val empty : t
   val is_empty : t -> bool
@@ -30,4 +30,4 @@ sig
 end
 
 
-module Make (El : S) : GenericSetSig with type f = El.t
+module Make (El : S) : GenericSetSig with type elt= El.t

@@ -1,6 +1,7 @@
 module type S = 
 sig 
   type t
+  val get_hash : t -> int
 end 
 
 
@@ -8,8 +9,7 @@ end
 (** Common signature of map modules based on Ptrees library. *)
 module type GenericMapSig =
 sig
-  type f
-  type key = int * f
+  type key 
   type 'a t = (key * 'a) Ptmap.t
 
   val empty : 'a t
@@ -43,4 +43,4 @@ sig
 end
 
 
-module Make (El : S) : GenericMapSig with type f = El.t
+module Make (El : S) : GenericMapSig with type key = El.t
