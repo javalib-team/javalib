@@ -339,6 +339,34 @@ let make_cms cs ms =
 	cmst.cmsi_next <- cmsi + 1;
 	new_cms
 
+let default_native_throwable = 
+[ (*RuntimeException that could be thrown by VM.*)
+    make_cn "java.lang.ArithmeticException";
+    make_cn "java.lang.ArrayStoreException";
+    make_cn "java.lang.ClassCastException";
+    make_cn "java.lang.IllegalMonitorStateException";
+    make_cn "java.lang.IndexOutOfBoundsException";
+    make_cn "java.lang.NegativeArraySizeException";
+    make_cn "java.lang.NullPointerException";
+    make_cn "java.lang.SecurityException";
+    (*Error that could be thrown by VM.*)
+    make_cn "java.lang.ClassFormatError";
+    make_cn "java.lang.ClassCircularityError";
+    make_cn "java.lang.NoClassDefFoundError";
+    make_cn "java.lang.UnsupportedClassVersionError";
+    make_cn "java.lang.NoSuchFieldError";
+    make_cn "java.lang.NoSuchMethodError";
+    make_cn "java.lang.InstantiationError";
+    make_cn "java.lang.IllegalAccessError";
+    make_cn "java.lang.VerifyError";
+    make_cn "java.lang.ExceptionInInitializerError";
+    make_cn "java.lang.AbstractMethodError";
+    make_cn "java.lang.UnsatisfiedLinkError";
+    make_cn "java.lang.InternalError";
+    make_cn "java.lang.OutOfMemoryError";
+    make_cn "java.lang.StackOverflowError";
+    make_cn "java.lang.UnknownError";
+ ]
 
 (* Comparison operations. *)
 
@@ -550,6 +578,7 @@ module FieldMap = GenericMap (struct type t = field_signature_data end)
 module ClassFieldMap = GenericMap (struct type t = class_field_signature_data end)
 
 module ClassMethodMap = GenericMap (struct type t = class_method_signature_data end)
+
 
 module ClassMethodMaptoSet =
   MaptoSet (struct type t = class_method_signature end)

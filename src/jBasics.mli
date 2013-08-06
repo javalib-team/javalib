@@ -114,6 +114,8 @@ type version = {major :int; minor:int;}
 (** [java.lang.Object] class name. *)
 val java_lang_object : class_name
 
+val default_native_throwable : class_name list
+
 (** Builds a [class_name] from a string representing the Java fully qualified
     name of the class. e.g. "java.lang.Object".
 
