@@ -13,6 +13,7 @@ sig
   val empty : 'a t
   val is_empty : 'a t -> bool
   val add : key -> 'a -> 'a t -> 'a t
+  val cardinal : 'a t -> int
   val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
   val find : key -> 'a t -> 'a
   val remove : key -> 'a t -> 'a t
@@ -53,6 +54,7 @@ struct
   let empty = Ptmap.empty
   let is_empty = Ptmap.is_empty
   let add key o m = Ptmap.add (S.get_hash key) (key, o) m
+  let cardinal m = Ptmap.cardinal m
   let modify key f m = Ptmap.modify (S.get_hash key)
     (fun x -> match x with
        | None -> (key, f None)

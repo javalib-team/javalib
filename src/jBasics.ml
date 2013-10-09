@@ -490,6 +490,7 @@ sig
   type key
   val empty : 'a t
   val is_empty : 'a t -> bool
+  val cardinal : 'a t -> int
   val add : key -> 'a -> 'a t -> 'a t
   val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
   val find : key -> 'a t -> 'a
@@ -517,6 +518,7 @@ struct
 
   let empty = Ptmap.empty
   let is_empty = Ptmap.is_empty
+  let cardinal m = Ptmap.cardinal m
   let add key o m = Ptmap.add (fst key) (key, o) m
   let modify key f m = Ptmap.modify (fst key)
     (fun x -> match x with

@@ -359,6 +359,7 @@ sig
   type key
   val empty : 'a t
   val is_empty : 'a t -> bool
+  val cardinal : 'a t -> int
   val add : key -> 'a -> 'a t -> 'a t
   val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
   val find : key -> 'a t -> 'a
