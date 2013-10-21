@@ -22,8 +22,6 @@
 include JClass
 include JFile
 
-open JBasics
-
 let unparse_class ioc out =
   let out_chan = IO.output_channel out in
     JUnparse.unparse_class out_chan ioc

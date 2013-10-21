@@ -288,10 +288,6 @@ let h2l_acmethod consts = function
   | AbstractMethod m -> h2l_amethod consts m
   | ConcreteMethod m -> h2l_cmethod consts m
 
-let h2l_concretemethods consts c' mm =
-  {c' with
-     j_methods = MethodMap.fold (fun _fs f l -> h2l_cmethod consts f::l) mm [];
-  }
 
 let h2l_methods consts c' mm =
   {c' with

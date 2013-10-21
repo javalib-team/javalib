@@ -19,7 +19,6 @@
  *)
 
 open JBasics
-open JBasicsLow
 open JClassLow
 open JCode
 open JClass

@@ -22,7 +22,6 @@
 (* This implementation is only to provide MapFieldSignature and MapMethodSignature.*)
 
 open JBasics
-open JCode
 
 (* Visibility modifiers. *)
 type access = [

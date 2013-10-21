@@ -23,7 +23,6 @@ open IO.BigEndian
 open JBasics
 open JBasicsLow
 open JClassLow
-open JParseCode
 open JUnparseSignature
 
 

@@ -18,13 +18,10 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open JClass
 open JBasics
 open JBasicsLow
-open JCode
 open JClassLow
 open IO
-open IO.BigEndian
 
 let count =
   List.fold_left
@@ -435,7 +432,7 @@ let check_space _consts offset length opcode =
   let ch = output_string () in
   let ch, count = pos_out ch in
   let offsetmod4 = offset mod 4 in
-    for i = 1 to offsetmod4 do (* Pour les instructions alignées *)
+    for _i = 1 to offsetmod4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
     JParseCode.unparse_instruction ch count length opcode;

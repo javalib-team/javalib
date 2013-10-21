@@ -556,8 +556,6 @@ module MaptoSet ( S : sig type t end )
 struct
   let to_set m =
     GMap.fold (fun k _ s -> GSet.add k s) m GSet.empty
-  let of_array l = Array.fold_right GSet.add l GSet.empty		     
-  let of_list l = List.fold_right GSet.add l GSet.empty		     
 
 end
 

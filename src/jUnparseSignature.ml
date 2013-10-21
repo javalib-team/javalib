@@ -18,10 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open IO
-open IO.BigEndian
 open JBasics
-open JClassLow
 open JSignature
 
 (* Descriptors and classname encoding *)
@@ -52,7 +49,7 @@ and unparse_value_type = function
   | TBasic b -> unparse_basic_type b
   | TObject o -> unparse_object_type o
 
-let rec unparse_method_descriptor (sigs, s) =
+let unparse_method_descriptor (sigs, s) =
       List.fold_left
 	(fun desc s ->
 	   desc ^ unparse_value_type s)
@@ -63,7 +60,7 @@ let rec unparse_method_descriptor (sigs, s) =
 	   | Some s -> unparse_value_type s
 	   | None -> "V")
 
-let rec unparse_descriptor = function
+let unparse_descriptor = function
   | SValue v -> unparse_value_type v
   | SMethod m -> unparse_method_descriptor m
 

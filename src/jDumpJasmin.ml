@@ -20,14 +20,11 @@
 open JBasics
 open JClassLow
 
-exception JDumpJasminException of string
 
 let string_of_version version  =
   (string_of_int version.major)^(".")^(string_of_int version.minor)
 
 let string_of_classname cn =  JDumpBasics.class_name ~jvm:true cn
-
-let string_of_classname_type cn = JDumpBasics.object_value_signature ~jvm:true (TClass cn)
 
 let string_of_class_flags flags =
   let to_string flag = match flag with
@@ -326,20 +323,6 @@ let find_Code m =
     | [] -> None
   in f m.m_attributes
 
-let string_of_attribute a = match a with
-  | AttributeStackMap _ -> "stackmap"
-  | AttributeLineNumberTable _ -> "linenumbertable"
-  | AttributeDeprecated -> "deprecated"
-  | AttributeUnknown(s,s') -> s^" "^(string_of_int (String.length s'))
-  | _ -> "Unkown attribute"
-
-(*let find_stack_map x =
-  let rec f = function
-    | AttributeStackMapTable sm::_ -> sm
-    | _::l ->f l
-    | [] -> []
-  in  f x*)
-
 let rec find_lines x = match x with
   | AttributeLineNumberTable lines::_ -> lines
   | _::l -> find_lines l
@@ -431,10 +414,7 @@ let string_of_stack_map_frame consts sm last = match sm with
 
 let dump ch cl =
   let version = string_of_version cl.j_version
-  in let (source:string) =
-      let rec f = function
-	| AttributeSourceFile s::_ -> s | _::l -> f l | [] -> ""
-      in f cl.j_attributes
+  in let (source:string) = find_SourceFile cl.j_attributes
   in let class_flags = string_of_class_flags cl.j_flags
   in let class_name = string_of_classname cl.j_name
   in let super = match cl.j_super with
@@ -453,11 +433,7 @@ let dump ch cl =
 	(fun field ->
 	   let field_flags = string_of_field_flags field.f_flags
 	   in let field_desc = string_of_value_type field.f_descriptor
-	   in let constant =
-	       let rec f = function
-		 | AttributeConstant c::_ -> "= "^(string_of_constant_value c)
-		 | _::l -> f l | [] -> ""
-	       in f field.f_attributes
+	   in let constant = find_Constant field.f_attributes
 	   in IO.printf ch ".field %s %s %s %s\n" field_flags field.f_name field_desc constant
 	) cl.j_fields;
       IO.printf ch "%s" "\n";

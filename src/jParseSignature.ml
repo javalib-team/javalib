@@ -20,8 +20,6 @@
  *)
 
 
-open JClassLow
-open IO.BigEndian
 open JBasics
 open JSignature
 
@@ -122,7 +120,7 @@ let parse_method_sig = parser
       (types, typ)
 
 (* Java signature. *)
-let rec parse_sig = parser
+let parse_sig = parser
     (* We cannot delete that because of "NameAndType" constants. *)
   | [< typ = parse_type >] -> SValue typ
   | [< sign = parse_method_sig >] -> SMethod sign

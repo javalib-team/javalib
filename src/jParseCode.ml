@@ -606,7 +606,7 @@ let basic_type = [|
 
 let padding ch count =
   flush ch;
-  for i = 1 + (count () - 1) mod 4 to 3 do
+  for _i = 1 + (count () - 1) mod 4 to 3 do
     write_ui8 ch 0
   done
 

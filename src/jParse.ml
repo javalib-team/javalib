@@ -23,7 +23,6 @@
 open JClassLow
 open IO.BigEndian
 open ExtList
-open ExtString
 open JBasics
 open JBasicsLow
 open JParseSignature
