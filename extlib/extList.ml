@@ -2,6 +2,7 @@
  * ExtList - additional and modified functions for lists.
  * Copyright (C) 2003 Brian Hurt
  * Copyright (C) 2003 Nicolas Cannasse
+ * Copyright (C) 2008 Red Hat Inc.
  * 
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -160,7 +161,14 @@ let filter_map f l =
 	let dummy = dummy_node() in
 	loop dummy l;
 	dummy.tl
-	
+
+let rec find_map f = function
+  | [] -> raise Not_found
+  | x :: xs ->
+      match f x with
+      | Some y -> y
+      | None -> find_map f xs
+
 let fold_right_max = 1000
 
 let fold_right f l init =
@@ -366,14 +374,13 @@ let rec init size f =
 		loop r 1;
 		inj r
 
-(* make by Richard W.M. Jones. *)
 let make i x =
   if i < 0 then invalid_arg "ExtList.List.make";
-  let rec make' x = function
-    | 0 -> []
-    | i -> x :: make' x (i-1)
+  let rec loop acc x = function
+  | 0 -> acc
+  | i -> loop (x::acc) x (i-1)
   in
-  make' x i
+  loop [] x i
 
 let mapi f = function
 	| [] -> []

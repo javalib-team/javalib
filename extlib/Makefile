@@ -1,6 +1,6 @@
 # Makefile contributed by Alain Frisch
 
--include ../Makefile.config
+VERSION = 1.5.4
 
 MODULES = \
  enum bitSet dynArray extArray extHashtbl extList extString global IO option \
@@ -9,28 +9,33 @@ MODULES = \
 # the list is topologically sorted
 
 MLI = $(MODULES:=.mli)
+CMI = $(MODULES:=.cmi)
+CMX = $(MODULES:=.cmx)
 SRC = $(MLI) $(MODULES:=.ml) extLib.ml
 
-all:bc opt
-bc: 
-	$(FINDER) ocamlc -g -a -o extLib.cma $(SRC)
+.PHONY: all opt cmxs doc install uninstall clean release
+
+all: 
+	ocamlc -a -o extLib.cma $(SRC)
 opt: 
-	$(FINDER) ocamlopt -g -a -o extLib.cmxa $(SRC)
+	ocamlopt -a -o extLib.cmxa $(SRC)
+cmxs: opt
+	ocamlopt -shared -linkall extLib.cmxa -o extLib.cmxs
 doc:
-	$(FINDER) ocamlc -c $(MODULES:=.mli)
-	mkdir -p doc/
-	$(FINDER) ocamldoc -sort -html -d doc/ $(MODULES:=.mli)
-	cp odoc_style.css doc/style.css
+	ocamlc -c $(MLI)
+	ocamldoc -sort -html -d doc/ $(MLI)
 
 install:
-	cp META.txt META
-	$(INSTALL) extlib META *.cmi *.cma $(MLI) $(wildcard *.cmxa) $(wildcard *.a)
+	ocamlfind install -patch-version $(VERSION) extlib META extLib.cma extLib.cmi $(MLI) $(CMI) -optional extLib.cmxa $(CMX) extLib.cmxs extLib.a extLib.lib
 
-remove:
-	$(FINDER) remove extlib
+uninstall:
+	ocamlfind remove extlib
 
 clean:
-	rm -f *.cmo *~ *.cmx *.o
-	rm -Rf doc
-cleanall:clean
-	$(RM) *.cmi *.cma *.cmxa *.a *.annot META
+	rm -f *.cmo *.cmx *.o *.obj *.cmi *.cma *.cmxa *.cmxs *.a *.lib doc/*.html
+
+release:
+	svn export . extlib-$(VERSION)
+	tar czf extlib-$(VERSION).tar.gz extlib-$(VERSION)
+	gpg -a -b extlib-$(VERSION).tar.gz
+	@echo make tag: svn copy https://ocaml-extlib.googlecode.com/svn/trunk https://ocaml-extlib.googlecode.com/svn/tags/extlib-$(VERSION)

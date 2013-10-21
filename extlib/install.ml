@@ -70,6 +70,21 @@ let copy file dest =
 			_ -> failwith "Aborted"
 	end
 
+let get_version () =
+  let ch = open_in "Makefile" in
+  let rec loop () =
+    let s = input_line ch in
+    try
+      Scanf.sscanf s " VERSION = %s %!" (fun s -> s)
+    with
+      _ -> loop ()
+  in
+  try
+    let s = loop () in close_in_noerr ch; s
+  with _ ->
+    close_in_noerr ch;
+    failwith "No VERSION present in Makefile"
+
 let complete_path p =
 	if p = "" then
 		p
@@ -99,7 +114,8 @@ let install() =
 	let autodoc = ref false in
 	let autobyte = ref false in
 	let autonative = ref false in
-	let usage = "ExtLib installation program v1.3\n(c)2003,2004 Nicolas Cannasse" in
+	let version = get_version () in
+	let usage = sprintf "ExtLib installation program v%s\n(C) 2003 Nicolas Cannasse" version in
 	Arg.parse [
 		("-d", Arg.String (fun s -> autodir := Some s) , "<dir> : install in target directory");
 		("-b", Arg.Unit (fun () -> autobyte := true) , ": byte code installation");
@@ -173,9 +189,10 @@ let install() =
 	end;
 	if !autodoc then begin
 		run (sprintf "ocamldoc -sort -html -d %s %s" doc_dir (m_list ".mli"));
-		run ((match path_type with
-				| PathDos -> sprintf "%s odoc_style.css %s\\style.css";
-				| PathUnix -> sprintf "%s odoc_style.css %s/style.css") cp_cmd doc_dir);
+		if doc_dir <> "doc" then (* style.css is already there *)
+      run ((match path_type with
+				| PathDos -> sprintf "%s doc\\style.css %s\\style.css";
+				| PathUnix -> sprintf "%s doc/style.css %s/style.css") cp_cmd doc_dir);
 	end;
 	match install_dir with
 	  Findlib ->
@@ -192,9 +209,8 @@ let install() =
 	      Buffer.add_string files "extLib.cmxa ";
 	      Buffer.add_string files ("extLib" ^ lib_ext^ " ");
 	    end;
-	    run (sprintf "%s META.txt META" cp_cmd);
 	    let files = Buffer.contents files in
-	    run (sprintf "ocamlfind install extlib %s META" files);
+	    run (sprintf "ocamlfind install -patch-version %s extlib META %s" version files);
 	| Dir install_dir ->
 	    List.iter (fun m ->
 			copy (m ^ ".cmi") install_dir;
@@ -213,5 +229,3 @@ with
 	Failure msg ->
 		prerr_endline msg;
 		exit 1
-
-

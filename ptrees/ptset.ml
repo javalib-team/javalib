@@ -371,10 +371,6 @@ let equal v1 v2 = 0 == (compare v1 v2)
 
 let compare = compare
 
-(*i*)
-let make l = List.fold_right add l empty
-(*i*)
-
 (*s Additional functions w.r.t to [Set.S]. *)
 
 let rec intersect s1 s2 = match (s1,s2) with
@@ -622,8 +618,6 @@ module Big = struct
 
   let compare = compare
 
-  let make l = List.fold_right add l empty
-
   let rec intersect s1 s2 = match (s1,s2) with
     | Empty, _ -> false
     | _, Empty -> false
@@ -742,5 +736,5 @@ let test empty add mem =
     loop empty 0
   in
   Random.init seed;
-  for i = 0 to 999 do assert (mem (Random.int max_int) s) done
+  for _i = 0 to 999 do assert (mem (Random.int max_int) s) done
 
