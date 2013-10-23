@@ -5,8 +5,8 @@
 ###
 ###     Provide a "local" configuration option
 ###     Detect ocamlfind
-###     Determine whether camlzip and ptrees need to be make'd
-###     Check the presence of unix, str, extlib
+###     Determine whether ptrees needs to be make'd
+###     Check the presence of extlib (>= 1.5.1) and camlzip (>=1.04)
 ###     Check for recode
 ###     Set the debug flag
 ###     Select the camlp4o executable
@@ -33,7 +33,7 @@
 ### <http://www.gnu.org/licenses/>.
 ### 
 ### This file: began on         march-18-2010,
-###            last updated on  june-20-2012.
+###            last updated on  october-22-2013.
 ###
 
 
@@ -238,13 +238,15 @@ fi
 
       
 #
-# Check Camlzip, Ptrees, and Extlib. Set them to compile if necessary.
+# Check Camlzip and Extlib are already installed. Ptrees, and Extlib. Set them to compile if necessary.
 #
 
-declare packages=(camlzip ptrees extlib)
-declare versions=("1.04" "1.3" "1.5.1")
+declare packages=(camlzip extlib)
+declare versions=("1.04" "1.5.1")
 
-for (( i=0 ; i<3 ; i++ )) 
+
+
+for (( i=0 ; i<2 ; i++ )) 
 do
     pkg=${packages[i]}
     location=`$FINDER query $pkg 2>/dev/null`
@@ -254,18 +256,40 @@ do
 	do_version_check $aversion $rversion
 	if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
 	then
+	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), please install a more recent version and then re-run `basename $0` ."
+	    exit 1
+	else
+	    msg "inf" "Package $pkg v$aversion found at $location"
+	fi
+    else 
+	msg "inf" "Package $pkg not found, please install it and re-run `basename $0` "
+	exit 1
+    fi
+done
+
+#
+# Check whether ptrees is already installed (>= 1.3). If not the script stops and users are requested to compile and install it.
+#
+pkg='ptrees'
+location=`$FINDER query $pkg 2>/dev/null`
+if [ $location ]; then
+	aversion=`$FINDER query $pkg -format %v`
+	rversion='1.3'
+	do_version_check $aversion $rversion
+	if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
+	then
 	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled and installed."
 	    push "$pkg" MAKEDEP
 	    push true MAKEDEPREMOVE
 	else
 	    msg "inf" "Package $pkg v$aversion found at $location"
 	fi
-    else 
+else 
 	msg "inf" "Package $pkg not found, will need to be compiled"
 	push "$pkg" MAKEDEP
 	push false MAKEDEPREMOVE
-    fi
-done
+fi
+
 
 #
 # Check for zlib, set flag if not found
