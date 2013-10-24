@@ -236,36 +236,76 @@ else
   FLAGS="$FLAGS -annot"
 fi
 
-      
+
 #
-# Check Camlzip and Extlib are already installed. Ptrees, and Extlib. Set them to compile if necessary.
+# Check whether extlib is already installed. 
+# If not the user is resquested to install it and the script stops
 #
+pkg='extlib'
+location=`$FINDER query $pkg 2>/dev/null`
+if [ $location ]; then
+  aversion=`$FINDER query $pkg -format %v`
+  rversion='1.5.1'
+  do_version_check $aversion $rversion
+  if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
+  then
+    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), please install a more recent version and then re-run  `basename $0` ."
+    exit 1
+  else
+    msg "inf" "Package $pkg v$aversion found at $location"
+  fi
+else 
+  msg "inf" "Package $pkg not found by ocamlfind. Please install it and re-run `basename $0` "
+exit 1
+fi
 
-declare packages=(camlzip extlib)
-declare versions=("1.04" "1.5.1")
 
+#
+# Check first whether camlzip installed. If not check whether zip is already installed. 
+# If not the user is resquested to install camlzip and the script stops.
+#
+packagezip=''  # will be used to set the package list. Its value could be camlzip or zip
+pkg='camlzip'
+location=`$FINDER query $pkg 2>/dev/null`
+if [ $location ]; then
+  aversion=`$FINDER query $pkg -format %v`
+  rversion='1.04'
+  do_version_check $aversion $rversion
+  if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
+  then
+    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), please install a more recent version and then re-run  `basename $0` ."
+    exit 1
+  else
+	msg "inf" "Package $pkg v$aversion found at $location"
+	packagezip=$pkg
+  fi
+else
+	# the package camlzip is not found
+	#check whether zip is installed
 
-
-for (( i=0 ; i<2 ; i++ )) 
-do
-    pkg=${packages[i]}
-    location=`$FINDER query $pkg 2>/dev/null`
-    if [ $location ]; then
-	aversion=`$FINDER query $pkg -format %v`
-	rversion=${versions[i]}
-	do_version_check $aversion $rversion
-	if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
-	then
-	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), please install a more recent version and then re-run `basename $0` ."
-	    exit 1
+	pkg='zip'
+	location=`$FINDER query $pkg 2>/dev/null`
+	if [ $location ]; then
+		aversion=`$FINDER query $pkg -format %v`
+		rversion='1.05'
+		do_version_check $aversion $rversion
+  		if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
+		then
+			msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), please install a more recent version and then re-run  `basename $0` ."
+			exit 1
+		else
+			msg "inf" "Package $pkg v$aversion found at $location"
+			packagezip=$pkg
+  		fi
 	else
-	    msg "inf" "Package $pkg v$aversion found at $location"
+	 	msg "inf" "Package camlzip not found by ocamlfind. Please install it and re-run `basename $0` "
+		exit 1	
 	fi
-    else 
-	msg "inf" "Package $pkg not found, please install it and re-run `basename $0` "
-	exit 1
-    fi
-done
+		
+ 
+fi
+
+      
 
 #
 # Check whether ptrees is already installed (>= 1.3). If not the script stops and users are requested to compile and install it.
@@ -341,6 +381,9 @@ echo "" >> $makeconfig
 echo "# Variables from template at: " >> $makeconfig
 echo "# $makeconfigtemplate" >> $makeconfig
 cat $makeconfigtemplate >> $makeconfig
+
+# write the package list with camlzip or zip
+echo "INCLUDE := -package unix,str,extlib,ptrees,"$packagezip >>$makeconfig
 echo -n "."
 echo " done."
 

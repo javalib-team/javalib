@@ -12,7 +12,6 @@ OCAMLLEX = ocamllex
 RECODE=-charset utf-8
 DOCDIR := doc/api
 
-INCLUDE := -package unix,str,ptrees
 PP := -package camlp4 -syntax camlp4o
 
 INSTALL = $(FINDER) install
