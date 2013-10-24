@@ -70,21 +70,13 @@ Tutorial
 ========
 
 To begin this tutorial, open an *OCaml* toplevel, for instance using
-the *Emacs* **tuareg-mode**, and load the following libraries in the
-given order:
+the *Emacs* **tuareg-mode**.
 
-~~~~~{#load .ocaml}
-#load "str.cma"
-#load "unix.cma"
-#load "extLib.cma"
-#load "zip.cma"
-#load "ptrees.cma"
-#load "javalib.cma"
-~~~~~
+Two standard libraries *str*, *unix*, and four specific libraries, *extlib*,
+*zip*, *ptrees* and *javalib* must be loaded. However, paths to find these four
+latter librairies must be specified with the **#directory** directives first.
 
-Don't forget the associated **#directory** directives that allow you
-to specify the paths where to find these libraries.
-If you installed javalib with FindLib you should do:
+If you installed javalib with ocamlfind you should enter:
 
 ~~~~~{#asso_dir .ocaml}
 #directory "<package_install_path>extlib"
@@ -93,6 +85,19 @@ If you installed javalib with FindLib you should do:
 #directory "<package_install_path>javalib"
 (*<package_install_path> is given by command 'ocamlfind printconf'. 
 If it is the same path than standard ocaml library just replace by '+'.*)
+~~~~~
+
+
+
+Then load the following libraries in the given order:
+
+~~~~~{#load .ocaml}
+#load "str.cma"
+#load "unix.cma"
+#load "extLib.cma"
+#load "zip.cma"
+#load "ptrees.cma"
+#load "javalib.cma"
 ~~~~~
 
 You can also build a toplevel including all these libraries using the
