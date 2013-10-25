@@ -261,11 +261,11 @@ fi
 
 
 #
-# Check first whether camlzip installed. If not check whether zip is already installed. 
+# Check first whether zip installed. If not check whether camlzip is already installed. 
 # If not the user is resquested to install camlzip and the script stops.
 #
 packagezip=''  # will be used to set the package list. Its value could be camlzip or zip
-pkg='camlzip'
+pkg='zip'
 location=`$FINDER query $pkg 2>/dev/null`
 if [ $location ]; then
   aversion=`$FINDER query $pkg -format %v`
@@ -280,10 +280,10 @@ if [ $location ]; then
 	packagezip=$pkg
   fi
 else
-	# the package camlzip is not found
-	#check whether zip is installed
+	# the package zip is not found
+	#check whether camlzip is installed
 
-	pkg='zip'
+	pkg='camlzip'
 	location=`$FINDER query $pkg 2>/dev/null`
 	if [ $location ]; then
 		aversion=`$FINDER query $pkg -format %v`
