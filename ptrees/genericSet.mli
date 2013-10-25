@@ -11,6 +11,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *)
 
+
+(**Provide a way to create GenericSet specifying how to hash.*)
+
+(** This module type must be implemented to obtain an instantiated GenericSet.*)
 module type S = 
 sig 
   type t

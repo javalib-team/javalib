@@ -19,7 +19,7 @@ The Patricia Tree library has been developed by
 {{:http://www.lri.fr/~filliatr/software.en.html}Filliatre} and extended by
 ourselves to add some features and to improve its efficiency in our context.
 
-{!modules: Ptmap Ptset}
+{!modules: Ptmap Ptset GenericMap GenericSet}
 
 {b {L Other internal modules}}
 

@@ -10,8 +10,10 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *)
+(**Provide a way to create GenericMap from a module specifying how to hash.*)
 
-(** This module type must be implemented to obtain an instanciated GenericMap.*)
+
+(** This module type must be implemented to obtain an instantiated GenericMap.*)
 module type S = 
 sig 
   type t
