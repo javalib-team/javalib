@@ -1,5 +1,5 @@
 # -*-conf-*-
-version = "2.2.2"
+version = "JAVALIB_TRUNK"
 description = "library to parse Java .class files"
 requires = "unix,str,extlib,camlzip,ptrees"
 archive(native) = "javalib.cmxa"
