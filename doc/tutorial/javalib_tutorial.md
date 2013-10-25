@@ -74,9 +74,7 @@ the *Emacs* **tuareg-mode**.
 
 Two standard libraries *str*, *unix*, and four specific libraries, *extlib*,
 *zip*, *ptrees* and *javalib* must be loaded. However, paths to find these four
-latter librairies must be specified with the **#directory** directives first.
-
-If you installed javalib with ocamlfind you should enter:
+latter librairies must be specified with the **#directory** directives first:
 
 ~~~~~{#asso_dir .ocaml}
 #directory "<package_install_path>extlib"
