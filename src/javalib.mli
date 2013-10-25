@@ -125,7 +125,6 @@ type method_annotations = {
 
 (* The final attribute has no meaning for a static method, but the JVM spec
    authorizes it anyway... *)
-(* TODO : mettre les champs inutiles à la fin. *)
 type 'a concrete_method = {
   cm_signature : method_signature;
   cm_class_method_signature : class_method_signature;

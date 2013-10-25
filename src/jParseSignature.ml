@@ -47,7 +47,6 @@ let parse_ident buff =
 	   && c <> UChar.of_char '<' >] -> c
   in
   let rec parse_more_ident buff = parser
-      (* TODO : it seems to be relatively inefficient *)
     | [< c = parse_char;
 	 name =
 	  (UTF8.Buf.add_char buff c;

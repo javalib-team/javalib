@@ -307,7 +307,6 @@ type element_value =
   | EVCstString of string
   | EVEnum of (class_name * string)
       (* (type_name_index,const_name_index) cf. JLS 13.1 *)
-      (* TODO: this should probably be modified but I have not understand how *)
   | EVClass of value_type option
   | EVAnnotation of annotation
   | EVArray of element_value list
