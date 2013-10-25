@@ -269,7 +269,7 @@ pkg='zip'
 location=`$FINDER query $pkg 2>/dev/null`
 if [ $location ]; then
   aversion=`$FINDER query $pkg -format %v`
-  rversion='1.04'
+  rversion='1.05'
   do_version_check $aversion $rversion
   if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
   then
@@ -287,7 +287,7 @@ else
 	location=`$FINDER query $pkg 2>/dev/null`
 	if [ $location ]; then
 		aversion=`$FINDER query $pkg -format %v`
-		rversion='1.05'
+		rversion='1.04'
 		do_version_check $aversion $rversion
   		if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
 		then
