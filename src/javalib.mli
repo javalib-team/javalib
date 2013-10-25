@@ -19,6 +19,8 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+(* TODO: add documentation on exception that can be raised by function.  *)
+
 (** User interface for using the Javalib. *)
 
 open JBasics
@@ -125,13 +127,14 @@ type method_annotations = {
 
 (* The final attribute has no meaning for a static method, but the JVM spec
    authorizes it anyway... *)
+(* TODO : mettre les champs inutiles à la fin. *)
 type 'a concrete_method = {
   cm_signature : method_signature;
   cm_class_method_signature : class_method_signature;
   cm_static : bool;
   cm_final : bool;
   cm_synchronized : bool;
-  cm_strict : bool; (* Correspond to flag ACC_STRICT, which shows if we are in
+  cm_strict : bool; (** Correspond to flag ACC_STRICT, which shows if we are in
                     FP-strict mod or not. *)
   cm_access: access;
   cm_generic_signature : JSignature.methodTypeSignature option;
@@ -156,8 +159,8 @@ type abstract_method = {
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
-  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute (cf. JVM Spec
+  * 1.5 §4.7 and §4.8.7) *)
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;

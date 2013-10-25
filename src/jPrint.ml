@@ -180,6 +180,8 @@ let exception_handler exc =
        | Some cl -> s := !s ^ Printf.sprintf "class %s" (class_name cl));
     !s ^ ")"
 
+(* TODO: take a local variable table as argument to replace variable number with
+   their name. *)
 let jopcode_jvm =
   let sprintf = Printf.sprintf in
     function
@@ -545,6 +547,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
     else
       Printf.sprintf "%s%s%s" header (field_signature fs) init_value
 
+(* TODO: print other things than code ?*)
 let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
   let indent_val = 3 in
   let ms = get_method_signature m in
@@ -717,6 +720,8 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  Format.pp_force_newline fmt ();
 	  ()
 
+(* TODO: using a string list for instruction is not efficient (string
+   concatenation is expensive) *)
 let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
     (out:out_channel) =
   let indent_val = 3 in

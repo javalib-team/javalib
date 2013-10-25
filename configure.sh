@@ -358,7 +358,6 @@ fi
 
 #
 # Output variables to the Makefile.config file
-# TODO: move the Makefile.config.example out of the way (in src?)
 #
 makeconfig=`pwd`/Makefile.config
 makeconfigtemplate=`pwd`/Makefile.config.example

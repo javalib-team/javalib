@@ -68,6 +68,7 @@ and section = parse
 
   open ExtString
 
+  (* TODO : accept missing manifest version (for midlets) *)
   let sections2manifest = function
       | ((mv, v) :: main) :: sections
 	  when String.lowercase mv = "manifest-version" ->
