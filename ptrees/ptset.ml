@@ -686,43 +686,43 @@ module Bigo = struct
   (* swaps the sign bit *)
   let swap x = if x < 0 then x land max_int else x lor min_int
 
-  let mem x s = mem (swap x) s
+  let _mem x s = mem (swap x) s
 
-  let add x s = add (swap x) s
+  let _add x s = add (swap x) s
 
-  let singleton x = singleton (swap x)
+  let _singleton x = singleton (swap x)
 
-  let remove x s = remove (swap x) s
+  let _remove x s = remove (swap x) s
 
-  let elements s = List.map swap (elements s)
+  let _elements s = List.map swap (elements s)
 
-  let choose s = swap (choose s)
+  let _choose s = swap (choose s)
 
-  let iter f = iter (fun x -> f (swap x))
+  let _iter f = iter (fun x -> f (swap x))
 
-  let fold f = fold (fun x a -> f (swap x) a)
+  let _fold f = fold (fun x a -> f (swap x) a)
 
-  let for_all f = for_all (fun x -> f (swap x))
+  let _for_all f = for_all (fun x -> f (swap x))
 
-  let exists f = exists (fun x -> f (swap x))
+  let _exists f = exists (fun x -> f (swap x))
 
-  let filter f = filter (fun x -> f (swap x))
+  let _filter f = filter (fun x -> f (swap x))
 
-  let partition f = partition (fun x -> f (swap x))
+  let _partition f = partition (fun x -> f (swap x))
 
-  let split x s = split (swap x) s
+  let _split x s = split (swap x) s
 
-  let rec min_elt = function
+  let rec _min_elt = function
     | Empty -> raise Not_found
     | Leaf k -> swap k
-    | Branch (_,_,s,_) -> min_elt s
+    | Branch (_,_,s,_) -> _min_elt s
 
-  let rec max_elt = function
+  let rec _max_elt = function
     | Empty -> raise Not_found
     | Leaf k -> swap k
-    | Branch (_,_,_,t) -> max_elt t
+    | Branch (_,_,_,t) -> _max_elt t
 
-  let to_string = to_string_aux elements
+  let _to_string = to_string_aux elements
 
 end
 
