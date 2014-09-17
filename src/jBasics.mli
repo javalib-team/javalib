@@ -204,6 +204,9 @@ val cfs_compare : class_field_signature -> class_field_signature -> int
 (** Returns [true] if two [class_field_signature] are equal, [false] otherwise. *)
 val cfs_equal : class_field_signature -> class_field_signature -> bool
 
+(** Returns the hash value of the given [class_field_signature]. *)
+val cfs_hash : class_field_signature -> int
+
 (** Creating and manipulating {!class_method_signature} values. *)
 
 (** Builds a [class_method_signature]. *)
@@ -217,7 +220,6 @@ val cms_compare : class_method_signature -> class_method_signature -> int
 
 (** Returns [true] if two [class_method_signature] are equal, [false] otherwise. *)
 val cms_equal : class_method_signature -> class_method_signature -> bool
-
 
 (** {2 Constant pool.} *)
 

@@ -371,6 +371,9 @@ let default_native_throwable =
 (* Comparison operations. *)
 
 let i_compare (i1,_:int*'a) (i2,_:int*'b) = i1 - i2
+(* NB: [i_compare] is correct for positive integers.
+       but in general, this could overflow *)
+
 let cn_compare = i_compare
 let ms_compare = i_compare
 let fs_compare = i_compare
@@ -420,7 +423,11 @@ let fs_type (_i,(_fn,ft):field_signature) = ft
 
 let cfs_split (_i,(cn,fs):class_field_signature) = (cn, fs)
 
+let cfs_hash ((i,_) : class_field_signature) = i
+
 let cms_split (_i,(cn,ms):class_method_signature) = (cn,ms)
+
+
 
 
 (* Containers. *)
