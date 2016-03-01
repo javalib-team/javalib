@@ -3,6 +3,8 @@
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -326,103 +328,41 @@ and annotation = {
 
 (** {2 Containers.} *)
 
-(** Common signature of set modules based on the Ptrees library. *)
-module type GenericSetSig =
-sig
-  type t
-  type elt
-  val empty : t
-  val is_empty : t -> bool
-  val singleton : elt -> t
-  val mem : elt -> t -> bool
-  val add : elt -> t -> t
-  val remove : elt -> t -> t
-  val union : t -> t -> t
-  val diff : t -> t -> t
-  val equal : t -> t -> bool
-  val elements : t -> elt list
-  val cardinal : t -> int
-  val iter : (elt -> unit) -> t -> unit
-  val fold : (elt -> 'b -> 'b) -> t -> 'b -> 'b
-  val exists : (elt -> bool) -> t -> bool
-  val filter : (elt -> bool) -> t -> t
-  val inter : t -> t -> t
-  val of_list : elt list -> t
-  val of_array : elt array -> t
-  (* val partition : (elt -> bool) -> t -> t * t *)
-  (* val choose_and_remove : t -> elt * t *)
-end
-
-(** Common signature of map modules based on Ptrees library. *)
-module type GenericMapSig =
-sig
-  type 'a t
-  type key
-  val empty : 'a t
-  val is_empty : 'a t -> bool
-  val cardinal : 'a t -> int
-  val add : key -> 'a -> 'a t -> 'a t
-  val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
-  val find : key -> 'a t -> 'a
-  val remove : key -> 'a t -> 'a t
-  val mem : key -> 'a t -> bool
-  val iter : (key -> 'a -> unit) -> 'a t -> unit
-  val map : ('a -> 'b) -> 'a t -> 'b t
-  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-    (** [merge f m1 m2] returns a map that has the bindings of [m1] and [m2] and
-        which binds [k] to [f d1 d2] if [m1] and [m2] binds the same [k] to
-        different [d1] and [d2], respectively. If [d1] equals [d2], [f d1 d2] is
-        supposed to return [d1]. *)
-  val choose_and_remove : 'a t -> key * 'a * 'a t
-    (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to [remove
-        i t] and [d] equals to [find i t].
-
-        @raise Not_found if [t] is empty. *)
-  val filter : ('a -> bool) -> 'a t -> 'a t
-  val filteri : (key -> 'a -> bool) -> 'a t -> 'a t
-  val key_elements : 'a t -> key list
-  val value_elements : 'a t -> 'a list
-  val elements : 'a t -> (key * 'a) list
-end
-
 (** This module allows to build maps of elements indexed by [class_name] values. *)
-module ClassMap : GenericMapSig with type key = class_name
+module ClassMap : GenericMap.GenericMapSig with type key = class_name
 
 (** This module allows to build maps of elements indexed by [method_signature] values. *)
-module MethodMap : GenericMapSig with type key = method_signature
+module MethodMap : GenericMap.GenericMapSig with type key = method_signature
 
 (** This module allows to build maps of elements indexed by [field_signature] values. *)
-module FieldMap : GenericMapSig with type key = field_signature
+module FieldMap : GenericMap.GenericMapSig with type key = field_signature
 
 (** This module allows to build maps of elements indexed by [class_field_signature] values. *)
-module ClassFieldMap : GenericMapSig with type key = class_field_signature
+module ClassFieldMap : GenericMap.GenericMapSig with type key = class_field_signature
 
 (** This module allows to build maps of elements indexed by [class_method_signature] values. *)
-module ClassMethodMap : GenericMapSig with type key = class_method_signature
+module ClassMethodMap : GenericMap.GenericMapSig with type key = class_method_signature
 
 (** This module allows to build sets of [class_name] values. *)
-module ClassSet : GenericSetSig with type elt = class_name
+module ClassSet : GenericSet.GenericSetSig with type elt = class_name
 
 (** This module allows to build sets of [method_signature] values. *)
-module MethodSet : GenericSetSig with type elt = method_signature
+module MethodSet : GenericSet.GenericSetSig with type elt = method_signature
 
 (** This module allows to build sets of [field_signature] values. *)
-module FieldSet : GenericSetSig with type elt = field_signature
+module FieldSet : GenericSet.GenericSetSig with type elt = field_signature
 
 (** This module allows to build sets of [class_field_signature] values. *)
-module ClassFieldSet : GenericSetSig with type elt = class_field_signature
+module ClassFieldSet : GenericSet.GenericSetSig with type elt = class_field_signature
 
 (** This module allows to build sets of [class_method_signature] values. *)
-module ClassMethodSet : GenericSetSig with type elt = class_method_signature
+module ClassMethodSet : GenericSet.GenericSetSig with type elt = class_method_signature
 
 module ClassMethodMaptoSet :
 sig
   val to_set : 'a ClassMethodMap.t -> ClassMethodSet.t
 end
+
 
 (** {2 Tuning JavaLib.} *)
 

@@ -3,7 +3,8 @@
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
- *
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -95,6 +96,8 @@ type class_field_signature_data = class_name * field_signature
 type class_method_signature_data = class_name * method_signature
 type class_field_signature = int * class_field_signature_data
 type class_method_signature = int * class_method_signature_data
+type class_method_signature_site_data = class_name * method_signature * int
+type class_method_signature_site = int * class_method_signature_site_data
 
 (* Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type descriptor =
@@ -421,175 +424,36 @@ let fs_hash (i,(_fn,_ft):field_signature) = i
 
 let fs_type (_i,(_fn,ft):field_signature) = ft
 
-let cfs_split (_i,(cn,fs):class_field_signature) = (cn, fs)
+let cfs_hash (i,_:class_field_signature) = i
 
-let cfs_hash ((i,_) : class_field_signature) = i
+let cfs_split (_i,(cn,fs):class_field_signature) = (cn, fs)
 
 let cms_split (_i,(cn,ms):class_method_signature) = (cn,ms)
 
-
-
-
 (* Containers. *)
 
-module type GenericSetSig =
-sig
-  type t
-  type elt
-  val empty : t
-  val is_empty : t -> bool
-  val singleton : elt -> t
-  val mem : elt -> t -> bool
-  val add : elt -> t -> t
-  val remove : elt -> t -> t
-  val union : t -> t -> t
-  val diff : t -> t -> t
-  val equal : t -> t -> bool
-  val elements : t -> elt list
-  val cardinal : t -> int
-  val iter : (elt -> unit) -> t -> unit
-  val fold : (elt -> 'b -> 'b) -> t -> 'b -> 'b
-  val exists : (elt -> bool) -> t -> bool
-  val filter : (elt -> bool) -> t -> t
-  (* val partition : (elt -> bool) -> t -> t * t *)
-  (* val choose_and_remove : t -> elt * t *)
-  (* val subset : t -> t -> bool *)
-  val inter : t -> t -> t
-  val of_list : elt list -> t
-  val of_array : elt array -> t
-  (* val choose : t -> int *)
-  (* val compare : t -> t -> int *)
-  (* val for_all : (int -> bool) -> t -> bool *)
-  (* val intersect : t -> t -> bool *)
-end
+module ClassSet = GenericSet.Make(struct type t = class_name let get_hash = fst end)
 
-module GenericSet ( S : sig type t end ) =
-struct
-  type elt = int * S.t
-  type t = elt Ptmap.t
+module MethodSet = GenericSet.Make(struct type t = method_signature let get_hash = fst end)
 
-  let empty = Ptmap.empty
-  let is_empty = Ptmap.is_empty
-  let mem e m = Ptmap.mem (fst e) m
-  let add e m = Ptmap.add (fst e) e m
-  let singleton e = Ptmap.add (fst e) e empty
-  let remove e m = Ptmap.remove (fst e) m
-  let union m1 m2 = Ptmap.merge_first m1 m2
-  let diff m1 m2 = Ptmap.diff (fun _ _ -> true) m1 m2
-  let equal m1 m2 = 0 == (compare m1 m2)
-  let elements m = Ptmap.fold (fun _ e l ->  e :: l) m []
-  let cardinal m = Ptmap.cardinal m
-  let iter f m = Ptmap.iter (fun _ e -> f e) m
-  let fold f m b = Ptmap.fold (fun _ e b -> f e b) m b
-  let exists f m = Ptmap.exists (fun _ e -> f e) m
-  let filter f m = Ptmap.filter f m
-  let inter m1 m2 = Ptmap.inter m1 m2
-  let of_array l = Array.fold_right add l empty		     
-  let of_list l = List.fold_right add l empty		     
+module FieldSet = GenericSet.Make(struct type t = field_signature let get_hash = fst end)
 
-  (* val partition : ('a -> bool) -> 'a t -> 'a t * 'a t *)
-  (* val choose_and_remove : *)
-end
+module ClassFieldSet = GenericSet.Make(struct type t = class_field_signature let get_hash = fst end)
 
-module type GenericMapSig =
-sig
-  type 'a t
-  type key
-  val empty : 'a t
-  val is_empty : 'a t -> bool
-  val cardinal : 'a t -> int
-  val add : key -> 'a -> 'a t -> 'a t
-  val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
-  val find : key -> 'a t -> 'a
-  val remove : key -> 'a t -> 'a t
-  val mem : key -> 'a t -> bool
-  val iter : (key -> 'a -> unit) -> 'a t -> unit
-  val map : ('a -> 'b) -> 'a t -> 'b t
-  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-  val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-  val choose_and_remove : 'a t -> key * 'a * 'a t
-  val filter : ('a -> bool) -> 'a t -> 'a t
-  val filteri : (key -> 'a -> bool) -> 'a t -> 'a t
-  val key_elements : 'a t -> key list
-  val value_elements : 'a t -> 'a list
-  val elements : 'a t -> (key * 'a) list
-end
+module ClassMethodSet = GenericSet.Make(struct type t = class_method_signature let get_hash = fst end)
+ 
+module ClassMethodMap = GenericMap.Make (struct type t = class_method_signature let get_hash = fst end)
 
-module GenericMap ( S : sig type t end ) =
-struct
-  type key = int * S.t
-  type 'a t = (key * 'a) Ptmap.t
+module ClassMap = GenericMap.Make (struct type t = class_name let get_hash = fst end)
 
-  let empty = Ptmap.empty
-  let is_empty = Ptmap.is_empty
-  let cardinal m = Ptmap.cardinal m
-  let add key o m = Ptmap.add (fst key) (key, o) m
-  let modify key f m = Ptmap.modify (fst key)
-    (fun x -> match x with
-       | None -> (key, f None)
-       | Some (_,a) -> (key, f (Some a))
-    ) m
-  let find key m = snd (Ptmap.find (fst key) m)
-  let remove key m = Ptmap.remove (fst key) m
-  let mem key m = Ptmap.mem (fst key) m
-  let iter f m = Ptmap.iter (fun _ (k,d) -> f k d) m
-  let map f m = Ptmap.map (fun (k,d) -> (k, f d)) m
-  let mapi f m = Ptmap.mapi (fun _ (k,d) -> (k, f k d)) m
-  let fold f m e = Ptmap.fold (fun _ (k,d) -> f k d) m e
-  let compare f m1 m2 = Ptmap.compare (fun a b -> f (snd a) (snd b)) m1 m2
-  let equal f m1 m2 = Ptmap.equal (fun a b -> f (snd a) (snd b)) m1 m2
-  let merge f m1 m2 = Ptmap.merge (fun a b -> (fst a), f (snd a) (snd b)) m1 m2
-  let choose_and_remove m =
-    let (_,(k,d),m) = Ptmap.choose_and_remove m in
-      (k, d, m)
-  let filter f m =
-    Ptmap.filter (fun (_,d) -> f d) m
-  let filteri f m =
-    Ptmap.filter (fun (k,d) -> f k d) m
-  let key_elements m =
-    Ptmap.fold (fun _ (k,_) l -> k :: l) m []
-  let value_elements m =
-    Ptmap.fold (fun _ (_,b) l -> b :: l) m []
-  let elements m =
-    Ptmap.fold (fun _ e l -> e :: l) m []
-end
+module MethodMap = GenericMap.Make (struct type t = method_signature let get_hash = fst end)
 
-module MaptoSet ( S : sig type t end )
-  ( GMap : GenericMapSig with type key = S.t )
-  ( GSet : GenericSetSig with type elt = S.t ) =
-struct
-  let to_set m =
-    GMap.fold (fun k _ s -> GSet.add k s) m GSet.empty
+module FieldMap = GenericMap.Make (struct type t = field_signature let get_hash = fst end)
 
-end
-
-module ClassSet = GenericSet(struct type t = string end)
-
-module MethodSet = GenericSet(struct type t = method_signature_data end)
-
-module FieldSet = GenericSet(struct type t = field_signature_data end)
-
-module ClassFieldSet = GenericSet(struct type t = class_field_signature_data end)
-
-module ClassMethodSet = GenericSet(struct type t = class_method_signature_data end)
-
-module ClassMap = GenericMap (struct type t = string end)
-
-module MethodMap = GenericMap (struct type t = method_signature_data end)
-
-module FieldMap = GenericMap (struct type t = field_signature_data end)
-
-module ClassFieldMap = GenericMap (struct type t = class_field_signature_data end)
-
-module ClassMethodMap = GenericMap (struct type t = class_method_signature_data end)
-
+module ClassFieldMap = GenericMap.Make (struct type t = class_field_signature let get_hash = fst end)
 
 module ClassMethodMaptoSet =
-  MaptoSet (struct type t = class_method_signature end)
-    (ClassMethodMap) (ClassMethodSet)
+  GenericMap.MaptoSet(struct type t = class_method_signature end)(ClassMethodMap)(ClassMethodSet)
 
 (* javalib tuning *)
 let permissive = ref false
