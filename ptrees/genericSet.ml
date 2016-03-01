@@ -76,7 +76,7 @@ struct
   let inter m1 m2 = Ptmap.inter m1 m2
   let of_array l = Array.fold_right add l empty		     
   let of_list l = List.fold_right add l empty
-  let subset = Ptmap.keys_subse				  
+  let subset = Ptmap.keys_subset				  
 
   (* val partition : ('a -> bool) -> 'a t -> 'a t * 'a t *)
   (* val choose_and_remove : *)
