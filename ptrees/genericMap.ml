@@ -1,6 +1,6 @@
 (*
  * Copyright (C) 2013, Pierre Vittet (INRIA)
- *
+ *               2016, David Pichardie, Laurent Guillo  
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -22,7 +22,7 @@ end
 module type GenericMapSig =
 sig
   type key 
-  type 'a t = (key * 'a) Ptmap.t
+  type 'a t
   val empty : 'a t
   val is_empty : 'a t -> bool
   val add : key -> 'a -> 'a t -> 'a t
@@ -96,4 +96,14 @@ struct
     Ptmap.fold (fun _ (_,b) l -> b :: l) m []
   let elements m =
     Ptmap.fold (fun _ e l -> e :: l) m []
+  let subset s m1 m2 =
+    Ptmap.subset (fun (_,v1) (_,v2) -> s v1 v2) m1 m2
+end
+
+module MaptoSet ( S : sig type t end )
+  ( GMap : GenericMapSig with type key = S.t )
+  ( GSet : GenericSet.GenericSetSig with type elt = S.t ) =
+struct
+  let to_set m =
+    GMap.fold (fun k _ s -> GSet.add k s) m GSet.empty
 end

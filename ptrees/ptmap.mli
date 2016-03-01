@@ -40,7 +40,7 @@ module type S = sig
       [d'] in [m], then the value [f d' d] is added instead of [d].  If
       no merge function is specified, then the previous bindings is
       simply discard.
-      @author Laurent Hubert*)
+   *)
   val add : ?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a t -> 'a t
 
   val modify : int -> ('a option -> 'a) -> 'a t -> 'a t
@@ -71,12 +71,16 @@ module type S = sig
 
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
-  (** [merge f m1 m2] returns a map that has the bindings of [m1] and [m2] and
-      which binds [k] to [f d1 d2] if [m1] and [m2] binds the same [k] to
-      different [d1] and [d2], respectively. If [d1] equals [d2], [f d1 d2] is
-      supposed to return [d1].
+  (** [merge f m1 m2] returns a map that binds every key [k] that is
+			either bound in [m1] or/and in [m2]. 
+			If [k] was bound to [d1] in [m1] and [d2] in [m2], it is now bound to [f d1 d2]. 
+			If [k] was bound to [d1] in [m1] but is not bound in [m2], it is still
+			bound to [d1].
+			If [k] was bound to [d2] in [m2] but is not bound in [m1], it is still
+			bound to [d2].
+			Precondition on [f]: if [d1] equals [d2], [f d1 d2] is supposed to return [d1].
 
-      @author Laurent Hubert*)
+   *)
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
 
   (** [merge_first m1 m2] is the same as [merge (fun a _ -> a) m1 m2] but it
@@ -104,9 +108,15 @@ module type S = sig
      @author David Pichardie *)
   val inter_map2 : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
 
-  (** [subset m1 m2] returns [true] if [m1] is a subset of [m2], [false]
-      otherwise. *)
-  val subset : 'a t -> 'a t -> bool
+  (** [keys_subset m1 m2] returns [true] if the set of keys in [m1] is a subset of
+      the set of keys in [m2], [false] otherwise. *)
+  val keys_subset : 'a t -> 'a t -> bool
+
+  (** [subset sub m1 m2] returns [true] if the set of keys in [m1] is a subset of
+      the set of keys in [m2], and if for all value [v1] in [m1], and [v2] in [m2],
+      at the same position, [sub v1 v2=true] holds,
+      [false] otherwise. *)
+  val subset : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 
   val cardinal: 'a t -> int
 

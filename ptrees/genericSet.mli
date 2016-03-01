@@ -1,6 +1,6 @@
 (*
  * Copyright (C) 2013, Pierre Vittet (INRIA)
- *
+ *               2016, David Pichardie, Laurent Guillo  
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -44,6 +44,7 @@ sig
   val inter : t -> t -> t
   val of_list : elt list -> t
   val of_array : elt array -> t
+  val subset : t -> t -> bool
 end
 
 

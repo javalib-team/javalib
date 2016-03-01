@@ -43,6 +43,7 @@ sig
   val inter : t -> t -> t
   val of_list : elt list -> t
   val of_array : elt array -> t
+  val subset : t -> t -> bool				
 end
 
 
@@ -74,7 +75,8 @@ struct
   let filter f m = Ptmap.filter f m
   let inter m1 m2 = Ptmap.inter m1 m2
   let of_array l = Array.fold_right add l empty		     
-  let of_list l = List.fold_right add l empty		     
+  let of_list l = List.fold_right add l empty
+  let subset = Ptmap.keys_subse				  
 
   (* val partition : ('a -> bool) -> 'a t -> 'a t * 'a t *)
   (* val choose_and_remove : *)

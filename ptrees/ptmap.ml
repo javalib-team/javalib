@@ -1,7 +1,7 @@
 (*
  * Copyright (C) 2008 Jean-Christophe Filliatre
  * Copyright (C) 2008, 2009 Laurent Hubert (CNRS)
- *
+ *               2016, David Pichardie, Laurent Guillo
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -44,7 +44,8 @@ module type S = sig
   val choose_and_remove : 'a t -> int * 'a * ('a t)
   val inter : 'a t -> 'a t -> 'a t
   val inter_map2 : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-  val subset : 'a t -> 'a t -> bool
+  val keys_subset : 'a t -> 'a t -> bool
+  val subset : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val cardinal: 'a t -> int
   val exists: (int -> 'a -> bool) -> 'a t -> bool
   val filter: ('a -> bool) -> 'a t -> 'a t
@@ -338,7 +339,7 @@ let rec inter_map2 f s1 s2 =
           else
             Empty
 
-let rec subset s1 s2 =
+let rec keys_subset s1 s2 =
   if s1 == s2 then true else
     match s1, s2 with
       | Empty , _ -> true
@@ -349,13 +350,39 @@ let rec subset s1 s2 =
       | _ , Leaf (_,_) -> false
       | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
           if m1 == m2 && p1 == p2 then
-            (subset l1 l2) && (subset r1 r2)
+            (keys_subset l1 l2) && (keys_subset r1 r2)
           else if m1 < m2 && match_prefix p2 p1 m1 then
             false
           else if m1 > m2 && match_prefix p1 p2 m2 then
-            subset s1 (if zero_bit p1 m2 then l2 else r2)
+            keys_subset s1 (if zero_bit p1 m2 then l2 else r2)
           else
             false
+
+(* warning : we assume the bottom element does not appear in the map *)
+let subset val_subset s1 s2 =
+  let rec sub s1 s2 =
+  if s1 == s2 then true else
+    match s1, s2 with
+      | Empty , _ -> true
+      | _, Empty -> false
+      | Leaf (k1,v1), Leaf (k2,v2) ->
+         if k1 == k2
+	 then val_subset v1 v2
+	 else false
+      | Leaf (k,v1), t ->
+         (try val_subset v1 (find k t)
+          with Not_found -> false)
+      | _ , Leaf (_,_) -> false
+      | (Branch (p1,m1,l1,r1) as t1), Branch (p2,m2,l2,r2) ->
+          if m1 == m2 && p1 == p2 then
+            (sub l1 l2) && (sub r1 r2)
+          else if m1 < m2 && match_prefix p2 p1 m1 then
+            false
+          else if m1 > m2 && match_prefix p1 p2 m2 then
+            sub t1 (if zero_bit p1 m2 then l2 else r2)
+          else
+            false in
+  sub s1 s2
 
 let diff f t1 t2 =
   let remove_eq k a f t =

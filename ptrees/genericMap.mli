@@ -1,6 +1,6 @@
 (*
  * Copyright (C) 2013, Pierre Vittet (INRIA)
- *
+ *               2016, David Pichardie, Laurent Guillo
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -26,7 +26,7 @@ end
 module type GenericMapSig =
 sig
   type key 
-  type 'a t = (key * 'a) Ptmap.t
+  type 'a t
 
   val empty : 'a t
   val is_empty : 'a t -> bool
@@ -57,7 +57,15 @@ sig
   val key_elements : 'a t -> key list
   val value_elements : 'a t -> 'a list
   val elements : 'a t -> (key * 'a) list
+  val subset : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 end
 
 
 module Make (El : S) : GenericMapSig with type key = El.t
+
+module MaptoSet ( S : sig type t end )
+  ( GMap : GenericMapSig with type key = S.t )
+  ( GSet : GenericSet.GenericSetSig with type elt = S.t ) :
+sig
+  val to_set : 'a GMap.t -> GSet.t
+end
