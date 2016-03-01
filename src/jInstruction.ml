@@ -2,6 +2,8 @@
  * This file is part of Javalib
  * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -444,7 +446,7 @@ let check_space _consts offset length opcode =
 
 
 let code2opcodes consts code =
-  let opcodes = Array.create (Array.length code) OpNop in
+  let opcodes = Array.make (Array.length code) OpNop in
     Array.iteri
       (fun i instr ->
 	 if instr <> JCode.OpInvalid

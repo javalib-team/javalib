@@ -138,7 +138,7 @@ let h2l_code2attribute consts = function
 	      @ h2l_other_attributes code.c_attributes;
 	  }
       in
-      let code = Lazy.lazy_from_fun h2l
+      let code = Lazy.from_fun h2l
       in
         (* bugfix : if h2l is not evaluated before the end of the main
            function (high2low), then consts is updated after c_const

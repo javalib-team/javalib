@@ -2,6 +2,8 @@
  * This file is part of Javalib
  * Copyright (c)2007 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -70,7 +72,7 @@ let open_path s =
   if is_dir s
   then Some (`dir s)
   else
-    if (Filename.check_suffix s ".jar" or Filename.check_suffix s ".zip") && is_file s
+    if (Filename.check_suffix s ".jar" || Filename.check_suffix s ".zip") && is_file s
     then Some (`jar (Zip.open_in s))
     else None
 
@@ -96,7 +98,7 @@ let class_path cp =
 	      then
 		let files =
 		  List.filter
-		    (fun file -> Filename.check_suffix file ".jar" or Filename.check_suffix file ".zip")
+		    (fun file -> Filename.check_suffix file ".jar" || Filename.check_suffix file ".zip")
 		    (Array.to_list (Sys.readdir cp_item))
 		in cp_item::(List.map (Filename.concat cp_item) files)
 	      else
@@ -250,7 +252,7 @@ let apply_to_dir_or_class f s =
 let apply_to_jar f other s =
   if
     (Filename.check_suffix s ".jar"
-     or
+    ||
      Filename.check_suffix s ".zip")
     && is_file s
   then
@@ -286,7 +288,7 @@ let fold_string class_path f file =
     invalid_arg ("invalid class name " ^ file ^ ", must be implicit")
   else
     let c =
-      if (Filename.check_suffix file ".jar" or Filename.check_suffix file ".zip")
+      if (Filename.check_suffix file ".jar" || Filename.check_suffix file ".zip")
       then file
       else replace_dot file
     in
@@ -409,7 +411,7 @@ let iter ?(debug=false) f filename =
       let _ = f (get_class cp (JBasics.make_cn file)) in
 	close_class_path cp
     end
-  else if is_file filename && (Filename.check_suffix filename ".jar" or Filename.check_suffix filename ".zip") then
+  else if is_file filename && (Filename.check_suffix filename ".jar" || Filename.check_suffix filename ".zip") then
     begin
       let cp = Filename.dirname filename in
       let filename = Filename.basename filename in
@@ -428,7 +430,7 @@ let iter ?(debug=false) f filename =
       try
 	while true do
 	  let next = Unix.readdir dir in
-	    if (Filename.check_suffix next ".jar" or Filename.check_suffix next ".zip") 
+	    if (Filename.check_suffix next ".jar" || Filename.check_suffix next ".zip") 
 	    then jar_files := next :: !jar_files
 	done
       with End_of_file ->

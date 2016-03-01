@@ -3,6 +3,8 @@
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
  * Copyright (c)2009 Nicolas Barre (INRIA)
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -22,7 +24,7 @@
 (** High level Ocaml representation of a Java class file. *)
 
 open JBasics
-open JCode
+(*open JCode*)
 
 (** {2 Common types.} *)
 

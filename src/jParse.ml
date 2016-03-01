@@ -370,7 +370,7 @@ and parse_attribute list consts ch =
 		if count() <> alen then error();
 		code
 	    in
-	      AttributeCode (Lazy.lazy_from_fun parse_code)
+	      AttributeCode (Lazy.from_fun parse_code)
 	| "Exceptions" -> check `Exceptions;
 	    let nentry = read_ui16 ch in
 	      if nentry * 2 + 2 <> alen then error();

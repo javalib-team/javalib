@@ -383,7 +383,7 @@ let subset val_subset s1 s2 =
           else
             false in
   sub s1 s2
-
+      
 let diff f t1 t2 =
   let remove_eq k a f t =
     let rec rmv = function

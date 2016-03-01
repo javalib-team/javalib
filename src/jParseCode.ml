@@ -3,6 +3,8 @@
  * Copyright (c)2004 Nicolas Cannasse
  * Copyright (c)2007, 2008 Tiphaine Turpin (Université de Rennes 1)
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
+ * Copyright (c)2016 David Pichardie (ENS Rennes)
+ * Copyright (c)2016 Laurent Guillo (CNRS)
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
@@ -371,7 +373,7 @@ let parse_full_opcode ch pos =
 
 let parse_code ch len =
   let ch , pos = IO.pos_in ch in
-  let code = Array.create len OpInvalid in
+  let code = Array.make len OpInvalid in
     while pos() < len do
       let p = pos() in
 	code.(p) <- parse_full_opcode ch pos

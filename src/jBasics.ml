@@ -5,6 +5,7 @@
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
  * Copyright (c)2016 David Pichardie (ENS Rennes)
  * Copyright (c)2016 Laurent Guillo (CNRS)
+ * 
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * as published by the Free Software Foundation, either version 3 of
@@ -96,8 +97,7 @@ type class_field_signature_data = class_name * field_signature
 type class_method_signature_data = class_name * method_signature
 type class_field_signature = int * class_field_signature_data
 type class_method_signature = int * class_method_signature_data
-type class_method_signature_site_data = class_name * method_signature * int
-type class_method_signature_site = int * class_method_signature_site_data
+
 
 (* Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type descriptor =
