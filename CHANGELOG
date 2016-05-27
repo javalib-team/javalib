@@ -1,17 +1,41 @@
-From 2.2.2 to 2.2.3
+From 2.3.1 to 2.3.2
+-----------------
+Minor changes:
+* Licence: we now use LGPL v2.1 with an special exception on linking
+  (described in file LICENCE). We follow exactly the same licence as
+  library ptrees.
+* Some cleaning, remove warnings found by ocaml 4.02.3
+
+Bug fixes:
+ * jParse now properly closes opened channels when a
+   Class_structure_error error is raised
+
+	
+FROM 2.3 to 2.3.1
+-----------------
+
+Minor changes
+* Ptrees
+    - remove redundant code about GenericSet and GenericMap. 
+* Javalib
+    - Update source codes related to GenericSet and GenericMap.
+    - Remove control over the class name extracted from a class file
+
+
+From 2.2.2 to 2.3
 -----------------
 Minor changes:
 * Ptrees: 
-    Provide GenericMap and GenericSet interfaces. They uses as argument a
+    Provide GenericMap and GenericSet interfaces. They use as argument a
     module specifying how to get a hash of the element.
 * compilation/installation:
-    - Do no longer provide extLib, user should install it themself. configure
+    - Do no longer provide extLib, users should install it themself. configure
       script accordingly changed.
-    - Do no longer provide camlzip, uer should install it themself. configure
+    - Do no longer provide camlzip, users should install it themself. configure
       script accordingly changed.
 * Javalib:
     Some cleaning, remove warnings found by ocaml 4.0.1.
-
+	
 From 2.2.1 to 2.2.2
 -----------------
 Minor changes:

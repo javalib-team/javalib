@@ -4,10 +4,10 @@
 # Copyright (c)2007, 2008, 2009 Laurent Hubert (CNRS)
 # Copyright (c)2009 Nicolas Barre (INRIA)
 #
-# This program is free software: you can redistribute it and/or
+# This software is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public License
-# as published by the Free Software Foundation, either version 3 of
-# the License, or (at your option) any later version.
+# version 2.1, with the special exception on linking described in file
+# LICENSE.
 # 
 # This program is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of

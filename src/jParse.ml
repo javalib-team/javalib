@@ -5,10 +5,10 @@
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
  * Copyright (c)2009, Frederic Dabrowski (INRIA)
  *
- * This program is free software: you can redistribute it and/or
+ * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation, either version 3 of
- * the License, or (at your option) any later version.
+ * version 2.1, with the special exception on linking described in file
+ * LICENSE.
  *
  * This program is distributed in the hope that it will be useful, but
  * WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -640,4 +640,11 @@ let parse_class_low_level ch =
        j_version = {major=version_major; minor=version_minor};
       }
 
+(* if the parsing raises a class_structure_error exception, we close the input ourself *)
+let parse_class_low_level ch =
+  try parse_class_low_level ch
+  with Class_structure_error _ as e ->
+    IO.close_in ch;
+    raise e
+  
 let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)
