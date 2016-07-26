@@ -272,9 +272,9 @@ let common_dictionary = make_dictionary ()
 
 
 let make_cn : string -> class_name =
-  let valid_class_name =
+(*  let valid_class_name =
     Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_0-9-]+\\$\\)*[a-zA-Z_0-9-]+$"
-  in function cn ->
+  in *)function cn ->
     let dic = common_dictionary in
     let cnt = dic.class_name_table in
       try
@@ -282,8 +282,8 @@ let make_cn : string -> class_name =
       with _ ->
 	let cni = cnt.cni_next in
         let new_cn = (cni,cn) in
-	  if not (Str.string_match valid_class_name cn 0)
-	  then invalid_arg ("Error : " ^ cn ^ " is not a valid name for a class");
+(*	  if not (Str.string_match valid_class_name cn 0)
+	  then invalid_arg ("Error : " ^ cn ^ " is not a valid name for a class");*)
 	  cnt.cni_map <- ClassNameMap.add cn new_cn cnt.cni_map;
 	  cnt.cni_next <- cni + 1;
 	  new_cn
