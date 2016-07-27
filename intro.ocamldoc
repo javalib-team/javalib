@@ -1,8 +1,8 @@
 {b {C JAVALIB_TRUNK}}
 
-{i {C Nicolas Barré, Nicolas Cannasse and Laurent Hubert}}
+{i {C Laurent Hubert an Tiphaine Turpin}}
 
-{i {C August 2012}}
+{i {C July 2016}}
 
 {2 {L Documentation}}
 
@@ -36,4 +36,4 @@ have some feedback).
 
 {!indexlist}
 
-{i {C Others contributors: Florent Kirchner and Tiphaine Turpin}}
+{i {C Others contributors: Florent Kirchner, Nicolas Barré, Nicolas Cannasse and David Pichardie}}
