@@ -92,6 +92,19 @@ type java_basic_type = [
 | other_num
 ]
 
+(** Method handle type. *)
+type method_handle_kind = [
+| `GetField
+| `GetStatic
+| `PutField
+| `PutStatic
+| `InvokeVirtual
+| `InvokeStatic
+| `InvokeSpecial
+| `NewInvokeSpecial
+| `InvokeInterface
+]
+
 (** Java object type *)
 type object_type =
   | TClass of class_name
@@ -230,6 +243,8 @@ val cms_equal : class_method_signature -> class_method_signature -> bool
     is typically useful for user-defined attributes that refer to the
     constant pool. *)
 
+type bootstrap_method_index = int
+
 (** Method descriptor. *)
 type method_descriptor = value_type list * value_type option
 
@@ -259,6 +274,9 @@ type constant =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
+  | ConstMethodType of method_descriptor
+  | ConstMethodHandle of method_handle_kind * constant
+  | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
@@ -372,4 +390,3 @@ end
 val set_permissive : bool -> unit
 
 val get_permissive : unit -> bool
-

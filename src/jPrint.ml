@@ -129,7 +129,7 @@ let constant_value = function
   | ConstDouble f -> "double " ^ (string_of_float f)
   | ConstClass cl -> "class " ^ (object_type cl)
 
-let constant = function
+let rec constant = function
   | ConstValue v -> constant_value v
   | ConstField (cl,fs) ->
       "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
@@ -139,6 +139,12 @@ let constant = function
       "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
   | ConstNameAndType (s,d) -> "name-and-type : " ^ (signature s d)
   | ConstStringUTF8 s -> "utf8 " ^ s
+  | ConstMethodType (args,ret) ->
+      "method-type : " ^ (method_descriptor args ret)
+  | ConstMethodHandle (kind,c) ->
+      "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant c)
+  | ConstInvokeDynamic (bmi,ms) ->
+      "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)
   | ConstUnusable -> "unusable"
 
 let constant_pool p =
@@ -311,7 +317,7 @@ let jopcode_jvm =
 
       | OpTableSwitch (def,min,max,tbl) ->
           (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
-          let inst = 
+          let inst =
             "tableswitch (["^ Int32.to_string min
             ^":"^ Int32.to_string max ^"] -> ["
           and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
@@ -355,6 +361,9 @@ let jopcode_jvm =
 	     | `Interface cs ->
 	         "invokeinterface " ^
                    (method_signature ~jvm:true ~callee:(TClass cs) ms)
+             | `Dynamic _ ->
+                 "invokedynamic " ^
+                   (method_signature ~jvm:true ms)
 	  )
       | OpNew cs -> "new " ^ (class_name cs)
       | OpNewArray t ->
@@ -533,7 +542,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
 			 [field_access f; field_static f;
 			  field_kind f]) in
   let header = if header = "" then header else header ^ " " in
-  let init_value = 
+  let init_value =
     let value =
       match f with
 	  InterfaceField ifd -> ifd.if_value
@@ -560,7 +569,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
   let header = if header = "" then header else header ^ " " in
     (match m with
        | AbstractMethod _ ->
-	   let header = 
+	   let header =
 	     if jvm then
 	       method_signature ~jvm:true ms
 	     else
@@ -583,7 +592,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
 		    ()
 	      | Java impl ->
                   let impl = Lazy.force impl in
-		  let header = 
+		  let header =
 		    if jvm then
 		      method_signature ~jvm:true ms
 		    else
@@ -615,18 +624,18 @@ let print_method ?(jvm=false) (m:'a jmethod) (f:'a -> string list)
     print_method_fmt jvm m (print_code f) fmt;
     Format.pp_print_flush fmt ()
 
-let print_method' ?(jvm=false) (m:'a jmethod) 
+let print_method' ?(jvm=false) (m:'a jmethod)
     (print_code: 'a -> Format.formatter -> unit) fmt =
   print_method_fmt jvm m print_code fmt;
   ()
 
-let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class) 
+let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
     print_code fmt =
   let name = cn_name (get_name ioc) in
-  let impl_ext = 
-    let extends = 
+  let impl_ext =
+    let extends =
       match ioc with
-	  JClass jc -> 
+	  JClass jc ->
 	    (match jc.c_super_class with
 		 None -> ""
 	       | Some cn -> "extends "^cn_name cn^" ")
@@ -634,13 +643,13 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
     in
     let get_output = function
 	[] -> extends^""
-      | l -> 
+      | l ->
 	  List.fold_left
 	    (fun msg cn -> msg^" "^cn_name cn)
 	    (extends^"implements")
 	    l
     in
-    let interf_l = 
+    let interf_l =
       match ioc with
 	  JClass jc -> jc.c_interfaces
 	| JInterface ji -> ji.i_interfaces
@@ -707,7 +716,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	  then
 	    begin
 	      Format.pp_open_vbox fmt indent_val;
-	      Format.pp_force_newline fmt ();     
+	      Format.pp_force_newline fmt ();
 	      MethodMap.iter
 		(fun _ m ->
 		   print_method_fmt jvm m print_code fmt;
@@ -729,7 +738,7 @@ let print_class ?(jvm=false) (ioc:'a interface_or_class) (f:'a -> string list)
     print_class_fmt ~jvm indent_val ioc (print_code f) fmt;
     Format.pp_print_flush fmt ()
 
-let print_class' ?(jvm=false) (ioc:'a interface_or_class) 
+let print_class' ?(jvm=false) (ioc:'a interface_or_class)
     (print_code:'a -> Format.formatter -> unit)
     (fmt:Format.formatter) =
   let indent_val = 3 in

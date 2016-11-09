@@ -141,7 +141,7 @@ type 'a concrete_method = {
 type abstract_method = {
   am_signature : method_signature;
   am_class_method_signature : class_method_signature;
-  am_access: [`Public | `Protected | `Default];
+  am_access: [`Public | `Protected | `Default | `Private];
   am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
   am_varargs: bool;
@@ -342,7 +342,5 @@ val map_class_with_native_context :
 val map_interface_with_native_context :
   ('a concrete_method -> 'a implementation -> 'b implementation) -> 'a jinterface -> 'b jinterface
 val map_interface_or_class_with_native_context :
-  ('a concrete_method -> 'a implementation -> 'b implementation) -> 
+  ('a concrete_method -> 'a implementation -> 'b implementation) ->
   'a interface_or_class -> 'b interface_or_class
-
-

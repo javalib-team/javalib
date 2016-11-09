@@ -119,6 +119,17 @@ let constant_to_int cp c =
 	     | _ -> ());
 	  i
 
+let method_handle_kind_to_int = function
+  | `GetField -> 1
+  | `GetStatic -> 2
+  | `PutField ->3
+  | `PutStatic -> 4
+  | `InvokeVirtual -> 5
+  | `InvokeStatic -> 6
+  | `InvokeSpecial -> 7
+  | `NewInvokeSpecial -> 8
+  | `InvokeInterface -> 9
+
 let value_to_int cp v = constant_to_int cp (ConstValue v)
 let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
 let field_to_int cp v = constant_to_int cp (ConstField v)
@@ -133,5 +144,3 @@ let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
 let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)
 let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
-
-

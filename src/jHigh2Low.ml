@@ -151,7 +151,7 @@ let split_vis_invis annots =
     List.fold_right
     (fun annot_vis (vis,invis) ->
        match annot_vis with
-         | annot,RTVisible -> (annot::vis),invis 
+         | annot,RTVisible -> (annot::vis),invis
          | annot,RTInvisible -> vis,(annot::invis))
     annots
     ([],[])
@@ -203,7 +203,7 @@ let h2l_cfield _consts f =
 	@ (List.map (fun i -> `AccRFU i) f.cf_other_flags)
 	@ (access2flags f.cf_access);
      f_attributes =
-	(match f.cf_value with 
+	(match f.cf_value with
 	     Some c -> [AttributeConstant  c]
 	   | None -> [] )
         @ (h2l_annotations f.cf_annotations)
@@ -222,8 +222,8 @@ let h2l_ifield _consts f =
 	@ (List.map (fun i -> `AccRFU i) f.if_other_flags)
 	@ [`AccPublic;`AccStatic;`AccFinal];
      f_attributes =
-	(match f.if_value with 
-	     Some c -> [AttributeConstant c] 
+	(match f.if_value with
+	     Some c -> [AttributeConstant c]
 	   | None -> [] )
         @ (h2l_annotations f.if_annotations)
 	@ (field_generic_signature_to_attribute f.if_generic_signature)

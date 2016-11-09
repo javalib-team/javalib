@@ -144,6 +144,7 @@ type opcode =
   | OpInvokeNonVirtual of int
   | OpInvokeStatic of int
   | OpInvokeInterface of int * int (** count *)
+  | OpInvokeDynamic of int
 
   | OpNew of int
   | OpNewArray of java_basic_type
@@ -250,6 +251,12 @@ type stackmap_frame =
   | AppendFrame of int * int * verification_type list
   | FullFrame of int * int * verification_type list * verification_type list
 
+type bootstrap_method = {
+  bootstrap_method_ref : int;
+  num_bootstrap_arguments : int;
+  bootstrap_arguments : int list;
+}
+
 type code = {
   c_max_stack : int;
   c_max_locals : int;
@@ -296,6 +303,7 @@ and attribute =
   | AttributeRuntimeVisibleParameterAnnotations of annotation list list
   | AttributeRuntimeInvisibleParameterAnnotations of annotation list list
   | AttributeAnnotationDefault of element_value  (* cf. §4.8.19 of JVM Spec 5 *)
+  | AttributeBootstrapMethods of bootstrap_method list
   | AttributeUnknown of string * string
 
 type jfield = {

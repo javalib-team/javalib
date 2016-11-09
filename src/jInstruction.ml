@@ -33,7 +33,7 @@ let count =
 	 | _ -> 1)
     1
 
-let opcode2instruction consts = function
+let opcode2instruction consts bootstrap_methods = function
   | OpNop -> JCode.OpNop
   | OpAConstNull -> JCode.OpConst `ANull
   | OpIConst v -> JCode.OpConst (`Int v)
@@ -193,6 +193,12 @@ let opcode2instruction consts = function
 	if count (ms_args ms) <> c
 	then raise (Class_structure_error "wrong count in invokeinterface");
 	JCode.OpInvoke (`Interface cs, ms)
+  | OpInvokeDynamic i ->
+      (match get_constant consts i with
+       | ConstInvokeDynamic (bmi, ms) ->
+           let handle_kind, handle_const, bootstrap_method_args = List.nth bootstrap_methods bmi in
+           JCode.OpInvoke (`Dynamic (handle_kind, handle_const, bootstrap_method_args), ms)
+       | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle"))
 
   | OpNew i -> JCode.OpNew (get_class consts i)
   | OpNewArray bt -> JCode.OpNewArray (TBasic bt)
@@ -212,8 +218,8 @@ let opcode2instruction consts = function
 
   | OpInvalid -> JCode.OpInvalid
 
-let opcodes2code consts opcodes =
-  Array.map (opcode2instruction consts) opcodes
+let opcodes2code consts bootstrap_methods opcodes =
+  Array.map (opcode2instruction consts bootstrap_methods) opcodes
 
 let instruction2opcode consts length = function
   | JCode.OpNop -> OpNop
@@ -409,6 +415,9 @@ let instruction2opcode consts length = function
 	     OpInvokeInterface
 	       (constant_to_int consts
 		  (ConstInterfaceMethod (t, ms)), count (ms_args ms))
+         | `Dynamic _ ->
+             (* TODO: use bootstrap methods table to resolve *)
+             assert false
       )
 
   | JCode.OpNew cs -> OpNew (class_to_int consts cs)

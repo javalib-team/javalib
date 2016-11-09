@@ -118,7 +118,7 @@ type 'a concrete_method = {
 type abstract_method = {
   am_signature : method_signature;
   am_class_method_signature : class_method_signature;
-  am_access: [`Public | `Protected | `Default];
+  am_access: [`Public | `Protected | `Default | `Private];
   am_generic_signature : JSignature.methodTypeSignature option;
   am_bridge: bool;
   am_varargs: bool;
@@ -176,8 +176,7 @@ type 'a jclass = {
   c_methods : 'a jmethod MethodMap.t;
 }
 
-(* Interfaces cannot be final and can only contains abstract
-    methods. Their super class is [java.lang.Object].*)
+(* Interfaces cannot be final. Their super class is [java.lang.Object].*)
 type 'a jinterface = {
   i_name : class_name;
   i_version : version;
@@ -267,7 +266,7 @@ let get_concrete_method ioc ms =
     | JInterface {i_initializer = Some cm}
 	when (ms_equal cm.cm_signature ms) -> cm
     | JInterface _ -> raise Not_found
-    | JClass c -> 
+    | JClass c ->
 	(match MethodMap.find ms c.c_methods with
 	    ConcreteMethod cm -> cm
 	  | AbstractMethod _ -> raise Not_found)
@@ -512,19 +511,19 @@ let map_concrete_method_with_native f cm =
   }
 
 let map_concrete_method ?(force=false) f =
-  map_concrete_method_with_native 
+  map_concrete_method_with_native
     (function
        | Native -> Native
-       | Java c -> 
+       | Java c ->
 	   if force then
 	     let new_c = f (Lazy.force c) in
 	       Java (lazy new_c)
 	   else Java (lazy (f (Lazy.force c))))
 
-let map_concrete_method_with_native_context f cm = 
+let map_concrete_method_with_native_context f cm =
   map_concrete_method_with_native (f cm) cm
 
-let map_concrete_method_context ?(force=false) f cm = 
+let map_concrete_method_context ?(force=false) f cm =
   map_concrete_method ~force:force  (f cm) cm
 
 let map_method ?(force=false) f = function
@@ -541,7 +540,7 @@ let map_method_with_native f = function
 
 let map_method_with_native_context f = function
   | AbstractMethod am -> AbstractMethod am
-  | ConcreteMethod cm -> 
+  | ConcreteMethod cm ->
       ConcreteMethod (map_concrete_method_with_native_context f cm)
 
 let map_class_gen map_method f c =
@@ -569,9 +568,9 @@ let map_class_gen map_method f c =
     c_methods = MethodMap.map (map_method f) c.c_methods;
   }
 
-let map_class_with_native_context f c = 
+let map_class_with_native_context f c =
   map_class_gen map_method_with_native_context f c
-let map_class_with_native f c  = 
+let map_class_with_native f c  =
   map_class_gen map_method_with_native f c
 
 let map_class_context ?(force=false) f c = map_class_gen (map_method_context ~force:force) f c
@@ -604,12 +603,12 @@ let map_interface_gen map_concrete_method f i =
 
 let map_interface_context ?(force=false) f i =
   map_interface_gen (map_concrete_method_context ~force:force) f i
-let map_interface ?(force=false) f i = 
+let map_interface ?(force=false) f i =
   map_interface_gen (map_concrete_method ~force:force) f i
 
-let map_interface_with_native_context f i = 
+let map_interface_with_native_context f i =
   map_interface_gen map_concrete_method_with_native_context f i
-let map_interface_with_native f i  = 
+let map_interface_with_native f i  =
   map_interface_gen map_concrete_method_with_native f i
 
 let map_interface_or_class_with_native f = function

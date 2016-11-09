@@ -313,7 +313,12 @@ let parse_opcode op ch wide =
 	    let index = read_ui16 ch in
 	    let nargs = IO.read_byte ch in
 	    let _ = IO.read_byte ch in
-	      OpInvokeInterface (index, nargs)
+              OpInvokeInterface (index, nargs)
+        | 186 ->
+     	    let index = read_ui16 ch in
+            let _ = IO.read_byte ch in
+            let _ = IO.read_byte ch in
+              OpInvokeDynamic index
 	(* ---- others --------------------------------- *)
 	| 187 ->
 		OpNew (read_ui16 ch)
@@ -672,8 +677,8 @@ let other count ch length instr =
         flush ch;
         let padding_size = (3 - (1 + (count () - 2) mod 4))
         in
-          if length <> 13 + padding_size + 4 * (Array.length tbl)
-          then raise (OpcodeLengthError (length,instr));
+          (*if length <> 13 + padding_size + 4 * (Array.length tbl)
+            then raise (OpcodeLengthError (length,instr));*)
           write_ui8 ch 170;
           padding ch count;
           write_i32 ch def;
@@ -684,8 +689,8 @@ let other count ch length instr =
         flush ch;
         let padding_size = (3 - (1 + (count () - 2) mod 4))
         in
-          if length <> 9 + padding_size + 8 * (List.length tbl)
-          then raise (OpcodeLengthError (length,instr));
+          (*if length <> 9 + padding_size + 8 * (List.length tbl)
+            then raise (OpcodeLengthError (length,instr));*)
           write_ui8 ch 171;
           padding ch count;
           write_i32 ch def;
@@ -700,6 +705,13 @@ let other count ch length instr =
         write_ui8 ch 185;
         write_ui16 ch index;
         write_ui8 ch nargs;
+        write_ui8 ch 0
+    | OpInvokeDynamic (index) ->
+        if length <> 5
+        then raise (OpcodeLengthError (length,instr));
+        write_ui8 ch 186;
+        write_ui16 ch index;
+        write_ui8 ch 0;
         write_ui8 ch 0
     | OpNewArray at ->
         if length <> 2

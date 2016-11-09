@@ -73,8 +73,8 @@ let string_of_value_type = JDumpBasics.value_signature ~jvm:true
 
 let string_of_object_type = JDumpBasics.object_value_signature ~jvm:true
 
-let string_objtype_2_classname = 
-  function 
+let string_objtype_2_classname =
+  function
       TClass cn -> string_of_classname cn
     | TArray _ as ot -> string_of_object_type ot
 
@@ -91,7 +91,7 @@ let string_of_constant_value v = match v with
   | ConstClass (TClass cn) -> string_of_classname cn
   | ConstClass (TArray _ as ot) -> string_of_object_type ot
 
-let string_of_constant c = match c with
+let rec string_of_constant c = match c with
   | ConstValue(c) -> string_of_constant_value c
   | ConstField(classname, fs) ->
       let classname' = string_of_classname classname
@@ -112,6 +112,12 @@ let string_of_constant c = match c with
 	  | SMethod d -> string_of_method_descriptor d
       in str^" "^desc'
   | ConstStringUTF8(str) -> str
+  | ConstMethodType(md) -> string_of_method_descriptor md
+  | ConstMethodHandle(kind,c) ->
+      (JDumpBasics.method_handle_kind kind)^"/"^(string_of_constant c)
+  | ConstInvokeDynamic(bmi,ms) ->
+      let methoddesc' = string_of_method_descriptor (ms_args ms, ms_rtype ms) in
+      (string_of_int bmi)^"/"^(ms_name ms)^methoddesc'
   | ConstUnusable -> "##### Unusable Constant #####"
 
 let string_of_opcode opcode constants pos =
@@ -281,6 +287,7 @@ let string_of_opcode opcode constants pos =
       | OpInvokeNonVirtual(i) -> "invokenonvirtual "^(string_of_constant constants.(i))
       | OpInvokeStatic(i) -> "invokestatic "^(string_of_constant constants.(i))
       | OpInvokeInterface(i,c) -> "invokeinterface "^(string_of_constant constants.(i))^" "^(string_of_int c)
+      | OpInvokeDynamic(i) -> "invokedynamic "^(string_of_constant constants.(i))
 
       | OpNew(i) -> "new "^(string_of_constant constants.(i))
       | OpNewArray(jbt) -> "newarray "^(JDumpBasics.basic_type jbt)

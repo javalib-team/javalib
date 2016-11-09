@@ -58,7 +58,7 @@ let basic_type ?(jvm=false) bt =
 
 let rec object_value_signature ?(jvm=false) ot =
   match ot with
-    | TClass cn -> 
+    | TClass cn ->
 	let cn = class_name ~jvm:jvm cn in
 	  if jvm then "L" ^cn^";"
 	  else cn
@@ -78,7 +78,7 @@ let rettype2shortstring ?(jvm=true) = function
     None ->
 	if jvm then "V"
 	else "void"
-    | Some v -> value_signature ~jvm:jvm v 
+    | Some v -> value_signature ~jvm:jvm v
 
 let arraytype2shortstring = function
   | `Long -> "J"
@@ -126,6 +126,17 @@ let jvm_array_type = function
   | `ByteBool -> 'b'
   | `Object -> 'a'
 
+let method_handle_kind = function
+  | `GetField -> "getfield"
+  | `GetStatic -> "getstatic"
+  | `PutField -> "putfield"
+  | `PutStatic -> "putstatic"
+  | `InvokeVirtual -> "invokevirtual"
+  | `InvokeStatic -> "invokestatic"
+  | `InvokeSpecial -> "invokespecial"
+  | `NewInvokeSpecial -> "newinvokespecial"
+  | `InvokeInterface -> "invokeinterface"
+
 let dump_constant_value ch = function
   | ConstString s -> IO.printf ch "string '%s'" (jstr_pp s)
   | ConstInt i -> IO.printf ch "int %ld" i
@@ -134,7 +145,7 @@ let dump_constant_value ch = function
   | ConstDouble f -> IO.printf ch "double %f" f
   | ConstClass cl -> IO.printf ch "class %s" (object_value_signature cl)
 
-let dump_constant ch = function
+let rec dump_constant ch = function
   | ConstValue v -> dump_constant_value ch v
   | ConstField (cn,fs) ->
       let fn = fs_name fs
@@ -156,6 +167,17 @@ let dump_constant ch = function
   | ConstNameAndType (s,sign) -> IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> IO.printf ch "utf8 %s" s
   | ConstUnusable -> IO.printf ch "unusable"
+  | ConstMethodType ms ->
+      IO.printf ch "method-type : %s"
+        (method_signature "" ms)
+  | ConstMethodHandle (hk, c) ->
+      IO.printf ch "method-handle : %s" (method_handle_kind hk);
+      (dump_constant ch c)
+  | ConstInvokeDynamic (bmi, ms) ->
+      IO.printf ch "invole-dynamic : %d %s"
+        bmi
+        (ms_name ms)
+
 
 let dump_constantpool ch =
   Array.iteri
@@ -190,5 +212,3 @@ let dump_exc ch _cl exc =
      | None -> IO.printf ch "<finally>"
      | Some cl -> IO.printf ch "class %s" (class_name cl));
   IO.printf ch ")"
-
-

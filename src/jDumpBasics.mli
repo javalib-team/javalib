@@ -74,6 +74,9 @@ val jvm_array_type :  jvm_array_type -> char
 val java_basic_type : java_basic_type -> char
   (** [java_basic_type t] returns the lowercase character that
       corresponds to the type [t]. *)
+val method_handle_kind : method_handle_kind -> string
+  (** [method_handle_kind k] returns the string that corresponds
+      to the method handle kind [k]. *)
 val dump_constant_value : 'a IO.output -> constant_value -> unit
   (** [dump_constant_value ch cst] prints on [ch] the constant value
       [ch] preceded by its type ({i e.g} "int 3").*)

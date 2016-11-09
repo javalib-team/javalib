@@ -99,11 +99,11 @@ type jopcode =
   | OpI2S
 
   | OpCmp of [`L   (*Compare long value. See lcmp in jvm spec.*)
-             |`FL  (*Compare float value. Push -1 as result if one of the 
+             |`FL  (*Compare float value. Push -1 as result if one of the
                      compared value is NaN. See fcmp in jvm spec.*)
              |`FG  (*Compare float value. Same as `FL but push 1 as result if
                      one of the compared value is NaN. See fcmp in jvm spec.*)
-             |`DL  (*Compare double value. Push -1 as result if one of the 
+             |`DL  (*Compare double value. Push -1 as result if one of the
                      compared value is NaN. See dcmp in jvm spec.*)
              |`DG  (*Compare double value. Same as `DL but push 1 as result of
                      one of the compared value is NaN. See dcmp in jvm spec.*)
@@ -111,14 +111,14 @@ type jopcode =
 
   (* Conditional jump *)
   | OpIf of [`Eq | `Ne | `Lt | `Ge | `Gt | `Le | `Null | `NonNull] * int
-  | OpIfCmp of [`IEq 
-               | `INe 
-               | `ILt 
-               | `IGe 
-               | `IGt 
-               | `ILe 
+  | OpIfCmp of [`IEq
+               | `INe
+               | `ILt
+               | `IGe
+               | `IGt
+               | `ILe
                | `AEq (*reference equality*)
-               | `ANe] (*reference inequality*) 
+               | `ANe] (*reference inequality*)
     * int
 
   (* Unconditional jump *)
@@ -149,6 +149,7 @@ type jopcode =
       | `Special of class_name
       | `Static of class_name
       | `Interface of class_name
+      | `Dynamic of method_handle_kind * constant * constant list
       ]
 	* method_signature
   | OpReturn of jvm_return_type
@@ -188,7 +189,7 @@ type jcode = {
   c_max_stack : int;
   c_max_locals : int;
   c_code : jopcodes;
-  c_exc_tbl : exception_handler list; 
+  c_exc_tbl : exception_handler list;
   (** The list is ordered in the same way as in the bytecode (See JVM Spec 7 $2.10). *)
   c_line_number_table : (int * int) list option;
   (** (start_pc, line_number) *)

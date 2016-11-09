@@ -5,7 +5,7 @@
  * Copyright (c)2007, 2008 Laurent Hubert (CNRS)
  * Copyright (c)2016 David Pichardie (ENS Rennes)
  * Copyright (c)2016 Laurent Guillo (CNRS)
- * 
+ *
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License
  * version 2.1, with the special exception on linking described in file
@@ -71,6 +71,18 @@ type java_basic_type = [
 | other_num
 ]
 
+type method_handle_kind = [
+| `GetField
+| `GetStatic
+| `PutField
+| `PutStatic
+| `InvokeVirtual
+| `InvokeStatic
+| `InvokeSpecial
+| `NewInvokeSpecial
+| `InvokeInterface
+]
+
 (* Java object type *)
 type object_type =
   | TClass of class_name
@@ -80,6 +92,8 @@ type object_type =
 and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
+
+type bootstrap_method_index = int
 
 (* Field descriptor *)
 type field_descriptor = value_type
@@ -125,6 +139,9 @@ type constant =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
+  | ConstMethodType of method_descriptor
+  | ConstMethodHandle of method_handle_kind * constant
+  | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
@@ -342,7 +359,7 @@ let make_cms cs ms =
 	cmst.cmsi_next <- cmsi + 1;
 	new_cms
 
-let default_native_throwable = 
+let default_native_throwable =
 [ (*RuntimeException that could be thrown by VM.*)
     make_cn "java.lang.ArithmeticException";
     make_cn "java.lang.ArrayStoreException";
@@ -441,7 +458,7 @@ module FieldSet = GenericSet.Make(struct type t = field_signature let get_hash =
 module ClassFieldSet = GenericSet.Make(struct type t = class_field_signature let get_hash = fst end)
 
 module ClassMethodSet = GenericSet.Make(struct type t = class_method_signature let get_hash = fst end)
- 
+
 module ClassMethodMap = GenericMap.Make (struct type t = class_method_signature let get_hash = fst end)
 
 module ClassMap = GenericMap.Make (struct type t = class_name let get_hash = fst end)

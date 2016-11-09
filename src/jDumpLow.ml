@@ -155,6 +155,7 @@ let opcode = function
   | OpInvokeNonVirtual i -> sprintf "invokespecial %d" i
   | OpInvokeStatic i -> sprintf "invokestatic %d" i
   | OpInvokeInterface (i,n) -> sprintf "invokeinterface %d %d" i n
+  | OpInvokeDynamic i -> sprintf "invokedynamic %d" i
 
   | OpNew i -> sprintf "new %d" i
   | OpNewArray k -> sprintf "%cnewarray" (java_basic_type k)
@@ -229,7 +230,7 @@ let dump_inner_classes ch icl =
        IO.write ch ' ';
        (match oc with
           | None -> ()
-          | Some ocname -> 
+          | Some ocname ->
               IO.nwrite ch (cn_name ocname);
               IO.write ch '.');
        (match ic with
@@ -266,7 +267,7 @@ let rec dump_element_value ch = function
       IO.nwrite ch (string_of_float cst)
   | EVCstFloat cst ->
       IO.nwrite ch (string_of_float cst);
-      IO.nwrite ch "f"      
+      IO.nwrite ch "f"
   | EVCstLong cst ->
       IO.nwrite ch (Int64.to_string cst);
       IO.nwrite ch "L"
@@ -306,6 +307,19 @@ and dump_annotation ch annot =
     IO.write ch '(';
     dump_pairs annot.element_value_pairs;
     IO.write ch ')'
+
+let dump_bootstrap_method ch { bootstrap_method_ref; bootstrap_arguments; } =
+  IO.nwrite ch "    method_ref = ";
+  IO.nwrite ch (string_of_int bootstrap_method_ref);
+  if bootstrap_arguments <> []
+  then
+    begin
+      IO.nwrite ch (" , bootstrap_arguments = ");
+      List.iter (fun arg ->
+          IO.nwrite ch (string_of_int arg);
+          IO.nwrite ch "\n")
+        bootstrap_arguments
+    end
 
 let rec dump_code ch consts code =
   IO.nwrite ch "    max_stack = ";
@@ -420,7 +434,7 @@ and dump_attrib ch consts = function
   | AttributeRuntimeInvisibleParameterAnnotations all ->
       IO.nwrite ch "    RuntimeInvisibleParameterAnnotations = ";
       List.iter
-        (fun al -> 
+        (fun al ->
            IO.nwrite ch "\n      [";
            dump_list (fun () -> IO.nwrite ch ", ") (dump_annotation ch) al;
            IO.write ch ']')
@@ -429,11 +443,19 @@ and dump_attrib ch consts = function
   | AttributeRuntimeVisibleParameterAnnotations all ->
       IO.nwrite ch "    RuntimeVisibleParameterAnnotations = ";
       List.iter
-        (fun al -> 
+        (fun al ->
            IO.nwrite ch "\n      [";
            dump_list (fun () -> IO.nwrite ch ", ") (dump_annotation ch) al;
            IO.write ch ']')
         all;
+      IO.write ch '\n'
+  | AttributeBootstrapMethods methods ->
+      IO.nwrite ch "    BootstrapMethods = ";
+      List.iter (fun m ->
+          IO.nwrite ch "\n      [";
+          dump_bootstrap_method ch m;
+          IO.write ch ']')
+        methods;
       IO.write ch '\n'
   | AttributeUnknown (s,_) ->
       IO.nwrite ch ("    ?"^s^"\n")

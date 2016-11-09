@@ -56,6 +56,7 @@ val field_to_int : constant DynArray.t ->
 val method_to_int : constant DynArray.t ->
   object_type * method_signature -> int
 val string_to_int : constant DynArray.t -> string -> int
+val method_handle_kind_to_int : method_handle_kind -> int
 
 (** Same thing, but writes the index to a channel. *)
 
@@ -87,4 +88,3 @@ val write_with_length :
   'a IO.output -> (string IO.output -> unit) -> unit
 val write_with_size :
   ('a IO.output -> int -> unit) -> 'a IO.output -> ('c -> unit) -> 'c list -> unit
-

@@ -75,6 +75,20 @@ let combine_LocalVariableTable (lvts:'s lvt list) : 's lvt =
       end;
     lvt
 
+(* resolve the constants of a bootstrap method in the constant poool *)
+let low2high_bootstrapmethod consts { bootstrap_method_ref; bootstrap_arguments; } =
+  match consts.(bootstrap_method_ref) with
+  | ConstMethodHandle (handle_kind, handle_const) ->
+      let bootstrap_method_args =
+        List.map
+          (fun bootstrap_arg_index -> match consts.(bootstrap_arg_index) with
+             | (ConstValue _ | ConstMethodHandle _ | ConstMethodType _) as arg ->
+                 arg
+             | _ ->
+                 raise (Class_structure_error "Bad argument type to bootstrap method"))
+          bootstrap_arguments in
+      handle_kind, handle_const, bootstrap_method_args
+  | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle")
 
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
@@ -84,8 +98,8 @@ let low2high_other_attributes consts : JClassLow.attribute list ->  (string*stri
        | a ->
 	   let (name,contents) = JUnparse.unparse_attribute_to_strings consts a
 	   in
-	     if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
-	     name,contents)
+    if !debug >0 then prerr_endline ("Warning: unexpected attribute found: "^name);
+    name,contents)
 
 (* convert a list of  attributes to an [attributes] structure. *)
 let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
@@ -137,11 +151,11 @@ let expanse_stackmap_table stackmap_table =
       ) ((-1,[],[]),[]) stackmap_table in
     List.rev stackmap
 
-let low2high_code consts = function c ->
+let low2high_code consts bootstrap_methods = function c ->
   {
     c_max_stack = c.JClassLow.c_max_stack;
     c_max_locals = c.JClassLow.c_max_locals;
-    c_code = JInstruction.opcodes2code (DynArray.to_array consts) c.JClassLow.c_code;
+    c_code = JInstruction.opcodes2code (DynArray.to_array consts) bootstrap_methods c.JClassLow.c_code;
     c_exc_tbl = c.JClassLow.c_exc_tbl;
     c_line_number_table =
       begin
@@ -410,18 +424,42 @@ let low2high_amethod consts cs ms = function m ->
   let (is_varargs,flags) = get_flag `AccVarArgs flags in
   let access =
     match access with
-      | `Private -> raise (Class_structure_error "Abstract method cannot be private")
+      | `Private ->
+          (* though this cannot happen with source methods, it happens with
+             compiler-generated lambdas in Java 8 *)
+          `Private
       | `Default -> `Default
       | `Protected -> `Protected
       | `Public -> `Public
   in
+  (* get rid of flags that can only happen in lambdas *)
+  let flags =
+    List.filter
+      (function
+        | `AccPrivate
+        | `AccStatic -> false
+        | _ -> true)
+      flags in
+   let to_string flag = match flag with
+    | `AccPublic -> "public"
+    | `AccPrivate -> "private"
+    | `AccProtected -> "protected"
+    | `AccStatic -> "static"
+    | `AccFinal -> "final"
+    | `AccSynchronized -> "synchronized"
+    | `AccBridge -> "bridge"
+    | `AccVarArgs -> "varargs"
+    | `AccNative -> "native"
+    | `AccAbstract -> "abstract"
+    | `AccStrict -> ""
+    | _ -> "" in
   let flags =
     List.map
       (function
-	 | `AccRFU i -> i
-	 | _ -> raise (Class_structure_error (
+ 	 | `AccRFU i -> i
+	 | i -> raise (Class_structure_error ( "Bad flag " ^ (to_string i) ^
 			 "If a method has its ACC_ABSTRACT flag set it may not have any"
-			 ^ "of its ACC_FINAL, ACC_NATIVE, ACC_PRIVATE, ACC_STATIC, "
+			 ^ "of its ACC_FINAL, ACC_NATIVE, ACC_STATIC, "
 			 ^ "ACC_STRICT, or ACC_SYNCHRONIZED flags set.")))
       flags
   in
@@ -539,7 +577,7 @@ let low2high_amethod consts cs ms = function m ->
       am_annotation_default = default_annotation;
     }
 
-let low2high_cmethod consts cs ms = function m ->
+let low2high_cmethod consts bootstrap_methods cs ms = function m ->
   if m.m_name = "<init>" &&
     List.exists (fun a -> a=`AccStatic || a=`AccFinal || a=`AccSynchronized || a=`AccNative || a=`AccAbstract)
     m.m_flags
@@ -589,7 +627,7 @@ let low2high_cmethod consts cs ms = function m ->
     List.partition (function AttributeCode _ -> true | _ -> false) other_att in
   let code = match code with
     | [AttributeCode c] when not is_native ->
-	Java (lazy (low2high_code consts (Lazy.force c)))
+	Java (lazy (low2high_code consts bootstrap_methods (Lazy.force c)))
     | [] when is_native -> Native
     | [] ->
         raise
@@ -684,12 +722,12 @@ let low2high_cmethod consts cs ms = function m ->
       cm_implementation = code;
     }
 
-let low2high_acmethod consts cs ms = function m ->
+let low2high_acmethod consts bootstrap_methods cs ms = function m ->
   if List.exists ((=)`AccAbstract) m.m_flags
   then AbstractMethod (low2high_amethod consts cs ms m)
-  else ConcreteMethod (low2high_cmethod consts cs ms m)
+  else ConcreteMethod (low2high_cmethod consts bootstrap_methods cs ms m)
 
-let low2high_methods cn consts = function ac ->
+let low2high_methods cn consts bootstrap_methods = function ac ->
   let cs = ac.j_name in
     List.fold_left
       (fun map meth ->
@@ -702,7 +740,7 @@ let low2high_methods cn consts = function ac ->
 		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) (fst meth.m_descriptor)) ^"))");
 	   MethodMap.add
 	     ms
-	     (try low2high_acmethod consts cs ms meth
+	     (try low2high_acmethod consts bootstrap_methods cs ms meth
 	      with Class_structure_error msg ->
 		raise (Class_structure_error
 			 ("in method " ^JDumpBasics.signature meth.m_name (SMethod meth.m_descriptor)^": "^msg)))
@@ -842,6 +880,15 @@ let low2high_class cl =
              | _ -> annots)
         cl.j_attributes
         []
+    and my_bootstrap_methods =
+      List.fold_right
+        (fun attr acc -> match attr with
+           | AttributeBootstrapMethods methods ->
+               List.map (low2high_bootstrapmethod cl.j_consts) methods
+           | _ ->
+               acc)
+        cl.j_attributes
+        [];
     and my_other_attributes =
       low2high_other_attributes consts
 	(List.filter
@@ -850,8 +897,8 @@ let low2high_class cl =
               | AttributeSourceDebugExtension _
               | AttributeRuntimeVisibleAnnotations _
               | AttributeRuntimeInvisibleAnnotations _
-	      | AttributeDeprecated | AttributeInnerClasses _ -> false
-	      | AttributeEnclosingMethod _ -> is_interface
+	      | AttributeDeprecated | AttributeInnerClasses _ | AttributeBootstrapMethods _ -> false
+              | AttributeEnclosingMethod _ -> is_interface
 	      | _ -> true)
 	   cl.j_attributes);
     in
@@ -883,13 +930,13 @@ let low2high_class cl =
 		       && fst m.m_descriptor = fst clinit_desc)
 		cl.j_methods
 	    with
-	      | [m],others -> Some (low2high_cmethod consts cs clinit_signature m),others
+	      | [m],others -> Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
 	      | [],others -> None, others
 	      | m::_::_,others ->
 		  if not (JBasics.get_permissive ())
 		  then raise (Class_structure_error
                                 "has more than one class initializer <clinit>")
-		  else Some (low2high_cmethod consts cs clinit_signature m),others
+		  else Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
 	  in
 	    JInterface {
 	      i_name = my_name;
@@ -993,7 +1040,7 @@ let low2high_class cl =
 		      (Class_structure_error
 		         "A EnclosingMethod attribute can only be specified at most once per class.")
 	  and my_methods =
-	    try low2high_methods my_name consts cl
+	    try low2high_methods my_name consts my_bootstrap_methods cl
 	    with
 	      | Class_structure_error msg ->
 		  raise (Class_structure_error

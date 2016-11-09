@@ -29,6 +29,18 @@ open JUnparseSignature
 (* Constant pool unparsing *)
 (***************************)
 
+let unparse_method_handle_kind = function
+  | `GetField -> 1
+  | `GetStatic -> 2
+  | `PutField -> 3
+  | `PutStatic -> 4
+  | `InvokeVirtual -> 5
+  | `InvokeStatic -> 6
+  | `InvokeSpecial -> 7
+  | `NewInvokeSpecial -> 8
+  | `InvokeInterface -> 9
+  | _ -> assert false
+
 let unparse_constant_value ch consts = function
   | ConstString s ->
       write_ui8 ch 8;
@@ -72,7 +84,18 @@ let unparse_constant ch consts =
 	write_string ch consts (unparse_descriptor signature)
     | ConstStringUTF8 s ->
 	write_ui8 ch 1;
-	write_string_with_length write_ui16 ch s
+        write_string_with_length write_ui16 ch s
+    | ConstMethodType md ->
+        write_ui8 ch 16;
+        write_string ch consts (unparse_method_descriptor md)
+    | ConstMethodHandle (kind, c) ->
+        write_ui8 ch 15;
+        write_ui8 ch (unparse_method_handle_kind kind);
+        write_constant ch consts c
+    | ConstInvokeDynamic (bmi, ms) ->
+        write_ui8 ch 18;
+        write_ui8 ch bmi;
+        write_name_and_type ch consts ((ms_name ms), (SMethod (ms_args ms, ms_rtype ms)))
     | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =
@@ -394,6 +417,15 @@ let rec unparse_attribute_to_strings consts =
 	      (unparse_attribute ch consts)
 	      code.c_attributes;
 	    ("Code",close_out ch)
+
+      | AttributeBootstrapMethods bootstrap_methods ->
+          write_with_size write_ui16 ch
+            (function { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments } ->
+               write_ui16 ch bootstrap_method_ref;
+               write_ui16 ch num_bootstrap_arguments;
+               write_with_size write_ui16 ch (function _ -> ()) bootstrap_arguments)
+            bootstrap_methods;
+          ("BootstrapMethods", close_out ch)
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr

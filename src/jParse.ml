@@ -32,6 +32,9 @@ type tmp_constant =
   | ConstantField of int * int
   | ConstantMethod of int * int
   | ConstantInterfaceMethod of int * int
+  | ConstantMethodType of int
+  | ConstantMethodHandle of int * int
+  | ConstantInvokeDynamic of int * int
   | ConstantString of int
   | ConstantInt of int32
   | ConstantFloat of float
@@ -45,8 +48,8 @@ let parse_constant max ch =
   let cid = IO.read_byte ch in
   let index() =
     let n = read_ui16 ch in
-      if n = 0 || n >= max
-      then raise (Class_structure_error ("Illegal index in constant pool: " ^ string_of_int n));
+    if n = 0 || n >= max
+      then raise (Class_structure_error ("1: Illegal indexz in constant pool: " ^ string_of_int n));
       n
   in
     match cid with
@@ -63,7 +66,18 @@ let parse_constant max ch =
       | 11 ->
 	  let n1 = index() in
 	  let n2 = index() in
-	    ConstantInterfaceMethod (n1,n2)
+            ConstantInterfaceMethod (n1,n2)
+      | 15 ->
+          let kind = IO.read_byte ch in
+          let n2 = index() in
+            ConstantMethodHandle (kind,n2)
+      | 16 ->
+          let n1 = index() in
+            ConstantMethodType n1
+      | 18 ->
+          let n1 = read_ui16 ch in
+          let n2 = index() in
+            ConstantInvokeDynamic (n1,n2)
       | 8 ->
 	  ConstantString (index())
       | 3 ->
@@ -84,7 +98,7 @@ let parse_constant max ch =
 	  let str = IO.really_nread ch len in
 	    ConstantStringUTF8 str
       | cid ->
-	  raise (Class_structure_error ("Illegal constant kind: " ^ string_of_int cid))
+	  raise (Class_structure_error ("Illegaly constant kind: " ^ string_of_int cid))
 
 let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
@@ -177,7 +191,7 @@ let parse_stackmap_table consts ch =
 
 (* Annotation parsing *)
 let rec parse_element_value consts ch =
-  let tag = IO.read_byte ch in 
+  let tag = IO.read_byte ch in
     match Char.chr tag with
       | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
           let constant_value_index = read_ui16 ch in
@@ -482,6 +496,19 @@ and parse_attribute list consts ch =
         | "AnnotationDefault" ->
             check `AnnotationDefault;
             AttributeAnnotationDefault (parse_element_value consts ch)
+        | "BootstrapMethods" ->
+            (* added in 1.8 to support invokedynamic *)
+            check `BootstrapMethods;
+            let nentry = read_ui16 ch in
+            AttributeBootstrapMethods
+              (List.init
+	         nentry
+		   (function _ ->
+		      let bootstrap_method_ref = read_ui16 ch in
+		      let num_bootstrap_arguments = read_ui16 ch in
+                      let bootstrap_arguments =
+                        List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
+                      { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
 	| _ -> raise Exit
     with
 	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
@@ -520,7 +547,7 @@ let parse_method consts ch =
   let attrib_count = read_ui16 ch in
   let attribs = List.init attrib_count
     (fun _ ->
-       let to_parse = 
+       let to_parse =
          [`Code ; `Exceptions ; `Synthetic ;
 	  `Deprecated ; `Signature;
           `AnnotationDefault;
@@ -539,7 +566,7 @@ let parse_method consts ch =
 
 let rec expand_constant consts n =
   let expand name cl nt =
-    match expand_constant consts cl  with
+    match expand_constant consts cl with
       | ConstValue (ConstClass c) ->
 	  (match expand_constant consts nt with
 	     | ConstNameAndType (n,s) -> (c,n,s)
@@ -565,7 +592,43 @@ let rec expand_constant consts n =
 	     | TClass c, n, SMethod (args,rtype) ->
                  ConstInterfaceMethod (c, make_ms n args rtype)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
-	     | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
+      | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
+      | ConstantMethodType i ->
+          (match expand_constant consts i with
+           | ConstStringUTF8 s ->
+               ConstMethodType (parse_method_descriptor s)
+            | _ -> raise (Class_structure_error ("Illegal constant referred in place of a MethodType constant")))
+      | ConstantMethodHandle (kind, index) ->
+          (match kind, expand_constant consts index with
+           | 1, (ConstField _ as const) ->
+               ConstMethodHandle (`GetField, const)
+           | 2, (ConstField _ as const) ->
+               ConstMethodHandle (`GetStatic, const)
+           | 3, (ConstField _ as const) ->
+               ConstMethodHandle (`PutField, const)
+           | 4, (ConstField _ as const) ->
+               ConstMethodHandle (`PutStatic, const)
+           | 5, (ConstMethod _ as const) ->
+               ConstMethodHandle (`InvokeVirtual, const)
+           | 6, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
+               ConstMethodHandle (`InvokeStatic, const)
+           | 7, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
+               ConstMethodHandle (`InvokeSpecial, const)
+           | 8, (ConstMethod _ as const) ->
+               ConstMethodHandle (`NewInvokeSpecial, const)
+           | 9, (ConstInterfaceMethod _ as const) ->
+               ConstMethodHandle (`InvokeInterface, const)
+           | n, c ->
+               let s =
+                 IO.output_string () in
+               JDumpBasics.dump_constant s c;
+               let str = IO.close_out s in
+               raise (Class_structure_error ("Bad method handle constant " ^ (string_of_int n) ^ str)))
+      | ConstantInvokeDynamic (bmi,nt) ->
+          (match expand_constant consts nt with
+           | ConstNameAndType (n, SMethod (args,rtype)) ->
+               ConstInvokeDynamic (bmi, make_ms n args rtype)
+           | _ -> raise (Class_structure_error ("Illegal constant referred in place of an InvokeDynamic constant")))
       | ConstantString i ->
 	  (match expand_constant consts i with
 	     | ConstStringUTF8 s -> ConstValue (ConstString (make_jstr s))
@@ -619,14 +682,14 @@ let parse_class_low_level ch =
 	attrib_count
 	(fun _ ->
            let to_parse =
-             [`Signature; `SourceFile; `Deprecated;
+             [`Signature; `SourceFile; `Deprecated; `BootstrapMethods;
               `InnerClasses ;`EnclosingMethod; `SourceDebugExtension;
               `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
               `RuntimeVisibleParameterAnnotations;
               `RuntimeInvisibleParameterAnnotations;]
            in
              parse_attribute
-               to_parse	     
+               to_parse
 	       consts ch)
     in
       {j_consts = consts;
@@ -646,5 +709,5 @@ let parse_class_low_level ch =
   with Class_structure_error _ as e ->
     IO.close_in ch;
     raise e
-  
+
 let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)

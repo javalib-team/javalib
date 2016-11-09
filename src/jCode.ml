@@ -126,6 +126,7 @@ type jopcode =
     | `Special of class_name
     | `Static of class_name
     | `Interface of class_name
+    | `Dynamic of method_handle_kind * constant * constant list
     ]
     * method_signature
   | OpReturn of jvm_return_type
