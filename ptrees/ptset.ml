@@ -726,7 +726,7 @@ module Bigo = struct
 
 end
 
-let test empty add mem =
+(*let test empty add mem =
   let seed = Random.int max_int in
   Random.init seed;
   let s =
@@ -737,4 +737,4 @@ let test empty add mem =
   in
   Random.init seed;
   for _i = 0 to 999 do assert (mem (Random.int max_int) s) done
-
+ *)
