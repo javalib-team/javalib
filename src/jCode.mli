@@ -202,7 +202,8 @@ type jcode = {
   c_attributes : (string * string) list;
 }
 
-
+(** Empty list of opcodes *)
+val empty : jcode
 
 (** {2 Access functions.} *)
 

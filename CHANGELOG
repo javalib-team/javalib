@@ -1,3 +1,10 @@
+From 2.3.3 to 2.3.4
+-----------------
+Minor changes:
+* Parsing does not crash anymore when a method has an
+  empty array of bytecodes. These changed are
+  based on a patch submitted by Sam Blackshear.
+
 From 2.3.2 to 2.3.3
 -----------------
 Minor changes:

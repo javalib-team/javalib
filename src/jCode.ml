@@ -164,6 +164,19 @@ type jcode = {
   c_attributes : (string * string) list;
 }
 
+let empty = {
+  c_max_stack = 0;
+  c_max_locals = 0;
+  c_code = Array.of_list [];
+  c_exc_tbl = [];
+  c_line_number_table = None;
+  c_local_variable_table = None;
+  c_local_variable_type_table = None;
+  c_stack_map_midp = None;
+  c_stack_map_java6 = None;
+  c_attributes = [];
+}
+
 let get_local_variable_info i pp code =
   match code.c_local_variable_table with
     | None -> None
