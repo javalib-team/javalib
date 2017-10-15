@@ -96,7 +96,7 @@ let parse_constant max ch =
       | 1 ->
 	  let len = read_ui16 ch in
 	  let str = IO.really_nread ch len in
-	    ConstantStringUTF8 str
+	    ConstantStringUTF8 (Bytes.to_string str)
       | cid ->
 	  raise (Class_structure_error ("Illegaly constant kind: " ^ string_of_int cid))
 
@@ -368,7 +368,7 @@ and parse_attribute list consts ch =
 	      AttributeEnclosingMethod (c,m)
 	| "SourceDebugExtension" ->
 	    check `SourceDebugExtension;
-	    AttributeSourceDebugExtension (IO.really_nread ch alen)
+	    AttributeSourceDebugExtension (Bytes.to_string (IO.really_nread ch alen))
 	| "SourceFile" -> check `SourceFile;
 	    if alen <> 2 then error();
 	    AttributeSourceFile (get_string_ui16 consts ch)
@@ -376,7 +376,7 @@ and parse_attribute list consts ch =
 	    if alen <> 2 then error();
 	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
-	    let ch = IO.input_string (IO.really_nread ch alen) in
+	    let ch = IO.input_string (Bytes.to_string (IO.really_nread ch alen)) in
 	    let parse_code _ =
 	      let ch, count = IO.pos_in ch in
 	      let code = parse_code consts ch
@@ -511,7 +511,7 @@ and parse_attribute list consts ch =
                       { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
 	| _ -> raise Exit
     with
-	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
+	Exit -> AttributeUnknown (aname,Bytes.to_string (IO.really_nread ch alen))
 
 let parse_field consts ch =
   let acc = parse_access_flags field_flags ch in

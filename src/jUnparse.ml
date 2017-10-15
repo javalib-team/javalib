@@ -98,6 +98,8 @@ let unparse_constant ch consts =
         write_name_and_type ch consts ((ms_name ms), (SMethod (ms_args ms, ms_rtype ms)))
     | ConstUnusable -> ()
 
+let string_nwrite ch s = IO.nwrite ch (Bytes.of_string s)
+                         
 let unparse_constant_pool ch consts =
   let ch'' = output_string ()
   and i = ref 0 in
@@ -106,7 +108,7 @@ let unparse_constant_pool ch consts =
       incr i
     done;
     write_ui16 ch (DynArray.length consts);
-    nwrite ch (close_out ch'')
+    string_nwrite ch (close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -481,7 +483,7 @@ let unparse_class_low_level ch c =
       unparse (unparse_method ch' consts) c.j_methods;
       unparse (unparse_attribute ch' consts) c.j_attributes;
       unparse_constant_pool ch consts;
-      nwrite ch (close_out ch')
+      string_nwrite ch (close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c

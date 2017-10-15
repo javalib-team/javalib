@@ -33,11 +33,11 @@ let sep =
     | _ -> assert false
 
 let replace_dot s =
-  let s = String.copy s in
-    for i = 0 to String.length s - 1 do
-      if s.[i] = '.' then s.[i] <- '/'
+  let s = Bytes.of_string s in
+    for i = 0 to Bytes.length s - 1 do
+      if Bytes.get s i = '.' then Bytes.set s i '/'
     done;
-    s
+    Bytes.to_string s
 
 (* [mkdir -p] *)
 let rec mkdir d perms =
