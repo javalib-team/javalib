@@ -743,8 +743,3 @@ let print_class' ?(jvm=false) (ioc:'a interface_or_class)
     (fmt:Format.formatter) =
   let indent_val = 3 in
     print_class_fmt ~jvm indent_val ioc print_code fmt
-
-let print_jasmin c ch =
-  let ioch = IO.output_channel ch in
-  let clow = JHigh2Low.high2low c in
-    JDumpJasmin.dump ioch clow

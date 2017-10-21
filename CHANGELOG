@@ -1,3 +1,10 @@
+From 2.3.4 to 2.3.?
+-----------------
+Minor changes:
+* no more print_jasmin function for printing a class file in Jasmin format.
+  The Jasmin project seems to be out of date with recent JVM evolutions.
+  See https://sourceforge.net/projects/jasmin/
+
 From 2.3.3 to 2.3.4
 -----------------
 Minor changes:

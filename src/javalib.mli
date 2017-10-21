@@ -637,8 +637,4 @@ sig
   val print_class' : ?jvm:bool -> 'a interface_or_class ->
     ('a -> Format.formatter -> unit) -> Format.formatter -> unit
 
-  (** {2 Outputting classes in Jasmin format.} *)
-
-  val print_jasmin : JCode.jcode interface_or_class -> out_channel -> unit
-
 end

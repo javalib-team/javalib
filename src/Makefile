@@ -29,11 +29,11 @@ CSS=\"style.css\"
 
 # ------ 
 MODULES=jBasics jBasicsLow jSignature jCode jClass jDumpBasics jParseCode	\
-jInstruction jUnparseSignature jDumpLow jHigh2Low jDumpJasmin jUnparse		\
+jInstruction jUnparseSignature jDumpLow jHigh2Low jUnparse		\
 jParseSignature jLow2High jParse jFile jManifest jPrint javalib 
 
 MODULE_INTERFACES=jBasics jBasicsLow jSignature jCode jClassLow jClass		\
-jDumpBasics jUnparseSignature jDumpLow jDumpJasmin jParseCode jInstruction	\
+jDumpBasics jUnparseSignature jDumpLow jParseCode jInstruction	\
 jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib 
 
 FOR_PACK= -for-pack Javalib_pack
