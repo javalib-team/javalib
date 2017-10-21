@@ -42,7 +42,7 @@ let write_i8 ch n =
 
 let write_string_with_length length ch s =
   length ch (String.length s);
-  nwrite ch (Bytes.of_string s) (* FIXME DP: check (in)efficiency *)
+  nwrite_string ch s
 
 let write_with_length length ch write =
   let ch' = output_string () in

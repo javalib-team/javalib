@@ -675,7 +675,7 @@ let other count ch length instr =
           raise (OpcodeLengthError (length,instr))
     | OpTableSwitch (def, low, high, tbl) ->
         flush ch;
-        let padding_size = (3 - (1 + (count () - 2) mod 4))
+        let _padding_size = (3 - (1 + (count () - 2) mod 4))
         in
           (*if length <> 13 + padding_size + 4 * (Array.length tbl)
             then raise (OpcodeLengthError (length,instr));*)
@@ -687,7 +687,7 @@ let other count ch length instr =
           Array.iter (write_i32 ch) tbl
     | OpLookupSwitch (def, tbl) ->
         flush ch;
-        let padding_size = (3 - (1 + (count () - 2) mod 4))
+        let _padding_size = (3 - (1 + (count () - 2) mod 4))
         in
           (*if length <> 9 + padding_size + 8 * (List.length tbl)
             then raise (OpcodeLengthError (length,instr));*)

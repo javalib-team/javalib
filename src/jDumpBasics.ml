@@ -21,12 +21,9 @@
 
 open JBasics
 
-let replace_dot s =
-  let s = Bytes.of_string s in
-    for i = 0 to Bytes.length s - 1 do
-      if Bytes.get s i = '.' then Bytes.set s i '/'
-    done;
-    Bytes.to_string s
+let replace_dot =
+  let replace_char c = if c='.' then '/' else c in
+  String.map replace_char
 
 let class_name ?(jvm=false) cn =
   let cname = cn_name cn in
