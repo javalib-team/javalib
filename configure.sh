@@ -72,28 +72,27 @@ E_SCRIPTERROR=84
 
 #
 # The msg recursive function takes care of the pretty-printing.
-# It uses "fmt" to stick to 75 characters columns.
 #
 function msg() 
 {
   if [ $# -eq 2 ]; then
     if [ $1 = "err" ]; then
       echo ""
-      echo "! configure error: $2." | fmt >&2
+      echo "! configure error: $2." >&2
       exit $E_MAKERERROR
     elif [ $1 = "inf" ]; then
-      echo "* $2." | fmt
+      echo "* $2." 
       return 0
     elif [ $1 = "maj" ]; then
         echo ""
-	echo "! $2." | fmt
+	echo "! $2." 
         echo ""
 	return 0
     fi
   elif [ $# -eq 3 ]; then
     if [ $1 = "ser" ]; then
       echo ""
-      echo "! script error ($2): $3. Please file a bug." | fmt >&2
+      echo "! script error ($2): $3. Please file a bug." >&2
       exit $E_SCRIPTERROR
     fi
     msg "ser" "msg" "unexpected message type"
@@ -418,9 +417,9 @@ echo " done."
 
 if [ "$MAKEDEP" ]; then
   echo ""
-  echo "WHAT'S NEXT: the following packages need to be compiled and installed:" | fmt
+  echo "WHAT'S NEXT: the following packages need to be compiled and installed:" 
   echo "    ${MAKEDEP[@]}"
-  echo "In short, you will need to execute the following commands:" | fmt
+  echo "In short, you will need to execute the following commands:" 
   for (( i=0 ; i<${#MAKEDEP[@]} ; i++ )) do
   dep=${MAKEDEP[i]}
   remove=${MAKEDEPREMOVE[i]}
@@ -441,10 +440,10 @@ if [ "$MAKEDEP" ]; then
     fi
   done
   if [ "$LOCALDEST" ]; then
-    echo "These packages will be installed in:" | fmt
+    echo "These packages will be installed in:" 
     echo "    $LOCALDEST"
   fi
-  echo "Once the packages have been installed, rerun your `basename $0` command to update the Javalib Makefiles." | fmt
+  echo "Once the packages have been installed, rerun your `basename $0` command to update the Javalib Makefiles." 
 else
     JAVALIB=`$FINDER query javalib 2>/dev/null`
     ALR_INST=$?
@@ -452,8 +451,8 @@ else
     echo "WHAT'S NEXT: all dependencies are satisfied."
     if [ $ALR_INST = 0 ]; then
 	echo " A version of Javalib is already installed."
-	echo " Compile, remove and install Javalib with the following commands:" | fmt
-    else echo " Compile and install Javalib with the following commands:" | fmt
+	echo " Compile, remove and install Javalib with the following commands:" 
+    else echo " Compile and install Javalib with the following commands:" 
     fi   
     if [ "$LOCALDEST" ]; then
 	if [ $ALR_INST = 0 ]; then
@@ -468,6 +467,6 @@ else
     fi
 fi
 echo ""
-echo "More details can be found in the installation documentation (INSTALL or http://javalib.gforge.inria.fr/javalib-doc.html)." | fmt
+echo "More details can be found in the installation documentation (INSTALL or http://javalib.gforge.inria.fr/javalib-doc.html)." 
 
 exit 0
