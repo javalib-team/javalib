@@ -21,7 +21,7 @@
  *)
 
 
-open ExtList
+open Batteries
 open JBasics
 open JClassLow
 
@@ -76,14 +76,14 @@ let open_path s =
 type directories = string list
 
 let make_directories dirs =
-  match ExtString.String.nsplit dirs sep with
+  match String.nsplit dirs sep with
     | [] -> [Filename.current_dir_name]
     | cp ->
 	List.filter is_dir cp
 
 let class_path cp =
   let cp_list =
-    match ExtString.String.nsplit cp sep with
+    match String.nsplit cp sep with
       | [] -> [Filename.current_dir_name]
       | cp -> cp
   in
@@ -121,7 +121,7 @@ let lookup c : cp_unit -> JClassLow.jclass =
 	    | `dir d ->
 		if is_file (Filename.concat d c)
 		then
-		  let ch = open_in_bin (Filename.concat d c) in
+		  let ch = Pervasives.open_in_bin (Filename.concat d c) in
 		    IO.input_channel ch
 		else raise Not_found
 	    | `jar jar ->
@@ -157,7 +157,7 @@ let write_class_low output_dir classe =
     (mkdir
        (Filename.concat output_dir (Filename.dirname c))
        0o755);
-    let f = open_out_bin (Filename.concat output_dir c) in
+    let f = Pervasives.open_out_bin (Filename.concat output_dir c) in
     let output = IO.output_channel f in
       JUnparse.unparse_class_low_level output classe;
       IO.close_out output
@@ -172,29 +172,29 @@ let dir_sep =
     | _ -> assert false (* Inspirated from filename.ml in the stdlib *)
 
 let extract_class_name_from_file file =
-  let input = IO.input_channel (open_in_bin file) in
+  let input = IO.input_channel (Pervasives.open_in_bin file) in
   let c = JParse.parse_class_low_level input in
     IO.close_in input;
     let cname = c.j_name in
     let package = cn_package cname in
     let path =
-      let p = ExtString.String.nsplit (Filename.dirname file) dir_sep in
+      let p = String.nsplit (Filename.dirname file) dir_sep in
 	match p with
 	  | [] -> []
 	  | hd :: tl ->
 	      (* We delete the unwanted empty strings due to the
 		 presence of multiple consecutive separators in
 		 file. *)
-	      hd :: (ExtList.List.remove_all tl "") in
+	      hd :: (List.remove_all tl "") in
     let ends_with l endl =
       let n = List.length l in
       let endn = List.length endl in
 	try
 	  let (hl,tl) =
-	    ExtList.List.split_nth (n - endn) l in
+	    List.split_at (n - endn) l in
 	    if (tl = endl) then (true,hl)
 	    else (false,l)
-	with ExtList.List.Invalid_index _ -> (false,l) in
+	with Invalid_argument _ -> (false,l) in
     let (b,l) = ends_with path package in
       if b then
 	let classpath = String.concat dir_sep l in
@@ -292,7 +292,7 @@ let fold_string class_path f file =
       try
 	apply_to_dir_or_class
 	  (function c ->
-	     let ch = open_in_bin c in
+	     let ch = Pervasives.open_in_bin c in
 	     let input = IO.input_channel ch in
 	     let classe = JParse.parse_class_low_level input in
 	       IO.close_in input;

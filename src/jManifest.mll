@@ -66,7 +66,7 @@ and section = parse
     individual_sections : section list
   }
 
-  open ExtString
+  open Batteries
 
   (* TODO : accept missing manifest version (for midlets) *)
   let sections2manifest = function

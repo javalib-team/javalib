@@ -22,7 +22,7 @@
 (** Parsing of Java class files. *)
 
 (** Parse a Java class file and return the low level representation. *)
-val parse_class_low_level : IO.input -> JClassLow.jclass
+val parse_class_low_level : Batteries.IO.input -> JClassLow.jclass
 
 (** Parse a Java class file and return the high level representation. *)
-val parse_class : IO.input -> JCode.jcode JClass.interface_or_class
+val parse_class : Batteries.IO.input -> JCode.jcode JClass.interface_or_class

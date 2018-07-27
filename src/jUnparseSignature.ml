@@ -20,13 +20,14 @@
 
 open JBasics
 open JSignature
+open Batteries
 
 (* Descriptors and classname encoding *)
 (************************************)
 
 let encode_class_name cs =
   let cn = cn_name cs in
-    ExtString.String.map
+    String.map
       (fun c -> if c = '.' then '/' else c) cn
 
 let unparse_basic_type = function

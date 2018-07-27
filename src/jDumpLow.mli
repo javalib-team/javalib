@@ -23,12 +23,12 @@
 
 val opcode : JClassLow.opcode -> string
 val dump_code :
-  'a IO.output -> JBasics.constant array -> JClassLow.code -> unit
+  'a Batteries.IO.output -> JBasics.constant array -> JClassLow.code -> unit
 val dump_attrib :
-  'a IO.output -> JBasics.constant array -> JClassLow.attribute -> unit
+  'a Batteries.IO.output -> JBasics.constant array -> JClassLow.attribute -> unit
 val access_flags : [< JClassLow.access_flag] list -> string
 val dump_field :
-  'a IO.output -> JBasics.constant array -> JClassLow.jfield -> unit
+  'a Batteries.IO.output -> JBasics.constant array -> JClassLow.jfield -> unit
 val dump_method :
-  'a IO.output -> JBasics.constant array -> JClassLow.jmethod -> unit
-val dump : 'a IO.output -> JClassLow.jclass -> unit
+  'a Batteries.IO.output -> JBasics.constant array -> JClassLow.jmethod -> unit
+val dump : 'a Batteries.IO.output -> JClassLow.jclass -> unit

@@ -18,6 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+open Batteries
 open IO
 open IO.BigEndian
 open JBasics
@@ -106,7 +107,7 @@ let unparse_constant_pool ch consts =
       incr i
     done;
     write_ui16 ch (DynArray.length consts);
-    nwrite_string ch (close_out ch'')
+    IO.write_string ch (close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -481,7 +482,7 @@ let unparse_class_low_level ch c =
       unparse (unparse_method ch' consts) c.j_methods;
       unparse (unparse_attribute ch' consts) c.j_attributes;
       unparse_constant_pool ch consts;
-      nwrite_string ch (close_out ch')
+      IO.write_string ch (close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c

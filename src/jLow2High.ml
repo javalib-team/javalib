@@ -18,6 +18,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+open Batteries
 open JBasics
 open JClassLow
 open JCode
@@ -133,7 +134,7 @@ let expanse_stackmap_table stackmap_table =
 	       let offset = pc + offset_delta + 1 in
 	       let nb_chop = 251 - k in
 	       let l_chop = List.rev
-		 (ExtList.List.drop nb_chop (List.rev l)) in
+		 (List.drop nb_chop (List.rev l)) in
 	       let s = (offset,l_chop,[]) in
 		 (s,s::stackmap)
 	   | SameFrameExtended (_,offset_delta) ->

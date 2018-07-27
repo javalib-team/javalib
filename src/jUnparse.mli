@@ -29,33 +29,33 @@
 
     @raise JParseCode.OpcodeLengthError if an opcode cannot be encoded in the
     allocated place. *)
-val unparse_class_low_level : 'a IO.output -> JClassLow.jclass -> unit
+val unparse_class_low_level : 'a Batteries.IO.output -> JClassLow.jclass -> unit
 
 (** Unparses a class to a file. See {!JInstruction.code2opcodes} for more
     information.
 
     @raise JParseCode.OpcodeLengthError if an opcode cannot be encoded in the
     allocated place. *)
-val unparse_class : 'a IO.output -> JCode.jcode JClass.interface_or_class -> unit
+val unparse_class : 'a Batteries.IO.output -> JCode.jcode JClass.interface_or_class -> unit
 
 (** Unparses an attribute to a couple [(name, content)] where [name]
     is the code-name of the attribute and [content] as encoded in a
     [.class] file. *)
-val unparse_attribute_to_strings : JBasics.constant DynArray.t -> JClassLow.attribute -> string * string
+val unparse_attribute_to_strings : JBasics.constant Batteries.DynArray.t -> JClassLow.attribute -> string * string
 
 (**/**)
 
 (* For statistics: *)
 
 val unparse_stackmap_attribute :
-  JBasics.constant DynArray.t ->
+  JBasics.constant Batteries.DynArray.t ->
   (int * JBasics.verification_type list * JBasics.verification_type list) list ->
   (string * string)
 
 val unparse_stackmap_table_attribute :
-  JBasics.constant DynArray.t -> JClassLow.stackmap_frame list -> (string * string)
+  JBasics.constant Batteries.DynArray.t -> JClassLow.stackmap_frame list -> (string * string)
 
 val unparse_constant_pool :
-  'a IO.output ->
-  JBasics.constant DynArray.t ->
+  'a Batteries.IO.output ->
+  JBasics.constant Batteries.DynArray.t ->
   unit

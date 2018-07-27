@@ -416,7 +416,7 @@ let cn_hash cn = fst cn
 
 let split_package_class csig =
   let cn = snd csig in
-  let l =  ExtString.String.nsplit cn "." in
+  let l =  BatString.nsplit cn "." in
     match l with
       | [] -> assert false
       | _ -> let rl = List.rev l in

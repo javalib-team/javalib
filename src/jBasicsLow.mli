@@ -41,50 +41,50 @@ val get_interface_method : constant array -> int ->
 
 (** Same thing, reading the index in a channel: *)
 
-val get_class_ui16 : constant array -> IO.input -> class_name
-val get_string_ui16 : constant array -> IO.input -> string
+val get_class_ui16 : constant array -> Batteries.IO.input -> class_name
+val get_string_ui16 : constant array -> Batteries.IO.input -> string
 
 (** Getting an index for a constant: *)
 
 (** Return the index of a constant, adding it to the constant pool if necessary. *)
-val constant_to_int : constant DynArray.t -> constant -> int
-val value_to_int : constant DynArray.t -> constant_value -> int
-val object_type_to_int : constant DynArray.t -> object_type -> int
-val class_to_int : constant DynArray.t -> class_name -> int
-val field_to_int : constant DynArray.t ->
+val constant_to_int : constant Batteries.DynArray.t -> constant -> int
+val value_to_int : constant Batteries.DynArray.t -> constant_value -> int
+val object_type_to_int : constant Batteries.DynArray.t -> object_type -> int
+val class_to_int : constant Batteries.DynArray.t -> class_name -> int
+val field_to_int : constant Batteries.DynArray.t ->
   class_name * field_signature -> int
-val method_to_int : constant DynArray.t ->
+val method_to_int : constant Batteries.DynArray.t ->
   object_type * method_signature -> int
-val string_to_int : constant DynArray.t -> string -> int
+val string_to_int : constant Batteries.DynArray.t -> string -> int
 val method_handle_kind_to_int : method_handle_kind -> int
 
 (** Same thing, but writes the index to a channel. *)
 
 val write_constant :
-  'a IO.output -> constant DynArray.t -> constant -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> constant -> unit
 val write_value :
-  'a IO.output -> constant DynArray.t -> constant_value -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> constant_value -> unit
 val write_object_type :
-  'a IO.output -> constant DynArray.t -> object_type -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> object_type -> unit
 val write_class :
-  'a IO.output -> constant DynArray.t -> class_name -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> class_name -> unit
 val write_string :
-  'a IO.output -> constant DynArray.t -> string -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> string -> unit
 val write_name_and_type :
-  'a IO.output -> constant DynArray.t -> string * descriptor -> unit
+  'a Batteries.IO.output -> constant Batteries.DynArray.t -> string * descriptor -> unit
 
 (** {2 Usefull writing functions. } *)
 
 (** @raise Overflow if the integer does not belong to [0x0;0xFF].  *)
-val write_ui8 : 'a IO.output -> int -> unit
+val write_ui8 : 'a Batteries.IO.output -> int -> unit
 
 (** @raise Overflow if the integer does not belong to [-0x80;0x7F].  *)
-val write_i8 : 'a IO.output -> int -> unit
+val write_i8 : 'a Batteries.IO.output -> int -> unit
 
 val write_string_with_length :
-  ('a IO.output -> int -> unit) -> 'a IO.output -> string -> unit
+  ('a Batteries.IO.output -> int -> unit) -> 'a Batteries.IO.output -> string -> unit
 val write_with_length :
-  ('a IO.output -> int -> unit) ->
-  'a IO.output -> (string IO.output -> unit) -> unit
+  ('a Batteries.IO.output -> int -> unit) ->
+  'a Batteries.IO.output -> (string Batteries.IO.output -> unit) -> unit
 val write_with_size :
-  ('a IO.output -> int -> unit) -> 'a IO.output -> ('c -> unit) -> 'c list -> unit
+  ('a Batteries.IO.output -> int -> unit) -> 'a Batteries.IO.output -> ('c -> unit) -> 'c list -> unit

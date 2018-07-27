@@ -21,9 +21,9 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+open Batteries
 open IO
 open IO.BigEndian
-open ExtList
 open JClassLow
 open JBasics
 open JBasicsLow
@@ -717,7 +717,7 @@ let other count ch length instr =
         if length <> 2
         then raise (OpcodeLengthError (length,instr));
         write_ui8 ch 188;
-        write_ui8 ch (4 + ExtArray.Array.findi (( = ) at) basic_type)
+        write_ui8 ch (4 + Array.findi (( = ) at) basic_type)
     | OpAMultiNewArray (c, dims) ->
         if length <> 4
         then raise (OpcodeLengthError (length,instr));

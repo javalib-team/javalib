@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-
+open Batteries
 open JBasics
 open JSignature
 

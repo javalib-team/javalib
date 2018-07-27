@@ -19,11 +19,11 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+open Batteries
 open IO
 open IO.BigEndian
 open JBasics
-open ExtList
-open ExtString
+
 
 (* Usefull functions *)
 (*********************)
@@ -42,7 +42,7 @@ let write_i8 ch n =
 
 let write_string_with_length length ch s =
   length ch (String.length s);
-  nwrite_string ch s
+  write_string ch s
 
 let write_with_length length ch write =
   let ch' = output_string () in
