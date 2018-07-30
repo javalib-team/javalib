@@ -1,6 +1,11 @@
-From 2.3.4 to 2.3.?
+From 2.3.5 to 2.3.?
 -----------------
 Minor changes:
+
+From 2.3.4 to 2.3.5
+-----------------
+Minor changes:
+* extlib dependences replaced by batteries (solve an issue with UTF8 manip)
 * no more print_jasmin function for printing a class file in Jasmin format.
   The Jasmin project seems to be out of date with recent JVM evolutions.
   See https://sourceforge.net/projects/jasmin/
