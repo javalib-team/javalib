@@ -30,12 +30,12 @@ val high2low : JCode.jcode JClass.interface_or_class -> JClassLow.jclass
     JDumpLow can be used. *)
 
 val h2l_cfield :
-  JBasics.constant Batteries.DynArray.t -> JClass.class_field -> JClassLow.jfield
+  JBasics.constant JLib.DynArray.t -> JClass.class_field -> JClassLow.jfield
 val h2l_ifield :
-  JBasics.constant Batteries.DynArray.t -> JClass.interface_field -> JClassLow.jfield
+  JBasics.constant JLib.DynArray.t -> JClass.interface_field -> JClassLow.jfield
 val h2l_cmethod :
-  JBasics.constant Batteries.DynArray.t -> JCode.jcode JClass.concrete_method -> JClassLow.jmethod
+  JBasics.constant JLib.DynArray.t -> JCode.jcode JClass.concrete_method -> JClassLow.jmethod
 val h2l_amethod :
-  JBasics.constant Batteries.DynArray.t -> JClass.abstract_method -> JClassLow.jmethod
+  JBasics.constant JLib.DynArray.t -> JClass.abstract_method -> JClassLow.jmethod
 val h2l_acmethod :
-  JBasics.constant Batteries.DynArray.t -> JCode.jcode JClass.jmethod -> JClassLow.jmethod
+  JBasics.constant JLib.DynArray.t -> JCode.jcode JClass.jmethod -> JClassLow.jmethod

@@ -19,7 +19,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
 open JBasics
 
 let replace_dot =
@@ -136,12 +135,12 @@ let method_handle_kind = function
   | `InvokeInterface -> "invokeinterface"
 
 let dump_constant_value ch = function
-  | ConstString s -> BatPrintf.fprintf ch "string '%s'" (jstr_pp s)
-  | ConstInt i -> BatPrintf.fprintf ch "int %ld" i
-  | ConstFloat f -> BatPrintf.fprintf ch "float %f" f
-  | ConstLong i -> BatPrintf.fprintf ch "long %Ld" i
-  | ConstDouble f -> BatPrintf.fprintf ch "double %f" f
-  | ConstClass cl -> BatPrintf.fprintf ch "class %s" (object_value_signature cl)
+  | ConstString s -> JLib.IO.printf ch "string '%s'" (jstr_pp s)
+  | ConstInt i -> JLib.IO.printf ch "int %ld" i
+  | ConstFloat f -> JLib.IO.printf ch "float %f" f
+  | ConstLong i -> JLib.IO.printf ch "long %Ld" i
+  | ConstDouble f -> JLib.IO.printf ch "double %f" f
+  | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
 
 let rec dump_constant ch = function
   | ConstValue v -> dump_constant_value ch v
@@ -149,30 +148,30 @@ let rec dump_constant ch = function
       let fn = fs_name fs
       and ft = fs_type fs
       in
-        BatPrintf.fprintf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
+        JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
   | ConstMethod (cl,ms) ->
       let mn = ms_name ms
       and md = ms_args ms, ms_rtype ms
       in
-        BatPrintf.fprintf ch "method : %s"
+        JLib.IO.printf ch "method : %s"
           (method_signature (object_value_signature cl ^ "::" ^ mn) md)
   | ConstInterfaceMethod (cn,ms) ->
       let mn = ms_name ms
       and md = ms_args ms, ms_rtype ms
       in
-        BatPrintf.fprintf ch "interface-method : %s"
+        JLib.IO.printf ch "interface-method : %s"
           (method_signature (class_name cn ^ "::" ^ mn) md)
-  | ConstNameAndType (s,sign) -> BatPrintf.fprintf ch "name-and-type : %s" (signature s sign)
-  | ConstStringUTF8 s -> BatPrintf.fprintf ch "utf8 %s" s
-  | ConstUnusable -> BatPrintf.fprintf ch "unusable"
+  | ConstNameAndType (s,sign) -> JLib.IO.printf ch "name-and-type : %s" (signature s sign)
+  | ConstStringUTF8 s -> JLib.IO.printf ch "utf8 %s" s
+  | ConstUnusable -> JLib.IO.printf ch "unusable"
   | ConstMethodType ms ->
-      BatPrintf.fprintf ch "method-type : %s"
+      JLib.IO.printf ch "method-type : %s"
         (method_signature "" ms)
   | ConstMethodHandle (hk, c) ->
-      BatPrintf.fprintf ch "method-handle : %s" (method_handle_kind hk);
+      JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
       (dump_constant ch c)
   | ConstInvokeDynamic (bmi, ms) ->
-      BatPrintf.fprintf ch "invole-dynamic : %d %s"
+      JLib.IO.printf ch "invole-dynamic : %d %s"
         bmi
         (ms_name ms)
 
@@ -180,9 +179,9 @@ let rec dump_constant ch = function
 let dump_constantpool ch =
   Array.iteri
     (fun i c ->
-      BatPrintf.fprintf ch "    %d  " i;
+      JLib.IO.printf ch "    %d  " i;
       dump_constant ch c;
-      IO.write ch '\n')
+      JLib.IO.write ch '\n')
 
 
 let dump_verification_type = function
@@ -197,16 +196,16 @@ let dump_verification_type = function
   | VUninitialized off -> sprintf "Uninitialized %d" off
 
 let dump_stackmap ch (offset,locals,stack) =
-  BatPrintf.fprintf ch "\n      offset=%d,\n      locals=[" offset;
-  List.iter (fun t -> BatPrintf.fprintf ch "\n        %s" (dump_verification_type t)) locals;
-  BatPrintf.fprintf ch "],\n      stack=[";
-  List.iter (fun t -> BatPrintf.fprintf ch "\n        %s" (dump_verification_type t)) stack
+  JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+  List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) locals;
+  JLib.IO.printf ch "],\n      stack=[";
+  List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) stack
 
 open JCode
 
 let dump_exc ch _cl exc =
-  BatPrintf.fprintf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;
+  JLib.IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;
   (match exc.e_catch_type with
-     | None -> BatPrintf.fprintf ch "<finally>"
-     | Some cl -> BatPrintf.fprintf ch "class %s" (class_name cl));
-  BatPrintf.fprintf ch ")"
+     | None -> JLib.IO.printf ch "<finally>"
+     | Some cl -> JLib.IO.printf ch "class %s" (class_name cl));
+  JLib.IO.printf ch ")"

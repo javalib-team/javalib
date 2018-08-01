@@ -21,9 +21,9 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
-open IO
-open IO.BigEndian
+
+open JLib.IO
+open JLib.IO.BigEndian
 open JClassLow
 open JBasics
 open JBasicsLow
@@ -46,10 +46,10 @@ let jvm_basic_type' place = function
 	| n -> raise (Class_structure_error ("Illegal type of "^ place ^": " ^ string_of_int n))
 
 let read_unsigned ch wide =
-  if wide then read_ui16 ch else IO.read_byte ch
+  if wide then read_ui16 ch else read_byte ch
 
 let read_signed ch wide =
-  if wide then read_i16 ch else IO.read_signed_byte ch
+  if wide then read_i16 ch else read_signed_byte ch
 
 let parse_opcode op ch wide =
   match op with
@@ -73,11 +73,11 @@ let parse_opcode op ch wide =
 	| 15 ->
 		OpDConst 1.
 	| 16 ->
-		OpBIPush (IO.read_signed_byte ch)
+		OpBIPush (read_signed_byte ch)
 	| 17 ->
 	    OpSIPush (read_i16 ch)
 	| 18 ->
-	    OpLdc1 (IO.read_byte ch)
+	    OpLdc1 (read_byte ch)
 	| 19 ->
 	    OpLdc1w (read_ui16 ch)
 	| 20 ->
@@ -311,19 +311,19 @@ let parse_opcode op ch wide =
 	    OpInvokeStatic (read_ui16 ch)
 	| 185 ->
 	    let index = read_ui16 ch in
-	    let nargs = IO.read_byte ch in
-	    let _ = IO.read_byte ch in
+	    let nargs = read_byte ch in
+	    let _ = read_byte ch in
               OpInvokeInterface (index, nargs)
         | 186 ->
      	    let index = read_ui16 ch in
-            let _ = IO.read_byte ch in
-            let _ = IO.read_byte ch in
+            let _ = read_byte ch in
+            let _ = read_byte ch in
               OpInvokeDynamic index
 	(* ---- others --------------------------------- *)
 	| 187 ->
 		OpNew (read_ui16 ch)
 	| 188 ->
-		OpNewArray (match IO.read_byte ch with
+		OpNewArray (match read_byte ch with
 			| 4 -> `Bool
 			| 5 -> `Char
 			| 6 -> `Float
@@ -349,7 +349,7 @@ let parse_opcode op ch wide =
 		OpMonitorExit
 	| 197 ->
 	    let c = read_ui16 ch in
-	    let dims = IO.read_byte ch in
+	    let dims = read_byte ch in
 	      OpAMultiNewArray (c,dims)
 	| 198 ->
 	    OpIfNull (read_i16 ch)
@@ -367,17 +367,17 @@ let parse_opcode op ch wide =
 
 let parse_full_opcode ch pos =
   let p = pos() in
-  let op = IO.read_byte ch in
+  let op = read_byte ch in
     if op = 196
-    then parse_opcode (IO.read_byte ch) ch true
+    then parse_opcode (read_byte ch) ch true
     else
       let offsetmod4 = (p + 1) mod 4 in
 	if (op = 170 || op = 171) && offsetmod4 > 0
-	then ignore(IO.really_nread ch (4 - offsetmod4));
+	then ignore(really_nread ch (4 - offsetmod4));
 	parse_opcode op ch false
 
 let parse_code ch len =
-  let ch , pos = IO.pos_in ch in
+  let ch , pos = pos_in ch in
   let code = Array.make len OpInvalid in
     while pos() < len do
       let p = pos() in
@@ -717,7 +717,7 @@ let other count ch length instr =
         if length <> 2
         then raise (OpcodeLengthError (length,instr));
         write_ui8 ch 188;
-        write_ui8 ch (4 + Array.findi (( = ) at) basic_type)
+        write_ui8 ch (4 + JLib.Array.findi (( = ) at) basic_type)
     | OpAMultiNewArray (c, dims) ->
         if length <> 4
         then raise (OpcodeLengthError (length,instr));

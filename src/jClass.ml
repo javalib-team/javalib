@@ -421,7 +421,7 @@ let cf_fold f = function
 
 let m_iter f = function
   | JInterface i ->
-      Batteries.Option.may (fun m -> f (ConcreteMethod m)) i.i_initializer;
+      JLib.Option.may (fun m -> f (ConcreteMethod m)) i.i_initializer;
       MethodMap.iter
         (fun _ m -> f (AbstractMethod m))
         i.i_methods
@@ -431,7 +431,7 @@ let m_iter f = function
         c.c_methods
 
 let cm_iter f = function
-  | JInterface i -> Batteries.Option.may (fun m -> f m) i.i_initializer;
+  | JInterface i -> JLib.Option.may (fun m -> f m) i.i_initializer;
   | JClass c ->
       MethodMap.iter
         (fun _ -> function
@@ -477,7 +477,7 @@ let m_fold f = function
          MethodMap.fold
            (fun _ m acc -> f (AbstractMethod m) acc)
            i.i_methods
-           (Batteries.Option.map_default
+           (JLib.Option.map_default
               (fun m -> f (ConcreteMethod m) d)
               d
               i.i_initializer))

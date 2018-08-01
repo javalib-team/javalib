@@ -19,7 +19,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
 open JBasics
 open JClassLow
 open JDumpBasics
@@ -202,25 +201,25 @@ let access_flags = function
 	      | `AccRFU i -> Printf.sprintf "rfu 0x%X" i
 	   ) flags) ^ " "
 
-let string_nwrite ch s = IO.write_string ch s
+let string_nwrite ch s = JLib.IO.write_string ch s
                         
 let dump_java6_stackmap ch frame =
   match frame with
-    | SameFrame k -> BatPrintf.fprintf ch "SameFrame(tag:%d)\n" k
+    | SameFrame k -> JLib.IO.printf ch "SameFrame(tag:%d)\n" k
     | SameLocals (k,vtype) ->
-	BatPrintf.fprintf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
+	JLib.IO.printf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
     | SameLocalsExtended (k,i,vtype) ->
-	BatPrintf.fprintf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
+	JLib.IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
 	  k i (dump_verification_type vtype)
     | ChopFrame (k,i) ->
-	BatPrintf.fprintf ch "ChopFrame(tag:%d,%d)\n" k i
+	JLib.IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
     | SameFrameExtended (k,i) ->
-	BatPrintf.fprintf ch "SameFrameExtended(tag:%d,%d)\n" k i
+	JLib.IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
     | AppendFrame (k,i,vtypes) ->
 	let svtypes = String.concat "," (List.map dump_verification_type vtypes) in
-	  BatPrintf.fprintf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
+	  JLib.IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
     | FullFrame (k,offset,locals,stack) ->
-	BatPrintf.fprintf ch "FullFrame(tag:%d," k;
+	JLib.IO.printf ch "FullFrame(tag:%d," k;
 	dump_stackmap ch (offset,locals,stack);
 	string_nwrite ch ")\n"
 
@@ -230,14 +229,14 @@ let dump_inner_classes ch icl =
        string_nwrite ch "\n      ";
        (* flags oc.ic (named icsource at source) *)
        string_nwrite ch (access_flags iflags);
-       IO.write ch ' ';
+       JLib.IO.write ch ' ';
        (match oc with
           | None -> ()
           | Some ocname ->
               string_nwrite ch (cn_name ocname);
-              IO.write ch '.');
+              JLib.IO.write ch '.');
        (match ic with
-          | None -> IO.write ch '_'
+          | None -> JLib.IO.write ch '_'
           | Some icname -> string_nwrite ch (cn_name icname));
        (match icsource with
           | None -> string_nwrite ch " (anonymous in source)"
@@ -280,7 +279,7 @@ let rec dump_element_value ch = function
         match cst.[i] with
           | '\\' -> string_nwrite ch "\\\\"  (* writes 2 slashes (but escaped) *)
           | '"' -> string_nwrite ch "\\\""  (* writes backslash and doublequote (but escaped) *)
-          | c -> IO.write ch c
+          | c -> JLib.IO.write ch c
       done;
       string_nwrite ch "\""
   | EVEnum (s1,s2) ->
@@ -305,11 +304,11 @@ and dump_annotation ch annot =
   let dump_pairs pairs =
     dump_list (fun () -> string_nwrite ch ", ") dump_pair pairs
   in
-    IO.write ch '@';
+    JLib.IO.write ch '@';
     string_nwrite ch (JBasics.cn_name annot.kind);
-    IO.write ch '(';
+    JLib.IO.write ch '(';
     dump_pairs annot.element_value_pairs;
-    IO.write ch ')'
+    JLib.IO.write ch ')'
 
 let dump_bootstrap_method ch { bootstrap_method_ref; bootstrap_arguments; } =
   string_nwrite ch "    method_ref = ";
@@ -329,26 +328,26 @@ let rec dump_code ch consts code =
   string_nwrite ch (string_of_int code.JClassLow.c_max_stack);
   string_nwrite ch " , max_locals = ";
   string_nwrite ch (string_of_int code.JClassLow.c_max_locals);
-  IO.write ch '\n';
+  JLib.IO.write ch '\n';
   Array.iteri (fun i c ->
 		 match c with
-		   | OpInvalid -> (); (* BatPrintf.fprintf ch "__\n" *)
-		   | _ -> BatPrintf.fprintf ch "      %.4i (%.4X) %s\n" i i (opcode c)
+		   | OpInvalid -> (); (* JLib.IO.printf ch "__\n" *)
+		   | _ -> JLib.IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
 	      ) code.JClassLow.c_code;
   if code.JClassLow.c_exc_tbl <> []
   then
     begin
       string_nwrite ch "    exceptions";
       List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
-      IO.write ch '\n';
+      JLib.IO.write ch '\n';
     end;
   List.iter (dump_attrib ch consts) code.JClassLow.c_attributes
 
 and dump_attrib ch consts = function
   | AttributeSourceFile s ->
-      BatPrintf.fprintf ch "    SourceFile : \"%s\"\n" s
+      JLib.IO.printf ch "    SourceFile : \"%s\"\n" s
   | AttributeSignature s ->
-      BatPrintf.fprintf ch "    signature = %s\n" s
+      JLib.IO.printf ch "    signature = %s\n" s
   | AttributeEnclosingMethod (cn,mso) ->
       string_nwrite ch "    enclosing method : class = ";
       string_nwrite ch (JDumpBasics.class_name cn);
@@ -356,37 +355,37 @@ and dump_attrib ch consts = function
       (match mso with
 	 | None -> string_nwrite ch "None"
 	 | Some (mn,ms) -> string_nwrite ch (JDumpBasics.signature mn ms));
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeSourceDebugExtension s ->
       string_nwrite ch ("    SourceDebugExtension = "^s^"\n")
   | AttributeConstant c ->
       string_nwrite ch "    const ";
       dump_constant_value ch c;
-      IO.write ch '\n';
+      JLib.IO.write ch '\n';
   | AttributeCode code ->
-      dump_code ch consts (Lazy.force code) (* BatPrintf.fprintf ch "    unexpected code attribute" *)
+      dump_code ch consts (Lazy.force code) (* JLib.IO.printf ch "    unexpected code attribute" *)
   | AttributeExceptions l ->
       string_nwrite ch "    exceptions";
       List.iter (fun cn -> string_nwrite ch (class_name cn^" ")) l;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeInnerClasses icl ->
       string_nwrite ch "    inner-classes:";
       dump_inner_classes ch icl;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeSynthetic ->
-      BatPrintf.fprintf ch "    synthetic\n"
+      JLib.IO.printf ch "    synthetic\n"
   | AttributeLineNumberTable lines ->
-      BatPrintf.fprintf ch "    LineNumberTable";
+      JLib.IO.printf ch "    LineNumberTable";
       List.iter
         (fun (i1,i2) ->
            string_nwrite ch ("\n      " ^string_of_int i1 ^ ":" ^string_of_int i2))
         lines;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeLocalVariableTable variables ->
       string_nwrite ch "    local-variables\n";
       List.iter
 	(function start_pc, length, name, signature, index ->
-	   BatPrintf.fprintf ch "      from %d to %d, %s %s at %d\n"
+	   JLib.IO.printf ch "      from %d to %d, %s %s at %d\n"
 	     start_pc
 	     (start_pc + length)
 	     (value_signature signature)
@@ -397,7 +396,7 @@ and dump_attrib ch consts = function
       string_nwrite ch "    generic-local-variables\n";
       List.iter
 	(function start_pc, length, name, signature, index ->
-	   BatPrintf.fprintf ch "      from %d to %d, %s %s at %d\n"
+	   JLib.IO.printf ch "      from %d to %d, %s %s at %d\n"
 	     start_pc
 	     (start_pc + length)
 	     (JUnparseSignature.unparse_FieldTypeSignature signature)
@@ -417,7 +416,7 @@ and dump_attrib ch consts = function
   | AttributeAnnotationDefault a ->
       string_nwrite ch "    AnnotationDefault = ";
       dump_element_value ch a;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeRuntimeVisibleAnnotations al ->
       string_nwrite ch "    RuntimeVisibleAnnotations";
       List.iter
@@ -425,7 +424,7 @@ and dump_attrib ch consts = function
            string_nwrite ch "\n        ";
            dump_annotation ch a)
         al;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeRuntimeInvisibleAnnotations al ->
       string_nwrite ch "    RuntimeInvisibleAnnotations";
       List.iter
@@ -433,74 +432,74 @@ and dump_attrib ch consts = function
            string_nwrite ch "\n      ";
            dump_annotation ch a)
         al;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeRuntimeInvisibleParameterAnnotations all ->
       string_nwrite ch "    RuntimeInvisibleParameterAnnotations = ";
       List.iter
         (fun al ->
            string_nwrite ch "\n      [";
            dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
-           IO.write ch ']')
+           JLib.IO.write ch ']')
         all;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeRuntimeVisibleParameterAnnotations all ->
       string_nwrite ch "    RuntimeVisibleParameterAnnotations = ";
       List.iter
         (fun al ->
            string_nwrite ch "\n      [";
            dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
-           IO.write ch ']')
+           JLib.IO.write ch ']')
         all;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeBootstrapMethods methods ->
       string_nwrite ch "    BootstrapMethods = ";
       List.iter (fun m ->
           string_nwrite ch "\n      [";
           dump_bootstrap_method ch m;
-          IO.write ch ']')
+          JLib.IO.write ch ']')
         methods;
-      IO.write ch '\n'
+      JLib.IO.write ch '\n'
   | AttributeUnknown (s,_) ->
       string_nwrite ch ("    ?"^s^"\n")
 
 let dump_field ch consts f =
-  BatPrintf.fprintf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
+  JLib.IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
   List.iter (dump_attrib ch consts) f.f_attributes
 
 let dump_method ch consts m =
-  BatPrintf.fprintf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
+  JLib.IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
   List.iter (dump_attrib ch consts) m.m_attributes;
-  IO.write ch '\n'
+  JLib.IO.write ch '\n'
 
 let dump_super ch = function
   | None -> ()
-  | Some c -> BatPrintf.fprintf ch "  extends %s\n" (class_name c)
+  | Some c -> JLib.IO.printf ch "  extends %s\n" (class_name c)
 
 let dump ch cl =
   string_nwrite ch (access_flags cl.j_flags);
   if List.for_all ((<>) `AccInterface) cl.j_flags
   then string_nwrite ch "class ";
   string_nwrite ch (cn_name cl.j_name);
-  IO.write ch '\n';
+  JLib.IO.write ch '\n';
   dump_super ch cl.j_super;
   if cl.j_interfaces <> []
   then
-    BatPrintf.fprintf ch "  implements %s\n"
+    JLib.IO.printf ch "  implements %s\n"
       (String.concat " " (List.map class_name cl.j_interfaces));
   string_nwrite ch ("    version = " ^(string_of_int cl.j_version.major)
                 ^"." ^(string_of_int cl.j_version.minor) ^"\n");
   List.iter (dump_attrib ch cl.j_consts) cl.j_attributes;
-  BatPrintf.fprintf ch "{\n\n";
-  BatPrintf.fprintf ch "/* **** CONSTANTS ****\n";
+  JLib.IO.printf ch "{\n\n";
+  JLib.IO.printf ch "/* **** CONSTANTS ****\n";
   (* Put this in the dump method for high level class files *)
   Array.iteri
     (fun i c ->
        string_nwrite ch ("    " ^string_of_int i^"  ");
        dump_constant ch c;
-       IO.write ch '\n'
+       JLib.IO.write ch '\n'
     ) cl.j_consts;
-  BatPrintf.fprintf ch "// ****************** */\n\n";
+  JLib.IO.printf ch "// ****************** */\n\n";
   List.iter (dump_field ch cl.j_consts) cl.j_fields;
-  BatPrintf.fprintf ch "\n";
+  JLib.IO.printf ch "\n";
   List.iter (dump_method ch cl.j_consts) cl.j_methods;
-  BatPrintf.fprintf ch "}\n";
+  JLib.IO.printf ch "}\n";

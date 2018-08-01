@@ -18,7 +18,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
 open JBasics
 open JClassLow
 open JCode
@@ -134,7 +133,7 @@ let expanse_stackmap_table stackmap_table =
 	       let offset = pc + offset_delta + 1 in
 	       let nb_chop = 251 - k in
 	       let l_chop = List.rev
-		 (List.drop nb_chop (List.rev l)) in
+		 (JLib.List.drop nb_chop (List.rev l)) in
 	       let s = (offset,l_chop,[]) in
 		 (s,s::stackmap)
 	   | SameFrameExtended (_,offset_delta) ->
@@ -156,7 +155,7 @@ let low2high_code consts bootstrap_methods = function c ->
   {
     c_max_stack = c.JClassLow.c_max_stack;
     c_max_locals = c.JClassLow.c_max_locals;
-    c_code = JInstruction.opcodes2code (DynArray.to_array consts) bootstrap_methods c.JClassLow.c_code;
+    c_code = JInstruction.opcodes2code (JLib.DynArray.to_array consts) bootstrap_methods c.JClassLow.c_code;
     c_exc_tbl = c.JClassLow.c_exc_tbl;
     c_line_number_table =
       begin
@@ -811,7 +810,7 @@ let low2high_class cl =
     then raise (Class_structure_error "ACC_SUPER must be set for all classes (that are not interfaces)");
     if not (JBasics.get_permissive ()) && (is_final && is_abstract)
     then raise (Class_structure_error "An abstract class cannot be final.");
-    let consts = DynArray.of_array cl.j_consts in
+    let consts = JLib.DynArray.of_array cl.j_consts in
     let my_name = cl.j_name in
     let my_version = cl.j_version in
     let my_access =
@@ -946,7 +945,7 @@ let low2high_class cl =
 	      i_access = my_access;
 	      i_generic_signature = my_generic_signature;
 	      i_interfaces = my_interfaces;
-	      i_consts = DynArray.to_array consts;
+	      i_consts = JLib.DynArray.to_array consts;
 	      i_sourcefile = my_sourcefile;
 	      i_deprecated = my_deprecated;
 	      i_source_debug_extention = my_source_debug_extention;
@@ -1081,7 +1080,7 @@ let low2high_class cl =
 	      c_enum = is_enum;
 	      c_other_flags = flags;
 	      c_interfaces = my_interfaces;
-	      c_consts = DynArray.to_array consts;
+	      c_consts = JLib.DynArray.to_array consts;
 	      c_sourcefile = my_sourcefile;
 	      c_deprecated = my_deprecated;
 	      c_source_debug_extention = my_source_debug_extention;

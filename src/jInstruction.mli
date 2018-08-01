@@ -46,7 +46,7 @@ val opcodes2code : JBasics.constant array ->
     will only be an issue when dumping the code to a class file.
 *)
 val code2opcodes :
-  JBasics.constant Batteries.DynArray.t -> JCode.jopcodes -> JClassLow.opcode array
+  JBasics.constant JLib.DynArray.t -> JCode.jopcodes -> JClassLow.opcode array
 
 (** Low level to high level bytecode instruction. *)
 val opcode2instruction : JBasics.constant array ->
@@ -61,4 +61,4 @@ val opcode2instruction : JBasics.constant array ->
 
     @raise JBasics.Class_structure_error if the class has not a valid structure.
 *)
-val instruction2opcode : JBasics.constant Batteries.DynArray.t -> int -> JCode.jopcode -> JClassLow.opcode
+val instruction2opcode : JBasics.constant JLib.DynArray.t -> int -> JCode.jopcode -> JClassLow.opcode

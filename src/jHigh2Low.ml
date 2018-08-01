@@ -18,7 +18,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
 open JBasics
 open JClassLow
 open JCode
@@ -296,7 +295,7 @@ let h2l_methods consts c' mm =
   }
 
 let high2low_class c =
-  let consts = DynArray.of_array c.c_consts in
+  let consts = JLib.DynArray.of_array c.c_consts in
   let c' =
     {j_name = c.c_name;
      j_version = c.c_version;
@@ -326,10 +325,10 @@ let high2low_class c =
 	@ h2l_other_attributes c.c_other_attributes;
     } in
   let c'= h2l_methods consts c' c.c_methods
-  in {c' with j_consts = DynArray.to_array consts}
+  in {c' with j_consts = JLib.DynArray.to_array consts}
 
 let high2low_interface (c:JCode.jcode jinterface) =
-  let consts = DynArray.of_array c.i_consts in
+  let consts = JLib.DynArray.of_array c.i_consts in
   let c' =
     {j_name = c.i_name;
      j_version = c.i_version;
@@ -357,7 +356,7 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.i_other_attributes;
     }
-  in {c' with j_consts = DynArray.to_array consts}
+  in {c' with j_consts = JLib.DynArray.to_array consts}
 
 let high2low = function
   | JInterface i -> high2low_interface i

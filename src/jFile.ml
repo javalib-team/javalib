@@ -21,7 +21,6 @@
  *)
 
 
-open Batteries
 open JBasics
 open JClassLow
 
@@ -76,14 +75,14 @@ let open_path s =
 type directories = string list
 
 let make_directories dirs =
-  match String.nsplit dirs sep with
+  match JLib.String.nsplit dirs sep with
     | [] -> [Filename.current_dir_name]
     | cp ->
 	List.filter is_dir cp
 
 let class_path cp =
   let cp_list =
-    match String.nsplit cp sep with
+    match JLib.String.nsplit cp sep with
       | [] -> [Filename.current_dir_name]
       | cp -> cp
   in
@@ -103,7 +102,7 @@ let class_path cp =
 	 )
 	 cp_list)
   in
-    List.filter_map open_path cp_with_jars
+    JLib.List.filter_map open_path cp_with_jars
 
 let close_class_path =
   List.iter
@@ -122,14 +121,14 @@ let lookup c : cp_unit -> JClassLow.jclass =
 		if is_file (Filename.concat d c)
 		then
 		  let ch = Pervasives.open_in_bin (Filename.concat d c) in
-		    IO.input_channel ch
+		    JLib.IO.input_channel ch
 		else raise Not_found
 	    | `jar jar ->
 		let e = Zip.find_entry jar c in
-		  IO.input_string (Zip.read_entry jar e)
+		  JLib.IO.input_string (Zip.read_entry jar e)
 	in
 	let c = JParse.parse_class_low_level ch in
-	  IO.close_in ch;
+	  JLib.IO.close_in ch;
 	  c
       with
 	| Not_found ->
@@ -158,9 +157,9 @@ let write_class_low output_dir classe =
        (Filename.concat output_dir (Filename.dirname c))
        0o755);
     let f = Pervasives.open_out_bin (Filename.concat output_dir c) in
-    let output = IO.output_channel f in
+    let output = JLib.IO.output_channel f in
       JUnparse.unparse_class_low_level output classe;
-      IO.close_out output
+      JLib.IO.close_out output
 
 let write_class output_dir classe = write_class_low output_dir (JHigh2Low.high2low classe)
 
@@ -172,26 +171,26 @@ let dir_sep =
     | _ -> assert false (* Inspirated from filename.ml in the stdlib *)
 
 let extract_class_name_from_file file =
-  let input = IO.input_channel (Pervasives.open_in_bin file) in
+  let input = JLib.IO.input_channel (Pervasives.open_in_bin file) in
   let c = JParse.parse_class_low_level input in
-    IO.close_in input;
+    JLib.IO.close_in input;
     let cname = c.j_name in
     let package = cn_package cname in
     let path =
-      let p = String.nsplit (Filename.dirname file) dir_sep in
+      let p = JLib.String.nsplit (Filename.dirname file) dir_sep in
 	match p with
 	  | [] -> []
 	  | hd :: tl ->
 	      (* We delete the unwanted empty strings due to the
 		 presence of multiple consecutive separators in
 		 file. *)
-	      hd :: (List.remove_all tl "") in
+	      hd :: (JLib.List.remove_all tl "") in
     let ends_with l endl =
       let n = List.length l in
       let endn = List.length endl in
 	try
 	  let (hl,tl) =
-	    List.split_at (n - endn) l in
+	    JLib.List.split_nth (n - endn) l in
 	    if (tl = endl) then (true,hl)
 	    else (false,l)
 	with Invalid_argument _ -> (false,l) in
@@ -258,9 +257,9 @@ let apply_to_jar f other s =
 	(function e ->
 	   if Filename.check_suffix e.Zip.filename ".class"
 	   then (
-	     let input = IO.input_string (Zip.read_entry jar e) in
+	     let input = JLib.IO.input_string (Zip.read_entry jar e) in
 	     let c = JParse.parse_class_low_level input in
-	       IO.close_in input;
+	       JLib.IO.close_in input;
 	       f c
 	   ) else other jar e)
 	(Zip.entries jar);
@@ -293,9 +292,9 @@ let fold_string class_path f file =
 	apply_to_dir_or_class
 	  (function c ->
 	     let ch = Pervasives.open_in_bin c in
-	     let input = IO.input_channel ch in
+	     let input = JLib.IO.input_channel ch in
 	     let classe = JParse.parse_class_low_level input in
-	       IO.close_in input;
+	       JLib.IO.close_in input;
 	       match f with
 		 | `read f ->
 		     f classe
@@ -324,9 +323,9 @@ let fold_string class_path f file =
 			    let class_name = JDumpBasics.class_name classe.j_name in
 			    let c = replace_dot class_name ^ ".class"
 			    and contents =
-			      let s = IO.output_string () in
+			      let s = JLib.IO.output_string () in
 				JUnparse.unparse_class_low_level s classe;
-				IO.close_out s in
+				JLib.IO.close_out s in
 			      Zip.add_entry contents jar' c)
 			 (fun jar e ->
 			    let contents = Zip.read_entry jar e in

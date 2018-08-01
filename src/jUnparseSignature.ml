@@ -20,7 +20,6 @@
 
 open JBasics
 open JSignature
-open Batteries
 
 (* Descriptors and classname encoding *)
 (************************************)

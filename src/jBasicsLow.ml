@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
+open JLib
 open IO
 open IO.BigEndian
 open JBasics
@@ -49,7 +49,7 @@ let write_with_length length ch write =
     write ch';
     write_string_with_length length ch (close_out ch')
 
-let write_with_size (size:'a IO.output -> int -> unit) ch write l =
+let write_with_size (size:'a output -> int -> unit) ch write l =
   size ch (List.length l);
   List.iter write l
 

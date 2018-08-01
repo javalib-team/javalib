@@ -21,8 +21,7 @@
  *)
 
 open JClassLow
-open Batteries
-open IO.BigEndian
+open JLib.IO.BigEndian
 open JBasics
 open JBasicsLow
 open JParseSignature
@@ -45,7 +44,7 @@ type tmp_constant =
   | ConstantUnusable
 
 let parse_constant max ch =
-  let cid = IO.read_byte ch in
+  let cid = JLib.IO.read_byte ch in
   let index() =
     let n = read_ui16 ch in
     if n = 0 || n >= max
@@ -68,7 +67,7 @@ let parse_constant max ch =
 	  let n2 = index() in
             ConstantInterfaceMethod (n1,n2)
       | 15 ->
-          let kind = IO.read_byte ch in
+          let kind = JLib.IO.read_byte ch in
           let n2 = index() in
             ConstantMethodHandle (kind,n2)
       | 16 ->
@@ -95,7 +94,7 @@ let parse_constant max ch =
 	    ConstantNameAndType (n1,n2)
       | 1 ->
 	  let len = read_ui16 ch in
-	  let str = IO.really_nread ch len in
+	  let str = JLib.IO.really_nread_string ch len in
 	    ConstantStringUTF8 str
       | cid ->
 	  raise (Class_structure_error ("Illegaly constant kind: " ^ string_of_int cid))
@@ -129,7 +128,7 @@ let parse_access_flags all_flags ch =
       all_flags;
     !flags
 
-let parse_stackmap_type_info consts ch = match IO.read_byte ch with
+let parse_stackmap_type_info consts ch = match JLib.IO.read_byte ch with
   | 0 -> VTop
   | 1 -> VInteger
   | 2 -> VFloat
@@ -156,7 +155,7 @@ let parse_stackmap_frame consts ch =
 (* DFr : Addition for 1.6 stackmap *****************************************)
 (***************************************************************************)
 let parse_stackmap_table consts ch =
-  let kind = IO.read_byte ch
+  let kind = JLib.IO.read_byte ch
   in
   let stackmap =
     if ((kind>=0) && (kind<=63)) then SameFrame(kind)
@@ -191,7 +190,7 @@ let parse_stackmap_table consts ch =
 
 (* Annotation parsing *)
 let rec parse_element_value consts ch =
-  let tag = IO.read_byte ch in
+  let tag = JLib.IO.read_byte ch in
     match Char.chr tag with
       | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
           let constant_value_index = read_ui16 ch in
@@ -282,7 +281,7 @@ let parse_annotations consts ch =
     List.init num_annotations (fun _ -> parse_annotation consts ch)
 
 let parse_parameter_annotations consts ch =
-  let num_parameters = IO.read_byte ch
+  let num_parameters = JLib.IO.read_byte ch
   in
     List.init num_parameters (fun _ -> parse_annotations consts ch)
 
@@ -368,7 +367,7 @@ and parse_attribute list consts ch =
 	      AttributeEnclosingMethod (c,m)
 	| "SourceDebugExtension" ->
 	    check `SourceDebugExtension;
-	    AttributeSourceDebugExtension (IO.really_nread ch alen)
+	    AttributeSourceDebugExtension (JLib.IO.really_nread_string ch alen)
 	| "SourceFile" -> check `SourceFile;
 	    if alen <> 2 then error();
 	    AttributeSourceFile (get_string_ui16 consts ch)
@@ -376,9 +375,9 @@ and parse_attribute list consts ch =
 	    if alen <> 2 then error();
 	    AttributeConstant (get_constant_value consts (read_ui16 ch))
 	| "Code" -> check `Code;
-	    let ch = IO.input_string (IO.really_nread ch alen) in
+	    let ch = JLib.IO.input_string (JLib.IO.really_nread_string ch alen) in
 	    let parse_code _ =
-	      let ch, count = IO.pos_in ch in
+	      let ch, count = JLib.IO.pos_in ch in
 	      let code = parse_code consts ch
 	      in
 		if count() <> alen then error();
@@ -461,7 +460,7 @@ and parse_attribute list consts ch =
 	    if alen <> 0 then error ();
 	    AttributeDeprecated
 	| "StackMap" -> check `StackMap;
-	    let ch, count = IO.pos_in ch in
+	    let ch, count = JLib.IO.pos_in ch in
 	    let nb_stackmap_frames = read_ui16 ch in
 	    let stackmap =
 	      List.init nb_stackmap_frames
@@ -472,7 +471,7 @@ and parse_attribute list consts ch =
 	| "StackMapTable" ->
 	    (* DFr : Addition for 1.6 stackmap *)
 	    check `StackMap;
-	    let ch, count = IO.pos_in ch in
+	    let ch, count = JLib.IO.pos_in ch in
 	    let nentry = read_ui16 ch in
 	    let stackmap =
 	      List.init nentry (fun _ -> parse_stackmap_table consts ch )
@@ -511,7 +510,7 @@ and parse_attribute list consts ch =
                       { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
 	| _ -> raise Exit
     with
-	Exit -> AttributeUnknown (aname,IO.really_nread ch alen)
+	Exit -> AttributeUnknown (aname,JLib.IO.really_nread_string ch alen)
 
 let parse_field consts ch =
   let acc = parse_access_flags field_flags ch in
@@ -620,9 +619,9 @@ let rec expand_constant consts n =
                ConstMethodHandle (`InvokeInterface, const)
            | n, c ->
                let s =
-                 IO.output_string () in
+                 JLib.IO.output_string () in
                JDumpBasics.dump_constant s c;
-               let str = IO.close_out s in
+               let str = JLib.IO.close_out s in
                raise (Class_structure_error ("Bad method handle constant " ^ (string_of_int n) ^ str)))
       | ConstantInvokeDynamic (bmi,nt) ->
           (match expand_constant consts nt with
@@ -707,7 +706,7 @@ let parse_class_low_level ch =
 let parse_class_low_level ch =
   try parse_class_low_level ch
   with Class_structure_error _ as e ->
-    IO.close_in ch;
+    JLib.IO.close_in ch;
     raise e
 
 let parse_class ch = JLow2High.low2high_class (parse_class_low_level ch)

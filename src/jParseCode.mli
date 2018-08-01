@@ -23,14 +23,14 @@
 
 (** Parse a sequence of instructions of given size (in bytes) and
     returns an array of instructions. *)
-val parse_code : Batteries.IO.input -> int -> JClassLow.opcode array
+val parse_code : JLib.IO.input -> int -> JClassLow.opcode array
 
 (** Unparse a sequence of instructions.
 
     @raise OpcodeLengthError if an opcode cannot be encoded in the allocated
     place.  *)
 val unparse_code :
-  'a Batteries.IO.output -> JClassLow.opcode array -> unit
+  'a JLib.IO.output -> JClassLow.opcode array -> unit
 
 (** [OpcodeLengthError] takes as argument the opcode and the excepted
     length that cannot be matched by unparsing the opcode. *)
@@ -38,7 +38,7 @@ exception OpcodeLengthError of int * JClassLow.opcode
 
 
 val parse_full_opcode :
-  Batteries.IO.input -> (unit -> int) -> JClassLow.opcode
+  JLib.IO.input -> (unit -> int) -> JClassLow.opcode
 
 (** [unparse_instruction ch count length opcode] output on [ch] the
     opcode [opcode] in the [length] byte(s) format. E.g [OpLoad
@@ -47,4 +47,4 @@ val parse_full_opcode :
 
     @raise OpcodeLengthError if the length provided cannot be matched.*)
 val unparse_instruction :
-  'a Batteries.IO.output -> (unit -> int) -> int -> JClassLow.opcode -> unit
+  'a JLib.IO.output -> (unit -> int) -> int -> JClassLow.opcode -> unit

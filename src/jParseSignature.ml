@@ -19,56 +19,55 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
 open JBasics
 open JSignature
 
 (* Validate an utf8 string and return a stream of characters. *)
 let read_utf8 s =
-  UTF8.validate s;
+  JLib.UTF8.validate s;
   let index = ref 0 in
     Stream.from
       (function _ ->
-	 if UTF8.out_of_range s ! index
+	 if JLib.UTF8.out_of_range s ! index
 	 then None
 	 else
-	   let c = UTF8.look s ! index in
-	     index := UTF8.next s ! index;
+	   let c = JLib.UTF8.look s ! index in
+	     index := JLib.UTF8.next s ! index;
 	     Some c)
 
 (* Java ident, with unicode letter and numbers, starting with a letter. *)
 let parse_ident buff =
   let parse_char = parser
-    | [< 'c when c <> UChar.of_char ';'  (* should be a letter or a number *)
-	   && c <> UChar.of_char '/'
-	   && c <> UChar.of_char ':'
-	   && c <> UChar.of_char '.'
-	   && c <> UChar.of_char '>'
-	   && c <> UChar.of_char '<' >] -> c
+    | [< 'c when c <> JLib.UChar.of_char ';'  (* should be a letter or a number *)
+	   && c <> JLib.UChar.of_char '/'
+	   && c <> JLib.UChar.of_char ':'
+	   && c <> JLib.UChar.of_char '.'
+	   && c <> JLib.UChar.of_char '>'
+	   && c <> JLib.UChar.of_char '<' >] -> c
   in
   let rec parse_more_ident buff = parser
       (* TODO : it seems to be relatively inefficient *)
     | [< c = parse_char;
 	 name =
-	  (UTF8.Buf.add_char buff c;
+	  (JLib.UTF8.Buf.add_char buff c;
 	   parse_more_ident buff) >] -> name
     | [< >] ->
-	UTF8.Buf.contents buff
+	JLib.UTF8.Buf.contents buff
   in
     parser
       | [< c = parse_char; (* should be a letter *)
 	   name =
-	    (UTF8.Buf.add_char buff c;
+	    (JLib.UTF8.Buf.add_char buff c;
 	     parse_more_ident buff) >] -> name
 
 
 (* Qualified name (internally encoded with '/'). *)
 let rec parse_name = parser
-  | [< ident = parse_ident (UTF8.Buf.create 0);
+  | [< ident = parse_ident (JLib.UTF8.Buf.create 0);
        name = parse_more_name >] -> ident :: name
 
 and parse_more_name = parser
-  | [< 'slash when slash = UChar.of_char '/';
+  | [< 'slash when slash = JLib.UChar.of_char '/';
        name = parse_name >] -> name
   | [< >] -> []
 
@@ -76,23 +75,23 @@ let get_name x = make_cn (String.concat "." (parse_name x))
 
 (* Java type. *)
 let parse_base_type = parser
-  | [< 'b when b = UChar.of_char 'B' >] -> `Byte
-  | [< 'c when c = UChar.of_char 'C' >] -> `Char
-  | [< 'd when d = UChar.of_char 'D' >] -> `Double
-  | [< 'f when f = UChar.of_char 'F' >] -> `Float
-  | [< 'i when i = UChar.of_char 'I' >] -> `Int
-  | [< 'j when j = UChar.of_char 'J' >] -> `Long
-  | [< 's when s = UChar.of_char 'S' >] -> `Short
-  | [< 'z when z = UChar.of_char 'Z' >] -> `Bool
+  | [< 'b when b = JLib.UChar.of_char 'B' >] -> `Byte
+  | [< 'c when c = JLib.UChar.of_char 'C' >] -> `Char
+  | [< 'd when d = JLib.UChar.of_char 'D' >] -> `Double
+  | [< 'f when f = JLib.UChar.of_char 'F' >] -> `Float
+  | [< 'i when i = JLib.UChar.of_char 'I' >] -> `Int
+  | [< 'j when j = JLib.UChar.of_char 'J' >] -> `Long
+  | [< 's when s = JLib.UChar.of_char 'S' >] -> `Short
+  | [< 'z when z = JLib.UChar.of_char 'Z' >] -> `Bool
 
 let rec parse_object_type = parser
-  | [< 'l when l = UChar.of_char 'L';
+  | [< 'l when l = JLib.UChar.of_char 'L';
        name = get_name;
-       'semicolon when semicolon = UChar.of_char ';' >] -> TClass name
+       'semicolon when semicolon = JLib.UChar.of_char ';' >] -> TClass name
   | [< a = parse_array >] -> a
 
 and parse_array = parser
-  | [< 'lbracket when lbracket = UChar.of_char '['; typ = parse_type >] ->
+  | [< 'lbracket when lbracket = JLib.UChar.of_char '['; typ = parse_type >] ->
       TArray typ
 
 and parse_type = parser
@@ -113,9 +112,9 @@ let parse_ot = parser
   | [< name = get_name >] -> TClass name
 
 let parse_method_sig = parser
-  | [< 'lpar when lpar = UChar.of_char '(';
+  | [< 'lpar when lpar = JLib.UChar.of_char '(';
        types = parse_types;
-       'rpar when rpar = UChar.of_char ')';
+       'rpar when rpar = JLib.UChar.of_char ')';
        typ = parse_type_option >] ->
       (types, typ)
 
@@ -155,24 +154,24 @@ let parse_descriptor s =
 (* Java 5 signature *)
 
 (* this is the type of stream used in this code *)
-type stream = UChar.t Stream.t
+type stream = JLib.UChar.t Stream.t
 
 let parse_TypeVariableSignature : stream -> typeVariable = parser
-  | [< 't when t = UChar.of_char 'T';
-       name = parse_ident (UTF8.Buf.create 0);
-       'semicolon when semicolon = UChar.of_char ';'>] -> TypeVariable name
+  | [< 't when t = JLib.UChar.of_char 'T';
+       name = parse_ident (JLib.UTF8.Buf.create 0);
+       'semicolon when semicolon = JLib.UChar.of_char ';'>] -> TypeVariable name
 
 let parse_QualifiedName : stream -> class_name = get_name
 
 let rec parse_TypeArguments : stream -> typeArgument list =
   let parse_TypeArgument = parser
-    | [< 'plus when plus = UChar.of_char '+'; typ = parse_FieldTypeSignature >]
+    | [< 'plus when plus = JLib.UChar.of_char '+'; typ = parse_FieldTypeSignature >]
       -> ArgumentExtends typ
-    | [< 'minus when minus = UChar.of_char '-'; typ = parse_FieldTypeSignature >]
+    | [< 'minus when minus = JLib.UChar.of_char '-'; typ = parse_FieldTypeSignature >]
       -> ArgumentInherits typ
     | [< typ = parse_FieldTypeSignature >]
       -> ArgumentIs typ
-    | [< 'star when star = UChar.of_char '*' >]
+    | [< 'star when star = JLib.UChar.of_char '*' >]
       -> ArgumentIsAny
   in
   let rec parse_more = parser
@@ -180,15 +179,15 @@ let rec parse_TypeArguments : stream -> typeArgument list =
     | [< >] -> []
   in
     parser
-      | [< 'lt when lt = UChar.of_char '<';
+      | [< 'lt when lt = JLib.UChar.of_char '<';
 	   typ = parse_TypeArgument;
 	   other = parse_more;
-	   'gt when gt = UChar.of_char '>' >] -> typ::other
+	   'gt when gt = JLib.UChar.of_char '>' >] -> typ::other
       | [< >] -> []
 
 
 and parse_ArrayTypeSignature : stream -> typeSignature = parser
-  | [< 'lb when lb = UChar.of_char '[';
+  | [< 'lb when lb = JLib.UChar.of_char '[';
        typ = parse_TypeSignature >] -> typ
 
 and parse_TypeSignature : stream -> typeSignature = parser
@@ -197,12 +196,12 @@ and parse_TypeSignature : stream -> typeSignature = parser
 
 
 and parse_SimpleClassTypeSignature : stream -> simpleClassTypeSignature = parser
-  | [< ident = parse_ident (UTF8.Buf.create 0); arguments = parse_TypeArguments >]
+  | [< ident = parse_ident (JLib.UTF8.Buf.create 0); arguments = parse_TypeArguments >]
     -> {scts_name = ident; scts_type_arguments = arguments;}
 
 and parse_ClassTypeSignatureSuffixes : stream -> simpleClassTypeSignature list =
   let parse_ClassTypeSignatureSuffix = parser
-    | [< 'dot when dot = UChar.of_char '.'; ct = parse_SimpleClassTypeSignature >]
+    | [< 'dot when dot = JLib.UChar.of_char '.'; ct = parse_SimpleClassTypeSignature >]
       -> ct
   in parser
     | [< ct = parse_ClassTypeSignatureSuffix ; others = parse_ClassTypeSignatureSuffixes >]
@@ -210,11 +209,11 @@ and parse_ClassTypeSignatureSuffixes : stream -> simpleClassTypeSignature list =
     | [< >] -> []
 
 and parse_ClassTypeSignature : stream -> classTypeSignature = parser
-  | [< 'l when l = UChar.of_char 'L';
+  | [< 'l when l = JLib.UChar.of_char 'L';
        qualified_name = parse_QualifiedName;
        args = parse_TypeArguments;
        cts = parse_ClassTypeSignatureSuffixes;
-       'semicolon when semicolon = UChar.of_char ';' >]
+       'semicolon when semicolon = JLib.UChar.of_char ';' >]
     ->
       let package = cn_package qualified_name in
       let ct = cn_simple_name qualified_name in
@@ -233,7 +232,7 @@ and parse_FieldTypeSignature : stream -> fieldTypeSignature = parser
   | [< tv = parse_TypeVariableSignature >] -> GVariable tv
 
 let parse_ClassBound : stream -> fieldTypeSignature option = parser
-  | [< 'colon when colon= UChar.of_char ':';
+  | [< 'colon when colon= JLib.UChar.of_char ':';
        e = (parser
 	      | [< typ = parse_FieldTypeSignature >] -> Some typ
 	      | [< >] -> None) >] -> e
@@ -241,7 +240,7 @@ let parse_ClassBound : stream -> fieldTypeSignature option = parser
 
 let rec parse_InterfaceBounds : stream -> fieldTypeSignature list =
   let parse_InterfaceBound = parser
-    | [< 'colon when colon= UChar.of_char ':'; typ = parse_FieldTypeSignature >] -> typ
+    | [< 'colon when colon= JLib.UChar.of_char ':'; typ = parse_FieldTypeSignature >] -> typ
   in parser
     | [< ib = parse_InterfaceBound; others = parse_InterfaceBounds >] -> ib::others
     | [< >] -> []
@@ -249,17 +248,17 @@ let rec parse_InterfaceBounds : stream -> fieldTypeSignature list =
 
 let parse_FormalTypeParameters : stream -> formalTypeParameter list =
   let parse_FormalTypeParameter : stream -> formalTypeParameter = parser
-    | [< name = parse_ident (UTF8.Buf.create 0); cb = parse_ClassBound; ib = parse_InterfaceBounds >]
+    | [< name = parse_ident (JLib.UTF8.Buf.create 0); cb = parse_ClassBound; ib = parse_InterfaceBounds >]
       -> {ftp_name = name; ftp_class_bound = cb; ftp_interface_bounds = ib;}
   in
   let rec parse_more = parser
     | [< typ = parse_FormalTypeParameter ; others = parse_more >] -> typ::others
     | [< >] -> []
   in parser
-    | [< 'lt when lt = UChar.of_char '<';
+    | [< 'lt when lt = JLib.UChar.of_char '<';
 	 typ = parse_FormalTypeParameter;
 	 others = parse_more;
-	 'gt when gt = UChar.of_char '>' >]
+	 'gt when gt = JLib.UChar.of_char '>' >]
       -> typ::others
     | [< >] -> []
 
@@ -279,11 +278,11 @@ let parse_ClassSignature : stream -> classSignature = parser
 
 let parse_MethodTypeSignature : stream -> methodTypeSignature =
   let parse_ReturnType : stream -> typeSignature option = parser
-    | [< 'v when v = UChar.of_char 'V' >] -> None
+    | [< 'v when v = JLib.UChar.of_char 'V' >] -> None
     | [< ts = parse_TypeSignature >] -> Some ts
   in
   let rec parse_ThrowsSignature : stream -> throwsSignature list = parser
-    | [< 'circ when circ = UChar.of_char '^';
+    | [< 'circ when circ = JLib.UChar.of_char '^';
 	 e = (parser
 		| [< cl = parse_ClassTypeSignature >] -> ThrowsClass cl
 		| [< var = parse_TypeVariableSignature >] -> ThrowsTypeVariable var);
@@ -294,9 +293,9 @@ let parse_MethodTypeSignature : stream -> methodTypeSignature =
     | [< >] -> []
   in parser
     | [< fp = parse_FormalTypeParameters;
-	 'lpar when lpar = UChar.of_char '(';
+	 'lpar when lpar = JLib.UChar.of_char '(';
 	 ts = parse_TypeSignatures;
-	 'rpar when rpar = UChar.of_char ')';
+	 'rpar when rpar = JLib.UChar.of_char ')';
 	 rt = parse_ReturnType;
 	 throws = parse_ThrowsSignature >]
       -> { mts_formal_type_parameters = fp;

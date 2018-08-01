@@ -66,14 +66,12 @@ and section = parse
     individual_sections : section list
   }
 
-  open Batteries
-
   (* TODO : accept missing manifest version (for midlets) *)
   let sections2manifest = function
       | ((mv, v) :: main) :: sections
 	  when String.lowercase mv = "manifest-version" ->
 	  {main_section =
-	      {manifest_version = List.map int_of_string (String.nsplit v ".");
+	      {manifest_version = List.map int_of_string (JLib.String.nsplit v ".");
 	       main_attributes = main};
 	   individual_sections =
 	      List.map
@@ -98,7 +96,7 @@ and section = parse
 
   let midlet_main_class m =
     let s = List.assoc "MIDlet-1" m.main_section.main_attributes in
-      match List.map (String.strip) (String.nsplit s ",") with
+      match List.map (JLib.String.strip) (JLib.String.nsplit s ",") with
 	| [_name ; _icon ; main] -> main
 	| _ -> failwith "incorrect MIDlet-1 attribute"
 

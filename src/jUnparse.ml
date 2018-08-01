@@ -18,9 +18,8 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open Batteries
-open IO
-open IO.BigEndian
+open JLib.IO
+open JLib.IO.BigEndian
 open JBasics
 open JBasicsLow
 open JClassLow
@@ -102,12 +101,12 @@ let unparse_constant ch consts =
 let unparse_constant_pool ch consts =
   let ch'' = output_string ()
   and i = ref 0 in
-    while ! i < DynArray.length consts do
-      unparse_constant ch'' consts (DynArray.unsafe_get consts ! i);
+    while ! i < JLib.DynArray.length consts do
+      unparse_constant ch'' consts (JLib.DynArray.unsafe_get consts ! i);
       incr i
     done;
-    write_ui16 ch (DynArray.length consts);
-    IO.write_string ch (close_out ch'')
+    write_ui16 ch (JLib.DynArray.length consts);
+    JLib.IO.write_string ch (close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -467,7 +466,7 @@ let unparse_class_low_level ch c =
   write_ui16 ch c.j_version.minor;
   write_ui16 ch c.j_version.major;
   let ch' = output_string ()
-  and consts = DynArray.of_array c.j_consts in
+  and consts = JLib.DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags class_flags c.j_flags);
     write_class ch' consts c.j_name;
     write_ui16 ch'
@@ -482,12 +481,12 @@ let unparse_class_low_level ch c =
       unparse (unparse_method ch' consts) c.j_methods;
       unparse (unparse_attribute ch' consts) c.j_attributes;
       unparse_constant_pool ch consts;
-      IO.write_string ch (close_out ch')
+      JLib.IO.write_string ch (close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c
   with Class_structure_error _ as e ->
-    IO.close_out ch;
+    JLib.IO.close_out ch;
     raise e
 
 let unparse_class ch c =

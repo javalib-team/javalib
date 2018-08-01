@@ -23,8 +23,7 @@
 open JBasics
 open JBasicsLow
 open JClassLow
-open Batteries
-open IO
+open JLib.IO
 
 let count =
   List.fold_left
@@ -449,7 +448,7 @@ let check_space _consts offset length opcode =
     done;
     JParseCode.unparse_instruction ch count length opcode;
     let space_taken = count () - offsetmod4 in
-    let opcodestring = BatIO.close_out ch in
+    let opcodestring = close_out ch in
     (* FIXME: this uses strange IO types and does not seem to be trigger *)
     (* if not (JBasics.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
         then failwith "check_space: count does not seems to provide the right result"; *)
