@@ -142,7 +142,7 @@ let parse_stackmap_type_info consts ch = match JLib.IO.read_byte ch with
 
 let parse_stackmap_frame consts ch =
   let parse_type_info_array ch nb_item =
-    List.init nb_item (fun _ -> parse_stackmap_type_info consts ch)
+    JLib.List.init nb_item (fun _ -> parse_stackmap_type_info consts ch)
   in let offset = read_ui16 ch in
   let number_of_locals = read_ui16 ch in
   let locals = parse_type_info_array ch number_of_locals in
@@ -172,16 +172,16 @@ let parse_stackmap_table consts ch =
       let offset_delta = read_ui16 ch in SameFrameExtended(kind,offset_delta)
     else if ((kind >=252) && (kind <=254)) then
       let offset_delta = read_ui16 ch in
-      let locals = List.init (kind-251)
+      let locals = JLib.List.init (kind-251)
 	(fun _ -> parse_stackmap_type_info consts ch) in
 	AppendFrame(kind,offset_delta,locals)
     else if (kind=255) then
       let offset_delta = read_ui16 ch in
       let nlocals = read_ui16 ch in
-      let locals = List.init nlocals
+      let locals = JLib.List.init nlocals
 	(fun _ -> parse_stackmap_type_info consts ch) in
       let nstack = read_ui16 ch in
-      let stack = List.init nstack
+      let stack = JLib.List.init nstack
 	(fun _ -> parse_stackmap_type_info consts ch) in
 	FullFrame(kind,offset_delta,locals,stack)
     else (print_string("Invalid stackmap kind\n");SameLocals(-1,VTop))
@@ -243,7 +243,7 @@ let rec parse_element_value consts ch =
       | '[' ->                          (* array *)
           let num_values = read_ui16 ch in
           let values =
-            List.init num_values (fun _ -> parse_element_value consts ch)
+            JLib.List.init num_values (fun _ -> parse_element_value consts ch)
           in EVArray values
       | _ ->
           raise (Class_structure_error
@@ -264,7 +264,7 @@ and parse_annotation consts ch =
               (Class_structure_error
                  "An annotation should only be a class")
   and ev_pairs =
-    List.init
+    JLib.List.init
       nb_ev_pairs
       (fun _ ->
          let name = get_string consts (read_ui16 ch)
@@ -278,12 +278,12 @@ and parse_annotation consts ch =
 let parse_annotations consts ch =
   let num_annotations = read_ui16 ch
   in
-    List.init num_annotations (fun _ -> parse_annotation consts ch)
+    JLib.List.init num_annotations (fun _ -> parse_annotation consts ch)
 
 let parse_parameter_annotations consts ch =
   let num_parameters = JLib.IO.read_byte ch
   in
-    List.init num_parameters (fun _ -> parse_annotations consts ch)
+    JLib.List.init num_parameters (fun _ -> parse_annotations consts ch)
 
 
 let rec parse_code consts ch =
@@ -301,7 +301,7 @@ let rec parse_code consts ch =
   in
   let exc_tbl_length = read_ui16 ch in
   let exc_tbl =
-    List.init
+    JLib.List.init
       exc_tbl_length
       (fun _ ->
 	 let spc = read_ui16 ch in
@@ -324,7 +324,7 @@ let rec parse_code consts ch =
       ) in
   let attrib_count = read_ui16 ch in
   let attribs =
-    List.init
+    JLib.List.init
       attrib_count
       (fun _ ->
 	 parse_attribute
@@ -388,7 +388,7 @@ and parse_attribute list consts ch =
 	    let nentry = read_ui16 ch in
 	      if nentry * 2 + 2 <> alen then error();
 	      AttributeExceptions
-		(List.init
+		(JLib.List.init
 		   nentry
 		   (function _ ->
 		      get_class_ui16 consts ch))
@@ -396,7 +396,7 @@ and parse_attribute list consts ch =
 	    let nentry = read_ui16 ch in
 	      if nentry * 8 + 2 <> alen then error();
 	      AttributeInnerClasses
-		(List.init
+		(JLib.List.init
 		   nentry
 		   (function _ ->
 		      let inner =
@@ -420,7 +420,7 @@ and parse_attribute list consts ch =
 	    let nentry = read_ui16 ch in
 	      if nentry * 4 + 2 <> alen then error();
 	      AttributeLineNumberTable
-		(List.init
+		(JLib.List.init
 		   nentry
 		   (fun _ ->
 		      let pc = read_ui16 ch in
@@ -430,7 +430,7 @@ and parse_attribute list consts ch =
 	    let nentry = read_ui16 ch in
 	      if nentry * 10 + 2 <> alen then error();
 	      AttributeLocalVariableTable
-		(List.init
+		(JLib.List.init
 		   nentry
 		   (function _ ->
 		      let start_pc = read_ui16 ch in
@@ -445,7 +445,7 @@ and parse_attribute list consts ch =
             let nentry = read_ui16 ch in
               if nentry *10 + 2 <> alen then error();
               AttributeLocalVariableTypeTable
-                (List.init
+                (JLib.List.init
                 nentry
                 (fun _ ->
                    let start_pc = read_ui16 ch in
@@ -463,7 +463,7 @@ and parse_attribute list consts ch =
 	    let ch, count = JLib.IO.pos_in ch in
 	    let nb_stackmap_frames = read_ui16 ch in
 	    let stackmap =
-	      List.init nb_stackmap_frames
+	      JLib.List.init nb_stackmap_frames
 		(fun _ -> parse_stackmap_frame consts ch )
 	    in
 	      if count() <> alen then error();
@@ -474,7 +474,7 @@ and parse_attribute list consts ch =
 	    let ch, count = JLib.IO.pos_in ch in
 	    let nentry = read_ui16 ch in
 	    let stackmap =
-	      List.init nentry (fun _ -> parse_stackmap_table consts ch )
+	      JLib.List.init nentry (fun _ -> parse_stackmap_table consts ch )
 	    in
 	      if count() <> alen then error();
 	      AttributeStackMapTable stackmap
@@ -500,13 +500,13 @@ and parse_attribute list consts ch =
             check `BootstrapMethods;
             let nentry = read_ui16 ch in
             AttributeBootstrapMethods
-              (List.init
+              (JLib.List.init
 	         nentry
 		   (function _ ->
 		      let bootstrap_method_ref = read_ui16 ch in
 		      let num_bootstrap_arguments = read_ui16 ch in
                       let bootstrap_arguments =
-                        List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
+                        JLib.List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
                       { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
 	| _ -> raise Exit
     with
@@ -529,7 +529,7 @@ let parse_field consts ch =
       else  base_attrib
   in
   let attribs =
-    List.init
+    JLib.List.init
       attrib_count
       (fun _ -> parse_attribute attrib_to_parse consts ch) in
     {
@@ -544,7 +544,7 @@ let parse_method consts ch =
   let name = get_string_ui16 consts ch in
   let sign = parse_method_descriptor (get_string_ui16 consts ch) in
   let attrib_count = read_ui16 ch in
-  let attribs = List.init attrib_count
+  let attribs = JLib.List.init attrib_count
     (fun _ ->
        let to_parse =
          [`Code ; `Exceptions ; `Synthetic ;
@@ -670,14 +670,14 @@ let parse_class_low_level ch =
     let super_idx = read_ui16 ch in
     let super = if super_idx = 0 then None else Some (get_class consts super_idx) in
     let interface_count = read_ui16 ch in
-    let interfaces = List.init interface_count (fun _ -> get_class_ui16 consts ch) in
+    let interfaces = JLib.List.init interface_count (fun _ -> get_class_ui16 consts ch) in
     let field_count = read_ui16 ch in
-    let fields = List.init field_count (fun _ -> parse_field consts ch) in
+    let fields = JLib.List.init field_count (fun _ -> parse_field consts ch) in
     let method_count = read_ui16 ch in
-    let methods = List.init method_count (fun _ -> parse_method consts ch) in
+    let methods = JLib.List.init method_count (fun _ -> parse_method consts ch) in
     let attrib_count = read_ui16 ch in
     let attribs =
-      List.init
+      JLib.List.init
 	attrib_count
 	(fun _ ->
            let to_parse =

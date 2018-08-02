@@ -103,6 +103,7 @@ end
 module List : sig
 
   val length : 'a list -> int
+  val init : int -> (int -> 'a) -> 'a list
   val iter : ('a -> unit) -> 'a list -> unit
   val drop : int -> 'a list -> 'a list
   val filter_map : ('a -> 'b option) -> 'a list -> 'b list
