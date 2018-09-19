@@ -1,0 +1,10 @@
+*.cm*
+*.o
+*.a
+*.annot
+*~
+Makefile.config
+*.depend
+src/META
+doc/tutorial/*.pdf
+src/jManifest.ml
