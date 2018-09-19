@@ -16,7 +16,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
 
--include ../Makefile.config
+-include ../../Makefile.config
 
 MODULES=ptmap.ml ptset.ml genericSet.ml genericMap.ml
 MODULE_INTERFACES=ptmap.mli ptset.mli genericSet.mli genericMap.mli
@@ -26,10 +26,6 @@ MODULE_INTERFACES=ptmap.mli ptset.mli genericSet.mli genericMap.mli
 
 all:ptrees.cma ptrees.cmxa
 
-install: META ptrees.cma ptrees.cmxa $(MODULE_INTERFACES) $(MODULE_INTERFACES:.mli=.cmi)
-	$(INSTALL) ptrees $^ ptrees.a
-remove:
-	$(FINDER) remove ptrees
 ptrees.cma:$(MODULES:.ml=.cmo)
 	$(OCAMLC) -o $@ -a $^
 
@@ -52,7 +48,7 @@ cleanall:clean
 	$(RM) *.cma *.cmxa
 
 # Dependencies
-.depend: ../Makefile.config $(MODULE_INTERFACES) $(MODULES)
+.depend: ../../Makefile.config $(MODULE_INTERFACES) $(MODULES)
 	$(OCAMLDEP) $(MODULE_INTERFACES) $(MODULES) > $@
 
 ifneq ($(MAKECMDGOALS),clean)

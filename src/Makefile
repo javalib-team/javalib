@@ -50,7 +50,7 @@ remove:
 	$(FINDER) remove javalib
 
 ocaml:javalib.cma
-	$(OCAMLMKTOP) $(INCLUDE) -linkpkg -o $@ ptrees.cma javalib.cma
+	$(OCAMLMKTOP) $(INCLUDE) -linkpkg -o $@ javalib.cma
 
 # compilation
 jParseSignature.cmo:jParseSignature.ml
@@ -59,11 +59,11 @@ jParseSignature.cmx jParseSignature.o:jParseSignature.ml
 	$(OCAMLOPT) $(INCLUDE) $(PP) $(FOR_PACK) -c $<
 
 .ml.cmo:
-	$(OCAMLC) $(INCLUDE) -c $<
+	$(OCAMLC) $(INCLUDE) -I ptrees -c $<
 %.cmx %.o:%.ml
-	$(OCAMLOPT) $(INCLUDE) $(FOR_PACK) -c $<
+	$(OCAMLOPT) $(INCLUDE) -I ptrees $(FOR_PACK) -c $<
 .mli.cmi:
-	$(OCAMLC) $(INCLUDE) -c $<
+	$(OCAMLC) $(INCLUDE) -I ptrees -c $<
 %.ml: %.mll
 	$(OCAMLLEX) $<
 
@@ -82,18 +82,14 @@ javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 javalib_pack.cmx: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 	$(OCAMLOPT) $(INCLUDE) -pack $(MODULES:=.cmx) -o $@
 
-
-../ptrees/ptrees.cma ../ptrees/ptrees.cmxa:$(wildcard ../ptrees/*.ml ../ptrees/*.mli)
-	$(MAKE) -C $(@D) $(@F)
-
 # doc
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(RECODE) $(INCLUDE) -d $(DOCDIR) -html -stars	\
+	$(OCAMLDOC) $(RECODE) $(INCLUDE) -I ptrees -d $(DOCDIR) -html -stars \
 		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
-		$(MODULE_INTERFACES:=.mli) ../ptrees/ptmap.mli		\
-		 ../ptrees/ptset.mli ../ptrees/genericMap.mli		\
-		../ptrees/genericSet.mli
+		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli		\
+		ptrees/ptset.mli ptrees/genericMap.mli			\
+		ptrees/genericSet.mli
 
 	echo "</body></html>" >> $(DOCDIR)/index.html # workaround for a bug in ocamldoc
 
@@ -101,16 +97,19 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 clean:
 	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~ \
 	jManifest.ml
+	$(MAKE) -C ptrees $@
 
 cleanall: clean
 	$(RM) -r ocaml *.cmi	\
-		*.cma *.cmxa *.cmxs 
+		*.cma *.cmxa *.cmxs
+	$(MAKE) -C ptrees $@
+
 cleandoc:
 	$(RM) -r $(DOCDIR)
 
 # Dependencies
-.depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml)
-	$(OCAMLDEP) $(PP) $^ > $@
+.depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml) 
+	$(OCAMLDEP) $(PP) -I ptrees $^ > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)

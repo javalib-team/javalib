@@ -5,7 +5,6 @@
 ###
 ###     Provide a "local" configuration option
 ###     Detect ocamlfind
-###     Determine whether ptrees needs to be make'd
 ###     Check the presence of extlib (>= 1.5.1) and camlzip (>=1.04)
 ###     Check for recode
 ###     Set the debug flag
@@ -304,32 +303,6 @@ else
  
 fi
 
-      
-
-#
-# Check whether ptrees is already installed (>= 1.3). If not the script stops and users are requested to compile and install it.
-#
-pkg='ptrees'
-location=`$FINDER query $pkg 2>/dev/null`
-if [ $location ]; then
-	aversion=`$FINDER query $pkg -format %v`
-	rversion='2.1'
-	do_version_check $aversion $rversion
-	if [ $? -eq 9 ] && [ $VCHECK = "true" ]; 
-	then
-	    msg "maj" "Package $pkg old version found ($location) in version $aversion (< $rversion needed), will need to be compiled and installed."
-	    push "$pkg" MAKEDEP
-	    push true MAKEDEPREMOVE
-	else
-	    msg "inf" "Package $pkg v$aversion found at $location"
-	fi
-else 
-	msg "inf" "Package $pkg not found, will need to be compiled"
-	push "$pkg" MAKEDEP
-	push false MAKEDEPREMOVE
-fi
-
-
 #
 # Check for zlib, set flag if not found
 #
@@ -381,7 +354,7 @@ echo "# $makeconfigtemplate" >> $makeconfig
 cat $makeconfigtemplate >> $makeconfig
 
 # write the package list with camlzip or zip
-echo "INCLUDE := -package unix,str,extlib,camomile,ptrees,"$packagezip >>$makeconfig
+echo "INCLUDE := -package unix,str,extlib,camomile,"$packagezip >>$makeconfig
 echo -n "."
 echo " done."
 
@@ -399,7 +372,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $metaconfig
 echo "# Variables detected at configure-time" >> $metaconfig
-echo "requires = \"unix,str,extlib,camomile,camlzip,ptrees,$packagezip\"" >> $metaconfig
+echo "requires = \"unix,str,extlib,camomile,camlzip,$packagezip\"" >> $metaconfig
 # The rest from template
 echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig
