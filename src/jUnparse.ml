@@ -106,7 +106,7 @@ let unparse_constant_pool ch consts =
       incr i
     done;
     write_ui16 ch (JLib.DynArray.length consts);
-    JLib.IO.write_string ch (close_out ch'')
+    JLib.IO.nwrite_string ch (close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -481,7 +481,7 @@ let unparse_class_low_level ch c =
       unparse (unparse_method ch' consts) c.j_methods;
       unparse (unparse_attribute ch' consts) c.j_attributes;
       unparse_constant_pool ch consts;
-      JLib.IO.write_string ch (close_out ch')
+      JLib.IO.nwrite_string ch (close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c
