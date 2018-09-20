@@ -201,7 +201,7 @@ let access_flags = function
 	      | `AccRFU i -> Printf.sprintf "rfu 0x%X" i
 	   ) flags) ^ " "
 
-let string_nwrite ch s = JLib.IO.write_string ch s
+let string_nwrite ch s = JLib.IO.nwrite_string ch s
                         
 let dump_java6_stackmap ch frame =
   match frame with

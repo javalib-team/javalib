@@ -25,7 +25,7 @@ module IO : sig
   val really_nread : input -> int -> Bytes.t
   val really_nread_string : input -> int -> string
   val write_byte : 'a output -> int -> unit
-  val write_string : 'a output -> string -> unit
+  val nwrite_string : 'a output -> string -> unit
   val output_string : unit -> string output
   val close_out : 'a output -> 'a
   val close_in : input -> unit
