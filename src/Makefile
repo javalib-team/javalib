@@ -25,8 +25,6 @@ DOCDIR := doc/api
 
 DOCDIR:=../$(DOCDIR)
 
-CSS=\"style.css\"
-
 # ------ 
 MODULES= jLib jBasics jBasicsLow jSignature jCode jClass jDumpBasics jParseCode	\
 jInstruction jUnparseSignature jDumpLow jHigh2Low jUnparse		\
@@ -34,9 +32,9 @@ jParseSignature jLow2High jParse jFile jManifest jPrint javalib
 
 MODULE_INTERFACES= jLib jBasics jBasicsLow jSignature jCode jClassLow jClass	\
 jDumpBasics jUnparseSignature jDumpLow jParseCode jInstruction	\
-jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib 
+jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib
 
-FOR_PACK= -for-pack Javalib_pack
+PTREES= ptset ptmap genericSet genericMap
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc remove
@@ -44,7 +42,8 @@ FOR_PACK= -for-pack Javalib_pack
 
 all: javalib.cma javalib.cmxa $(SHARED)
 
-install: META javalib.cm[ia] javalib.cmxa $(MODULE_INTERFACES:=.mli) javalib_pack.cm[iox] javalib_pack.o 
+install: META javalib.cm[ia] javalib.cmxa javalib_pack.cm[iox] javalib_pack.o 	\
+	$(MODULE_INTERFACES:=.mli) $(addprefix ptrees/, $(PTREES:=.mli))
 	$(INSTALL) javalib $^ javalib.a
 remove:
 	$(FINDER) remove javalib
@@ -77,10 +76,10 @@ javalib.cmxa: javalib_pack.cmx
 # 	$(OCAMLOPT) $(INCLUDE) -linkpkg -shared -o $@ $^
 
 javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
-	$(OCAMLC) $(INCLUDE) -pack $(MODULES:=.cmo) -o $@
+	$(OCAMLC) $(INCLUDE) -I ptrees -pack  $(PTREES:=.cmo) $(MODULES:=.cmo) -o $@
 
 javalib_pack.cmx: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
-	$(OCAMLOPT) $(INCLUDE) -pack $(MODULES:=.cmx) -o $@
+	$(OCAMLOPT) $(INCLUDE) -I ptrees -pack $(PTREES:=.cmx) $(MODULES:=.cmx) -o $@
 
 # doc
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
@@ -97,12 +96,10 @@ doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 clean:
 	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~ \
 	jManifest.ml
-	$(MAKE) -C ptrees $@
 
 cleanall: clean
 	$(RM) -r ocaml *.cmi	\
 		*.cma *.cmxa *.cmxs
-	$(MAKE) -C ptrees $@
 
 cleandoc:
 	$(RM) -r $(DOCDIR)

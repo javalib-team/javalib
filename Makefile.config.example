@@ -16,3 +16,4 @@ PP := -package camlp4 -syntax camlp4o
 
 INSTALL = $(FINDER) install
 
+FOR_PACK = -for-pack Javalib_pack

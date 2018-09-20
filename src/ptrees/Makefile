@@ -24,13 +24,7 @@ MODULE_INTERFACES=ptmap.mli ptset.mli genericSet.mli genericMap.mli
 .PHONY : all clean cleanall cleandoc doc install remove
 .DELETE_ON_ERROR:.depend
 
-all:ptrees.cma ptrees.cmxa
-
-ptrees.cma:$(MODULES:.ml=.cmo)
-	$(OCAMLC) -o $@ -a $^
-
-ptrees.cmxa:$(MODULES:.ml=.cmx)
-	$(OCAMLOPT) -o $@ -a $^
+all: $(MODULES:.ml=.cmo) $(MODULES:.ml=.cmx)
 
 .SUFFIXES: .ml .mli .cmo .cmi .cmx .cma .cmxa
 
@@ -39,13 +33,13 @@ ptrees.cmxa:$(MODULES:.ml=.cmx)
 .mli.cmi:.depend Makefile
 	$(OCAMLC) -c $<
 .ml.cmx:.depend Makefile
-	$(OCAMLOPT) -c $< 
+	$(OCAMLOPT) $(FOR_PACK) -c $< 
 
 # Clean up
 clean:
 	$(RM) *.o *.a *.cm[iox] *~ *.annot .depend
 cleanall:clean
-	$(RM) *.cma *.cmxa
+	$(RM)
 
 # Dependencies
 .depend: ../../Makefile.config $(MODULE_INTERFACES) $(MODULES)
