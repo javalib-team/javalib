@@ -29,12 +29,28 @@ In the main repository, execute
      $ make
      $ make install
 
+If you want to verify that Javalib is correctly installed and found by ocaml, this command should find the library path
+
+     $ ocamlfind query javalib
+
+To clean the sources, run
+
+     $ make clean
+
 To remove the library from your system, just do
 
      $ make remove
+     
+If you want to generate the documentation, run
 
+     $ make doc
+     
+You can clean the doc with
+
+    $ make cleandoc
+    
 ## Using Javalib
 
 Before being able to use the modules presented in the [API documentation](http://javalib.gforge.inria.fr/javalib-api), you need to `open Javalib_pack;;`.
 
-*Javalib* has just been ported from a *svn* repository hosted by [Inria Gforge](https://gforge.inria.fr/projects/javalib/) to [GitHub](https://github.com/javalib-team/javalib/). More documentation will we available soon in the project Wiki, but in the meantime please refer to the available [website](http://sawja.inria.fr/).
+To get started with *Javalib*, read the [tutorial](https://github.com/javalib-team/javalib/wiki).
