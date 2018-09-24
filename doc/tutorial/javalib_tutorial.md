@@ -2,7 +2,7 @@ Introduction
 ============
 
 *Javalib* is a library written in *OCaml* with the aim to provide
-a high level representation of *Java* **.class** files. Thus it
+a high level representation of *Java* `.class` files. Thus it
 stands for a good starting point for people who want to develop
 static analysis for *Java* byte-code programs, benefiting from the
 strength of *OCaml* language.
@@ -35,7 +35,7 @@ These types are:
 
 The types representing class names, method signatures and field
 signatures are abstract. The directives to build them are in *JBasics*
-and are respectively **make_cn**, **make_ms** and **make_fs**.
+and are respectively `make_cn`, `make_ms` and `make_fs`.
 
 This module also provides some sets and maps containers relative to
 the abstract class names, field signatures and method signatures.
@@ -55,7 +55,7 @@ opcodes, and that the position of an opcode in this array corresponds
 to its relative address in the original binary file (this is the same
 numbering as **javap**). In *Javalib* representation, an opcode
 includes an instruction and its arguments. That's why we needed to
-introduce a dummy opcode **OpInvalid** to keep the correct numbering.
+introduce a dummy opcode `OpInvalid` to keep the correct numbering.
 
 
 *Javalib* module
@@ -72,47 +72,47 @@ Tutorial
 To begin this tutorial, open an *OCaml* toplevel, for instance using
 the *Emacs* **tuareg-mode**.
 
-Two standard libraries *str*, *unix*, and four specific libraries, *extlib*,
-*zip*, *ptrees* and *javalib* must be loaded. However, paths to find these four
-latter librairies must be specified with the **#directory** directives first:
+Three standard libraries *str*, *unix*, *bigarray*, and four specific libraries,
+*extlib*, *zip*, *camomile* and *javalib* must be loaded.
+However, paths to find these three latter librairies must be specified with the
+`#directory` directives first:
 
-~~~~~{#asso_dir .ocaml}
+~~~~~ocaml
 #directory "<package_install_path>extlib"
-#directory "<package_install_path>camlzip"
-#directory "<package_install_path>ptrees"
+#directory "<package_install_path>zip"
+#directory "<package_install_path>camomile/library"
 #directory "<package_install_path>javalib"
 (*<package_install_path> is given by command 'ocamlfind printconf'. 
 If it is the same path than standard ocaml library just replace by '+'.*)
 ~~~~~
 
-
-
 Then load the following libraries in the given order:
 
-~~~~~{#load .ocaml}
+~~~~~ocaml
 #load "str.cma"
 #load "unix.cma"
 #load "extLib.cma"
 #load "zip.cma"
-#load "ptrees.cma"
+#load "bigarray.cma"
+#load "camomileLibrary.cma"
 #load "javalib.cma"
 ~~~~~
 
 You can also build a toplevel including all these libraries using the
-command **make ocaml** in the sources repository of *Javalib*. This
+command `make ocaml` in the sources repository of *Javalib*. This
 command builds an executable named **ocaml** which is the result of
 the **ocamlmktop** command.
 
 Making class names, field signatures and method signatures
 ----------------------------------------------------------
 
-Imagine you want to access the method **m:(Ljava.lang.String;)V** and
-the field **f:I** of the class **A**.
+Imagine you want to access the method `m:(Ljava.lang.String;)V` and
+the field `f:I` of the class `A`.
 
 You first need to build the signatures associated to each entity.
 According to the *Javalib* API you will write:
 
-~~~~~{#make_cn_ms_fs .ocaml}
+~~~~~ocaml
 open Javalib_pack
 open JBasics
 let aname = make_cn "A"
@@ -128,63 +128,63 @@ Getting a class representation from a binary file
 The methods you need are in the *Javalib* module. You can open this
 module cause you will need it very often.
 
-~~~~~{#op_javalib .ocaml}
+~~~~~ocaml
 open Javalib
 ~~~~~
 
-Then, you need to build a **class_path** to specify where the classes
+Then, you need to build a `class_path` to specify where the classes
 you want to load have to be found:
 
-~~~~~{#cp .ocaml}
+~~~~~ocaml
 let class_path = class_path "./" (* for instance *)
 ~~~~~
 
-You can now load the class **./A.class** corresponding to **aname**.
+You can now load the class `./A.class` corresponding to `aname`.
 
-~~~~~{#load_a .ocaml}
+~~~~~ocaml
 let a = get_class class_path aname
 ~~~~~
 
 When you don't need a classpath any more, close it with
-**close_class_path** if you don't want to get file descriptors
+`close_class_path` if you don't want to get file descriptors
 exceptions in a near futur.
 
 Getting fields and methods from a class
 ----------------------------------------
 
-You now have the class **a** of type *Javalib.interface_or_class*. You
-might want to recover its method **m** of type *Javalib.jmethod* and
-field **f** of type *Javalib.any_field*.
+You now have the class `a` of type `Javalib.interface_or_class`. You
+might want to recover its method `m` of type `Javalib.jmethod` and
+field `f` of type `Javalib.any_field`.
 
 Simply do:
 
-~~~~~{#load_m_f .ocaml}
+~~~~~ocaml
 let m = get_method a ms
 let f = get_field a fs
 ~~~~~
 
 Note:
-:    The methods **get_method** and **get_field** raise the exception **Not_found** if the method or field asked for can't be found.
+> The methods `get_method` and `get_field` raise the exception `Not_found` if the method or field asked for can't be found.
 
-It's important to notice that **a** can be a *Class of jclass* or an
-*Interface of jinterface* (see type *interface_or_class*), but that
-the methods **get_method** and **get_field** work equaly on it. That's
-why **get_field** returns a value of type *any_field* which can be
-*ClassField of class_field* or *Interface_field of interface_field*.
+It's important to notice that `a` can be a `Class of jclass` or an
+`Interface of jinterface` (see type `interface_or_class`), but that
+the methods `get_method` and `get_field` work equaly on it. That's
+why `get_field` returns a value of type `any_field` which can be
+`ClassField of class_field` or `Interface_field of interface_field`.
 Indeed, according to the JVM specification, we need to make the
 distinction between interface fields and class fields.
 
 A more sophisticated example
 ----------------------------
 
-Now we would like to write a function that takes a **classpath** and
-a **classname** as parameters and that returns, for each method of
+Now we would like to write a function that takes a `classpath` and
+a `classname` as parameters and that returns, for each method of
 this class, a set of the fields accessed for reading (instructions
-**getstatic** and **getfield**).
+`getstatic` and `getfield`).
 
 Here is the code:
 
-~~~~~{#exemple1 .ocaml}
+~~~~~ocaml
 open Javalib_pack
 open Javalib
 open JBasics
@@ -236,7 +236,7 @@ let get_accessed_fields (class_path : class_path)
 
 This method has the signature
 
-~~~~~{#cp_sig .ocaml}
+~~~~~ocaml
 Javalib.class_path ->
   JBasics.class_name -> JBasics.FieldSet.t JBasics.MethodMap.t
 ~~~~~
@@ -244,9 +244,9 @@ Javalib.class_path ->
 Another use case
 ----------------
 
-Consider the following class written in java:
+Consider the following class written in *java*:
 
-~~~~~{#TestString .java}
+~~~~~java
 public class TestString{
    public boolean m(String s){
       if (s.equals("str")){
@@ -258,13 +258,13 @@ public class TestString{
 }
 ~~~~~
 
-We see that the method *m* might raise an *NullPointer* exception if
-we call the method *equals* on an uninitialized string *s*. To avoid
-this, a good practice is to replace the test **s.equals("str")** by
-the expression **"str".equals(s)** which will return false rather than
+We see that the method `m` might raise an `NullPointer` exception if
+we call the method `equals` on an uninitialized string `s`. To avoid
+this, a good practice is to replace the test `s.equals("str")` by
+the expression `"str".equals(s)` which will return false rather than
 raising an exception.
 
-Let's see the bytecode associated to the method *m*, given by **javap**:
+Let's see the bytecode associated to the method `m`, given by **javap**:
 
 ~~~~~
 public boolean m(java.lang.String);
@@ -276,14 +276,14 @@ public boolean m(java.lang.String);
 ~~~~~
 
 We will now write a sample of code that detects instructions of type
-**ldc 'string'** followed by an **invokevirtual** on
-*java.lang.String.equals* method.
+`ldc 'string'` followed by an `invokevirtual` on
+`java.lang.String.equals` method.
 
 We first need to write a function that returns the next instruction
 and its program point in a code, given this code and a current program
 point:
 
-~~~~~{#next_instr .ocaml}
+~~~~~ocaml
 let rec next_instruction (code : jopcodes) (pp : int)
   : (jopcode * int) option =
  try
@@ -293,13 +293,13 @@ let rec next_instruction (code : jopcodes) (pp : int)
  with _ -> None
 ~~~~~
 
-Now we define a function that takes a *classpath* and a *classname* as
+Now we define a function that takes a `classpath` and a `classname` as
 parameters and that returns a map associating each concrete method
-signature to a list of (**int**,**string**) couples representing the
-program points and the strings on which the *java.lang.String.equals*
+signature to a list of `int * string` couples representing the
+program points and the strings on which the `java.lang.String.equals`
 method is called.
 
-~~~~~{#get_equals .ocaml}
+~~~~~ocaml
 let get_equals_calls (class_path : class_path)
   (cn : class_name) =
  (* We first recover the interface or class associated to the
@@ -364,14 +364,14 @@ let get_equals_calls (class_path : class_path)
 
 This method has the signature
 
-~~~~~{#cp_sig2 .ocaml}
+~~~~~ocaml
     Javalib.class_path ->
-      JBasics.class_name -> (int * string) list JBasics.MethodMap.t
+      JBasics.class_name -> (int * JBasics.jstr) list JBasics.MethodMap.t
 ~~~~~
 
-We obtain the expected result on the previous class *TestString*:
+We obtain the expected result on the previous class `TestString`:
 
-~~~~~{#run_cp .ocaml}
+~~~~~ocaml
 # let cp = class_path ".";;
 val cp : Javalib.class_path = <abstr>
 

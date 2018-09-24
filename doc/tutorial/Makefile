@@ -31,4 +31,4 @@ test: tutorial.ml
 	rm tutorial.cmi tutorial.cmo tutorial.annot
 
 clean:
-	rm -f javalib_tut.pdf javalib-tut.html style.css
+	rm -f javalib-tut.pdf javalib-tut.html style.css
