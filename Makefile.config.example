@@ -15,4 +15,3 @@ DOCDIR := doc/api
 PP := -package camlp4 -syntax camlp4o
 
 INSTALL = $(FINDER) install
-

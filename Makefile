@@ -1,6 +1,6 @@
 -include Makefile.config
 
-.PHONY:all ptrees javalib install clean cleanall cleandoc doc
+.PHONY:all javalib install clean cleanall cleandoc doc
 
 # should do : 
 all:javalib
@@ -10,9 +10,6 @@ javalib:
 
 # Package-specific targets
 
-ptrees installptrees removeptrees:%ptrees:
-	$(MAKE) -C ptrees $*
-
 install remove:
 	$(MAKE) -C src $@
 
@@ -21,7 +18,6 @@ distclean:clean
 
 cleanall clean:
 	$(MAKE) -C src $@
-	$(MAKE) -C ptrees $@
 	$(MAKE) -C doc $@
 	$(RM) *~
 
