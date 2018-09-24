@@ -51,6 +51,6 @@ You can clean the doc with
     
 ## Using Javalib
 
-Before being able to use the modules presented in the [API documentation](http://javalib.gforge.inria.fr/javalib-api), you need to `open Javalib_pack;;`.
+Before being able to use the modules presented in the [API documentation](https://javalib-team.github.io/javalib/doc/api/), you need to `open Javalib_pack`.
 
 To get started with *Javalib*, read the [tutorial](https://github.com/javalib-team/javalib/wiki).
