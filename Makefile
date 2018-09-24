@@ -6,7 +6,6 @@
 all:javalib
 
 javalib:
-	$(MAKE) -C src/ptrees
 	$(MAKE) -C src
 
 # Package-specific targets
@@ -18,7 +17,6 @@ distclean:clean
 	$(RM) Makefile.config
 
 cleanall clean:
-	$(MAKE) -C src/ptrees $@
 	$(MAKE) -C src $@
 	$(MAKE) -C doc $@
 	$(RM) *~

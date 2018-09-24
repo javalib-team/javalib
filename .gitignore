@@ -7,4 +7,5 @@ Makefile.config
 *.depend
 src/META
 doc/tutorial/*.pdf
+doc/api
 src/jManifest.ml

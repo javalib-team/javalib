@@ -25,16 +25,21 @@ DOCDIR := doc/api
 
 DOCDIR:=../$(DOCDIR)
 
-# ------ 
-MODULES= jLib jBasics jBasicsLow jSignature jCode jClass jDumpBasics jParseCode	\
+# ------
+
+PTREES= ptrees/ptset ptrees/ptmap ptrees/genericSet ptrees/genericMap
+
+MODULES= $(PTREES)							\
+jLib jBasics jBasicsLow jSignature jCode jClass jDumpBasics jParseCode	\
 jInstruction jUnparseSignature jDumpLow jHigh2Low jUnparse		\
 jParseSignature jLow2High jParse jFile jManifest jPrint javalib
 
-MODULE_INTERFACES= jLib jBasics jBasicsLow jSignature jCode jClassLow jClass	\
+MODULE_INTERFACES= $(PTREES)					\
+jLib jBasics jBasicsLow jSignature jCode jClassLow jClass	\
 jDumpBasics jUnparseSignature jDumpLow jParseCode jInstruction	\
 jUnparse jParseSignature jParse jLow2High jHigh2Low jFile jManifest javalib
 
-PTREES= ptset ptmap genericSet genericMap
+FOR_PACK = -for-pack Javalib_pack
 
 .SUFFIXES : .cmo .cmx .cmi .ml .mli
 .PHONY : all install clean cleanall cleandoc doc remove
@@ -43,7 +48,7 @@ PTREES= ptset ptmap genericSet genericMap
 all: javalib.cma javalib.cmxa $(SHARED)
 
 install: META javalib.cm[ia] javalib.cmxa javalib_pack.cm[iox] javalib_pack.o 	\
-	$(MODULE_INTERFACES:=.mli) $(addprefix ptrees/, $(PTREES:=.mli))
+	$(MODULE_INTERFACES:=.mli)
 	$(INSTALL) javalib $^ javalib.a
 remove:
 	$(FINDER) remove javalib
@@ -76,25 +81,22 @@ javalib.cmxa: javalib_pack.cmx
 # 	$(OCAMLOPT) $(INCLUDE) -linkpkg -shared -o $@ $^
 
 javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
-	$(OCAMLC) $(INCLUDE) -I ptrees -pack  $(PTREES:=.cmo) $(MODULES:=.cmo) -o $@
+	$(OCAMLC) $(INCLUDE) -I ptrees -pack  $(MODULES:=.cmo) -o $@
 
 javalib_pack.cmx: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
-	$(OCAMLOPT) $(INCLUDE) -I ptrees -pack $(PTREES:=.cmx) $(MODULES:=.cmx) -o $@
+	$(OCAMLOPT) $(INCLUDE) -I ptrees -pack $(MODULES:=.cmx) -o $@
 
 # doc
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
 	$(OCAMLDOC) $(RECODE) $(INCLUDE) -I ptrees -d $(DOCDIR) -html -stars \
 		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
-		$(MODULE_INTERFACES:=.mli) ptrees/ptmap.mli		\
-		ptrees/ptset.mli ptrees/genericMap.mli			\
-		ptrees/genericSet.mli
-
-	echo "</body></html>" >> $(DOCDIR)/index.html # workaround for a bug in ocamldoc
+		$(MODULE_INTERFACES:=.mli)
 
 # cleaning
 clean:
-	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~ \
+	$(RM) .depend *.cmi *.cmo *.cmx *.annot *.obj *.o *.a *~ 	\
+	$(RM) $(addprefix ptrees/, *.o *.a *.cm[iox] *~ *.annot)	\
 	jManifest.ml
 
 cleanall: clean
