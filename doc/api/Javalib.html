@@ -1,0 +1,1459 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JManifest.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Common types." rel="Section" href="#2_Commontypes">
+<link title="Fields of classes and interfaces." rel="Section" href="#2_Fieldsofclassesandinterfaces">
+<link title="Fields access functions." rel="Section" href="#2_Fieldsaccessfunctions">
+<link title="Methods of classes and interfaces." rel="Section" href="#2_Methodsofclassesandinterfaces">
+<link title="Methods access functions." rel="Section" href="#2_Methodsaccessfunctions">
+<link title="Classes and interfaces." rel="Section" href="#2_Classesandinterfaces">
+<link title="Classes access functions." rel="Section" href="#2_Classesaccessfunctions">
+<link title="Iterators" rel="Section" href="#2_Iterators">
+<link title="Transforming code representation." rel="Section" href="#2_Transformingcoderepresentation">
+<link title="Files manipulations." rel="Section" href="#2_Filesmanipulations">
+<link title="Dumping classes in .class format." rel="Section" href="#2_Dumpingclassesinclassformat">
+<link title="Printing functions." rel="Section" href="#2_Printingfunctions">
+<link title="Alternative transforming functions" rel="Subsection" href="#3_Alternativetransformingfunctions">
+<link title="More advanced files manipulations." rel="Subsection" href="#3_Moreadvancedfilesmanipulations">
+<title>Javalib : Javalib</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="JManifest.html" title="JManifest">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Javalib.html">Javalib</a></h1>
+
+<pre><span id="MODULEJavalib"><span class="keyword">module</span> Javalib</span>: <code class="code"><span class="keyword">sig</span></code> <a href="Javalib.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>User interface for using the Javalib.</p>
+</div>
+</div>
+<hr width="100%">
+<h3 id="2_Commontypes">Common types.</h3>
+<pre><span id="TYPEaccess"><span class="keyword">type</span> <code class="type"></code>access</span> = <code class="type">[ `Default | `Private | `Protected | `Public ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Visibility modifiers.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEattributes"><span class="keyword">type</span> <code class="type"></code>attributes</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattributes.synthetic">synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the attribute, not to the flag (cf. JVM Spec 1.5
+      §4.2, §4.6, §4.7 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattributes.deprecated">deprecated</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattributes.other">other</span>&nbsp;: <code class="type">(string * string) list</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Generic attributes common to classes, fields and methods.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEvisibility"><span class="keyword">type</span> <code class="type"></code>visibility</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvisibility.RTVisible"><span class="constructor">RTVisible</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvisibility.RTInvisible"><span class="constructor">RTInvisible</span></span></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>visibility modifiers for annotations. An annotation may either be visible at
+    run-time (<code class="code"><span class="constructor">RTVisible</span></code>) or only present in the class file without being
+    visible at run-time (<code class="code"><span class="constructor">RTInvisible</span></code>).  (Note that there exists a third
+    visibility at the Java source level, but as it corresponds to the
+    source-only visibility they are not in the class file anymore.)</p>
+</div>
+</div>
+
+<h3 id="2_Fieldsofclassesandinterfaces">Fields of classes and interfaces.</h3>
+<pre><code><span id="TYPEfield_kind"><span class="keyword">type</span> <code class="type"></code>field_kind</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfield_kind.NotFinal"><span class="constructor">NotFinal</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfield_kind.Final"><span class="constructor">Final</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTfield_kind.Volatile"><span class="constructor">Volatile</span></span></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Field kind</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEclass_field"><span class="keyword">type</span> <code class="type"></code>class_field</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_signature">cf_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_class_signature">cf_class_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_field_signature">JBasics.class_field_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_generic_signature">cf_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_access">cf_access</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEaccess">access</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_static">cf_static</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_synthetic">cf_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.6 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_enum">cf_enum</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_kind">cf_kind</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEfield_kind">field_kind</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_value">cf_value</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_transient">cf_transient</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_annotations">cf_annotations</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_other_flags">cf_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTclass_field.cf_attributes">cf_attributes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Fields of classes.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEinterface_field"><span class="keyword">type</span> <code class="type"></code>interface_field</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_signature">if_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_class_signature">if_class_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_field_signature">JBasics.class_field_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_generic_signature">if_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_synthetic">if_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.6 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_value">if_value</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>a constant_value is not mandatory, especially as it can be
+      initialized by the class initializer &lt;clinit&gt;.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_annotations">if_annotations</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_other_flags">if_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_field.if_attributes">if_attributes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Fields of interfaces are implicitly <code class="code">public</code>, <code class="code">static</code> and
+    <code class="code">final</code>.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEany_field"><span class="keyword">type</span> <code class="type"></code>any_field</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTany_field.InterfaceField"><span class="constructor">InterfaceField</span></span> <span class="keyword">of</span> <code class="type"><a href="Javalib.html#TYPEinterface_field">interface_field</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTany_field.ClassField"><span class="constructor">ClassField</span></span> <span class="keyword">of</span> <code class="type"><a href="Javalib.html#TYPEclass_field">class_field</a></code></code></td>
+
+</tr></table>
+
+
+<h3 id="2_Fieldsaccessfunctions">Fields access functions.</h3>
+<pre><span id="VALget_field_signature"><span class="keyword">val</span> get_field_signature</span> : <code class="type"><a href="Javalib.html#TYPEany_field">any_field</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a></code></pre>
+<pre><span id="VALget_class_field_signature"><span class="keyword">val</span> get_class_field_signature</span> : <code class="type"><a href="Javalib.html#TYPEany_field">any_field</a> -> <a href="JBasics.html#TYPEclass_field_signature">JBasics.class_field_signature</a></code></pre>
+<pre><span id="VALget_field_visibility"><span class="keyword">val</span> get_field_visibility</span> : <code class="type"><a href="Javalib.html#TYPEany_field">any_field</a> -> <a href="Javalib.html#TYPEaccess">access</a></code></pre>
+<pre><span id="VALis_static_field"><span class="keyword">val</span> is_static_field</span> : <code class="type"><a href="Javalib.html#TYPEany_field">any_field</a> -> bool</code></pre>
+<pre><span id="VALis_final_field"><span class="keyword">val</span> is_final_field</span> : <code class="type"><a href="Javalib.html#TYPEany_field">any_field</a> -> bool</code></pre><h3 id="2_Methodsofclassesandinterfaces">Methods of classes and interfaces.</h3>
+<pre><code><span id="TYPEimplementation"><span class="keyword">type</span> <code class="type">'a</code> implementation</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTimplementation.Native"><span class="constructor">Native</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTimplementation.Java"><span class="constructor">Java</span></span> <span class="keyword">of</span> <code class="type">'a Stdlib.Lazy.t</code></code></td>
+
+</tr></table>
+
+
+
+<pre><code><span id="TYPEmethod_annotations"><span class="keyword">type</span> <code class="type"></code>method_annotations</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_annotations.ma_global">ma_global</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>annotations that are for the whole method.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_annotations.ma_parameters">ma_parameters</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list list</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p><code class="code">[al1,al2]</code> represents the annotations for the 2 parameters of the
+      method, <code class="code">al1</code> being the annotations for the first parameter and <code class="code">al2</code> the
+      annotations for the second parameter.  The length is smaller than the
+      number of parameters of the method (excluding the receiver this).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEconcrete_method"><span class="keyword">type</span> <code class="type">'a</code> concrete_method</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_signature">cm_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_class_method_signature">cm_class_method_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_method_signature">JBasics.class_method_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_static">cm_static</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_final">cm_final</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_synchronized">cm_synchronized</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_strict">cm_strict</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Correspond to flag ACC_STRICT, which shows if we are in
+                    FP-strict mod or not.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_access">cm_access</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEaccess">access</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_generic_signature">cm_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEmethodTypeSignature">JSignature.methodTypeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_bridge">cm_bridge</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_varargs">cm_varargs</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_synthetic">cm_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.7 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_other_flags">cm_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_exceptions">cm_exceptions</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_attributes">cm_attributes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_annotations">cm_annotations</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEmethod_annotations">method_annotations</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_implementation">cm_implementation</span>&nbsp;: <code class="type">'a <a href="Javalib.html#TYPEimplementation">implementation</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEabstract_method"><span class="keyword">type</span> <code class="type"></code>abstract_method</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_signature">am_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_class_method_signature">am_class_method_signature</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_method_signature">JBasics.class_method_signature</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_access">am_access</span>&nbsp;: <code class="type">[ `Default | `Private | `Protected | `Public ]</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_generic_signature">am_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEmethodTypeSignature">JSignature.methodTypeSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_bridge">am_bridge</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_varargs">am_varargs</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_synthetic">am_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute (cf. JVM Spec
+ 1.5 §4.7 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_other_flags">am_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_exceptions">am_exceptions</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_attributes">am_attributes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_annotations">am_annotations</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEmethod_annotations">method_annotations</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_annotation_default">am_annotation_default</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEelement_value">JBasics.element_value</a> option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>If the method is in an annotation interface, then <code class="code">am_annotation_default</code>
+      may contains a default value for this method (annotation element).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>An abstract method cannot be final, synchronized, strict or private.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEjmethod"><span class="keyword">type</span> <code class="type">'a</code> jmethod</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.AbstractMethod"><span class="constructor">AbstractMethod</span></span> <span class="keyword">of</span> <code class="type"><a href="Javalib.html#TYPEabstract_method">abstract_method</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.ConcreteMethod"><span class="constructor">ConcreteMethod</span></span> <span class="keyword">of</span> <code class="type">'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a></code></code></td>
+
+</tr></table>
+
+
+<h3 id="2_Methodsaccessfunctions">Methods access functions.</h3>
+<pre><span id="VALget_method_signature"><span class="keyword">val</span> get_method_signature</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code></pre>
+<pre><span id="VALget_class_method_signature"><span class="keyword">val</span> get_class_method_signature</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> <a href="JBasics.html#TYPEclass_method_signature">JBasics.class_method_signature</a></code></pre>
+<pre><span id="VALget_method_visibility"><span class="keyword">val</span> get_method_visibility</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> <a href="Javalib.html#TYPEaccess">access</a></code></pre>
+<pre><span id="VALis_static_method"><span class="keyword">val</span> is_static_method</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> bool</code></pre>
+<pre><span id="VALis_final_method"><span class="keyword">val</span> is_final_method</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> bool</code></pre>
+<pre><span id="VALis_synchronized_method"><span class="keyword">val</span> is_synchronized_method</span> : <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> bool</code></pre><h3 id="2_Classesandinterfaces">Classes and interfaces.</h3>
+<pre><code><span id="TYPEinner_class"><span class="keyword">type</span> <code class="type"></code>inner_class</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_class_name">ic_class_name</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_outer_class_name">ic_outer_class_name</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_source_name">ic_source_name</span>&nbsp;: <code class="type">string option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_access">ic_access</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEaccess">access</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_static">ic_static</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_final">ic_final</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_synthetic">ic_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_annotation">ic_annotation</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p><code class="code"><span class="keyword">true</span></code> if and only if the class is an annotation (it should in this case
+      be an interface)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_enum">ic_enum</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_other_flags">ic_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinner_class.ic_type">ic_type</span>&nbsp;: <code class="type">[ `Abstract | `ConcreteClass | `Interface ]</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEjclass"><span class="keyword">type</span> <code class="type">'a</code> jclass</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_name">c_name</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_version">c_version</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEversion">JBasics.version</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_access">c_access</span>&nbsp;: <code class="type">[ `Default | `Public ]</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_final">c_final</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_abstract">c_abstract</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_super_class">c_super_class</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_generic_signature">c_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEclassSignature">JSignature.classSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_fields">c_fields</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEclass_field">class_field</a> JBasics.FieldMap.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_interfaces">c_interfaces</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_consts">c_consts</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>needed at least for unparsed/unknown attributes that might refer to the constant pool.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_sourcefile">c_sourcefile</span>&nbsp;: <code class="type">string option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_deprecated">c_deprecated</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_enclosing_method">c_enclosing_method</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> option) option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>introduced with Java 5 for local classes (defined in methods'
+      code). The first element is innermost class that encloses the
+      declaration of the current class. The second element is the
+      method that encose this class definition. cf
+      <a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>,
+      paragraph 4.8.6.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_source_debug_extention">c_source_debug_extention</span>&nbsp;: <code class="type">string option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Introduced in Java 5 for debugging purpose (no
+      semantics defined)
+      (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_inner_classes">c_inner_classes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEinner_class">inner_class</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_synthetic">c_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec 1.5 §4.2 and §4.8.7)</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_enum">c_enum</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_annotations">c_annotations</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_other_flags">c_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_other_attributes">c_other_attributes</span>&nbsp;: <code class="type">(string * string) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.c_methods">c_methods</span>&nbsp;: <code class="type">'a <a href="Javalib.html#TYPEjmethod">jmethod</a> JBasics.MethodMap.t</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEjinterface"><span class="keyword">type</span> <code class="type">'a</code> jinterface</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_name">i_name</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_version">i_version</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEversion">JBasics.version</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_access">i_access</span>&nbsp;: <code class="type">[ `Default | `Public ]</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_interfaces">i_interfaces</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_generic_signature">i_generic_signature</span>&nbsp;: <code class="type"><a href="JSignature.html#TYPEclassSignature">JSignature.classSignature</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_consts">i_consts</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>needed at least for unparsed/unknown attributes that might refer to the constant pool.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_sourcefile">i_sourcefile</span>&nbsp;: <code class="type">string option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_deprecated">i_deprecated</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_source_debug_extention">i_source_debug_extention</span>&nbsp;: <code class="type">string option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Introduced in Java 5 for debugging purpose (no
+      semantics defined)
+      (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_inner_classes">i_inner_classes</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEinner_class">inner_class</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_initializer">i_initializer</span>&nbsp;: <code class="type">'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> option</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>the signature is &lt;clinit&gt;()V; and the method should be static</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_annotation">i_annotation</span>&nbsp;: <code class="type">bool</code>;</code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p><code class="code"><span class="keyword">true</span></code> if and only if the interface is an annotation.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_annotations">i_annotations</span>&nbsp;: <code class="type">(<a href="JBasics.html#TYPEannotation">JBasics.annotation</a> * <a href="Javalib.html#TYPEvisibility">visibility</a>) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_other_attributes">i_other_attributes</span>&nbsp;: <code class="type">(string * string) list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_other_flags">i_other_flags</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_fields">i_fields</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEinterface_field">interface_field</a> JBasics.FieldMap.t</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjinterface.i_methods">i_methods</span>&nbsp;: <code class="type"><a href="Javalib.html#TYPEabstract_method">abstract_method</a> JBasics.MethodMap.t</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Interfaces cannot be final and can only contains abstract
+    methods. Their super class is <code class="code">java.lang.<span class="constructor">Object</span></code>.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEinterface_or_class"><span class="keyword">type</span> <code class="type">'a</code> interface_or_class</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_or_class.JInterface"><span class="constructor">JInterface</span></span> <span class="keyword">of</span> <code class="type">'a <a href="Javalib.html#TYPEjinterface">jinterface</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTinterface_or_class.JClass"><span class="constructor">JClass</span></span> <span class="keyword">of</span> <code class="type">'a <a href="Javalib.html#TYPEjclass">jclass</a></code></code></td>
+
+</tr></table>
+
+
+<h3 id="2_Classesaccessfunctions">Classes access functions.</h3>
+<pre><span id="VALget_name"><span class="keyword">val</span> get_name</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the fully qualified name of a <code class="code">class_name</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALget_consts"><span class="keyword">val</span> get_consts</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> array</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the constant pool of a class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALget_access"><span class="keyword">val</span> get_access</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> [ `Default | `Public ]</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the access type of a class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALget_sourcefile"><span class="keyword">val</span> get_sourcefile</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> string option</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the source file associated to the parsed bytecode used to build
+    the given class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALis_deprecated"><span class="keyword">val</span> is_deprecated</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if the use of the given interface or class is deprecated,
+    <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+
+<pre><span id="VALis_final"><span class="keyword">val</span> is_final</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if the given interface or class is final, <code class="code"><span class="keyword">false</span></code>
+    otherwise.</p>
+</div>
+</div>
+
+<pre><span id="VALget_inner_classes"><span class="keyword">val</span> get_inner_classes</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="Javalib.html#TYPEinner_class">inner_class</a> list</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the list of inner classes defined in the given class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALget_initializer"><span class="keyword">val</span> get_initializer</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> option</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the initializer of the given class or interface, if defined.</p>
+</div>
+</div>
+
+<pre><span id="VALget_other_attributes"><span class="keyword">val</span> get_other_attributes</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> (string * string) list</code></pre>
+<pre><span id="VALget_other_flags"><span class="keyword">val</span> get_other_flags</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> int list</code></pre>
+<pre><span id="VALdefines_method"><span class="keyword">val</span> defines_method</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">defines_method&nbsp;ioc&nbsp;ms</code> returns <code class="code"><span class="keyword">true</span></code> if <code class="code">ioc</code> defines a method with a signature equal
+    to <code class="code">ms</code>, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+
+<pre><span id="VALget_method"><span class="keyword">val</span> get_method</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -><br>       <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> 'a <a href="Javalib.html#TYPEjmethod">jmethod</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">get_method&nbsp;ioc&nbsp;ms</code> returns the method with the signature <code class="code">ms</code> in the
+    interface or class <code class="code">ioc</code>.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Not_found</code> if such a method can't be found.</li>
+</ul>
+</div>
+
+<pre><span id="VALget_concrete_method"><span class="keyword">val</span> get_concrete_method</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -><br>       <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> 'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">get_concrete_method&nbsp;ioc&nbsp;ms</code> returns the method with the signature
+    <code class="code">ms</code> in the interface or class <code class="code">ioc</code>.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Not_found</code> if such a
+    method can't be found or if the method is not concrete.</li>
+</ul>
+</div>
+
+<pre><span id="VALget_methods"><span class="keyword">val</span> get_methods</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'a <a href="Javalib.html#TYPEjmethod">jmethod</a> JBasics.MethodMap.t</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the map of all the methods defined in the given class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALget_concrete_methods"><span class="keyword">val</span> get_concrete_methods</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -><br>       'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> JBasics.MethodMap.t</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the map of all the concrete methods defined in the given class or interface.</p>
+</div>
+</div>
+
+<pre><span id="VALdefines_field"><span class="keyword">val</span> defines_field</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">defines_field&nbsp;ioc&nbsp;fs</code> returns <code class="code"><span class="keyword">true</span></code> if <code class="code">ioc</code> defines a field with a signature equal
+    to <code class="code">fs</code>, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+
+<pre><span id="VALget_field"><span class="keyword">val</span> get_field</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> <a href="Javalib.html#TYPEany_field">any_field</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">get_field&nbsp;ioc&nbsp;fs</code> returns the field with the signature <code class="code">fs</code> in the
+    interface or class <code class="code">ioc</code>.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Not_found</code> if such a field can't be found.</li>
+</ul>
+</div>
+
+<pre><span id="VALget_fields"><span class="keyword">val</span> get_fields</span> : <code class="type">'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="Javalib.html#TYPEany_field">any_field</a> JBasics.FieldMap.t</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the map of all the fields defined in the given class or interface.</p>
+</div>
+</div>
+<h3 id="2_Iterators">Iterators</h3>
+<pre><span id="VALcf_iter"><span class="keyword">val</span> cf_iter</span> : <code class="type">(<a href="Javalib.html#TYPEclass_field">class_field</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALif_iter"><span class="keyword">val</span> if_iter</span> : <code class="type">(<a href="Javalib.html#TYPEinterface_field">interface_field</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALf_iter"><span class="keyword">val</span> f_iter</span> : <code class="type">(<a href="Javalib.html#TYPEany_field">any_field</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALcf_fold"><span class="keyword">val</span> cf_fold</span> : <code class="type">(<a href="Javalib.html#TYPEclass_field">class_field</a> -> 'b -> 'b) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
+<pre><span id="VALif_fold"><span class="keyword">val</span> if_fold</span> : <code class="type">(<a href="Javalib.html#TYPEinterface_field">interface_field</a> -> 'b -> 'b) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
+<pre><span id="VALf_fold"><span class="keyword">val</span> f_fold</span> : <code class="type">(<a href="Javalib.html#TYPEany_field">any_field</a> -> 'b -> 'b) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
+<pre><span id="VALcm_iter"><span class="keyword">val</span> cm_iter</span> : <code class="type">('a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALam_iter"><span class="keyword">val</span> am_iter</span> : <code class="type">(<a href="Javalib.html#TYPEabstract_method">abstract_method</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALm_iter"><span class="keyword">val</span> m_iter</span> : <code class="type">('a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> unit) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
+<pre><span id="VALcm_fold"><span class="keyword">val</span> cm_fold</span> : <code class="type">('a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -> 'b -> 'b) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
+<pre><span id="VALam_fold"><span class="keyword">val</span> am_fold</span> : <code class="type">(<a href="Javalib.html#TYPEabstract_method">abstract_method</a> -> 'b -> 'b) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
+<pre><span id="VALm_fold"><span class="keyword">val</span> m_fold</span> : <code class="type">('a <a href="Javalib.html#TYPEjmethod">jmethod</a> -> 'b -> 'b) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre><h3 id="2_Transformingcoderepresentation">Transforming code representation.</h3>
+<pre><span id="VALmap_concrete_method"><span class="keyword">val</span> map_concrete_method</span> : <code class="type">?force:bool -><br>       ('a -> 'b) -> 'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -> 'b <a href="Javalib.html#TYPEconcrete_method">concrete_method</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_concrete_method&nbsp;f&nbsp;cm</code> lazily applies <code class="code">f</code> to the implementation of <code class="code">cm</code>
+    (if the method is native, it does nothing but changing the type).  The
+    application is <b>lazy</b>: <code class="code">f</code> is not applied until <code class="code"><span class="constructor">Lazy</span>.force</code> is called on
+    the implementation: be careful if you use side-effects.</p>
+</div>
+</div>
+
+<pre><span id="VALmap_interface_or_class"><span class="keyword">val</span> map_interface_or_class</span> : <code class="type">?force:bool -><br>       ('a -> 'b) -> 'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_interface_or_class&nbsp;f&nbsp;ioc</code> lazily applies <code class="code">f</code> to all non-native method
+    implementations of the interface or class <code class="code">ioc</code>.  The application of <code class="code">f</code> is
+    <b>lazy</b> (cf <a href="Javalib.html#VALmap_concrete_method"><code class="code"><span class="constructor">Javalib</span>.map_concrete_method</code></a>).</p>
+</div>
+</div>
+
+<pre><span id="VALmap_interface_or_class_context"><span class="keyword">val</span> map_interface_or_class_context</span> : <code class="type">?force:bool -><br>       ('a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -> 'a -> 'b) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_interface_or_class_context&nbsp;f&nbsp;ioc</code> lazily applies <code class="code">f</code> to all non-native
+    method implementations of the interface or class <code class="code">ioc</code>, giving the concrete
+    method being transformed as argument to <code class="code">f</code>.  The application of <code class="code">f</code> is <b>    lazy</b> (cf <a href="Javalib.html#VALmap_concrete_method"><code class="code"><span class="constructor">Javalib</span>.map_concrete_method</code></a>).</p>
+</div>
+</div>
+<h4 id="3_Alternativetransformingfunctions">Alternative transforming functions</h4>
+<pre><span id="VALmap_concrete_method_with_native"><span class="keyword">val</span> map_concrete_method_with_native</span> : <code class="type">('a <a href="Javalib.html#TYPEimplementation">implementation</a> -> 'b <a href="Javalib.html#TYPEimplementation">implementation</a>) -><br>       'a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -> 'b <a href="Javalib.html#TYPEconcrete_method">concrete_method</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_concrete_method_with_native&nbsp;f&nbsp;cm</code> is equivalent to
+    <a href="Javalib.html#VALmap_concrete_method"><code class="code"><span class="constructor">Javalib</span>.map_concrete_method</code></a> but allows to transform not only the code
+    representation but also the implementation type. It provides a way
+    to modify the nature of implementation to <code class="code"><span class="constructor">Native</span></code> if the code
+    could not be transformed or conversly to provide a generated code
+    for <code class="code"><span class="constructor">Native</span></code> implementation.</p>
+</div>
+</div>
+
+<pre><span id="VALmap_interface_or_class_with_native"><span class="keyword">val</span> map_interface_or_class_with_native</span> : <code class="type">('a <a href="Javalib.html#TYPEimplementation">implementation</a> -> 'b <a href="Javalib.html#TYPEimplementation">implementation</a>) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_interface_or_class_with_native&nbsp;f&nbsp;ioc</code> is equivalent to
+    <a href="Javalib.html#VALmap_interface_or_class"><code class="code"><span class="constructor">Javalib</span>.map_interface_or_class</code></a> but allows to transform not
+    only the code representation but also the implementation type. It
+    provides a way to modify the nature of implementation to <code class="code"><span class="constructor">Native</span></code>
+    if the code could not be transformed or conversly to provide a
+    generated code for <code class="code"><span class="constructor">Native</span></code> implementation.</p>
+</div>
+</div>
+
+<pre><span id="VALmap_interface_or_class_with_native_context"><span class="keyword">val</span> map_interface_or_class_with_native_context</span> : <code class="type">('a <a href="Javalib.html#TYPEconcrete_method">concrete_method</a> -><br>        'a <a href="Javalib.html#TYPEimplementation">implementation</a> -> 'b <a href="Javalib.html#TYPEimplementation">implementation</a>) -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'b <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">map_interface_or_class_with_native_context&nbsp;f&nbsp;ioc</code> is equivalent to
+    <a href="Javalib.html#VALmap_interface_or_class_context"><code class="code"><span class="constructor">Javalib</span>.map_interface_or_class_context</code></a> but allows to transform not
+    only the code representation but also the implementation type. It
+    provides a way to modify the nature of implementation to <code class="code"><span class="constructor">Native</span></code>
+    if the code could not be transformed or conversly to provide a
+    generated code for <code class="code"><span class="constructor">Native</span></code> implementation.</p>
+</div>
+</div>
+<h3 id="2_Filesmanipulations">Files manipulations.</h3>
+<pre><span id="TYPEclass_path"><span class="keyword">type</span> <code class="type"></code>class_path</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>The type of "compiled" class paths (jar (or zip) files are opened for efficiency).</p>
+</div>
+</div>
+
+
+<pre><span id="VALclass_path"><span class="keyword">val</span> class_path</span> : <code class="type">string -> <a href="Javalib.html#TYPEclass_path">class_path</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">class_path&nbsp;cp</code> opens a class path from the list <code class="code">cp</code> of
+    directories and jar (or zip) files separated by <a href="JFile.html#VALsep"><code class="code"><span class="constructor">JFile</span>.sep</code></a>.  jar
+    (or zip) files in the given directories are also considered, but
+    they are not looked for recursively.  If <code class="code">cp</code> is empty(<code class="code"><span class="string">""</span></code>), then
+    the current directory is used.  Note: the order matters: the
+    search stops when a class file is found. Directories and jar (or
+    zip) files are read in the given order. When several directories
+    are given, the order of the jar (or zip) file inside those
+    directory are unspecified, but the jar (or zip) file of the first
+    directory will be read before the others.</p>
+
+<p>Note : the following works :</p>
+<pre class="codepre"><code class="code"><span class="keyword">try</span> class_path (<span class="constructor">Sys</span>.getenv <span class="string">"CLASSPATH"</span>)
+<span class="keyword">with</span> <span class="constructor">Not_found</span><span class="keywordsign">-&gt;</span> class_path <span class="string">""</span></code></pre></div>
+</div>
+
+<pre><span id="VALclose_class_path"><span class="keyword">val</span> close_class_path</span> : <code class="type"><a href="Javalib.html#TYPEclass_path">class_path</a> -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p>Closes a class path.</p>
+</div>
+</div>
+
+<pre><span id="VALget_class"><span class="keyword">val</span> get_class</span> : <code class="type"><a href="Javalib.html#TYPEclass_path">class_path</a> -><br>       <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Parses a single class. It takes as argument the class name built
+    with <a href="JBasics.html#VALmake_cn"><code class="code"><span class="constructor">JBasics</span>.make_cn</code></a>.
+    This function does not check that the name of the parsed class is the
+    same as the argument class name.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b><ul><li><code>JBasics.No_class_found</code> if the given class name <code class="code">cn</code> does not
+    correspond to a class file that can be found in the given class path.</li>
+<li><code>JBasics.Class_structure_error</code> if the class file does not match the
+    official specification (although it does not check the class file
+    entirely).</li>
+</ul></li>
+</ul>
+</div>
+
+<pre><span id="VALwrite_class"><span class="keyword">val</span> write_class</span> : <code class="type">string -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">write_class&nbsp;outputdir&nbsp;c</code> writes the class <code class="code">c</code> in the subdirectory of
+    <code class="code">outputdir</code> that correspond to the package name of <code class="code">c</code>.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if an opcode cannot be encoded in the available
+    place.</li>
+</ul>
+</div>
+
+<pre><span id="VALextract_class_name_from_file"><span class="keyword">val</span> extract_class_name_from_file</span> : <code class="type">string -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * string</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">extract_class_name_from_file&nbsp;f</code> recovers a class name and a class
+    path from the file <code class="code">f</code>.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Sys_error</code> if <code class="code">f</code> is not a file. <code class="code">f</code>
+    must contain the <code class="code">.<span class="keyword">class</span></code> extension.</li>
+</ul>
+</div>
+<h4 id="3_Moreadvancedfilesmanipulations">More advanced files manipulations.</h4>
+<pre><span id="VALiter"><span class="keyword">val</span> iter</span> : <code class="type">?debug:bool -><br>       (<a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> unit) -> string -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">iter&nbsp;~debug:<span class="keyword">false</span>&nbsp;f&nbsp;filename</code> applies the function successively the
+    function <code class="code">f</code> on each classes specified by <code class="code">filename</code>. <code class="code">filename</code> is either a
+    valid class file, a valid jar (or zip) file, or a valid directory with jar
+    (or zip) files inside.  The dirname of <code class="code">filename</code> is used as classpath.  If
+    <code class="code">debug</code> is <code class="code"><span class="keyword">true</span></code> then the number of classes parsed when given a .jar file or
+    a directory is printed on the standard error output.</p>
+</div>
+</div>
+
+<pre><span id="TYPEdirectories"><span class="keyword">type</span> <code class="type"></code>directories</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Abstract type representing a list of directories.</p>
+</div>
+</div>
+
+
+<pre><span id="VALmake_directories"><span class="keyword">val</span> make_directories</span> : <code class="type">string -> <a href="Javalib.html#TYPEdirectories">directories</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">make_directories&nbsp;directories</code> returns an abstract <code class="code">directories</code> type.  The
+    string <code class="code">directories</code> must be a list of files separated by ":" under Unix or
+    ";" under Windows. Only directories are filtered.</p>
+</div>
+</div>
+<p>The following functions search for class files in the following order :</p>
+<ul>
+<li>If a name can be found in some directory, subsequent directories are
+    ignored.</li>
+<li>If a name is the name of an existing directory, then every
+    .class file inside this directory is read, and the search is over
+    (even if the directory is empty).</li>
+<li>Otherwise, if the name refers to an existing .class file
+    (without the extension) then this file is read.</li>
+<li>Otherwise, if the name ends in .jar or .zip and the file exists, it is
+    assumed to be a jar file and the class files inside are read.</li>
+</ul>
+<p>Dots in class names are interpreted as / (but not for jar
+    files).</p>
+
+<pre><span id="VALread"><span class="keyword">val</span> read</span> : <code class="type"><a href="Javalib.html#TYPEdirectories">directories</a> -><br>       ('a -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> 'a) -><br>       'a -> string list -> 'a</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">read&nbsp;directories&nbsp;f&nbsp;acc&nbsp;names</code> iterates <code class="code">f</code> over all classes specified by
+    <code class="code">names</code>. <code class="code">acc</code> is the initial accumulator value.</p>
+</div>
+</div>
+
+<pre><span id="VALtransform"><span class="keyword">val</span> transform</span> : <code class="type"><a href="Javalib.html#TYPEdirectories">directories</a> -><br>       string -><br>       (<a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -><br>        <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a>) -><br>       string list -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">transform&nbsp;directories&nbsp;outputdir&nbsp;f&nbsp;names</code> applies <code class="code">f</code> to all classes
+    specified by <code class="code">names</code>, writing the resulting classes in <code class="code">outputdir</code>. Jar
+    files are mapped to jar files, zip files to zip files and the non-class
+    files are kept unchanged in the resulting archive.</p>
+</div>
+</div>
+<h3 id="2_Dumpingclassesinclassformat">Dumping classes in .class format.</h3>
+<pre><span id="VALunparse_class"><span class="keyword">val</span> unparse_class</span> : <code class="type"><a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="Javalib.html#TYPEinterface_or_class">interface_or_class</a> -> Stdlib.out_channel -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">unparse_class&nbsp;ioc&nbsp;out</code> dump the class or interface <code class="code">ioc</code> into <code class="code">out</code> as a
+    <code class="code">.<span class="keyword">class</span></code> file.  The distance between the offset of two successive
+    non-OpInvalid instructions is assumed to be at least the length of the
+    optimal coding for the first instruction (for example, iload_0 vs iload
+    0). The opcode may be encoded with the non-optimal form to fill the
+    available space.</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the length of an opcode produced is greater
+    than the available space (number of OpInvalid + 1) except if
+    <a href="JBasics.html#VALset_permissive"><code class="code"><span class="constructor">JBasics</span>.set_permissive</code></a> has been called with <code class="code"><span class="keyword">true</span></code>.</li>
+</ul>
+</div>
+<h3 id="2_Printingfunctions">Printing functions.</h3>
+<pre><span id="MODULEJPrint"><span class="keyword">module</span> <a href="Javalib.JPrint.html">JPrint</a></span>: <code class="code"><span class="keyword">sig</span></code> <a href="Javalib.JPrint.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+<p>Module gathering useful printing functions for basic types.</p>
+
+</div>
+</body></html>

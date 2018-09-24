@@ -1,0 +1,909 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JLib.html">
+<link rel="next" href="JBasicsLow.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Definition of basic types and descriptors." rel="Section" href="#2_Definitionofbasictypesanddescriptors">
+<link title="Basic types manipulation." rel="Section" href="#2_Basictypesmanipulation">
+<link title="Constant pool." rel="Section" href="#2_Constantpool">
+<link title="Stackmaps" rel="Section" href="#2_Stackmaps">
+<link title="Errors" rel="Section" href="#2_Errors">
+<link title="Annotations" rel="Section" href="#2_Annotations">
+<link title="Containers." rel="Section" href="#2_Containers">
+<link title="Tuning JavaLib." rel="Section" href="#2_TuningJavaLib">
+<title>Javalib : JBasics</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="JLib.html" title="JLib">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="JBasicsLow.html" title="JBasicsLow">Next</a>
+</div>
+<h1>Module <a href="type_JBasics.html">JBasics</a></h1>
+
+<pre><span id="MODULEJBasics"><span class="keyword">module</span> JBasics</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JBasics.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Basic elements of class files.</p>
+</div>
+</div>
+<hr width="100%">
+<h3 id="2_Definitionofbasictypesanddescriptors">Definition of basic types and descriptors.</h3>
+<pre><span id="TYPEclass_name"><span class="keyword">type</span> <code class="type"></code>class_name</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Type representing a class name. e.g. <code class="code">java.lang.<span class="constructor">Object</span></code></p>
+</div>
+</div>
+
+
+<pre><span id="TYPEmethod_signature"><span class="keyword">type</span> <code class="type"></code>method_signature</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Type representing a method signature.
+    A method signature contains the method name, the types of parameters
+    and the method return type. Two methods in two different classes can
+    have the same <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEfield_signature"><span class="keyword">type</span> <code class="type"></code>field_signature</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Type representing a field signature.
+    A field signature contains the field name and the field type.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEclass_field_signature"><span class="keyword">type</span> <code class="type"></code>class_field_signature</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Type representing a signature for a field in a particular class.
+    Each field of each class has a unique <code class="code">class_field_signature</code>.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEclass_method_signature"><span class="keyword">type</span> <code class="type"></code>class_method_signature</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Type representing a signature for a method in a particular class.
+    Each method of each class has a unique <code class="code">class_method_signature</code>.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEother_num"><span class="keyword">type</span> <code class="type"></code>other_num</span> = <code class="type">[ `Double | `Float | `Long ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Numerical types that are not smaller than int.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjvm_basic_type"><span class="keyword">type</span> <code class="type"></code>jvm_basic_type</span> = <code class="type">[ `Double | `Float | `Int2Bool | `Long ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>JVM basic type (int = short = char = byte = bool).</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjvm_type"><span class="keyword">type</span> <code class="type"></code>jvm_type</span> = <code class="type">[ `Double | `Float | `Int2Bool | `Long | `Object ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>JVM type (int = short = char = byte = bool, all objects have the same type).</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjvm_array_type"><span class="keyword">type</span> <code class="type"></code>jvm_array_type</span> = <code class="type">[ `ByteBool | `Char | `Double | `Float | `Int | `Long | `Object | `Short ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>JVM array element type (byte = bool, all objects have the same type).</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjvm_return_type"><span class="keyword">type</span> <code class="type"></code>jvm_return_type</span> = <code class="type">[ `Double | `Float | `Int2Bool | `Long | `Object | `Void ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>JVM return type (byte = bool, all objects have the same type).</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjava_basic_type"><span class="keyword">type</span> <code class="type"></code>java_basic_type</span> = <code class="type">[ `Bool | `Byte | `Char | `Double | `Float | `Int | `Long | `Short ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Java basic type.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEmethod_handle_kind"><span class="keyword">type</span> <code class="type"></code>method_handle_kind</span> = <code class="type">[ `GetField<br>       | `GetStatic<br>       | `InvokeInterface<br>       | `InvokeSpecial<br>       | `InvokeStatic<br>       | `InvokeVirtual<br>       | `NewInvokeSpecial<br>       | `PutField<br>       | `PutStatic ]</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Method handle type.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEobject_type"><span class="keyword">type</span> <code class="type"></code>object_type</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTobject_type.TClass"><span class="constructor">TClass</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTobject_type.TArray"><span class="constructor">TArray</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEvalue_type">value_type</a></code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Java object type</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEvalue_type"><span class="keyword">type</span> <code class="type"></code>value_type</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue_type.TBasic"><span class="constructor">TBasic</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjava_basic_type">java_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue_type.TObject"><span class="constructor">TObject</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEobject_type">object_type</a></code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Java type</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEversion"><span class="keyword">type</span> <code class="type"></code>version</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTversion.major">major</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTversion.minor">minor</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Version number of the class file. Extract of the specification: An
+    implementation of Java 1.k sould support class file formats of
+    versions in the range of 45.0 through 44+k.0 inclusive. E.g. Java
+    1.6 implementations support class file formats of versions up to
+    50.0.</p>
+</div>
+</div>
+
+<h3 id="2_Basictypesmanipulation">Basic types manipulation.</h3><p>Creating and manipulating <a href="JBasics.html#TYPEclass_name"><code class="code"><span class="constructor">JBasics</span>.class_name</code></a> values.</p>
+
+<pre><span id="VALjava_lang_object"><span class="keyword">val</span> java_lang_object</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">java.lang.<span class="constructor">Object</span></code> class name.</p>
+</div>
+</div>
+
+<pre><span id="VALdefault_native_throwable"><span class="keyword">val</span> default_native_throwable</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> list</code></pre>
+<pre><span id="VALmake_cn"><span class="keyword">val</span> make_cn</span> : <code class="type">string -> <a href="JBasics.html#TYPEclass_name">class_name</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Builds a <code class="code">class_name</code> from a string representing the Java fully qualified
+    name of the class. e.g. "java.lang.Object".</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Invalid_argument</code> if the class name given as argument is not a valid
+    class name (ie. it must match the regular expression
+    <code class="code">"^\\([a-zA-Z_$][a-zA-Z_$0-9]*\\.\\)*\\([a-zA-Z_0-9]+\\$\\)*[a-zA-Z_0-9]+$</code>").</li>
+</ul>
+</div>
+
+<pre><span id="VALcn_hash"><span class="keyword">val</span> cn_hash</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the hash value of the given <code class="code">class_name</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcn_name"><span class="keyword">val</span> cn_name</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> string</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the Java fully qualified name of a class.
+    e.g. "java.lang.Object".</p>
+</div>
+</div>
+
+<pre><span id="VALcn_simple_name"><span class="keyword">val</span> cn_simple_name</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> string</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the Java simple name of a class, omitting the package name.
+    e.g. "Object" instead of "java.lang.Object".</p>
+</div>
+</div>
+
+<pre><span id="VALcn_package"><span class="keyword">val</span> cn_package</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> string list</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the package name from a <code class="code">class_name</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcn_compare"><span class="keyword">val</span> cn_compare</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> <a href="JBasics.html#TYPEclass_name">class_name</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Compares two classes names.</p>
+</div>
+</div>
+
+<pre><span id="VALcn_equal"><span class="keyword">val</span> cn_equal</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -> <a href="JBasics.html#TYPEclass_name">class_name</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if two classes names are equal, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+<p>Creating and manipulating <a href="JBasics.html#TYPEmethod_signature"><code class="code"><span class="constructor">JBasics</span>.method_signature</code></a> values.</p>
+
+<pre><span id="VALclinit_signature"><span class="keyword">val</span> clinit_signature</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">&lt;clinit&gt;</code> method signature.</p>
+</div>
+</div>
+
+<pre><span id="VALmake_ms"><span class="keyword">val</span> make_ms</span> : <code class="type">string -><br>       <a href="JBasics.html#TYPEvalue_type">value_type</a> list -><br>       <a href="JBasics.html#TYPEvalue_type">value_type</a> option -> <a href="JBasics.html#TYPEmethod_signature">method_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Builds a <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALms_hash"><span class="keyword">val</span> ms_hash</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the hash value of the given <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALms_name"><span class="keyword">val</span> ms_name</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> string</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the method name from a <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALms_args"><span class="keyword">val</span> ms_args</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> <a href="JBasics.html#TYPEvalue_type">value_type</a> list</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves method parameters types from a <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALms_rtype"><span class="keyword">val</span> ms_rtype</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> <a href="JBasics.html#TYPEvalue_type">value_type</a> option</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves method return type from a <code class="code">method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALms_compare"><span class="keyword">val</span> ms_compare</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> <a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Compares two method signatures.</p>
+</div>
+</div>
+
+<pre><span id="VALms_equal"><span class="keyword">val</span> ms_equal</span> : <code class="type"><a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> <a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if two method signatures are equal, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+<p>Creating and manipulating <a href="JBasics.html#TYPEfield_signature"><code class="code"><span class="constructor">JBasics</span>.field_signature</code></a> values.</p>
+
+<pre><span id="VALmake_fs"><span class="keyword">val</span> make_fs</span> : <code class="type">string -> <a href="JBasics.html#TYPEvalue_type">value_type</a> -> <a href="JBasics.html#TYPEfield_signature">field_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Builds a <code class="code">field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALfs_hash"><span class="keyword">val</span> fs_hash</span> : <code class="type"><a href="JBasics.html#TYPEfield_signature">field_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the hash value of the given <code class="code">field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALfs_name"><span class="keyword">val</span> fs_name</span> : <code class="type"><a href="JBasics.html#TYPEfield_signature">field_signature</a> -> string</code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the field name from a <code class="code">field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALfs_type"><span class="keyword">val</span> fs_type</span> : <code class="type"><a href="JBasics.html#TYPEfield_signature">field_signature</a> -> <a href="JBasics.html#TYPEvalue_type">value_type</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the field type from a <code class="code">field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALfs_compare"><span class="keyword">val</span> fs_compare</span> : <code class="type"><a href="JBasics.html#TYPEfield_signature">field_signature</a> -> <a href="JBasics.html#TYPEfield_signature">field_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Compares two field signatures.</p>
+</div>
+</div>
+
+<pre><span id="VALfs_equal"><span class="keyword">val</span> fs_equal</span> : <code class="type"><a href="JBasics.html#TYPEfield_signature">field_signature</a> -> <a href="JBasics.html#TYPEfield_signature">field_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if two field signatures are equal, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+<p>Creating and manipulating <a href="JBasics.html#TYPEclass_field_signature"><code class="code"><span class="constructor">JBasics</span>.class_field_signature</code></a> values.</p>
+
+<pre><span id="VALmake_cfs"><span class="keyword">val</span> make_cfs</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -><br>       <a href="JBasics.html#TYPEfield_signature">field_signature</a> -> <a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Builds a <code class="code">class_field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcfs_split"><span class="keyword">val</span> cfs_split</span> : <code class="type"><a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> <a href="JBasics.html#TYPEclass_name">class_name</a> * <a href="JBasics.html#TYPEfield_signature">field_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the <code class="code">class_name</code> and <code class="code">field_signature</code> from a <code class="code">class_field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcfs_compare"><span class="keyword">val</span> cfs_compare</span> : <code class="type"><a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> <a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Compares two <code class="code">class_field_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcfs_equal"><span class="keyword">val</span> cfs_equal</span> : <code class="type"><a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> <a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if two <code class="code">class_field_signature</code> are equal, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+
+<pre><span id="VALcfs_hash"><span class="keyword">val</span> cfs_hash</span> : <code class="type"><a href="JBasics.html#TYPEclass_field_signature">class_field_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns the hash value of the given <code class="code">class_field_signature</code>.</p>
+</div>
+</div>
+<p>Creating and manipulating <a href="JBasics.html#TYPEclass_method_signature"><code class="code"><span class="constructor">JBasics</span>.class_method_signature</code></a> values.</p>
+
+<pre><span id="VALmake_cms"><span class="keyword">val</span> make_cms</span> : <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a> -><br>       <a href="JBasics.html#TYPEmethod_signature">method_signature</a> -> <a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Builds a <code class="code">class_method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcms_split"><span class="keyword">val</span> cms_split</span> : <code class="type"><a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a> -><br>       <a href="JBasics.html#TYPEclass_name">class_name</a> * <a href="JBasics.html#TYPEmethod_signature">method_signature</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Retrieves the <code class="code">class_name</code> and <code class="code">method_signature</code> from a <code class="code">class_method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcms_compare"><span class="keyword">val</span> cms_compare</span> : <code class="type"><a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a> -> <a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a> -> int</code></pre><div class="info ">
+<div class="info-desc">
+<p>Compares two <code class="code">class_method_signature</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALcms_equal"><span class="keyword">val</span> cms_equal</span> : <code class="type"><a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a> -> <a href="JBasics.html#TYPEclass_method_signature">class_method_signature</a> -> bool</code></pre><div class="info ">
+<div class="info-desc">
+<p>Returns <code class="code"><span class="keyword">true</span></code> if two <code class="code">class_method_signature</code> are equal, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
+</div>
+</div>
+<h3 id="2_Constantpool">Constant pool.</h3><p>You should not need this for normal usage, as the
+    parsing/unparsing functions take care of the constant pool. This
+    is typically useful for user-defined attributes that refer to the
+    constant pool.</p>
+
+<pre><span id="TYPEbootstrap_method_index"><span class="keyword">type</span> <code class="type"></code>bootstrap_method_index</span> = <code class="type">int</code> </pre>
+
+
+<pre><span id="TYPEmethod_descriptor"><span class="keyword">type</span> <code class="type"></code>method_descriptor</span> = <code class="type"><a href="JBasics.html#TYPEvalue_type">value_type</a> list * <a href="JBasics.html#TYPEvalue_type">value_type</a> option</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Method descriptor.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEdescriptor"><span class="keyword">type</span> <code class="type"></code>descriptor</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdescriptor.SValue"><span class="constructor">SValue</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEvalue_type">value_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTdescriptor.SMethod"><span class="constructor">SMethod</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEmethod_descriptor">method_descriptor</a></code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Signatures parsed from CONSTANT_NameAndType_info structures.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEjstr"><span class="keyword">type</span> <code class="type"></code>jstr</span> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Abstract datatype for Java strings</p>
+</div>
+</div>
+
+
+<pre><span id="VALmake_jstr"><span class="keyword">val</span> make_jstr</span> : <code class="type">string -> <a href="JBasics.html#TYPEjstr">jstr</a></code></pre>
+<pre><span id="VALjstr_pp"><span class="keyword">val</span> jstr_pp</span> : <code class="type"><a href="JBasics.html#TYPEjstr">jstr</a> -> string</code></pre>
+<pre><span id="VALjstr_raw"><span class="keyword">val</span> jstr_raw</span> : <code class="type"><a href="JBasics.html#TYPEjstr">jstr</a> -> string</code></pre>
+<pre><code><span id="TYPEconstant_value"><span class="keyword">type</span> <code class="type"></code>constant_value</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstString"><span class="constructor">ConstString</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjstr">jstr</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstInt"><span class="constructor">ConstInt</span></span> <span class="keyword">of</span> <code class="type">int32</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstFloat"><span class="constructor">ConstFloat</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstLong"><span class="constructor">ConstLong</span></span> <span class="keyword">of</span> <code class="type">int64</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstDouble"><span class="constructor">ConstDouble</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant_value.ConstClass"><span class="constructor">ConstClass</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEobject_type">object_type</a></code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Constant value.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEconstant"><span class="keyword">type</span> <code class="type"></code>constant</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstValue"><span class="constructor">ConstValue</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEconstant_value">constant_value</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstField"><span class="constructor">ConstField</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">class_name</a> * <a href="JBasics.html#TYPEfield_signature">field_signature</a>)</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstMethod"><span class="constructor">ConstMethod</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEobject_type">object_type</a> * <a href="JBasics.html#TYPEmethod_signature">method_signature</a>)</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstInterfaceMethod"><span class="constructor">ConstInterfaceMethod</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">class_name</a> * <a href="JBasics.html#TYPEmethod_signature">method_signature</a>)</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstMethodType"><span class="constructor">ConstMethodType</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEmethod_descriptor">method_descriptor</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstMethodHandle"><span class="constructor">ConstMethodHandle</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEmethod_handle_kind">method_handle_kind</a> * <a href="JBasics.html#TYPEconstant">constant</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstInvokeDynamic"><span class="constructor">ConstInvokeDynamic</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEbootstrap_method_index">bootstrap_method_index</a> * <a href="JBasics.html#TYPEmethod_signature">method_signature</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstNameAndType"><span class="constructor">ConstNameAndType</span></span> <span class="keyword">of</span> <code class="type">string * <a href="JBasics.html#TYPEdescriptor">descriptor</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstStringUTF8"><span class="constructor">ConstStringUTF8</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconstant.ConstUnusable"><span class="constructor">ConstUnusable</span></span></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Constant.</p>
+</div>
+</div>
+
+<h3 id="2_Stackmaps">Stackmaps</h3>
+<pre><code><span id="TYPEverification_type"><span class="keyword">type</span> <code class="type"></code>verification_type</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VTop"><span class="constructor">VTop</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VInteger"><span class="constructor">VInteger</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VFloat"><span class="constructor">VFloat</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VDouble"><span class="constructor">VDouble</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VLong"><span class="constructor">VLong</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VNull"><span class="constructor">VNull</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VUninitializedThis"><span class="constructor">VUninitializedThis</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VObject"><span class="constructor">VObject</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEobject_type">object_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTverification_type.VUninitialized"><span class="constructor">VUninitialized</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>creation point</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Verification type.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEstackmap"><span class="keyword">type</span> <code class="type"></code>stackmap</span> = <code class="type">int * <a href="JBasics.html#TYPEverification_type">verification_type</a> list * <a href="JBasics.html#TYPEverification_type">verification_type</a> list</code> </pre>
+<div class="info ">
+<div class="info-desc">
+<p>Stackmap type.</p>
+</div>
+</div>
+
+<h3 id="2_Errors">Errors</h3><p>The library may throw the following exceptions, in addition to <code class="code"><span class="constructor">Invalid_argument</span></code>.
+    Any other exception (in particular, an <code class="code"><span class="constructor">Assert_failure</span></code>)
+    should be interpreted as a bug in <code class="code">javalib</code>.</p>
+
+<pre><span id="EXCEPTIONNo_class_found"><span class="keyword">exception</span> No_class_found</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+<div class="info ">
+<div class="info-desc">
+<p>Indicates that a class name could not be found in a given classpath.</p>
+</div>
+</div>
+
+<pre><span id="EXCEPTIONClass_structure_error"><span class="keyword">exception</span> Class_structure_error</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+<div class="info ">
+<div class="info-desc">
+<p>Indicates the argument of a parsing/unparsing function does not
+    satisfy a structural constraint of class files.</p>
+</div>
+</div>
+<h3 id="2_Annotations">Annotations</h3>
+<pre><code><span id="TYPEelement_value"><span class="keyword">type</span> <code class="type"></code>element_value</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstByte"><span class="constructor">EVCstByte</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstChar"><span class="constructor">EVCstChar</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstInt"><span class="constructor">EVCstInt</span></span> <span class="keyword">of</span> <code class="type">int32</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstShort"><span class="constructor">EVCstShort</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstBoolean"><span class="constructor">EVCstBoolean</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstDouble"><span class="constructor">EVCstDouble</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstFloat"><span class="constructor">EVCstFloat</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstLong"><span class="constructor">EVCstLong</span></span> <span class="keyword">of</span> <code class="type">int64</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVCstString"><span class="constructor">EVCstString</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVEnum"><span class="constructor">EVEnum</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">class_name</a> * string)</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVClass"><span class="constructor">EVClass</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEvalue_type">value_type</a> option</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVAnnotation"><span class="constructor">EVAnnotation</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEannotation">annotation</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTelement_value.EVArray"><span class="constructor">EVArray</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEelement_value">element_value</a> list</code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p><code class="code">element_value</code> represents a constant value, either a number, a string, a
+    class, an enum, an array of <code class="code">element_value</code>s or another annotation.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEannotation"><span class="keyword">type</span> <code class="type"></code>annotation</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTannotation.kind">kind</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">class_name</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTannotation.element_value_pairs">element_value_pairs</span>&nbsp;: <code class="type">(string * <a href="JBasics.html#TYPEelement_value">element_value</a>) list</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>An <code class="code">annotation</code> contains the name (<code class="code">kind</code>) of the annotation an a list of
+    element-value pairs (the name of the element and its value).  The names
+    given here should corresponds to the elements declared during the definition
+    of the annotation, but this is not checked (as it would need to load
+    additional class files).</p>
+</div>
+</div>
+
+<h3 id="2_Containers">Containers.</h3>
+<pre><span id="MODULEClassMap"><span class="keyword">module</span> <a href="JBasics.ClassMap.html">ClassMap</a></span>: <code class="type"><a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a></code><code class="type">  with type key = class_name</code></pre><div class="info">
+<p>This module allows to build maps of elements indexed by <code class="code">class_name</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEMethodMap"><span class="keyword">module</span> <a href="JBasics.MethodMap.html">MethodMap</a></span>: <code class="type"><a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a></code><code class="type">  with type key = method_signature</code></pre><div class="info">
+<p>This module allows to build maps of elements indexed by <code class="code">method_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEFieldMap"><span class="keyword">module</span> <a href="JBasics.FieldMap.html">FieldMap</a></span>: <code class="type"><a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a></code><code class="type">  with type key = field_signature</code></pre><div class="info">
+<p>This module allows to build maps of elements indexed by <code class="code">field_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassFieldMap"><span class="keyword">module</span> <a href="JBasics.ClassFieldMap.html">ClassFieldMap</a></span>: <code class="type"><a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a></code><code class="type">  with type key = class_field_signature</code></pre><div class="info">
+<p>This module allows to build maps of elements indexed by <code class="code">class_field_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassMethodMap"><span class="keyword">module</span> <a href="JBasics.ClassMethodMap.html">ClassMethodMap</a></span>: <code class="type"><a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a></code><code class="type">  with type key = class_method_signature</code></pre><div class="info">
+<p>This module allows to build maps of elements indexed by <code class="code">class_method_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassSet"><span class="keyword">module</span> <a href="JBasics.ClassSet.html">ClassSet</a></span>: <code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = class_name</code></pre><div class="info">
+<p>This module allows to build sets of <code class="code">class_name</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEMethodSet"><span class="keyword">module</span> <a href="JBasics.MethodSet.html">MethodSet</a></span>: <code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = method_signature</code></pre><div class="info">
+<p>This module allows to build sets of <code class="code">method_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEFieldSet"><span class="keyword">module</span> <a href="JBasics.FieldSet.html">FieldSet</a></span>: <code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = field_signature</code></pre><div class="info">
+<p>This module allows to build sets of <code class="code">field_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassFieldSet"><span class="keyword">module</span> <a href="JBasics.ClassFieldSet.html">ClassFieldSet</a></span>: <code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = class_field_signature</code></pre><div class="info">
+<p>This module allows to build sets of <code class="code">class_field_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassMethodSet"><span class="keyword">module</span> <a href="JBasics.ClassMethodSet.html">ClassMethodSet</a></span>: <code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = class_method_signature</code></pre><div class="info">
+<p>This module allows to build sets of <code class="code">class_method_signature</code> values.</p>
+
+</div>
+
+<pre><span id="MODULEClassMethodMaptoSet"><span class="keyword">module</span> <a href="JBasics.ClassMethodMaptoSet.html">ClassMethodMaptoSet</a></span>: <code class="code"><span class="keyword">sig</span></code> <a href="JBasics.ClassMethodMaptoSet.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><h3 id="2_TuningJavaLib">Tuning JavaLib.</h3>
+<pre><span id="VALset_permissive"><span class="keyword">val</span> set_permissive</span> : <code class="type">bool -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">set_permissive&nbsp;<span class="keyword">true</span></code> disables some checking in JavaLib.  It can
+    allow to parse some files that do not strictly comply with the
+    official specification.</p>
+</div>
+</div>
+
+<pre><span id="VALget_permissive"><span class="keyword">val</span> get_permissive</span> : <code class="type">unit -> bool</code></pre></body></html>

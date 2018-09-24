@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JFile.html">
+<link rel="next" href="Javalib.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><title>Javalib : JManifest</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="JFile.html" title="JFile">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Javalib.html" title="Javalib">Next</a>
+</div>
+<h1>Module <a href="type_JManifest.html">JManifest</a></h1>
+
+<pre><span id="MODULEJManifest"><span class="keyword">module</span> JManifest</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JManifest.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Accessing meta-information in jar files.</p>
+</div>
+</div>
+<hr width="100%">
+<p>The type of manifest files:</p>
+
+<pre><code><span id="TYPEmain_section"><span class="keyword">type</span> <code class="type"></code>main_section</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmain_section.manifest_version">manifest_version</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmain_section.main_attributes">main_attributes</span>&nbsp;: <code class="type">(string * string) list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEsection"><span class="keyword">type</span> <code class="type"></code>section</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsection.name">name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTsection.attributes">attributes</span>&nbsp;: <code class="type">(string * string) list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEmanifest"><span class="keyword">type</span> <code class="type"></code>manifest</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmanifest.main_section">main_section</span>&nbsp;: <code class="type"><a href="JManifest.html#TYPEmain_section">main_section</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmanifest.individual_sections">individual_sections</span>&nbsp;: <code class="type"><a href="JManifest.html#TYPEsection">section</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALjar2manifest"><span class="keyword">val</span> jar2manifest</span> : <code class="type">string -> <a href="JManifest.html#TYPEmanifest">manifest</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Read a manifest from a jar file (which must end with .jar).</p>
+</div>
+</div>
+
+<pre><span id="VALmidlet_main_class"><span class="keyword">val</span> midlet_main_class</span> : <code class="type"><a href="JManifest.html#TYPEmanifest">manifest</a> -> string</code></pre><div class="info ">
+<div class="info-desc">
+<p>Get a midlet's main class from the MIDlet-1 attribute of its manifest.</p>
+</div>
+</div>
+<p>Other functions</p>
+
+<pre><span id="VALsections"><span class="keyword">val</span> sections</span> : <code class="type">Stdlib.Lexing.lexbuf -> (string * string) list list</code></pre><div class="info ">
+<div class="info-desc">
+<p>Read a list of sections. This function may be used for reading
+    various files from the META-INF directory of a jar file, including
+    the MANIFEST.MF file</p>
+</div>
+</div>
+
+<pre><span id="VALsections2manifest"><span class="keyword">val</span> sections2manifest</span> : <code class="type">(string * string) list list -> <a href="JManifest.html#TYPEmanifest">manifest</a></code></pre><div class="info ">
+<div class="info-desc">
+<p>Interpret a list of section as a manifest.</p>
+</div>
+</div>
+</body></html>

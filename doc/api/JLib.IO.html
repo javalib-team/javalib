@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JLib.DynArray.html">
+<link rel="next" href="JLib.UChar.html">
+<link rel="Up" href="JLib.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><title>Javalib : JLib.IO</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="JLib.DynArray.html" title="JLib.DynArray">Previous</a>
+&nbsp;<a class="up" href="JLib.html" title="JLib">Up</a>
+&nbsp;<a class="post" href="JLib.UChar.html" title="JLib.UChar">Next</a>
+</div>
+<h1>Module <a href="type_JLib.IO.html">JLib.IO</a></h1>
+
+<pre><span id="MODULEIO"><span class="keyword">module</span> IO</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+
+<pre><span id="TYPEinput"><span class="keyword">type</span> <code class="type"></code>input</span> </pre>
+
+
+<pre><span id="TYPEoutput"><span class="keyword">type</span> <code class="type">'a</code> output</span> </pre>
+
+
+<pre><span id="EXCEPTIONOverflow"><span class="keyword">exception</span> Overflow</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+
+<pre><span id="VALinput_channel"><span class="keyword">val</span> input_channel</span> : <code class="type">Stdlib.in_channel -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
+<pre><span id="VALoutput_channel"><span class="keyword">val</span> output_channel</span> : <code class="type">Stdlib.out_channel -> unit <a href="JLib.IO.html#TYPEoutput">output</a></code></pre>
+<pre><span id="VALinput_string"><span class="keyword">val</span> input_string</span> : <code class="type">string -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
+<pre><span id="VALflush"><span class="keyword">val</span> flush</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> unit</code></pre>
+<pre><span id="VALread_byte"><span class="keyword">val</span> read_byte</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int</code></pre>
+<pre><span id="VALread_signed_byte"><span class="keyword">val</span> read_signed_byte</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int</code></pre>
+<pre><span id="VALreally_nread"><span class="keyword">val</span> really_nread</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int -> Stdlib.Bytes.t</code></pre>
+<pre><span id="VALreally_nread_string"><span class="keyword">val</span> really_nread_string</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int -> string</code></pre>
+<pre><span id="VALwrite_byte"><span class="keyword">val</span> write_byte</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> int -> unit</code></pre>
+<pre><span id="VALnwrite_string"><span class="keyword">val</span> nwrite_string</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> string -> unit</code></pre>
+<pre><span id="VALoutput_string"><span class="keyword">val</span> output_string</span> : <code class="type">unit -> string <a href="JLib.IO.html#TYPEoutput">output</a></code></pre>
+<pre><span id="VALclose_out"><span class="keyword">val</span> close_out</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> 'a</code></pre>
+<pre><span id="VALclose_in"><span class="keyword">val</span> close_in</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> unit</code></pre>
+<pre><span id="VALprintf"><span class="keyword">val</span> printf</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> ('b, unit, string, unit) Stdlib.format4 -> 'b</code></pre>
+<pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> char -> unit</code></pre>
+<pre><span id="VALpos_in"><span class="keyword">val</span> pos_in</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> <a href="JLib.IO.html#TYPEinput">input</a> * (unit -> int)</code></pre>
+<pre><span id="VALpos_out"><span class="keyword">val</span> pos_out</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> 'a <a href="JLib.IO.html#TYPEoutput">output</a> * (unit -> int)</code></pre>
+<pre><span id="MODULEBigEndian"><span class="keyword">module</span> <a href="JLib.IO.BigEndian.html">BigEndian</a></span>: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.BigEndian.html">..</a> <code class="code"><span class="keyword">end</span></code></pre></body></html>

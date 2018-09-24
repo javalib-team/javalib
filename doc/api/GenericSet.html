@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Ptmap.html">
+<link rel="next" href="GenericMap.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><title>Javalib : GenericSet</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Ptmap.html" title="Ptmap">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="GenericMap.html" title="GenericMap">Next</a>
+</div>
+<h1>Module <a href="type_GenericSet.html">GenericSet</a></h1>
+
+<pre><span id="MODULEGenericSet"><span class="keyword">module</span> GenericSet</span>: <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Provide a way to create GenericSet specifying how to hash.</p>
+</div>
+</div>
+<hr width="100%">
+
+<pre><span id="MODULETYPES"><span class="keyword">module type</span> <a href="GenericSet.S.html">S</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+<p>This module type must be implemented to obtain an instantiated GenericSet.</p>
+
+</div>
+
+<pre><span id="MODULETYPEGenericSetSig"><span class="keyword">module type</span> <a href="GenericSet.GenericSetSig.html">GenericSetSig</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.GenericSetSig.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="MODULEMake"><span class="keyword">module</span> <a href="GenericSet.Make.html">Make</a></span>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">El</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericSet.S.html">S</a></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="type"><a href="GenericSet.GenericSetSig.html">GenericSetSig</a></code><code class="type">  with type elt= El.t</code></div></pre></body></html>

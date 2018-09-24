@@ -1,0 +1,1399 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="JCode.html">
+<link rel="next" href="JClass.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Low level bytecode instructions." rel="Section" href="#2_Lowlevelbytecodeinstructions">
+<link title="Flags, attributes and low-level structure of class files." rel="Section" href="#2_Flagsattributesandlowlevelstructureofclassfiles">
+<title>Javalib : JClassLow</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="JCode.html" title="JCode">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="JClass.html" title="JClass">Next</a>
+</div>
+<h1>Module <a href="type_JClassLow.html">JClassLow</a></h1>
+
+<pre><span id="MODULEJClassLow"><span class="keyword">module</span> JClassLow</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JClassLow.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Low level representation of a Java class file.</p>
+</div>
+</div>
+<hr width="100%">
+<h3 id="2_Lowlevelbytecodeinstructions">Low level bytecode instructions.</h3>
+<pre><code><span id="TYPEopcode"><span class="keyword">type</span> <code class="type"></code>opcode</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpNop"><span class="constructor">OpNop</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAConstNull"><span class="constructor">OpAConstNull</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIConst"><span class="constructor">OpIConst</span></span> <span class="keyword">of</span> <code class="type">int32</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLConst"><span class="constructor">OpLConst</span></span> <span class="keyword">of</span> <code class="type">int64</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpFConst"><span class="constructor">OpFConst</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDConst"><span class="constructor">OpDConst</span></span> <span class="keyword">of</span> <code class="type">float</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpBIPush"><span class="constructor">OpBIPush</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpSIPush"><span class="constructor">OpSIPush</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLdc1"><span class="constructor">OpLdc1</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLdc1w"><span class="constructor">OpLdc1w</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLdc2w"><span class="constructor">OpLdc2w</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLoad"><span class="constructor">OpLoad</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a> * int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpALoad"><span class="constructor">OpALoad</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpArrayLoad"><span class="constructor">OpArrayLoad</span></span> <span class="keyword">of</span> <code class="type">[ `Double | `Float | `Int | `Long ]</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAALoad"><span class="constructor">OpAALoad</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpBALoad"><span class="constructor">OpBALoad</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpCALoad"><span class="constructor">OpCALoad</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpSALoad"><span class="constructor">OpSALoad</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpStore"><span class="constructor">OpStore</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a> * int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAStore"><span class="constructor">OpAStore</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpArrayStore"><span class="constructor">OpArrayStore</span></span> <span class="keyword">of</span> <code class="type">[ `Double | `Float | `Int | `Long ]</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAAStore"><span class="constructor">OpAAStore</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpBAStore"><span class="constructor">OpBAStore</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpCAStore"><span class="constructor">OpCAStore</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpSAStore"><span class="constructor">OpSAStore</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpPop"><span class="constructor">OpPop</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpPop2"><span class="constructor">OpPop2</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDup"><span class="constructor">OpDup</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDupX1"><span class="constructor">OpDupX1</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDupX2"><span class="constructor">OpDupX2</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDup2"><span class="constructor">OpDup2</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDup2X1"><span class="constructor">OpDup2X1</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDup2X2"><span class="constructor">OpDup2X2</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpSwap"><span class="constructor">OpSwap</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAdd"><span class="constructor">OpAdd</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpSub"><span class="constructor">OpSub</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpMult"><span class="constructor">OpMult</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDiv"><span class="constructor">OpDiv</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpRem"><span class="constructor">OpRem</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpNeg"><span class="constructor">OpNeg</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIShl"><span class="constructor">OpIShl</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLShl"><span class="constructor">OpLShl</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIShr"><span class="constructor">OpIShr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLShr"><span class="constructor">OpLShr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIUShr"><span class="constructor">OpIUShr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLUShr"><span class="constructor">OpLUShr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIAnd"><span class="constructor">OpIAnd</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLAnd"><span class="constructor">OpLAnd</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIOr"><span class="constructor">OpIOr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLOr"><span class="constructor">OpLOr</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIXor"><span class="constructor">OpIXor</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLXor"><span class="constructor">OpLXor</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIInc"><span class="constructor">OpIInc</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>index, increment</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2L"><span class="constructor">OpI2L</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2F"><span class="constructor">OpI2F</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2D"><span class="constructor">OpI2D</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpL2I"><span class="constructor">OpL2I</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpL2F"><span class="constructor">OpL2F</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpL2D"><span class="constructor">OpL2D</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpF2I"><span class="constructor">OpF2I</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpF2L"><span class="constructor">OpF2L</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpF2D"><span class="constructor">OpF2D</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpD2I"><span class="constructor">OpD2I</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpD2L"><span class="constructor">OpD2L</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpD2F"><span class="constructor">OpD2F</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2B"><span class="constructor">OpI2B</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2C"><span class="constructor">OpI2C</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpI2S"><span class="constructor">OpI2S</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLCmp"><span class="constructor">OpLCmp</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpFCmpL"><span class="constructor">OpFCmpL</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpFCmpG"><span class="constructor">OpFCmpG</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDCmpL"><span class="constructor">OpDCmpL</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpDCmpG"><span class="constructor">OpDCmpG</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfEq"><span class="constructor">OpIfEq</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfNe"><span class="constructor">OpIfNe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfLt"><span class="constructor">OpIfLt</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfGe"><span class="constructor">OpIfGe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfGt"><span class="constructor">OpIfGt</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfLe"><span class="constructor">OpIfLe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpEq"><span class="constructor">OpICmpEq</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpNe"><span class="constructor">OpICmpNe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpLt"><span class="constructor">OpICmpLt</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpGe"><span class="constructor">OpICmpGe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpGt"><span class="constructor">OpICmpGt</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpICmpLe"><span class="constructor">OpICmpLe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpACmpEq"><span class="constructor">OpACmpEq</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpACmpNe"><span class="constructor">OpACmpNe</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpGoto"><span class="constructor">OpGoto</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpJsr"><span class="constructor">OpJsr</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpRet"><span class="constructor">OpRet</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpTableSwitch"><span class="constructor">OpTableSwitch</span></span> <span class="keyword">of</span> <code class="type">int * int32 * int32 * int array</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpLookupSwitch"><span class="constructor">OpLookupSwitch</span></span> <span class="keyword">of</span> <code class="type">int * (int32 * int) list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpReturn"><span class="constructor">OpReturn</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjvm_basic_type">JBasics.jvm_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAReturn"><span class="constructor">OpAReturn</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpReturnVoid"><span class="constructor">OpReturnVoid</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpGetStatic"><span class="constructor">OpGetStatic</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpPutStatic"><span class="constructor">OpPutStatic</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpGetField"><span class="constructor">OpGetField</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpPutField"><span class="constructor">OpPutField</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvokeVirtual"><span class="constructor">OpInvokeVirtual</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvokeNonVirtual"><span class="constructor">OpInvokeNonVirtual</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvokeStatic"><span class="constructor">OpInvokeStatic</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvokeInterface"><span class="constructor">OpInvokeInterface</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>count</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvokeDynamic"><span class="constructor">OpInvokeDynamic</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpNew"><span class="constructor">OpNew</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpNewArray"><span class="constructor">OpNewArray</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEjava_basic_type">JBasics.java_basic_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpANewArray"><span class="constructor">OpANewArray</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpArrayLength"><span class="constructor">OpArrayLength</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpThrow"><span class="constructor">OpThrow</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpCheckCast"><span class="constructor">OpCheckCast</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInstanceOf"><span class="constructor">OpInstanceOf</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpMonitorEnter"><span class="constructor">OpMonitorEnter</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpMonitorExit"><span class="constructor">OpMonitorExit</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpAMultiNewArray"><span class="constructor">OpAMultiNewArray</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>ClassInfo, dims</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfNull"><span class="constructor">OpIfNull</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpIfNonNull"><span class="constructor">OpIfNonNull</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpGotoW"><span class="constructor">OpGotoW</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpJsrW"><span class="constructor">OpJsrW</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpBreakpoint"><span class="constructor">OpBreakpoint</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTopcode.OpInvalid"><span class="constructor">OpInvalid</span></span></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>Instruction.</p>
+</div>
+</div>
+
+
+<pre><span id="TYPEopcodes"><span class="keyword">type</span> <code class="type"></code>opcodes</span> = <code class="type"><a href="JClassLow.html#TYPEopcode">opcode</a> array</code> </pre>
+
+<h3 id="2_Flagsattributesandlowlevelstructureofclassfiles">Flags, attributes and low-level structure of class files.</h3>
+<pre><span id="TYPEcommon_flag"><span class="keyword">type</span> <code class="type"></code>common_flag</span> = <code class="type">[ `AccFinal | `AccPublic | `AccRFU of int | `AccSynthetic ]</code> </pre>
+
+
+<pre><span id="TYPEinner_flag"><span class="keyword">type</span> <code class="type"></code>inner_flag</span> = <code class="type">[ `AccAbstract<br>       | `AccAnnotation<br>       | `AccEnum<br>       | `AccFinal<br>       | `AccInterface<br>       | `AccPrivate<br>       | `AccProtected<br>       | `AccPublic<br>       | `AccRFU of int<br>       | `AccStatic<br>       | `AccSynthetic ]</code> </pre>
+
+
+<pre><span id="TYPEfield_flag"><span class="keyword">type</span> <code class="type"></code>field_flag</span> = <code class="type">[ `AccEnum<br>       | `AccFinal<br>       | `AccPrivate<br>       | `AccProtected<br>       | `AccPublic<br>       | `AccRFU of int<br>       | `AccStatic<br>       | `AccSynthetic<br>       | `AccTransient<br>       | `AccVolatile ]</code> </pre>
+
+
+<pre><span id="TYPEmethod_flag"><span class="keyword">type</span> <code class="type"></code>method_flag</span> = <code class="type">[ `AccAbstract<br>       | `AccBridge<br>       | `AccFinal<br>       | `AccNative<br>       | `AccPrivate<br>       | `AccProtected<br>       | `AccPublic<br>       | `AccRFU of int<br>       | `AccStatic<br>       | `AccStrict<br>       | `AccSynchronized<br>       | `AccSynthetic<br>       | `AccVarArgs ]</code> </pre>
+
+
+<pre><span id="TYPEclass_flag"><span class="keyword">type</span> <code class="type"></code>class_flag</span> = <code class="type">[ `AccAbstract<br>       | `AccAnnotation<br>       | `AccEnum<br>       | `AccFinal<br>       | `AccInterface<br>       | `AccPublic<br>       | `AccRFU of int<br>       | `AccSuper<br>       | `AccSynthetic ]</code> </pre>
+
+
+<pre><span id="TYPEaccess_flag"><span class="keyword">type</span> <code class="type"></code>access_flag</span> = <code class="type">[ `AccAbstract<br>       | `AccAnnotation<br>       | `AccBridge<br>       | `AccEnum<br>       | `AccFinal<br>       | `AccInterface<br>       | `AccNative<br>       | `AccPrivate<br>       | `AccProtected<br>       | `AccPublic<br>       | `AccRFU of int<br>       | `AccStatic<br>       | `AccStrict<br>       | `AccSuper<br>       | `AccSynchronized<br>       | `AccSynthetic<br>       | `AccTransient<br>       | `AccVarArgs<br>       | `AccVolatile ]</code> </pre>
+
+
+<pre><code><span id="TYPEstackmap_frame"><span class="keyword">type</span> <code class="type"></code>stackmap_frame</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.SameFrame"><span class="constructor">SameFrame</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.SameLocals"><span class="constructor">SameLocals</span></span> <span class="keyword">of</span> <code class="type">int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.SameLocalsExtended"><span class="constructor">SameLocalsExtended</span></span> <span class="keyword">of</span> <code class="type">int * int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.ChopFrame"><span class="constructor">ChopFrame</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.SameFrameExtended"><span class="constructor">SameFrameExtended</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.AppendFrame"><span class="constructor">AppendFrame</span></span> <span class="keyword">of</span> <code class="type">int * int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTstackmap_frame.FullFrame"><span class="constructor">FullFrame</span></span> <span class="keyword">of</span> <code class="type">int * int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list</code></code></td>
+
+</tr></table>
+
+<div class="info ">
+<div class="info-desc">
+<p>DFr : Addition for 1.6 stackmap.</p>
+</div>
+</div>
+
+
+<pre><code><span id="TYPEbootstrap_method"><span class="keyword">type</span> <code class="type"></code>bootstrap_method</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTbootstrap_method.bootstrap_method_ref">bootstrap_method_ref</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTbootstrap_method.num_bootstrap_arguments">num_bootstrap_arguments</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTbootstrap_method.bootstrap_arguments">bootstrap_arguments</span>&nbsp;: <code class="type">int list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEcode"><span class="keyword">type</span> <code class="type"></code>code</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcode.c_max_stack">c_max_stack</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcode.c_max_locals">c_max_locals</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcode.c_code">c_code</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEopcodes">opcodes</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcode.c_exc_tbl">c_exc_tbl</span>&nbsp;: <code class="type"><a href="JCode.html#TYPEexception_handler">JCode.exception_handler</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTcode.c_attributes">c_attributes</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEattribute">attribute</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEattribute"><span class="keyword">type</span> <code class="type"></code>attribute</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeSourceFile"><span class="constructor">AttributeSourceFile</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeConstant"><span class="constructor">AttributeConstant</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeCode"><span class="constructor">AttributeCode</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEcode">code</a> Stdlib.Lazy.t</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeExceptions"><span class="constructor">AttributeExceptions</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeInnerClasses"><span class="constructor">AttributeInnerClasses</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option * <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option * string option *<br>      <a href="JClassLow.html#TYPEinner_flag">inner_flag</a> list)<br>     list</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>inner_class_info, outer_class_info, inner_name,
+	    inner_class_access_flags</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeSynthetic"><span class="constructor">AttributeSynthetic</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeLineNumberTable"><span class="constructor">AttributeLineNumberTable</span></span> <span class="keyword">of</span> <code class="type">(int * int) list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeLocalVariableTable"><span class="constructor">AttributeLocalVariableTable</span></span> <span class="keyword">of</span> <code class="type">(int * int * string * <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> * int) list</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>start_pc, length, name, type, index</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeLocalVariableTypeTable"><span class="constructor">AttributeLocalVariableTypeTable</span></span> <span class="keyword">of</span> <code class="type">(int * int * string * <a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> * int) list</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>(start_pc, length, name, type, index), LocalVariableTable for
+          generics, described in the JVM Spec 1.5, §4.8.13</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeDeprecated"><span class="constructor">AttributeDeprecated</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeStackMap"><span class="constructor">AttributeStackMap</span></span> <span class="keyword">of</span> <code class="type">(int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list) list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeSignature"><span class="constructor">AttributeSignature</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Introduced in Java 5 for generics
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeEnclosingMethod"><span class="constructor">AttributeEnclosingMethod</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * (string * <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a>) option)</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Introduced in Java 5 for local classes (classes
+	  defined in a method body)
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeSourceDebugExtension"><span class="constructor">AttributeSourceDebugExtension</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>Introduced in Java 5 for debugging purpose (no
+	  semantics defined)
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeStackMapTable"><span class="constructor">AttributeStackMapTable</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEstackmap_frame">stackmap_frame</a> list</code></code></td>
+<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
+<div class="info-desc">
+<p>DFr : Addition for 1.6 stackmap.</p>
+</div>
+</div>
+</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeRuntimeVisibleAnnotations"><span class="constructor">AttributeRuntimeVisibleAnnotations</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEannotation">JBasics.annotation</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeRuntimeInvisibleAnnotations"><span class="constructor">AttributeRuntimeInvisibleAnnotations</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEannotation">JBasics.annotation</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeRuntimeVisibleParameterAnnotations"><span class="constructor">AttributeRuntimeVisibleParameterAnnotations</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEannotation">JBasics.annotation</a> list list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeRuntimeInvisibleParameterAnnotations"><span class="constructor">AttributeRuntimeInvisibleParameterAnnotations</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEannotation">JBasics.annotation</a> list list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeAnnotationDefault"><span class="constructor">AttributeAnnotationDefault</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEelement_value">JBasics.element_value</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeBootstrapMethods"><span class="constructor">AttributeBootstrapMethods</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEbootstrap_method">bootstrap_method</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeUnknown"><span class="constructor">AttributeUnknown</span></span> <span class="keyword">of</span> <code class="type">string * string</code></code></td>
+
+</tr></table>
+
+
+
+<pre><code><span id="TYPEjfield"><span class="keyword">type</span> <code class="type"></code>jfield</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjfield.f_name">f_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjfield.f_descriptor">f_descriptor</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjfield.f_flags">f_flags</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEfield_flag">field_flag</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjfield.f_attributes">f_attributes</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEattribute">attribute</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEjmethod"><span class="keyword">type</span> <code class="type"></code>jmethod</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.m_name">m_name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.m_descriptor">m_descriptor</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.m_flags">m_flags</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEmethod_flag">method_flag</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjmethod.m_attributes">m_attributes</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEattribute">attribute</a> list</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><code><span id="TYPEjclass"><span class="keyword">type</span> <code class="type"></code>jclass</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_name">j_name</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_super">j_super</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_interfaces">j_interfaces</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_consts">j_consts</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_flags">j_flags</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEclass_flag">class_flag</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_fields">j_fields</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEjfield">jfield</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_methods">j_methods</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEjmethod">jmethod</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_attributes">j_attributes</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEattribute">attribute</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_version">j_version</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEversion">JBasics.version</a></code>;</code></td>
+
+</tr></table>
+}
+
+
+</body></html>

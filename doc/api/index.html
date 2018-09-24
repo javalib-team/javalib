@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Index of module types" rel=Appendix href="index_module_types.html">
+<link title="Ptset" rel="Chapter" href="Ptset.html">
+<link title="Ptmap" rel="Chapter" href="Ptmap.html">
+<link title="GenericSet" rel="Chapter" href="GenericSet.html">
+<link title="GenericMap" rel="Chapter" href="GenericMap.html">
+<link title="JLib" rel="Chapter" href="JLib.html">
+<link title="JBasics" rel="Chapter" href="JBasics.html">
+<link title="JBasicsLow" rel="Chapter" href="JBasicsLow.html">
+<link title="JSignature" rel="Chapter" href="JSignature.html">
+<link title="JCode" rel="Chapter" href="JCode.html">
+<link title="JClassLow" rel="Chapter" href="JClassLow.html">
+<link title="JClass" rel="Chapter" href="JClass.html">
+<link title="JDumpBasics" rel="Chapter" href="JDumpBasics.html">
+<link title="JUnparseSignature" rel="Chapter" href="JUnparseSignature.html">
+<link title="JDumpLow" rel="Chapter" href="JDumpLow.html">
+<link title="JParseCode" rel="Chapter" href="JParseCode.html">
+<link title="JInstruction" rel="Chapter" href="JInstruction.html">
+<link title="JUnparse" rel="Chapter" href="JUnparse.html">
+<link title="JParseSignature" rel="Chapter" href="JParseSignature.html">
+<link title="JParse" rel="Chapter" href="JParse.html">
+<link title="JLow2High" rel="Chapter" href="JLow2High.html">
+<link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
+<link title="JFile" rel="Chapter" href="JFile.html">
+<link title="JManifest" rel="Chapter" href="JManifest.html">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><title>Javalib</title>
+</head>
+<body>
+<h1>Javalib</h1>
+<div class="info-desc">
+<p><b><center>2.3.5</center></b></p>
+
+<p><i><center>Laurent Hubert and Tiphaine Turpin</center></i></p>
+
+<p><i><center>September 2018</center></i></p>
+
+<h3 id="2_Documentation"><div align=left>Documentation</div></h3>
+<p><b><div align=left>User interface</div></b></p>
+
+<p>The following modules consitute the user interface of Javalib. They are the only
+modules you should need.</p>
+
+<p><table class="indextable module-list">
+<tr><td class="module"><a href="Javalib.html">Javalib</a></td><td><div class="info">
+<p>User interface for using the Javalib.</p>
+
+</div>
+</td></tr>
+<tr><td class="module"><a href="JBasics.html">JBasics</a></td><td><div class="info">
+<p>Basic elements of class files.</p>
+
+</div>
+</td></tr>
+<tr><td class="module"><a href="JCode.html">JCode</a></td><td><div class="info">
+<p>High level Ocaml representation of JVM opcodes.</p>
+
+</div>
+</td></tr>
+</table></p>
+
+<p><b><div align=left>Patricia Tree library</div></b></p>
+
+<p>The Patricia Tree library has been developed by
+<a href="http://www.lri.fr/~filliatr/software.en.html">Filliatre</a> and extended by
+ourselves to add some features and to improve its efficiency in our context.</p>
+
+<p><table class="indextable module-list">
+<tr><td class="module"><a href="Ptmap.html">Ptmap</a></td><td><div class="info">
+<p>Maps over integers implemented as Patricia trees.</p>
+
+</div>
+</td></tr>
+<tr><td class="module"><a href="Ptset.html">Ptset</a></td><td><div class="info">
+<p>Sets of integers implemented as Patricia trees.</p>
+
+</div>
+</td></tr>
+<tr><td class="module"><a href="GenericMap.html">GenericMap</a></td><td><div class="info">
+<p>Provide a way to create GenericMap from a module specifying how to hash.</p>
+
+</div>
+</td></tr>
+<tr><td class="module"><a href="GenericSet.html">GenericSet</a></td><td><div class="info">
+<p>Provide a way to create GenericSet specifying how to hash.</p>
+
+</div>
+</td></tr>
+</table></p>
+
+<p><b><div align=left>Other internal modules</div></b></p>
+
+<p>Those are the internal modules of Javalib.  You should not need to look into
+those files unless you do rely advanced stuff (and in this case we would love to
+have some feedback).</p>
+
+<p><a href="JDumpBasics.html"><code class="code"><span class="constructor">JDumpBasics</span></code></a>, <a href="JSignature.html"><code class="code"><span class="constructor">JSignature</span></code></a>, <a href="JClass.html"><code class="code"><span class="constructor">JClass</span></code></a>, <a href="JFile.html"><code class="code"><span class="constructor">JFile</span></code></a>, <a href="JManifest.html"><code class="code"><span class="constructor">JManifest</span></code></a>,
+<a href="JParseCode.html"><code class="code"><span class="constructor">JParseCode</span></code></a>, <a href="JParse.html"><code class="code"><span class="constructor">JParse</span></code></a>, <a href="JParseSignature.html"><code class="code"><span class="constructor">JParseSignature</span></code></a>, <a href="JUnparse.html"><code class="code"><span class="constructor">JUnparse</span></code></a>, <a href="JUnparseSignature.html"><code class="code"><span class="constructor">JUnparseSignature</span></code></a>,
+<a href="JInstruction.html"><code class="code"><span class="constructor">JInstruction</span></code></a>, <a href="JLow2High.html"><code class="code"><span class="constructor">JLow2High</span></code></a>, <a href="JHigh2Low.html"><code class="code"><span class="constructor">JHigh2Low</span></code></a>, <a href="JBasicsLow.html"><code class="code"><span class="constructor">JBasicsLow</span></code></a>, <a href="JClassLow.html"><code class="code"><span class="constructor">JClassLow</span></code></a> and
+<a href="JDumpLow.html"><code class="code"><span class="constructor">JDumpLow</span></code></a>.</p>
+
+<p><b><div align=left>Indexes</div></b></p>
+
+<ul class="indexlist">
+<li><a href="index_types.html">Index of types</a></li>
+<li><a href="index_exceptions.html">Index of exceptions</a></li>
+<li><a href="index_values.html">Index of values</a></li>
+<li><a href="index_modules.html">Index of modules</a></li>
+<li><a href="index_module_types.html">Index of module types</a></li>
+</ul>
+
+<p><i><center>Others contributors: Florent Kirchner, Nicolas Barré, Nicolas Cannasse and David Pichardie</center></i></p>
+</div>
+</body>
+</html>
