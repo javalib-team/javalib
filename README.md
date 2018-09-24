@@ -33,7 +33,7 @@ To remove the library from your system, just do
 
      $ make remove
 
-# Using Javalib
+## Using Javalib
 
 Before being able to use the modules presented in the [API documentation](http://javalib.gforge.inria.fr/javalib-api), you need to `open Javalib_pack;;`.
 
