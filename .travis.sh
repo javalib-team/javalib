@@ -12,12 +12,9 @@ fi
 
 opam install -y ${OPAM_DEPENDS}
 
-./configure.sh
-make
+./configure.sh || exit 1
+make || exit 1
 
-cd tests
-make
-make clean
+make tests || exit 1
 
-cd ..
-make clean
+make cleanall 
