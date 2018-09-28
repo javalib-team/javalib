@@ -8,6 +8,9 @@ all:javalib
 javalib:
 	$(MAKE) -C src
 
+tests: FORCE
+	$(MAKE) -C tests
+
 # Package-specific targets
 
 install remove:
@@ -16,9 +19,12 @@ install remove:
 distclean:clean
 	$(RM) Makefile.config
 
-cleanall clean:
+cleanall:clean
+	$(MAKE) -C doc clean cleanall
+	$(MAKE) -C tests clean
+
+clean:
 	$(MAKE) -C src $@
-	$(MAKE) -C doc $@
 	$(RM) *~
 
 cleandoc doc:
@@ -27,3 +33,8 @@ cleandoc doc:
 # Documentation for release (INSTALL and README)
 cleandocr docr:
 	$(MAKE) -C doc $@
+
+cleantests:
+	$(MAKE) -C tests $@
+
+FORCE:
