@@ -322,6 +322,18 @@ fi
 done
 
 #
+# Check Extlib and Camomile
+#
+for pkg in extlib camomile; do
+location=`$FINDER query $pkg 2> /dev/null`
+if [ $location ]; then
+  msg "inf" "Package $pkg found at $location"
+else 
+  msg "err" "Package $pkg not found"
+fi
+done
+
+#
 # Infer the value of the DESTDIR and OPT_FLAGS variables
 #
 if [ -n "$LOCALDEST" ]; then
