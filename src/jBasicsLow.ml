@@ -79,17 +79,17 @@ let get_class consts i =
 
 let get_field consts i =
   match get_constant consts i with
-    | ConstField cnfs -> cnfs
+    | ConstRef (ConstField cnfs) -> cnfs
     | _ -> raise (Class_structure_error ("Illegal field index (does not refer to a constant field)"))
 
 let get_method consts i =
   match get_constant consts i with
-    | ConstMethod (ot, ms) -> ot,ms
+    | ConstRef (ConstMethod (ot, ms)) -> ot,ms
     | _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
 
 let get_interface_method consts i =
   match get_constant consts i with
-    | ConstInterfaceMethod cms -> cms
+    | ConstRef (ConstInterfaceMethod cms) -> cms
     | _ -> raise (Class_structure_error ("Illegal interface method index (does not refer to a constant interface method)"))
 
 let get_string consts i =
@@ -132,8 +132,8 @@ let method_handle_kind_to_int = function
 
 let value_to_int cp v = constant_to_int cp (ConstValue v)
 let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
-let field_to_int cp v = constant_to_int cp (ConstField v)
-let method_to_int cp v = constant_to_int cp (ConstMethod v)
+let field_to_int cp v = constant_to_int cp (ConstRef (ConstField v))
+let method_to_int cp v = constant_to_int cp (ConstRef (ConstMethod v))
 let class_to_int cp v = object_type_to_int cp (TClass v)
 let string_to_int cp v = constant_to_int cp (ConstStringUTF8 v)
 let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s))

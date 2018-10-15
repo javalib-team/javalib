@@ -579,17 +579,17 @@ let rec expand_constant consts n =
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
       | ConstantField (cl,nt) ->
 	  (match expand "Field" cl nt with
-	     | TClass c, n, SValue v -> ConstField (c, make_fs n v)
+	     | TClass c, n, SValue v -> ConstRef (ConstField (c, make_fs n v))
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Field constant: " ^ ""))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Field constant")))
       | ConstantMethod (cl,nt) ->
 	  (match expand "Method" cl nt with
-	     | c, n, SMethod (args,rtype) -> ConstMethod (c, make_ms n args rtype)
+	     | c, n, SMethod (args,rtype) -> ConstRef (ConstMethod (c, make_ms n args rtype))
 	     | _, _, SValue _ -> raise (Class_structure_error ("Illegal type in Method constant")))
       | ConstantInterfaceMethod (cl,nt) ->
 	  (match expand "InterfaceMethod" cl nt with
 	     | TClass c, n, SMethod (args,rtype) ->
-                 ConstInterfaceMethod (c, make_ms n args rtype)
+                 ConstRef(ConstInterfaceMethod (c, make_ms n args rtype))
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
       | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
       | ConstantMethodType i ->
@@ -599,24 +599,24 @@ let rec expand_constant consts n =
             | _ -> raise (Class_structure_error ("Illegal constant referred in place of a MethodType constant")))
       | ConstantMethodHandle (kind, index) ->
           (match kind, expand_constant consts index with
-           | 1, (ConstField _ as const) ->
-               ConstMethodHandle (`GetField, const)
-           | 2, (ConstField _ as const) ->
-               ConstMethodHandle (`GetStatic, const)
-           | 3, (ConstField _ as const) ->
-               ConstMethodHandle (`PutField, const)
-           | 4, (ConstField _ as const) ->
-               ConstMethodHandle (`PutStatic, const)
-           | 5, (ConstMethod _ as const) ->
-               ConstMethodHandle (`InvokeVirtual, const)
-           | 6, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeStatic, const)
-           | 7, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeSpecial, const)
-           | 8, (ConstMethod _ as const) ->
-               ConstMethodHandle (`NewInvokeSpecial, const)
-           | 9, (ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeInterface, const)
+           | 1, ConstRef (ConstField _ as const) ->
+              ConstMethodHandle (`GetField, const)
+           | 2, ConstRef (ConstField _ as const) ->
+              ConstMethodHandle (`GetStatic, const)
+           | 3, ConstRef (ConstField _ as const) ->
+              ConstMethodHandle (`PutField, const)
+           | 4, ConstRef (ConstField _ as const) ->
+              ConstMethodHandle (`PutStatic, const)
+           | 5, ConstRef (ConstMethod _ as const) ->
+              ConstMethodHandle (`InvokeVirtual, const)
+           | 6, ConstRef (ConstMethod _ | ConstInterfaceMethod _ as const) ->
+              ConstMethodHandle (`InvokeStatic, const)
+           | 7, ConstRef (ConstMethod _ | ConstInterfaceMethod _ as const) ->
+              ConstMethodHandle (`InvokeSpecial, const)
+           | 8, ConstRef (ConstMethod _ as const) ->
+              ConstMethodHandle (`NewInvokeSpecial, const)
+           | 9, ConstRef (ConstInterfaceMethod _ as const) ->
+              ConstMethodHandle (`InvokeInterface, const)
            | n, c ->
                let s =
                  JLib.IO.output_string () in

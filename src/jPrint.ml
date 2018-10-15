@@ -129,20 +129,23 @@ let constant_value = function
   | ConstDouble f -> "double " ^ (string_of_float f)
   | ConstClass cl -> "class " ^ (object_type cl)
 
-let rec constant = function
-  | ConstValue v -> constant_value v
+let constant_ref = function
   | ConstField (cl,fs) ->
       "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
   | ConstMethod (ot,ms) ->
       "method : " ^ (method_signature ~callee:ot ms)
   | ConstInterfaceMethod (cn,ms) ->
-      "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
+      "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)    
+
+let constant = function
+  | ConstValue v -> constant_value v
+  | ConstRef r -> constant_ref r
   | ConstNameAndType (s,d) -> "name-and-type : " ^ (signature s d)
   | ConstStringUTF8 s -> "utf8 " ^ s
   | ConstMethodType (args,ret) ->
       "method-type : " ^ (method_descriptor args ret)
   | ConstMethodHandle (kind,c) ->
-      "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant c)
+      "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant_ref c)
   | ConstInvokeDynamic (bmi,ms) ->
       "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)
   | ConstUnusable -> "unusable"

@@ -259,6 +259,12 @@ val make_jstr : string -> jstr
 val jstr_pp   : jstr -> string
 val jstr_raw  : jstr -> string
 
+(** Constant field or method reference **)
+type constant_ref =
+  | ConstField of (class_name * field_signature)
+  | ConstMethod of (object_type * method_signature)
+  | ConstInterfaceMethod of (class_name * method_signature)
+                          
 (** Constant value. *)
 type constant_value =
   | ConstString of jstr
@@ -271,11 +277,9 @@ type constant_value =
 (** Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstField of (class_name * field_signature)
-  | ConstMethod of (object_type * method_signature)
-  | ConstInterfaceMethod of (class_name * method_signature)
+  | ConstRef of constant_ref    
   | ConstMethodType of method_descriptor
-  | ConstMethodHandle of method_handle_kind * constant
+  | ConstMethodHandle of method_handle_kind * constant_ref
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string

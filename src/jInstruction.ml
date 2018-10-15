@@ -414,7 +414,7 @@ let instruction2opcode consts length = function
 	 | `Interface t ->
 	     OpInvokeInterface
 	       (constant_to_int consts
-		  (ConstInterfaceMethod (t, ms)), count (ms_args ms))
+		  (ConstRef (ConstInterfaceMethod (t, ms))), count (ms_args ms))
          | `Dynamic _ ->
              (* TODO: use bootstrap methods table to resolve *)
              assert false

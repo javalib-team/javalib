@@ -87,7 +87,7 @@ let low2high_bootstrapmethod consts { bootstrap_method_ref; bootstrap_arguments;
              | _ ->
                  raise (Class_structure_error "Bad argument type to bootstrap method"))
           bootstrap_arguments in
-      handle_kind, handle_const, bootstrap_method_args
+      handle_kind, ConstRef handle_const, bootstrap_method_args
   | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle")
 
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
