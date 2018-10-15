@@ -20,6 +20,7 @@ distclean:clean
 	$(RM) Makefile.config
 
 cleanall:clean
+	$(MAKE) -C src cleanall
 	$(MAKE) -C doc clean cleanall
 	$(MAKE) -C tests clean
 
