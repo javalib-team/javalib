@@ -29,6 +29,11 @@ type ldc_value = [
   | `CMethodHandle of method_handle
 ]
    
+type ioc_method = [
+  | `Class of object_type * method_signature
+  | `Interface of class_name * method_signature
+]
+
 (** {2 Constant Pool.}  *)
 
 (** Getting a constant from the constant pool: *)
@@ -45,6 +50,7 @@ val get_method : constant array -> int ->
   object_type * method_signature
 val get_interface_method : constant array -> int ->
   class_name * method_signature
+val get_method_or_interface_method : constant array -> int -> ioc_method
 
 (** Same thing, reading the index in a channel: *)
 
@@ -63,6 +69,8 @@ val field_to_int : constant JLib.DynArray.t ->
   class_name * field_signature -> int
 val method_to_int : constant JLib.DynArray.t ->
   object_type * method_signature -> int
+val interface_method_to_int : constant JLib.DynArray.t ->
+  class_name * method_signature -> int
 val string_to_int : constant JLib.DynArray.t -> string -> int
 val method_handle_kind_to_int : method_handle_kind -> int
 

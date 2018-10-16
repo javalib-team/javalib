@@ -40,6 +40,8 @@ type jconst = [
   | `MethodHandle of method_handle                        (** ldc / ldc_w *)
 ]
 
+type jinterface_or_class = [ `Class | `Interface ]
+
 type jopcode =
 
   (* Access to a local variable *)
@@ -148,8 +150,8 @@ type jopcode =
   | OpInvoke
       of [
 	`Virtual of object_type
-      | `Special of class_name
-      | `Static of class_name
+      | `Special of jinterface_or_class * class_name
+      | `Static of jinterface_or_class * class_name
       | `Interface of class_name
       | `Dynamic of method_handle_kind * constant * constant list
       ]

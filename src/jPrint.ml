@@ -358,10 +358,10 @@ let jopcode_jvm =
       | `Virtual t ->
 	 "invokevirtual " ^
            (method_signature ~jvm:true ~callee:t ms)
-      | `Special cs ->
+      | `Special (_, cs) ->
 	 "invokespecial " ^
            (method_signature ~jvm:true ~callee:(TClass cs) ms)
-      | `Static cs ->
+      | `Static (_, cs) ->
 	 "invokestatic " ^
            (method_signature ~jvm:true ~callee:(TClass cs) ms)
       | `Interface cs ->
@@ -425,12 +425,20 @@ let jopcode ?(jvm=false) op =
 	  Printf.sprintf "invokeinterface %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
-      | OpInvoke ((`Static cn),ms) ->
+      | OpInvoke ((`Static (`Class, cn)),ms) ->
 	  Printf.sprintf "invokestatic %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
-      | OpInvoke ((`Special cn),ms) ->
+      | OpInvoke ((`Static (`Interface, cn)),ms) ->
+	  Printf.sprintf "invokestatic InterfaceMethod %s.%s%s : %s" (cn_name cn)
+	    (ms_name ms) (value_type_list (ms_args ms))
+	    (return_type (ms_rtype ms))
+      | OpInvoke ((`Special (`Class, cn)),ms) ->
 	  Printf.sprintf "invokespecial %s.%s%s : %s" (cn_name cn)
+	    (ms_name ms) (value_type_list (ms_args ms))
+	    (return_type (ms_rtype ms))
+      | OpInvoke ((`Special (`Interface, cn)),ms) ->
+	  Printf.sprintf "invokespecial InterfaceMethod %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
       | _ -> jopcode_jvm op

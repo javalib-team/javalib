@@ -183,14 +183,18 @@ let opcode2instruction consts bootstrap_methods = function
       let t, ms = get_method consts i in
 	JCode.OpInvoke (`Virtual t, ms)
   | OpInvokeNonVirtual i ->
-      (match get_method consts i with
-	 | TClass cs, ms ->
-	     JCode.OpInvoke (`Special cs, ms)
+      (match get_method_or_interface_method consts i with
+	 | `Class (TClass cs, ms) ->
+	    JCode.OpInvoke (`Special (`Class, cs), ms)
+         | `Interface (cs, ms) ->
+            JCode.OpInvoke (`Special (`Interface, cs), ms)
 	 | _ -> raise (Class_structure_error ("Illegal invokespecial: array class")))
   | OpInvokeStatic i ->
-      (match get_method consts i with
-	 | TClass cs, ms ->
-	     JCode.OpInvoke (`Static cs, ms)
+      (match get_method_or_interface_method consts i with
+	 | `Class (TClass cs, ms) ->
+	    JCode.OpInvoke (`Static (`Class, cs), ms)
+         | `Interface (cs, ms) ->
+            JCode.OpInvoke (`Static (`Interface, cs), ms)
 	 | _ -> raise (Class_structure_error ("Illegal invokestatic: array class")))
   | OpInvokeInterface (i, c) ->
       let cs, ms = get_interface_method consts i in
@@ -411,16 +415,22 @@ let instruction2opcode consts length = function
 	 | `Virtual t ->
 	     OpInvokeVirtual
 	       (method_to_int consts (t, ms))
-	 | `Special t ->
+	 | `Special (`Class, t) ->
 	     OpInvokeNonVirtual
 	       (method_to_int consts (TClass t, ms))
-	 | `Static t ->
+         | `Special (`Interface, t) ->
+	     OpInvokeNonVirtual
+	       (interface_method_to_int consts (t, ms))
+	 | `Static (`Class, t) ->
 	     OpInvokeStatic
 	       (method_to_int consts (TClass t, ms))
+         | `Static (`Interface, t) ->
+	     OpInvokeStatic
+	       (interface_method_to_int consts (t, ms))
 	 | `Interface t ->
 	     OpInvokeInterface
-	       (constant_to_int consts
-		  (ConstRef (ConstInterfaceMethod (t, ms))), count (ms_args ms))
+	       (constant_to_int consts (ConstRef (ConstInterfaceMethod (t, ms))),
+                count (ms_args ms))
          | `Dynamic _ ->
              (* TODO: use bootstrap methods table to resolve *)
              assert false
