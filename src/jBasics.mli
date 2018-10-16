@@ -92,6 +92,16 @@ type java_basic_type = [
 | other_num
 ]
 
+(** Java object type *)
+type object_type =
+  | TClass of class_name
+  | TArray of value_type
+
+(** Java type *)
+and value_type =
+  | TBasic of java_basic_type
+  | TObject of object_type
+
 (** Method handle type. *)
 type method_handle_kind = [
 | `GetField
@@ -104,17 +114,7 @@ type method_handle_kind = [
 | `NewInvokeSpecial
 | `InvokeInterface
 ]
-
-(** Java object type *)
-type object_type =
-  | TClass of class_name
-  | TArray of value_type
-
-(** Java type *)
-and value_type =
-  | TBasic of java_basic_type
-  | TObject of object_type
-
+                        
 (** Version number of the class file. Extract of the specification: An
     implementation of Java 1.k sould support class file formats of
     versions in the range of 45.0 through 44+k.0 inclusive. E.g. Java
@@ -264,7 +264,10 @@ type constant_ref =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
-                          
+
+(** Method handle **)
+type method_handle = method_handle_kind * constant_ref
+
 (** Constant value. *)
 type constant_value =
   | ConstString of jstr
@@ -279,7 +282,7 @@ type constant =
   | ConstValue of constant_value
   | ConstRef of constant_ref    
   | ConstMethodType of method_descriptor
-  | ConstMethodHandle of method_handle_kind * constant_ref
+  | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string

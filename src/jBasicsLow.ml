@@ -24,7 +24,12 @@ open IO
 open IO.BigEndian
 open JBasics
 
-
+type ldc_value = [
+  | `CValue of constant_value
+  | `CMethodType of method_descriptor
+  | `CMethodHandle of method_handle
+]
+               
 (* Usefull functions *)
 (*********************)
 
@@ -62,6 +67,14 @@ let get_constant c n =
     | ConstUnusable -> raise (Class_structure_error ("Illegal constant: unusable"))
     | x -> x
 
+(* for ldc and ldc_w since Java 7 *)
+let get_constant_ldc_value c n =
+  match get_constant c n with
+  | ConstValue v -> `CValue v
+  | ConstMethodType mt -> `CMethodType mt
+  | ConstMethodHandle (mh_kind, cr) -> `CMethodHandle (mh_kind, cr)
+  | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value or a method type or a method handle)"))
+  
 let get_constant_value c n =
   match get_constant c n with
     | ConstValue v -> v
@@ -131,6 +144,11 @@ let method_handle_kind_to_int = function
   | `InvokeInterface -> 9
 
 let value_to_int cp v = constant_to_int cp (ConstValue v)
+let ldc_value_to_int cp = function
+  | `CValue c -> constant_to_int cp (ConstValue c)
+  | `CMethodType mt -> constant_to_int cp (ConstMethodType mt)
+  | `CMethodHandle (h_kind, cr) -> constant_to_int cp (ConstMethodHandle (h_kind, cr))
+
 let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
 let field_to_int cp v = constant_to_int cp (ConstRef (ConstField v))
 let method_to_int cp v = constant_to_int cp (ConstRef (ConstMethod v))

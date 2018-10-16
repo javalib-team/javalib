@@ -20,7 +20,7 @@
  *)
 
 open JBasics
-
+   
 type jconst = [
   | `ANull (* AConstNull  *)
   | `Int of int32
@@ -31,6 +31,8 @@ type jconst = [
   | `Short of int
   | `String of jstr
   | `Class of object_type
+  | `MethodType of value_type list * value_type option (* Since Java 7 *)
+  | `MethodHandle of method_handle (* Since Java 7 *)
 ]
 
 type jopcode =

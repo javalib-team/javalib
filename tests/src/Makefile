@@ -5,7 +5,7 @@ BIN=test_parser
 
 .PHONY:clean cleanall
 
-test_parser:test_parser.ml
+test_parser:test_parser.ml ../../src/javalib.cmxa
 	$(OCAMLOPT) $(INCLUDE) $(INC_PATH) -linkpkg -w Ae -annot -o $@ javalib.cmxa $^
 
 clean:

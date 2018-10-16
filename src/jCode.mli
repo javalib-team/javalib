@@ -27,15 +27,17 @@ open JBasics
 (********************************)
 
 type jconst = [
-  | `ANull                            (** AConstNull  *)
-  | `Int of int32                     (** IConst / ldc / ldc_w *)
-  | `Long of int64                    (** LConst / ldc2w  *)
-  | `Float of float                   (** FConst / ldc / ldc_w *)
-  | `Double of float                  (** DConst / ldc2w  *)
-  | `Byte of int                      (** BIPush *)
-  | `Short of int                     (** SIPush *)
-  | `String of jstr                   (** ldc / ldc_w  *)
-  | `Class of object_type             (** ldc / ldc_w *)
+  | `ANull                                                (** AConstNull  *)
+  | `Int of int32                                         (** IConst / ldc / ldc_w *)
+  | `Long of int64                                        (** LConst / ldc2w  *)
+  | `Float of float                                       (** FConst / ldc / ldc_w *)
+  | `Double of float                                      (** DConst / ldc2w  *)
+  | `Byte of int                                          (** BIPush *)
+  | `Short of int                                         (** SIPush *)
+  | `String of jstr                                       (** ldc / ldc_w  *)
+  | `Class of object_type                                 (** ldc / ldc_w *)
+  | `MethodType of value_type list * value_type option    (** ldc / ldc_w *)
+  | `MethodHandle of method_handle                        (** ldc / ldc_w *)
 ]
 
 type jopcode =

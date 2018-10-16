@@ -3,6 +3,7 @@ open Javalib
 open JBasics   
 
 let _ =
+  let _ = set_permissive true in
   let javafilename = ref None in
   let verbose = ref true in
   let argspec =

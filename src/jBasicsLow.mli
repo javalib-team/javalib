@@ -23,11 +23,18 @@
 
 open JBasics
 
+type ldc_value = [
+  | `CValue of constant_value
+  | `CMethodType of method_descriptor
+  | `CMethodHandle of method_handle
+]
+   
 (** {2 Constant Pool.}  *)
 
 (** Getting a constant from the constant pool: *)
 
 val get_constant : constant array -> int -> constant
+val get_constant_ldc_value : constant array -> int -> ldc_value
 val get_constant_value : constant array -> int -> constant_value
 val get_object_type : constant array -> int -> object_type
 val get_class : constant array -> int -> class_name
@@ -48,6 +55,7 @@ val get_string_ui16 : constant array -> JLib.IO.input -> string
 
 (** Return the index of a constant, adding it to the constant pool if necessary. *)
 val constant_to_int : constant JLib.DynArray.t -> constant -> int
+val ldc_value_to_int : constant JLib.DynArray.t -> ldc_value -> int
 val value_to_int : constant JLib.DynArray.t -> constant_value -> int
 val object_type_to_int : constant JLib.DynArray.t -> object_type -> int
 val class_to_int : constant JLib.DynArray.t -> class_name -> int

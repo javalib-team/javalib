@@ -48,7 +48,7 @@ let parse_constant max ch =
   let index() =
     let n = read_ui16 ch in
     if n = 0 || n >= max
-      then raise (Class_structure_error ("1: Illegal indexz in constant pool: " ^ string_of_int n));
+      then raise (Class_structure_error ("1: Illegal index in constant pool: " ^ string_of_int n));
       n
   in
     match cid with

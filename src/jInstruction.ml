@@ -45,19 +45,23 @@ let opcode2instruction consts bootstrap_methods = function
   | OpLdc1 n
   | OpLdc1w n ->
       JCode.OpConst
-	(match get_constant_value consts n with
-	   | ConstInt c -> `Int c
-	   | ConstFloat c -> `Float c
-	   | ConstString c -> `String c
-	   | ConstClass c -> `Class c
-	   | ConstLong _ | ConstDouble _ -> raise (Class_structure_error ("Illegal constant for Ldc1: long/double")))
+	(match get_constant_ldc_value consts n with
+	   | `CValue (ConstInt c) -> `Int c
+	   | `CValue (ConstFloat c) -> `Float c
+	   | `CValue (ConstString c) -> `String c
+	   | `CValue (ConstClass c) -> `Class c
+	   | `CValue (ConstLong _) | `CValue (ConstDouble _) ->
+              raise (Class_structure_error ("Illegal constant for Ldc1: long/double"))
+           | `CMethodType (l_args, rval) -> `MethodType (l_args, rval)
+           | `CMethodHandle (h_kind, cr) -> `MethodHandle (h_kind, cr)
+        )
   | OpLdc2w n ->
       JCode.OpConst
 	(match get_constant_value consts n with
-	   | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-	       raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
 	   | ConstLong c -> `Long c
-	   | ConstDouble c -> `Double c)
+	   | ConstDouble c -> `Double c
+           | _ -> raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
+        )
 
   | OpLoad (k, l) ->
       JCode.OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
@@ -225,7 +229,7 @@ let instruction2opcode consts length = function
   | JCode.OpNop -> OpNop
   | JCode.OpConst x ->
       let opldc_w c =
-	let index = (value_to_int consts c)
+	let index = (ldc_value_to_int consts c)
 	in
           if length = 2 && index <= 0xFF
           then OpLdc1 index
@@ -241,7 +245,7 @@ let instruction2opcode consts length = function
 	   | `Int v ->
 	       if length = 1 && -1l <= v && v <= 5l
 	       then OpIConst v
-	       else opldc_w (ConstInt v)
+	       else opldc_w (`CValue (ConstInt v))
 	   | `Long v ->
 	       if length = 1 && (v=0L || v=1L)
 	       then OpLConst v
@@ -249,16 +253,18 @@ let instruction2opcode consts length = function
 	   | `Float v ->
 	       if length = 1 && (v=0. || v=1. || v=2.)
 	       then OpFConst v
-	       else opldc_w (ConstFloat v)
+	       else opldc_w (`CValue (ConstFloat v))
 	   | `Double v ->
 	       if length = 1 && (v=0. || v=1.)
                then OpDConst v
 	       else OpLdc2w (value_to_int consts (ConstDouble v))
 	   | `Byte v -> OpBIPush v
 	   | `Short v -> OpSIPush v
-	   | `String v -> opldc_w (ConstString v)
-	   | `Class v -> opldc_w (ConstClass v)
-	)
+	   | `String v -> opldc_w (`CValue (ConstString v))
+	   | `Class v -> opldc_w (`CValue (ConstClass v))
+           | `MethodType mt -> opldc_w (`CMethodType mt)
+           | `MethodHandle mh -> opldc_w (`CMethodHandle mh)
+        )
 
   | JCode.OpLoad (k, l) ->
       (match k with

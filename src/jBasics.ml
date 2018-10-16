@@ -71,18 +71,6 @@ type java_basic_type = [
 | other_num
 ]
 
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
-
 (* Java object type *)
 type object_type =
   | TClass of class_name
@@ -118,6 +106,19 @@ type descriptor =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
+(* Method handle kind *)
+type method_handle_kind = [
+| `GetField
+| `GetStatic
+| `PutField
+| `PutStatic
+| `InvokeVirtual
+| `InvokeStatic
+| `InvokeSpecial
+| `NewInvokeSpecial
+| `InvokeInterface
+]
+
 (* Constant value. *)
 type jstr = string
 let make_jstr s = s
@@ -128,6 +129,9 @@ type constant_ref =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
+
+(* Method Handle *)
+type method_handle = method_handle_kind * constant_ref
 
 type constant_value =
   | ConstString of jstr
@@ -142,7 +146,7 @@ type constant =
   | ConstValue of constant_value
   | ConstRef of constant_ref    
   | ConstMethodType of method_descriptor
-  | ConstMethodHandle of method_handle_kind * constant_ref
+  | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
