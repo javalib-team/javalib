@@ -431,9 +431,9 @@ let instruction2opcode consts length = function
 	     OpInvokeInterface
 	       (constant_to_int consts (ConstRef (ConstInterfaceMethod (t, ms))),
                 count (ms_args ms))
-         | `Dynamic _ ->
+         | `Dynamic (mh_kind, c, c_list) ->
              (* TODO: use bootstrap methods table to resolve *)
-             assert false
+            assert false
       )
 
   | JCode.OpNew cs -> OpNew (class_to_int consts cs)

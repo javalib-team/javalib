@@ -328,7 +328,7 @@ let rec parse_code consts ch =
       attrib_count
       (fun _ ->
 	 parse_attribute
-	   [`LineNumberTable ; `LocalVariableTable ; `StackMap]
+	   [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
 	   consts ch) in
     {
       c_max_stack = max_stack;

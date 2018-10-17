@@ -223,7 +223,9 @@ let low2high_code consts bootstrap_methods = function c ->
       (List.filter
 	 (function
 	    | AttributeStackMap _
-	    | AttributeStackMapTable _ | AttributeLocalVariableTable _
+	    | AttributeStackMapTable _
+            | AttributeLocalVariableTable _
+            | AttributeLocalVariableTypeTable _
 	    | AttributeLineNumberTable _ -> false
 	    | _ -> true)
 	 c.JClassLow.c_attributes);
