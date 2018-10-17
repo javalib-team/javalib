@@ -119,7 +119,7 @@ let method_flags =
     `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
     `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
     `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
-
+  
 let parse_access_flags all_flags ch =
   let fl = read_ui16 ch in
   let flags = ref [] in

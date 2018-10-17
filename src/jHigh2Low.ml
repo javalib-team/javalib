@@ -346,7 +346,7 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
      j_methods =
 	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts m])
-	@ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
+	@ MethodMap.fold (fun _ms m l -> h2l_acmethod consts m::l) c.i_methods [];
      j_attributes =
 	deprecated_to_attribute c.i_deprecated
 	@ class_generic_signature_to_attribute c.i_generic_signature

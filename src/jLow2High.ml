@@ -996,7 +996,7 @@ let low2high_class cl =
                           ^ "))");
 		     MethodMap.add
 		       ms
-		       (try low2high_amethod consts cs ms meth
+		       (try low2high_acmethod consts my_bootstrap_methods cs ms meth
 			with Class_structure_error msg ->
 			  let sign =
                             JDumpBasics.signature

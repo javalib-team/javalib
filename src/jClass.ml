@@ -194,7 +194,7 @@ type 'a jinterface = {
   i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t;
+  i_methods : 'a jmethod MethodMap.t;
 }
 
 type 'a interface_or_class =
@@ -257,7 +257,7 @@ let get_method ioc ms =
 	when (ms_equal cm.cm_signature ms) ->
 	ConcreteMethod cm
     | JInterface i ->
-	AbstractMethod(MethodMap.find ms i.i_methods)
+	MethodMap.find ms i.i_methods
     | JClass c ->
 	MethodMap.find ms c.c_methods
 
@@ -265,7 +265,10 @@ let get_concrete_method ioc ms =
   match ioc with
     | JInterface {i_initializer = Some cm}
 	when (ms_equal cm.cm_signature ms) -> cm
-    | JInterface _ -> raise Not_found
+    | JInterface i ->
+	(match MethodMap.find ms i.i_methods with
+	    ConcreteMethod cm -> cm
+	  | AbstractMethod _ -> raise Not_found)
     | JClass c ->
 	(match MethodMap.find ms c.c_methods with
 	    ConcreteMethod cm -> cm
@@ -273,12 +276,11 @@ let get_concrete_method ioc ms =
 
 let get_methods = function
   | JInterface i ->
-      let mmap =
-	MethodMap.map (fun am -> AbstractMethod am) i.i_methods in
-	(match i.i_initializer with
-	   | None -> mmap
-	   | Some cm -> MethodMap.add clinit_signature (ConcreteMethod cm) mmap
-	)
+     let mmap = i.i_methods in
+     (match i.i_initializer with
+      | None -> mmap
+      | Some cm -> MethodMap.add clinit_signature (ConcreteMethod cm) mmap
+     )
   | JClass {c_methods = mmap} -> mmap
 
 let get_concrete_methods = function
@@ -423,7 +425,7 @@ let m_iter f = function
   | JInterface i ->
       JLib.Option.may (fun m -> f (ConcreteMethod m)) i.i_initializer;
       MethodMap.iter
-        (fun _ m -> f (AbstractMethod m))
+        (fun _ m -> f m)
         i.i_methods
   | JClass c ->
       MethodMap.iter
@@ -432,6 +434,11 @@ let m_iter f = function
 
 let cm_iter f = function
   | JInterface i -> JLib.Option.may (fun m -> f m) i.i_initializer;
+      MethodMap.iter
+        (fun _ -> function
+           | AbstractMethod _ -> ()
+           | ConcreteMethod m -> f m)
+        i.i_methods
   | JClass c ->
       MethodMap.iter
         (fun _ -> function
@@ -440,7 +447,12 @@ let cm_iter f = function
         c.c_methods
 
 let am_iter f = function
-  | JInterface i -> MethodMap.iter (fun _ m -> f m) i.i_methods
+  | JInterface i ->
+      MethodMap.iter
+        (fun _ -> function
+           | AbstractMethod m -> f m
+           | ConcreteMethod _ -> ())
+        i.i_methods
   | JClass c ->
       MethodMap.iter
         (fun _ -> function
@@ -452,7 +464,9 @@ let am_iter f = function
 let am_fold f = function
   | JInterface i ->
       MethodMap.fold
-        (fun _ m acc -> f m acc)
+        (fun _ -> function
+           | AbstractMethod m -> f m
+           | ConcreteMethod _ -> (fun acc -> acc))
         i.i_methods
   | JClass c ->
       MethodMap.fold
@@ -462,8 +476,18 @@ let am_fold f = function
         c.c_methods
 
 let cm_fold f = function
-  | JInterface {i_initializer = Some m} -> f m
-  | JInterface _ -> identity
+  | JInterface i ->
+      (fun d ->
+         MethodMap.fold
+           (fun _ m acc ->
+             match m with
+             | AbstractMethod _ -> acc
+             | ConcreteMethod m' -> f m' acc)
+           i.i_methods
+           (JLib.Option.map_default
+              (fun m -> f m d)
+              d
+              i.i_initializer))
   | JClass c ->
       MethodMap.fold
         (fun _ -> function
@@ -475,7 +499,7 @@ let m_fold f = function
   | JInterface i ->
       (fun d ->
          MethodMap.fold
-           (fun _ m acc -> f (AbstractMethod m) acc)
+           (fun _ m acc -> f m acc)
            i.i_methods
            (JLib.Option.map_default
               (fun m -> f (ConcreteMethod m) d)
@@ -576,7 +600,7 @@ let map_class_with_native f c  =
 let map_class_context ?(force=false) f c = map_class_gen (map_method_context ~force:force) f c
 let map_class ?(force=false) f c = map_class_gen (map_method ~force:force) f c
 
-let map_interface_gen map_concrete_method f i =
+let map_interface_gen map_method f i =
   {
     i_name = i.i_name;
     i_version = i.i_version;
@@ -592,24 +616,29 @@ let map_interface_gen map_concrete_method f i =
     i_initializer = (match i.i_initializer with
 		       | None -> None
 		       | Some cm ->
-			   Some (map_concrete_method f cm)
+			  Some (match map_method f (ConcreteMethod cm) with
+                                | ConcreteMethod cm' -> cm'
+                                | AbstractMethod _ ->
+                                   raise (Class_structure_error
+                                            "Must not map a concrete method to an abstract one.")
+                               )
 		    );
     i_annotation = i.i_annotation;
     i_annotations = i.i_annotations;
     i_other_flags = i.i_other_flags;
     i_fields = i.i_fields;
-    i_methods = i.i_methods;
+    i_methods = MethodMap.map (map_method f) i.i_methods;
   }
 
 let map_interface_context ?(force=false) f i =
-  map_interface_gen (map_concrete_method_context ~force:force) f i
+  map_interface_gen (map_method_context ~force:force) f i
 let map_interface ?(force=false) f i =
-  map_interface_gen (map_concrete_method ~force:force) f i
+  map_interface_gen (map_method ~force:force) f i
 
 let map_interface_with_native_context f i =
-  map_interface_gen map_concrete_method_with_native_context f i
+  map_interface_gen map_method_with_native_context f i
 let map_interface_with_native f i  =
-  map_interface_gen map_concrete_method_with_native f i
+  map_interface_gen map_method_with_native f i
 
 let map_interface_or_class_with_native f = function
   | JInterface i -> JInterface (map_interface_with_native f i)

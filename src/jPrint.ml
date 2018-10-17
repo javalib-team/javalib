@@ -701,7 +701,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	      Format.pp_force_newline fmt ();
 	      MethodMap.iter
 		(fun _ m ->
-		   print_method_fmt jvm (AbstractMethod m) print_code fmt;
+		   print_method_fmt jvm m print_code fmt;
 		   Format.pp_force_newline fmt ();
 		) i.i_methods;
 	      Format.pp_close_box fmt ();

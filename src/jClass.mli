@@ -242,7 +242,7 @@ type 'a jinterface = {
   i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t;
+  i_methods : 'a jmethod MethodMap.t;
 }
 
 type 'a interface_or_class =
