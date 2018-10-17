@@ -230,6 +230,19 @@ let h2l_ifield _consts f =
 	@ (h2l_attributes f.if_attributes);
     }
 
+let h2l_method_parameters m_params =
+  let make_flags p =
+    let flags = ref [] in
+    let () = if p.mp_final then flags := `AccFinal :: !flags;
+             if p.mp_synthetic then flags := `AccSynthetic :: !flags;
+             if p.mp_mandated then flags := `AccMandated :: !flags
+    in !flags
+  in
+  let l_params = (List.map (fun p -> { name = p.mp_name;
+                                       flags = make_flags p; } ) m_params)
+  in
+  if l_params = [] then [] else [ AttributeMethodParameters l_params ]
+  
 let h2l_cmethod consts m =
   let ms = m.cm_signature in
   let mname = ms_name ms in
@@ -258,7 +271,8 @@ let h2l_cmethod consts m =
         @ h2l_parameter_annotation m.cm_annotations.ma_parameters
 	@ method_generic_signature_to_attribute m.cm_generic_signature
 	@ code
-	@ h2l_attributes m.cm_attributes;
+	@ h2l_attributes m.cm_attributes
+        @ h2l_method_parameters m.cm_parameters;
     }
 
 let h2l_amethod _consts m =
@@ -281,7 +295,8 @@ let h2l_amethod _consts m =
 	@ method_generic_signature_to_attribute m.am_generic_signature
         @ h2l_annotations m.am_annotations.ma_global
         @ h2l_parameter_annotation m.am_annotations.ma_parameters
-	@ h2l_attributes m.am_attributes;
+	@ h2l_attributes m.am_attributes
+        @ h2l_method_parameters m.am_parameters;
     }
 
 let h2l_acmethod consts = function

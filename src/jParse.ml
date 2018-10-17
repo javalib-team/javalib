@@ -119,6 +119,11 @@ let method_flags =
     `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
     `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
     `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
+let method_parameters_flags =
+  [|`AccRFU 0x1; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+    `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+    `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+    `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccMandated|]
   
 let parse_access_flags all_flags ch =
   let fl = read_ui16 ch in
@@ -508,6 +513,20 @@ and parse_attribute list consts ch =
                       let bootstrap_arguments =
                         JLib.List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
                       { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
+        | "MethodParameters" ->
+           check `MethodParameters;
+           let nentry = JLib.IO.read_byte ch in
+           AttributeMethodParameters
+             (JLib.List.init
+	        nentry
+		(function _ ->
+		          let name_index = read_ui16 ch in
+                          let name = if name_index = 0
+                                     then None
+                                     else Some (get_string consts name_index) in
+		          let flags = parse_access_flags method_parameters_flags ch in
+                          { name; flags; })
+             )
 	| _ -> raise Exit
     with
 	Exit -> AttributeUnknown (aname,JLib.IO.really_nread_string ch alen)
@@ -520,9 +539,7 @@ let parse_field consts ch =
   let attrib_to_parse =
     let base_attrib =
       [`Synthetic ; `Deprecated ; `Signature;
-       `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-       `RuntimeVisibleParameterAnnotations;
-       `RuntimeInvisibleParameterAnnotations;]
+       `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations]
     in
       if List.exists ((=)`AccStatic) acc
       then  `ConstantValue:: base_attrib
@@ -547,12 +564,15 @@ let parse_method consts ch =
   let attribs = JLib.List.init attrib_count
     (fun _ ->
        let to_parse =
-         [`Code ; `Exceptions ; `Synthetic ;
-	  `Deprecated ; `Signature;
-          `AnnotationDefault;
-          `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-          `RuntimeVisibleParameterAnnotations;
-          `RuntimeInvisibleParameterAnnotations;]
+         [`Code ; `Exceptions ;
+          `RuntimeVisibleParameterAnnotations ;
+          `RuntimeInvisibleParameterAnnotations ;
+          `AnnotationDefault ;
+          `MethodParameters ;
+          `Synthetic ;
+	  `Deprecated ; `Signature ;
+          `RuntimeVisibleAnnotations ; `RuntimeInvisibleAnnotations ;
+          ]
        in
          parse_attribute to_parse consts ch)
   in

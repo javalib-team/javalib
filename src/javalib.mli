@@ -45,6 +45,14 @@ type attributes = {
   other : (string * string) list
 }
 
+(** Attribute proper to a method parameter. *)
+type method_parameter_attribute = {
+  mp_name : string option;
+  mp_final : bool;
+  mp_synthetic : bool;
+  mp_mandated : bool;
+}
+
 (** visibility modifiers for annotations. An annotation may either be visible at
     run-time ([RTVisible]) or only present in the class file without being
     visible at run-time ([RTInvisible]).  (Note that there exists a third
@@ -146,6 +154,7 @@ type 'a concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
+  cm_parameters : method_parameter_attribute list;
   cm_annotations : method_annotations;
   cm_implementation : 'a implementation;
 }
@@ -164,6 +173,7 @@ type abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
+  am_parameters : method_parameter_attribute list;
   am_annotations : method_annotations;
   am_annotation_default : element_value option;
   (** If the method is in an annotation interface, then [am_annotation_default]

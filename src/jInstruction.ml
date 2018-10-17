@@ -433,7 +433,7 @@ let instruction2opcode consts length = function
                 count (ms_args ms))
          | `Dynamic (mh_kind, c, c_list) ->
              (* TODO: use bootstrap methods table to resolve *)
-            assert false
+             assert false
       )
 
   | JCode.OpNew cs -> OpNew (class_to_int consts cs)

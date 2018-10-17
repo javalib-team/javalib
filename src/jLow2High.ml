@@ -562,6 +562,24 @@ let low2high_amethod consts cs ms = function m ->
              "The length of an Runtime(In)VisibleParameterAnnotations \
               is longer than the number of arguments of the same method")
   in
+  let (method_parameters_att, other_att) =
+    List.partition
+      (function
+         | AttributeMethodParameters _ -> true
+         | _ -> false)
+      other_att
+  in
+  let method_parameters_att =
+    match method_parameters_att with
+    | [] -> []
+    | AttributeMethodParameters params :: [] ->
+       List.map (fun p -> { mp_name = p.name;
+                            mp_final = List.mem `AccFinal p.flags;
+                            mp_synthetic =  List.mem `AccSynthetic p.flags;
+                            mp_mandated =  List.mem `AccMandated p.flags; }) params
+    | _ -> raise (Class_structure_error
+                    "A method should contain only one MethodParameters attribute")
+  in
     {
       am_signature = ms;
       am_class_method_signature = make_cms cs ms;
@@ -576,6 +594,7 @@ let low2high_amethod consts cs ms = function m ->
       am_annotations =
         {ma_global = annotations;
          ma_parameters = parameter_annotations;};
+      am_parameters = method_parameters_att;
       am_annotation_default = default_annotation;
     }
 
@@ -704,6 +723,24 @@ let low2high_cmethod consts bootstrap_methods cs ms = function m ->
              "The length of an Runtime(In)VisibleParameterAnnotations \
               is longer than the number of arguments of the same method")
   in
+  let (method_parameters_att, other_att) =
+    List.partition
+      (function
+         | AttributeMethodParameters _ -> true
+         | _ -> false)
+      other_att
+  in
+  let method_parameters_att =
+    match method_parameters_att with
+    | [] -> []
+    | AttributeMethodParameters params :: [] ->
+       List.map (fun p -> { mp_name = p.name;
+                            mp_final = List.mem `AccFinal p.flags;
+                            mp_synthetic =  List.mem `AccSynthetic p.flags;
+                            mp_mandated =  List.mem `AccMandated p.flags; }) params
+    | _ -> raise (Class_structure_error
+                    "A method should contain only one MethodParameters attribute")
+  in
     {
       cm_signature = ms;
       cm_class_method_signature = make_cms cs ms;
@@ -722,6 +759,7 @@ let low2high_cmethod consts bootstrap_methods cs ms = function m ->
       cm_annotations =
         {ma_global = annotations;
          ma_parameters = parameter_annotations;};
+      cm_parameters = method_parameters_att;
       cm_implementation = code;
     }
 

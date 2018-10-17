@@ -134,6 +134,11 @@ let method_flags =
    `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
    `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
    `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000]
+let method_parameters_flags =
+  [`AccRFU 0x1; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+   `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+   `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccMandated]
 
 let unparse_flags all_flags flags =
   let fl = ref 0
@@ -430,6 +435,16 @@ let rec unparse_attribute_to_strings consts =
                write_with_size write_ui16 ch (function _ -> ()) bootstrap_arguments)
             bootstrap_methods;
           ("BootstrapMethods", close_out ch)
+      | AttributeMethodParameters mpl ->
+         write_with_size
+           write_ui8 ch
+           (function { name; flags } ->
+                     (match name with
+                      | None -> write_ui16 ch 0
+                      | Some name -> write_string ch consts name);
+                     write_ui16 ch (unparse_flags method_parameters_flags flags)
+           ) mpl;
+         ("MethodParameters", close_out ch)
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr

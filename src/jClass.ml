@@ -38,6 +38,13 @@ type attributes = {
   other : (string * string) list
 }
 
+type method_parameter_attribute = {
+  mp_name : string option;
+  mp_final : bool;
+  mp_synthetic : bool;
+  mp_mandated : bool;
+}
+
 type visibility = RTVisible | RTInvisible
 
 type method_annotations = {
@@ -111,6 +118,7 @@ type 'a concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
+  cm_parameters : method_parameter_attribute list;
   cm_annotations : method_annotations;
   cm_implementation : 'a implementation;
 }
@@ -126,6 +134,7 @@ type abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
+  am_parameters : method_parameter_attribute list;
   am_annotations : method_annotations;
   am_annotation_default : element_value option;
 }
@@ -530,6 +539,7 @@ let map_concrete_method_with_native f cm =
     cm_other_flags = cm.cm_other_flags;
     cm_exceptions = cm.cm_exceptions;
     cm_attributes = cm.cm_attributes;
+    cm_parameters = cm.cm_parameters;
     cm_annotations = cm.cm_annotations;
     cm_implementation = f cm.cm_implementation
   }

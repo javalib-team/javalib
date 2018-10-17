@@ -257,6 +257,13 @@ type bootstrap_method = {
   bootstrap_arguments : int list;
 }
 
+type mp_flags = [ `AccFinal | `AccSynthetic | `AccMandated | `AccRFU of int ]
+
+type method_parameters = {
+    name : string option;
+    flags : mp_flags list;
+}
+
 type code = {
   c_max_stack : int;
   c_max_locals : int;
@@ -304,6 +311,7 @@ and attribute =
   | AttributeRuntimeInvisibleParameterAnnotations of annotation list list
   | AttributeAnnotationDefault of element_value  (* cf. §4.8.19 of JVM Spec 5 *)
   | AttributeBootstrapMethods of bootstrap_method list
+  | AttributeMethodParameters of method_parameters list
   | AttributeUnknown of string * string
 
 type jfield = {
