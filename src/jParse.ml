@@ -681,11 +681,10 @@ let parse_class_low_level ch =
 	attrib_count
 	(fun _ ->
            let to_parse =
-             [`Signature; `SourceFile; `Deprecated; `BootstrapMethods;
-              `InnerClasses ;`EnclosingMethod; `SourceDebugExtension;
-              `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-              `RuntimeVisibleParameterAnnotations;
-              `RuntimeInvisibleParameterAnnotations;]
+             [`SourceFile; `InnerClasses ; `EnclosingMethod ;
+              `SourceDebugExtension ; `BootstrapMethods;
+              `Synthetic ; `Deprecated; `Signature;
+              `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations; ]
            in
              parse_attribute
                to_parse
