@@ -310,17 +310,16 @@ and dump_annotation ch annot =
     dump_pairs annot.element_value_pairs;
     JLib.IO.write ch ')'
 
-let dump_bootstrap_method ch { bootstrap_method_ref; bootstrap_arguments; } =
+let dump_bootstrap_method ch { bm_ref; bm_args; } =
   string_nwrite ch "    method_ref = ";
-  string_nwrite ch (string_of_int bootstrap_method_ref);
-  if bootstrap_arguments <> []
+  dump_constant ch (ConstMethodHandle bm_ref);
+  if bm_args <> []
   then
     begin
       string_nwrite ch (" , bootstrap_arguments = ");
       List.iter (fun arg ->
-          string_nwrite ch (string_of_int arg);
-          string_nwrite ch "\n")
-        bootstrap_arguments
+          dump_bootstrap_argument ch arg;
+          string_nwrite ch "\n") bm_args
     end
 
 let rec dump_code ch consts code =

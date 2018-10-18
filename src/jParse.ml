@@ -508,11 +508,13 @@ and parse_attribute list consts ch =
               (JLib.List.init
 	         nentry
 		   (function _ ->
-		      let bootstrap_method_ref = read_ui16 ch in
+		      let bootstrap_method_ref = get_method_handle_ui16 consts ch in
 		      let num_bootstrap_arguments = read_ui16 ch in
                       let bootstrap_arguments =
-                        JLib.List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
-                      { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
+                        JLib.List.init num_bootstrap_arguments
+                                       (function _ -> get_bootstrap_argument_ui16 consts ch) in
+                      { bm_ref = bootstrap_method_ref;
+                        bm_args = bootstrap_arguments; }))
         | "MethodParameters" ->
            check `MethodParameters;
            let nentry = JLib.IO.read_byte ch in
@@ -710,6 +712,14 @@ let parse_class_low_level ch =
                to_parse
 	       consts ch)
     in
+    let (bootstrap_table, attribs) =
+      List.partition (function AttributeBootstrapMethods _ -> true | _ -> false) attribs in
+    let bootstrap_table = (match bootstrap_table with
+                           | [] -> []
+                           | (AttributeBootstrapMethods l) :: [] -> l
+                           | _ -> raise (Class_structure_error
+                                           "A class may contain at most one bootstrap table");
+                          ) in
       {j_consts = consts;
        j_flags = flags;
        j_name = this;
@@ -718,6 +728,7 @@ let parse_class_low_level ch =
        j_fields = fields;
        j_methods = methods;
        j_attributes = attribs;
+       j_bootsrap_table = bootstrap_table;
        j_version = {major=version_major; minor=version_minor};
       }
 

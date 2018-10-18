@@ -142,6 +142,7 @@ let dump_constant_value ch = function
   | ConstDouble f -> JLib.IO.printf ch "double %f" f
   | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
 
+
 let dump_constant_ref ch = function
   | ConstField (cn,fs) ->
      let fn = fs_name fs
@@ -174,10 +175,19 @@ let dump_constant ch = function
       JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
       (dump_constant_ref ch c)
   | ConstInvokeDynamic (bmi, ms) ->
-      JLib.IO.printf ch "invole-dynamic : %d %s"
+      JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi
         (ms_name ms)
 
+let dump_bootstrap_argument ch = function
+  | `String s -> dump_constant_value ch (ConstString s)
+  | `Class cl -> dump_constant_value ch (ConstClass cl)
+  | `Int i -> dump_constant_value ch (ConstInt i)
+  | `Long i -> dump_constant_value ch (ConstLong i)
+  | `Float f -> dump_constant_value ch (ConstFloat f)
+  | `Double f -> dump_constant_value ch (ConstDouble f)
+  | `MethodHandle mh -> dump_constant ch (ConstMethodHandle mh)
+  | `MethodType ms -> dump_constant ch (ConstMethodType ms)
 
 let dump_constantpool ch =
   Array.iteri

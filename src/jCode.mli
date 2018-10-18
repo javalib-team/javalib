@@ -153,7 +153,7 @@ type jopcode =
       | `Special of jinterface_or_class * class_name
       | `Static of jinterface_or_class * class_name
       | `Interface of class_name
-      | `Dynamic of method_handle_kind * constant * constant list
+      | `Dynamic of bootstrap_method
       ]
 	* method_signature
   | OpReturn of jvm_return_type

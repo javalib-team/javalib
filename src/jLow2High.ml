@@ -75,21 +75,6 @@ let combine_LocalVariableTable (lvts:'s lvt list) : 's lvt =
       end;
     lvt
 
-(* resolve the constants of a bootstrap method in the constant poool *)
-let low2high_bootstrapmethod consts { bootstrap_method_ref; bootstrap_arguments; } =
-  match consts.(bootstrap_method_ref) with
-  | ConstMethodHandle (handle_kind, handle_const) ->
-      let bootstrap_method_args =
-        List.map
-          (fun bootstrap_arg_index -> match consts.(bootstrap_arg_index) with
-             | (ConstValue _ | ConstMethodHandle _ | ConstMethodType _) as arg ->
-                 arg
-             | _ ->
-                 raise (Class_structure_error "Bad argument type to bootstrap method"))
-          bootstrap_arguments in
-      handle_kind, ConstRef handle_const, bootstrap_method_args
-  | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle")
-
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
   List.map
@@ -921,15 +906,6 @@ let low2high_class cl =
              | _ -> annots)
         cl.j_attributes
         []
-    and my_bootstrap_methods =
-      List.fold_right
-        (fun attr acc -> match attr with
-           | AttributeBootstrapMethods methods ->
-               List.map (low2high_bootstrapmethod cl.j_consts) methods
-           | _ ->
-               acc)
-        cl.j_attributes
-        [];
     and my_other_attributes =
       low2high_other_attributes consts
 	(List.filter
@@ -943,6 +919,7 @@ let low2high_class cl =
 	      | _ -> true)
 	   cl.j_attributes);
     in
+    let my_bootstrap_methods = cl.j_bootsrap_table in
       if is_interface
       then
 	begin

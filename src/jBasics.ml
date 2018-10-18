@@ -133,6 +133,24 @@ type constant_ref =
 (* Method Handle *)
 type method_handle = method_handle_kind * constant_ref
 
+(* Bootstrap argument *)
+type bootstrap_argument = [
+  | `String of jstr
+  | `Class of object_type
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `MethodHandle of method_handle
+  | `MethodType of value_type list * value_type option
+]
+
+(* Bootstrap method *)
+type bootstrap_method = {
+    bm_ref : method_handle;
+    bm_args : bootstrap_argument list;
+  }
+
 type constant_value =
   | ConstString of jstr
   | ConstInt of int32

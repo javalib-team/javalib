@@ -251,12 +251,6 @@ type stackmap_frame =
   | AppendFrame of int * int * verification_type list
   | FullFrame of int * int * verification_type list * verification_type list
 
-type bootstrap_method = {
-  bootstrap_method_ref : int;
-  num_bootstrap_arguments : int;
-  bootstrap_arguments : int list;
-}
-
 type mp_flags = [ `AccFinal | `AccSynthetic | `AccMandated | `AccRFU of int ]
 
 type method_parameters = {
@@ -337,5 +331,6 @@ type jclass = {
   j_fields : jfield list;
   j_methods : jmethod list;
   j_attributes : attribute list;
+  j_bootsrap_table : bootstrap_method list;
   j_version : version;
 }

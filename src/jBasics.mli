@@ -259,14 +259,32 @@ val make_jstr : string -> jstr
 val jstr_pp   : jstr -> string
 val jstr_raw  : jstr -> string
 
-(** Constant field or method reference **)
+(** Constant field or method reference *)
 type constant_ref =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
 
-(** Method handle **)
+(** Method handle *)
 type method_handle = method_handle_kind * constant_ref
+
+(** Bootstrap argument *)
+type bootstrap_argument = [
+  | `String of jstr
+  | `Class of object_type
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `MethodHandle of method_handle
+  | `MethodType of value_type list * value_type option
+]
+
+(** Bootstrap method *)
+type bootstrap_method = {
+    bm_ref : method_handle;
+    bm_args : bootstrap_argument list;
+}
 
 (** Constant value. *)
 type constant_value =

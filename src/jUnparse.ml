@@ -98,7 +98,7 @@ let unparse_constant ch consts =
         write_constant ch consts (ConstRef c)
     | ConstInvokeDynamic (bmi, ms) ->
         write_ui8 ch 18;
-        write_ui8 ch bmi;
+        write_ui16 ch bmi;
         write_name_and_type ch consts ((ms_name ms), (SMethod (ms_args ms, ms_rtype ms)))
     | ConstUnusable -> ()
 
@@ -427,14 +427,15 @@ let rec unparse_attribute_to_strings consts =
 	      code.c_attributes;
 	    ("Code",close_out ch)
 
-      | AttributeBootstrapMethods bootstrap_methods ->
-          write_with_size write_ui16 ch
-            (function { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments } ->
-               write_ui16 ch bootstrap_method_ref;
-               write_ui16 ch num_bootstrap_arguments;
-               write_with_size write_ui16 ch (function _ -> ()) bootstrap_arguments)
-            bootstrap_methods;
-          ("BootstrapMethods", close_out ch)
+      | AttributeBootstrapMethods bm_table ->
+         write_ui16 ch (List.length bm_table);
+         List.iter (function { bm_ref; bm_args } ->
+                             write_ui16 ch (constant_to_int consts (ConstMethodHandle bm_ref));
+                             write_ui16 ch (List.length bm_args);
+                             List.iter (function arg ->
+                                                 write_bootstrap_argument ch consts arg
+                                       ) bm_args) bm_table;
+         ("BootstrapMethods", close_out ch)
       | AttributeMethodParameters mpl ->
          write_with_size
            write_ui8 ch
@@ -451,7 +452,8 @@ and unparse_attribute ch consts attr =
   in
     write_string ch consts name;
     write_string_with_length write_i32 ch content
-
+    
+  
 (* Fields, methods and classes *)
 (*******************************)
 
@@ -498,7 +500,8 @@ let unparse_class_low_level ch c =
 	c.j_interfaces;
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;
-      unparse (unparse_attribute ch' consts) c.j_attributes;
+      unparse (unparse_attribute ch' consts) (c.j_attributes
+                                              @ [AttributeBootstrapMethods c.j_bootsrap_table]);
       unparse_constant_pool ch consts;
       JLib.IO.nwrite_string ch (close_out ch')
 

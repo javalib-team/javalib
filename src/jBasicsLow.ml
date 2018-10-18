@@ -116,6 +116,33 @@ let get_method_or_interface_method consts i =
   | ConstRef (ConstInterfaceMethod cms) -> `Interface (cms)
   | _ -> raise (Class_structure_error ("Illegal class or interface method index (does not refer to a constant class or interface method)"))
                                          
+let get_method_handle consts i =
+  match get_constant consts i with
+  | ConstMethodHandle mh -> mh
+  | _ -> raise (Class_structure_error ("Illegal method handle index"))
+
+let get_bootstrap_argument consts i =
+  match get_constant consts i with
+  | ConstValue (ConstString s) -> `String s
+  | ConstValue (ConstClass cl) -> `Class cl
+  | ConstValue (ConstInt i) -> `Int i
+  | ConstValue (ConstLong i) -> `Long i
+  | ConstValue (ConstFloat f) -> `Float f
+  | ConstValue (ConstDouble f) -> `Double f
+  | ConstMethodType mt -> `MethodType mt
+  | ConstMethodHandle mh -> `MethodHandle mh
+  | _ -> raise (Class_structure_error ("Illegal bootstrap argument"))
+
+let bootstrap_argument_to_const arg =
+  match arg with
+  | `String s ->  ConstValue (ConstString s)
+  | `Class cl ->  ConstValue (ConstClass cl)
+  | `Int i -> ConstValue (ConstInt i)
+  | `Long i -> ConstValue (ConstLong i)
+  | `Float f -> ConstValue (ConstFloat f)
+  | `Double f -> ConstValue (ConstDouble f)
+  | `MethodHandle mh -> ConstMethodHandle mh
+  | `MethodType ms -> ConstMethodType ms
 
 let get_string consts i =
   match get_constant consts i with
@@ -124,6 +151,8 @@ let get_string consts i =
 
 let get_class_ui16 consts ch = get_class consts (read_ui16 ch)
 let get_string_ui16 consts ch = get_string consts (read_ui16 ch)
+let get_method_handle_ui16 consts ch = get_method_handle consts (read_ui16 ch)
+let get_bootstrap_argument_ui16 consts ch = get_bootstrap_argument consts (read_ui16 ch)
 
 let constant_to_int cp c =
   if c = ConstUnusable
@@ -143,6 +172,15 @@ let constant_to_int cp c =
 		 DynArray.add cp ConstUnusable
 	     | _ -> ());
 	  i
+
+let bootstrap_method_to_int bm_table bm =
+  try
+    DynArray.index_of (fun bm' -> 0 = compare bm bm') bm_table
+  with
+    Not_found ->
+    let i = DynArray.length bm_table in
+    DynArray.add bm_table bm;
+    i
 
 let method_handle_kind_to_int = function
   | `GetField -> 1
@@ -168,6 +206,7 @@ let interface_method_to_int cp v = constant_to_int cp (ConstRef (ConstInterfaceM
 let class_to_int cp v = object_type_to_int cp (TClass v)
 let string_to_int cp v = constant_to_int cp (ConstStringUTF8 v)
 let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s))
+let bootstrap_argument_to_int cp a = constant_to_int cp (bootstrap_argument_to_const a)
 
 let write_constant ch cp c = write_ui16 ch (constant_to_int cp c)
 let write_value ch cp c = write_ui16 ch (value_to_int cp c)
@@ -175,3 +214,4 @@ let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
 let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)
 let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
+let write_bootstrap_argument ch cp a = write_ui16 ch (bootstrap_argument_to_int cp a)

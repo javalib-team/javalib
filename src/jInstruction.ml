@@ -204,8 +204,8 @@ let opcode2instruction consts bootstrap_methods = function
   | OpInvokeDynamic i ->
       (match get_constant consts i with
        | ConstInvokeDynamic (bmi, ms) ->
-           let handle_kind, handle_const, bootstrap_method_args = List.nth bootstrap_methods bmi in
-           JCode.OpInvoke (`Dynamic (handle_kind, handle_const, bootstrap_method_args), ms)
+           let bm = List.nth bootstrap_methods bmi in
+           JCode.OpInvoke (`Dynamic bm, ms)
        | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle"))
 
   | OpNew i -> JCode.OpNew (get_class consts i)
@@ -229,7 +229,7 @@ let opcode2instruction consts bootstrap_methods = function
 let opcodes2code consts bootstrap_methods opcodes =
   Array.map (opcode2instruction consts bootstrap_methods) opcodes
 
-let instruction2opcode consts length = function
+let instruction2opcode consts bm_table length = function
   | JCode.OpNop -> OpNop
   | JCode.OpConst x ->
       let opldc_w c =
@@ -431,9 +431,10 @@ let instruction2opcode consts length = function
 	     OpInvokeInterface
 	       (constant_to_int consts (ConstRef (ConstInterfaceMethod (t, ms))),
                 count (ms_args ms))
-         | `Dynamic (mh_kind, c, c_list) ->
-             (* TODO: use bootstrap methods table to resolve *)
-             assert false
+         | `Dynamic bm ->
+            let bmi = bootstrap_method_to_int bm_table bm in
+            let i = constant_to_int consts (ConstInvokeDynamic (bmi, ms)) in
+            OpInvokeDynamic i
       )
 
   | JCode.OpNew cs -> OpNew (class_to_int consts cs)
@@ -471,7 +472,7 @@ let check_space _consts offset length opcode =
       length = space_taken
 
 
-let code2opcodes consts code =
+let code2opcodes consts bm_table code =
   let opcodes = Array.make (Array.length code) OpNop in
     Array.iteri
       (fun i instr ->
@@ -485,7 +486,7 @@ let code2opcodes consts code =
                done;
                !j-i
            in
-	   let opcode = instruction2opcode consts length instr in
+	   let opcode = instruction2opcode consts bm_table length instr in
 	     opcodes.(i) <- opcode;
 	     if not (JBasics.get_permissive ()) && not (check_space consts i length opcode)
 	     then

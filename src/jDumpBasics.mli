@@ -83,6 +83,8 @@ val dump_constant_value : 'a JLib.IO.output -> constant_value -> unit
 val dump_constant : 'a JLib.IO.output -> constant -> unit
   (** [dump_constant ch cst] prints on [ch] the constant pool constant
       [cst] of the. *)
+val dump_bootstrap_argument : 'a JLib.IO.output -> bootstrap_argument -> unit
+  (** [dump_bootstrap_argument b] prints on [ch] the bootstrap argument [b]. *)
 val dump_constantpool : 'a JLib.IO.output -> constant array -> unit
   (** [dump_constantpool ch pool] print on [ch] the constant pool
       [pool].*)

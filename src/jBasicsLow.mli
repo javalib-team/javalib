@@ -51,11 +51,15 @@ val get_method : constant array -> int ->
 val get_interface_method : constant array -> int ->
   class_name * method_signature
 val get_method_or_interface_method : constant array -> int -> ioc_method
+val get_method_handle : constant array -> int -> method_handle
+val get_bootstrap_argument : constant array -> int -> bootstrap_argument
 
 (** Same thing, reading the index in a channel: *)
 
 val get_class_ui16 : constant array -> JLib.IO.input -> class_name
 val get_string_ui16 : constant array -> JLib.IO.input -> string
+val get_method_handle_ui16 : constant array -> JLib.IO.input -> method_handle
+val get_bootstrap_argument_ui16 : constant array -> JLib.IO.input -> bootstrap_argument
 
 (** Getting an index for a constant: *)
 
@@ -73,6 +77,10 @@ val interface_method_to_int : constant JLib.DynArray.t ->
   class_name * method_signature -> int
 val string_to_int : constant JLib.DynArray.t -> string -> int
 val method_handle_kind_to_int : method_handle_kind -> int
+val name_and_type_to_int : constant JLib.DynArray.t -> string * descriptor -> int
+
+(** Return the index of a bootstrap method in the bootstrap method table, adding it if necessary. *)
+val bootstrap_method_to_int : bootstrap_method JLib.DynArray.t -> bootstrap_method -> int
 
 (** Same thing, but writes the index to a channel. *)
 
@@ -88,6 +96,8 @@ val write_string :
   'a JLib.IO.output -> constant JLib.DynArray.t -> string -> unit
 val write_name_and_type :
   'a JLib.IO.output -> constant JLib.DynArray.t -> string * descriptor -> unit
+val write_bootstrap_argument :
+  'a JLib.IO.output -> constant JLib.DynArray.t -> bootstrap_argument -> unit
 
 (** {2 Usefull writing functions. } *)
 

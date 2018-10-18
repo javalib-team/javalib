@@ -29,7 +29,7 @@
     an instruction can alternatively by defined as the first following
     non-OpInvalid instruction. *)
 val opcodes2code : JBasics.constant array ->
-  (JBasics.method_handle_kind * JBasics.constant * JBasics.constant list) list ->
+  JBasics.bootstrap_method list ->
   JClassLow.opcode array ->
   JCode.jopcodes
 
@@ -45,14 +45,15 @@ val opcodes2code : JBasics.constant array ->
     {!JBasics.set_permissive} has been called with [true].  Note that this
     will only be an issue when dumping the code to a class file.
 *)
-val code2opcodes :
-  JBasics.constant JLib.DynArray.t -> JCode.jopcodes -> JClassLow.opcode array
+val code2opcodes : JBasics.constant JLib.DynArray.t ->
+                   JBasics.bootstrap_method JLib.DynArray.t ->
+                   JCode.jopcodes -> JClassLow.opcode array
 
 (** Low level to high level bytecode instruction. *)
 val opcode2instruction : JBasics.constant array ->
-  (JBasics.method_handle_kind * JBasics.constant * JBasics.constant list) list ->
-  JClassLow.opcode ->
-  JCode.jopcode
+                         JBasics.bootstrap_method list ->
+                         JClassLow.opcode ->
+                         JCode.jopcode
 
 (** High level to low level bytecode instruction.
 
@@ -61,4 +62,6 @@ val opcode2instruction : JBasics.constant array ->
 
     @raise JBasics.Class_structure_error if the class has not a valid structure.
 *)
-val instruction2opcode : JBasics.constant JLib.DynArray.t -> int -> JCode.jopcode -> JClassLow.opcode
+val instruction2opcode : JBasics.constant JLib.DynArray.t ->
+                         JBasics.bootstrap_method JLib.DynArray.t ->
+                         int -> JCode.jopcode -> JClassLow.opcode
