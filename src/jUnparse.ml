@@ -61,27 +61,23 @@ let unparse_constant_value ch consts = function
       write_ui8 ch 7;
       write_string ch consts (unparse_constClass c)
 
-let unparse_constant_ref ch consts =
-  function
-  | ConstField (c, fs) ->
-     write_ui8 ch 9;
-     write_class ch consts c;
-     write_name_and_type ch consts (fs_name fs, SValue (fs_type fs))
-  | ConstMethod (c, ms) ->
-     write_ui8 ch 10;
-     write_object_type ch consts c;
-     write_name_and_type ch consts
-                         (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
-  | ConstInterfaceMethod (c, ms) ->
-     write_ui8 ch 11;
-     write_class ch consts c;
-     write_name_and_type ch consts
-                         (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
-      
 let unparse_constant ch consts =
   function
     | ConstValue v -> unparse_constant_value ch consts v
-    | ConstRef r -> unparse_constant_ref ch consts r
+    | ConstField (c, fs) ->
+       write_ui8 ch 9;
+       write_class ch consts c;
+       write_name_and_type ch consts (fs_name fs, SValue (fs_type fs))
+    | ConstMethod (c, ms) ->
+       write_ui8 ch 10;
+       write_object_type ch consts c;
+       write_name_and_type ch consts
+                           (ms_name ms, SMethod (make_md (ms_args ms, ms_rtype ms)))
+    | ConstInterfaceMethod (c, ms) ->
+       write_ui8 ch 11;
+       write_class ch consts c;
+       write_name_and_type ch consts
+                           (ms_name ms, SMethod (make_md (ms_args ms, ms_rtype ms)))
     | ConstNameAndType (s, signature) ->
 	write_ui8 ch 12;
 	write_string ch consts s;
@@ -96,11 +92,12 @@ let unparse_constant ch consts =
         let (kind, c) = JBasicsLow.method_handle_to_const mh in
         write_ui8 ch 15;
         write_ui8 ch (unparse_method_handle_kind kind);
-        write_constant ch consts (ConstRef c)
+        write_constant ch consts c
     | ConstInvokeDynamic (bmi, ms) ->
         write_ui8 ch 18;
         write_ui16 ch bmi;
-        write_name_and_type ch consts ((ms_name ms), (SMethod (ms_args ms, ms_rtype ms)))
+        write_name_and_type ch consts ((ms_name ms),
+                                       (SMethod (make_md (ms_args ms, ms_rtype ms))))
     | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =

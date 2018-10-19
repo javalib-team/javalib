@@ -50,7 +50,7 @@ let enclosingmethod_to_attribute = function
 	| None -> None
 	| Some ms ->
 	    let mname = ms_name ms in
-	    let mdesc = (ms_args ms, ms_rtype ms) in
+	    let mdesc = make_md (ms_args ms, ms_rtype ms) in
 	      Some (mname, SMethod mdesc)
       in
 	[AttributeEnclosingMethod (cs,meth)]
@@ -246,7 +246,7 @@ let h2l_method_parameters m_params =
 let h2l_cmethod consts bm_table m =
   let ms = m.cm_signature in
   let mname = ms_name ms in
-  let mdesc = (ms_args ms, ms_rtype ms) in
+  let mdesc = make_md (ms_args ms, ms_rtype ms) in
   let code = h2l_code2attribute consts bm_table m.cm_implementation
   in
     {m_name = mname;
@@ -278,7 +278,7 @@ let h2l_cmethod consts bm_table m =
 let h2l_amethod _consts m =
   let ms = m.am_signature in
   let mname = ms_name ms in
-  let mdesc = (ms_args ms, ms_rtype ms) in
+  let mdesc = make_md (ms_args ms, ms_rtype ms) in
     {m_name = mname;
      m_descriptor = mdesc;
      m_flags =

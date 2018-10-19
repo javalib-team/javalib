@@ -52,7 +52,7 @@ type ioc_method = [
 (** Converting to constant pool elements: *)
 
 val bootstrap_argument_to_const : bootstrap_argument -> constant
-val method_handle_to_const : method_handle -> method_handle_kind * constant_ref
+val method_handle_to_const : method_handle -> method_handle_kind * constant
 
 (** Getting a constant from the constant pool: *)
 

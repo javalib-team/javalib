@@ -757,13 +757,14 @@ let low2high_methods cn consts bootstrap_methods = function ac ->
   let cs = ac.j_name in
     List.fold_left
       (fun map meth ->
-	 let ms = make_ms meth.m_name (fst meth.m_descriptor) (snd meth.m_descriptor) in
+         let (m_args, m_rtype) = md_split meth.m_descriptor in
+	 let ms = make_ms meth.m_name m_args m_rtype in
 	   if !debug > 0 && MethodMap.mem ms map
 	   then
 	     prerr_endline
 	       ("Warning: in " ^ JDumpBasics.class_name cn
                 ^ " 2 methods have been found with the same signature (" ^ meth.m_name
-		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) (fst meth.m_descriptor)) ^"))");
+		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) m_args) ^"))");
 	   MethodMap.add
 	     ms
 	     (try low2high_acmethod consts bootstrap_methods cs ms meth
@@ -943,9 +944,10 @@ let low2high_class cl =
 	      List.partition
 		(fun m ->
 		   let clinit_name = ms_name clinit_signature in
-		   let clinit_desc = (ms_args clinit_signature, ms_rtype clinit_signature) in
+		   let clinit_desc = make_md (ms_args clinit_signature,
+                                              ms_rtype clinit_signature) in
 		     m.m_name = clinit_name
-		       && fst m.m_descriptor = fst clinit_desc)
+		       && (md_args m.m_descriptor) = (md_args clinit_desc))
 		cl.j_methods
 	    with
 	      | [m],others -> Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
@@ -999,8 +1001,8 @@ let low2high_class cl =
 		   let ms =
                      make_ms
                        meth.m_name
-                       (fst meth.m_descriptor)
-                       (snd meth.m_descriptor)
+                       (md_args meth.m_descriptor)
+                       (md_rtype meth.m_descriptor)
                    in
 		     if !debug > 0 && MethodMap.mem ms map
 		     then
@@ -1009,7 +1011,7 @@ let low2high_class cl =
                           ^ " 2 methods have been found with the same signature ("
                           ^ meth.m_name ^"("
                           ^ String.concat ", " (List.map (JDumpBasics.value_signature)
-						  (fst meth.m_descriptor))
+						  (md_args meth.m_descriptor))
                           ^ "))");
 		     MethodMap.add
 		       ms
@@ -1047,7 +1049,7 @@ let low2high_class cl =
 		      match mso with
 		        | None -> None
 		        | Some (mn,SMethod mdesc) ->
-			    Some (make_ms mn (fst mdesc) (snd mdesc))
+			    Some (make_ms mn (md_args mdesc) (md_rtype mdesc))
 		        | Some (_,SValue _) ->
 			    raise
 			      (Class_structure_error

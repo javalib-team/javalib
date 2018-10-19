@@ -87,10 +87,12 @@ let arraytype2shortstring = function
   | `ByteBool -> "B"
   | `Object -> "A"
 
-let method_signature name (sl,sr) =
-		(match sr with
-		| None -> "void"
-		| Some s -> value_signature s) ^ " " ^name^ "(" ^ String.concat "," (List.map value_signature sl) ^ ")"
+let method_signature name md =
+  let (sl, sr) = md_split md in
+  (match sr with
+   | None -> "void"
+   | Some s -> value_signature s
+  ) ^ " " ^name^ "(" ^ String.concat "," (List.map value_signature sl) ^ ")"
 
 let signature name = function
   | SValue v -> value_signature v ^ " " ^name
@@ -142,8 +144,8 @@ let dump_constant_value ch = function
   | ConstDouble f -> JLib.IO.printf ch "double %f" f
   | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
 
-
-let dump_constant_ref ch = function
+let rec dump_constant ch = function
+  | ConstValue v -> dump_constant_value ch v
   | ConstField (cn,fs) ->
      let fn = fs_name fs
      and ft = fs_type fs
@@ -151,20 +153,16 @@ let dump_constant_ref ch = function
      JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
   | ConstMethod (cl,ms) ->
      let mn = ms_name ms
-     and md = ms_args ms, ms_rtype ms
+     and md = make_md (ms_args ms, ms_rtype ms)
      in
      JLib.IO.printf ch "method : %s"
                     (method_signature (object_value_signature cl ^ "::" ^ mn) md)
   | ConstInterfaceMethod (cn,ms) ->
      let mn = ms_name ms
-     and md = ms_args ms, ms_rtype ms
+     and md = make_md (ms_args ms, ms_rtype ms)
      in
      JLib.IO.printf ch "interface-method : %s"
                     (method_signature (class_name cn ^ "::" ^ mn) md)
-
-let dump_constant ch = function
-  | ConstValue v -> dump_constant_value ch v
-  | ConstRef r -> dump_constant_ref ch r
   | ConstNameAndType (s,sign) -> JLib.IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> JLib.IO.printf ch "utf8 %s" s
   | ConstUnusable -> JLib.IO.printf ch "unusable"
@@ -174,7 +172,7 @@ let dump_constant ch = function
   | ConstMethodHandle mh ->
      let (hk, c) = JBasicsLow.method_handle_to_const mh in
      JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
-     (dump_constant_ref ch c)
+     (dump_constant ch c)
   | ConstInvokeDynamic (bmi, ms) ->
       JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi

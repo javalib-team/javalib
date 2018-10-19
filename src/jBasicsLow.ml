@@ -109,23 +109,23 @@ let get_class consts i =
 
 let get_field consts i =
   match get_constant consts i with
-    | ConstRef (ConstField cnfs) -> cnfs
+    | ConstField cnfs -> cnfs
     | _ -> raise (Class_structure_error ("Illegal field index (does not refer to a constant field)"))
 
 let get_method consts i =
   match get_constant consts i with
-    | ConstRef (ConstMethod (ot, ms)) -> ot,ms
+    | ConstMethod cms -> cms
     | _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
 
 let get_interface_method consts i =
   match get_constant consts i with
-    | ConstRef (ConstInterfaceMethod cms) -> cms
+    | ConstInterfaceMethod cms -> cms
     | _ -> raise (Class_structure_error ("Illegal interface method index (does not refer to a constant interface method)"))
 
 let get_method_or_interface_method consts i =
   match get_constant consts i with
-  | ConstRef (ConstMethod (ot, ms)) -> `Class (ot,ms)
-  | ConstRef (ConstInterfaceMethod cms) -> `Interface (cms)
+  | ConstMethod cms -> `Class cms
+  | ConstInterfaceMethod cms -> `Interface cms
   | _ -> raise (Class_structure_error ("Illegal class or interface method index (does not refer to a constant class or interface method)"))
                                          
 let get_method_handle consts i =
@@ -226,9 +226,9 @@ let ldc_value_to_int cp = function
   | `CMethodHandle mh -> constant_to_int cp (ConstMethodHandle mh)
 
 let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
-let field_to_int cp v = constant_to_int cp (ConstRef (ConstField v))
-let method_to_int cp v = constant_to_int cp (ConstRef (ConstMethod v))
-let interface_method_to_int cp v = constant_to_int cp (ConstRef (ConstInterfaceMethod v))
+let field_to_int cp v = constant_to_int cp (ConstField v)
+let method_to_int cp v = constant_to_int cp (ConstMethod v)
+let interface_method_to_int cp v = constant_to_int cp (ConstInterfaceMethod v)
 let class_to_int cp v = object_type_to_int cp (TClass v)
 let string_to_int cp v = constant_to_int cp (ConstStringUTF8 v)
 let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s))

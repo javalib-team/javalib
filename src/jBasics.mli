@@ -34,6 +34,11 @@ type class_name
     have the same [method_signature]. *)
 type method_signature
 
+(** Type representing a method descriptor.
+    A method descriptor contains the types of parameters and the method
+    return type. *)
+type method_descriptor
+
 (** Type representing a field signature.
     A field signature contains the field name and the field type. *)
 type field_signature
@@ -175,6 +180,20 @@ val ms_compare : method_signature -> method_signature -> int
 (** Returns [true] if two method signatures are equal, [false] otherwise. *)
 val ms_equal : method_signature -> method_signature -> bool
 
+(** Creating and manipulating {!method_descriptor} values. *)
+
+(** Builds a [method_descriptor]. *)
+val make_md : value_type list * value_type option -> method_descriptor
+
+(** Splits a [method_descriptor] into arguments list and return type. *)
+val md_split : method_descriptor -> value_type list * value_type option
+
+(** Returns the [method_descriptor] arguments list. *)
+val md_args : method_descriptor -> value_type list
+
+(** Returns the [method_descriptor] return type. *)
+val md_rtype : method_descriptor -> value_type option
+
 (** Creating and manipulating {!field_signature} values. *)
 
 (** Builds a [field_signature]. *)
@@ -235,7 +254,7 @@ val jstr_pp   : jstr -> string
 (** Returns the original [string]. *)
 val jstr_raw  : jstr -> string
 
-(** {2 Bootstrap methods.} *)
+(** {2 Bootstrap method and method handle types.} *)
 
 (** Features introduced in Java 8 to implement lambdas. *)
   
@@ -266,7 +285,7 @@ type bootstrap_argument = [
   | `Float of float
   | `Double of float
   | `MethodHandle of method_handle
-  | `MethodType of value_type list * value_type option
+  | `MethodType of method_descriptor
 ]
 
 (** Bootstrap method called by the [invokedynamic] instruction. *)
@@ -284,19 +303,10 @@ type bootstrap_method = {
 
 type bootstrap_method_index = int
 
-(** Method descriptor. *)
-type method_descriptor = value_type list * value_type option
-
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type descriptor =
   | SValue of value_type
   | SMethod of method_descriptor
-
-(** Constant field or method reference *)
-type constant_ref =
-  | ConstField of (class_name * field_signature)
-  | ConstMethod of (object_type * method_signature)
-  | ConstInterfaceMethod of (class_name * method_signature)
 
 (** Constant value. *)
 type constant_value =
@@ -310,14 +320,15 @@ type constant_value =
 (** Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstRef of constant_ref    
+  | ConstField of (class_name * field_signature)
+  | ConstMethod of (object_type * method_signature)
+  | ConstInterfaceMethod of (class_name * method_signature)
   | ConstMethodType of method_descriptor
   | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
-
 
 (** {2 Stackmaps}  *)
 

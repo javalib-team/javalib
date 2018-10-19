@@ -116,7 +116,7 @@ let parse_method_sig = parser
        types = parse_types;
        'rpar when rpar = JLib.UChar.of_char ')';
        typ = parse_type_option >] ->
-      (types, typ)
+     make_md (types, typ)
 
 (* Java signature. *)
 let parse_sig = parser

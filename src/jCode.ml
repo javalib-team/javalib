@@ -31,7 +31,7 @@ type jconst = [
   | `Short of int
   | `String of jstr
   | `Class of object_type
-  | `MethodType of value_type list * value_type option (* Since Java 7 *)
+  | `MethodType of method_descriptor (* Since Java 7 *)
   | `MethodHandle of method_handle (* Since Java 7 *)
 ]
 

@@ -106,16 +106,10 @@ type descriptor =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(* Constant value. *)
 type jstr = string
 let make_jstr s = s
 let jstr_pp s   = String.escaped s
 let jstr_raw s  = s
-
-type constant_ref =
-  | ConstField of (class_name * field_signature)
-  | ConstMethod of (object_type * method_signature)
-  | ConstInterfaceMethod of (class_name * method_signature)
 
 (* Method Handle *)
 type jmethod_or_interface = [
@@ -144,7 +138,7 @@ type bootstrap_argument = [
   | `Float of float
   | `Double of float
   | `MethodHandle of method_handle
-  | `MethodType of value_type list * value_type option
+  | `MethodType of method_descriptor
 ]
 
 (* Bootstrap method *)
@@ -153,6 +147,7 @@ type bootstrap_method = {
     bm_args : bootstrap_argument list;
   }
 
+(* Constant value. *)
 type constant_value =
   | ConstString of jstr
   | ConstInt of int32
@@ -164,7 +159,9 @@ type constant_value =
 (* Constant. *)
 type constant =
   | ConstValue of constant_value
-  | ConstRef of constant_ref    
+  | ConstField of (class_name * field_signature)
+  | ConstMethod of (object_type * method_signature)
+  | ConstInterfaceMethod of (class_name * method_signature)
   | ConstMethodType of method_descriptor
   | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
@@ -343,6 +340,11 @@ let make_ms mname margs mrtype =
 	mst.msi_map <- MethodSignatureMap.add ms new_ms mst.msi_map;
 	mst.msi_next <- msi + 1;
 	new_ms
+
+let make_md md = md
+let md_split md = md
+let md_args md = fst md
+let md_rtype md = snd md
 
 let make_fs fname fdesc =
   let dic = common_dictionary in

@@ -118,7 +118,7 @@ let signature ?(jvm=false) name d =
 	let fs = make_fs name fd in
 	  field_signature ~jvm:jvm fs
     | SMethod md ->
-	let ms = make_ms name (fst md) (snd md) in
+	let ms = make_ms name (md_args md) (md_rtype md) in
 	  method_signature ~jvm:jvm ms
 
 let constant_value = function
@@ -129,24 +129,22 @@ let constant_value = function
   | ConstDouble f -> "double " ^ (string_of_float f)
   | ConstClass cl -> "class " ^ (object_type cl)
 
-let constant_ref = function
+let rec constant = function
+  | ConstValue v -> constant_value v
   | ConstField (cl,fs) ->
       "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
   | ConstMethod (ot,ms) ->
       "method : " ^ (method_signature ~callee:ot ms)
   | ConstInterfaceMethod (cn,ms) ->
       "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
-
-let constant = function
-  | ConstValue v -> constant_value v
-  | ConstRef r -> constant_ref r
   | ConstNameAndType (s,d) -> "name-and-type : " ^ (signature s d)
   | ConstStringUTF8 s -> "utf8 " ^ s
-  | ConstMethodType (args,ret) ->
+  | ConstMethodType mt ->
+      let (args,ret) = md_split mt in
       "method-type : " ^ (method_descriptor args ret)
   | ConstMethodHandle mh ->
       let (kind, c) = JBasicsLow.method_handle_to_const mh in
-      "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant_ref c)
+      "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant c)
   | ConstInvokeDynamic (bmi,ms) ->
       "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)
   | ConstUnusable -> "unusable"

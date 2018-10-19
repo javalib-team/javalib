@@ -601,17 +601,20 @@ let rec expand_constant consts n =
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
       | ConstantField (cl,nt) ->
 	  (match expand "Field" cl nt with
-	     | TClass c, n, SValue v -> ConstRef (ConstField (c, make_fs n v))
+	     | TClass c, n, SValue v -> ConstField (c, make_fs n v)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Field constant: " ^ ""))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Field constant")))
       | ConstantMethod (cl,nt) ->
 	  (match expand "Method" cl nt with
-	     | c, n, SMethod (args,rtype) -> ConstRef (ConstMethod (c, make_ms n args rtype))
+	     | c, n, SMethod md ->
+                let (args,rtype) = md_split md in
+                ConstMethod (c, make_ms n args rtype)
 	     | _, _, SValue _ -> raise (Class_structure_error ("Illegal type in Method constant")))
       | ConstantInterfaceMethod (cl,nt) ->
 	  (match expand "InterfaceMethod" cl nt with
-	     | TClass c, n, SMethod (args,rtype) ->
-                 ConstRef(ConstInterfaceMethod (c, make_ms n args rtype))
+	     | TClass c, n, SMethod md ->
+                let (args,rtype) = md_split md in
+                ConstInterfaceMethod (c, make_ms n args rtype)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
       | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
       | ConstantMethodType i ->
@@ -621,27 +624,27 @@ let rec expand_constant consts n =
             | _ -> raise (Class_structure_error ("Illegal constant referred in place of a MethodType constant")))
       | ConstantMethodHandle (kind, index) ->
           (match kind, expand_constant consts index with
-           | 1, ConstRef (ConstField f) ->
+           | 1, ConstField f ->
               ConstMethodHandle (`GetField f)
-           | 2, ConstRef (ConstField f) ->
+           | 2, ConstField f ->
               ConstMethodHandle (`GetStatic f)
-           | 3, ConstRef (ConstField f) ->
+           | 3, ConstField f ->
               ConstMethodHandle (`PutField f)
-           | 4, ConstRef (ConstField f) ->
+           | 4, ConstField f ->
               ConstMethodHandle (`PutStatic f)
-           | 5, ConstRef (ConstMethod v) ->
+           | 5, ConstMethod v ->
               ConstMethodHandle (`InvokeVirtual v)
-           | 6, ConstRef (ConstMethod v) ->
+           | 6, ConstMethod v ->
               ConstMethodHandle (`InvokeStatic (`Method v))
-           | 6, ConstRef (ConstInterfaceMethod v) ->
+           | 6, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeStatic (`InterfaceMethod v))
-           | 7, ConstRef (ConstMethod v) ->
+           | 7, ConstMethod v ->
               ConstMethodHandle (`InvokeSpecial (`Method v))
-           | 7, ConstRef (ConstInterfaceMethod v) ->
+           | 7, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeSpecial (`InterfaceMethod v))
-           | 8, ConstRef (ConstMethod v) ->
+           | 8, ConstMethod v ->
               ConstMethodHandle (`NewInvokeSpecial v)
-           | 9, ConstRef (ConstInterfaceMethod v) ->
+           | 9, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeInterface v)
            | n, c ->
                let s =
@@ -651,7 +654,8 @@ let rec expand_constant consts n =
                raise (Class_structure_error ("Bad method handle constant " ^ (string_of_int n) ^ str)))
       | ConstantInvokeDynamic (bmi,nt) ->
           (match expand_constant consts nt with
-           | ConstNameAndType (n, SMethod (args,rtype)) ->
+           | ConstNameAndType (n, SMethod md) ->
+               let (args,rtype) = md_split md in
                ConstInvokeDynamic (bmi, make_ms n args rtype)
            | _ -> raise (Class_structure_error ("Illegal constant referred in place of an InvokeDynamic constant")))
       | ConstantString i ->

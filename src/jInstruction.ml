@@ -429,7 +429,7 @@ let instruction2opcode consts bm_table length = function
 	       (interface_method_to_int consts (t, ms))
 	 | `Interface t ->
 	     OpInvokeInterface
-	       (constant_to_int consts (ConstRef (ConstInterfaceMethod (t, ms))),
+	       (constant_to_int consts (ConstInterfaceMethod (t, ms)),
                 count (ms_args ms))
          | `Dynamic bm ->
             let bmi = bootstrap_method_to_int bm_table bm in

@@ -36,7 +36,7 @@ val parse_field_descriptor : string -> value_type
 
 (** @raise Class_structure_error if the string does not correspond the a method
     descriptor.*)
-val parse_method_descriptor : string -> value_type list * value_type option
+val parse_method_descriptor : string -> method_descriptor
 
 (** @raise Class_structure_error if the string does not correspond the a
     descriptor.*)
