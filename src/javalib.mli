@@ -69,6 +69,13 @@ type field_kind =
   | Final
   | Volatile
 
+type constant_attribute = [
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `Int of int32
+  | `String of jstr
+  ]
 
 (** Fields of classes. *)
 type class_field = {
@@ -82,7 +89,7 @@ type class_field = {
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option;
+  cf_value : constant_attribute option;
   cf_transient : bool;
   cf_annotations : (JBasics.annotation * visibility) list;
   cf_other_flags : int list;
@@ -98,8 +105,8 @@ type interface_field = {
   if_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
       (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
-  if_value : constant_value option;
-  (** a constant_value is not mandatory, especially as it can be
+  if_value : constant_attribute option;
+  (** a constant_attribute is not mandatory, especially as it can be
       initialized by the class initializer <clinit>. *)
   if_annotations: (annotation*visibility) list;
   if_other_flags : int list;

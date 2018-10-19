@@ -378,7 +378,7 @@ and parse_attribute list consts ch =
 	    AttributeSourceFile (get_string_ui16 consts ch)
 	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
-	    AttributeConstant (get_constant_value consts (read_ui16 ch))
+	    AttributeConstant (get_constant_attribute consts (read_ui16 ch))
 	| "Code" -> check `Code;
 	    let ch = JLib.IO.input_string (JLib.IO.really_nread_string ch alen) in
 	    let parse_code _ =

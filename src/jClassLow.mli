@@ -268,7 +268,7 @@ type code = {
 
 and attribute =
   | AttributeSourceFile of string
-  | AttributeConstant of constant_value
+  | AttributeConstant of JClass.constant_attribute
   | AttributeCode of code Lazy.t
   | AttributeExceptions of class_name list
   | AttributeInnerClasses of

@@ -95,3 +95,4 @@ val dump_stackmap :
 val dump_exc : 'a JLib.IO.output -> 'b -> JCode.exception_handler -> unit
   (** [dump_exc ch _ ex] prints on [ch] the exception handler
       declaration [ex].*)
+val constant_attribute : JClass.constant_attribute -> string

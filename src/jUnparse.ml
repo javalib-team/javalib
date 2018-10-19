@@ -327,7 +327,7 @@ let rec unparse_attribute_to_strings consts =
 	  write_string ch consts s;
 	  ("SourceFile",close_out ch)
       | AttributeConstant c ->
-	  write_value ch consts c;
+	  write_constant_attribute ch consts c;
 	  ("ConstantValue",close_out ch)
       | AttributeExceptions l ->
 	  write_with_size write_ui16 ch

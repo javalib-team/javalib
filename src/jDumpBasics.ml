@@ -221,3 +221,10 @@ let dump_exc ch _cl exc =
      | None -> JLib.IO.printf ch "<finally>"
      | Some cl -> JLib.IO.printf ch "class %s" (class_name cl));
   JLib.IO.printf ch ")"
+
+let constant_attribute = function
+  | `Long i -> sprintf "long %Ld" i
+  | `Float f -> sprintf "float %f" f
+  | `Double f -> sprintf "double %f" f
+  | `Int i -> sprintf "int %ld" i
+  | `String s -> sprintf "string '%s'" (jstr_pp s)

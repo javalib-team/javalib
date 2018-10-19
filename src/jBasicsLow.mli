@@ -53,6 +53,7 @@ type ioc_method = [
 
 val bootstrap_argument_to_const : bootstrap_argument -> constant
 val method_handle_to_const : method_handle -> method_handle_kind * constant
+val constant_attribute_to_const : JClass.constant_attribute -> constant
 
 (** Getting a constant from the constant pool: *)
 
@@ -71,6 +72,7 @@ val get_interface_method : constant array -> int ->
 val get_method_or_interface_method : constant array -> int -> ioc_method
 val get_method_handle : constant array -> int -> method_handle
 val get_bootstrap_argument : constant array -> int -> bootstrap_argument
+val get_constant_attribute : constant array -> int -> JClass.constant_attribute
 
 (** Same thing, reading the index in a channel: *)
 
@@ -116,6 +118,8 @@ val write_name_and_type :
   'a JLib.IO.output -> constant JLib.DynArray.t -> string * descriptor -> unit
 val write_bootstrap_argument :
   'a JLib.IO.output -> constant JLib.DynArray.t -> bootstrap_argument -> unit
+val write_constant_attribute :
+  'a JLib.IO.output -> constant JLib.DynArray.t -> JClass.constant_attribute -> unit
 
 (** {2 Usefull writing functions. } *)
 

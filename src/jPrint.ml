@@ -563,7 +563,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
     in
       match value with
 	  None -> ""
-	| Some cfv -> " = "^constant_value cfv
+	| Some cfv -> " = " ^ JDumpBasics.constant_attribute cfv
   in
     if jvm then field_signature ~jvm:true fs
     else

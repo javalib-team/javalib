@@ -145,6 +145,14 @@ let get_bootstrap_argument consts i =
   | ConstMethodHandle mh -> `MethodHandle mh
   | _ -> raise (Class_structure_error ("Illegal bootstrap argument"))
 
+let get_constant_attribute consts i =
+  match get_constant consts i with
+  | ConstValue (ConstLong i) -> `Long i
+  | ConstValue (ConstFloat f) -> `Float f
+  | ConstValue (ConstDouble f) -> `Double f
+  | ConstValue (ConstInt i) -> `Int i
+  | ConstValue (ConstString s) -> `String s
+
 let bootstrap_argument_to_const arg =
   match arg with
   | `String s ->  ConstValue (ConstString s)
@@ -169,6 +177,14 @@ let method_handle_to_const mh =
   | `InvokeSpecial (`Method v) -> (`InvokeSpecial, ConstMethod v)
   | `InvokeSpecial (`InterfaceMethod v) -> (`InvokeSpecial, ConstInterfaceMethod v)
   | `InvokeInterface v -> (`InvokeInterface, ConstInterfaceMethod v)
+
+let constant_attribute_to_const attr =
+  match attr with
+  | `Long i -> ConstValue (ConstLong i)
+  | `Float f -> ConstValue (ConstFloat f)
+  | `Double f -> ConstValue (ConstDouble f)
+  | `Int i -> ConstValue (ConstInt i)
+  | `String s -> ConstValue (ConstString s)
 
 let get_string consts i =
   match get_constant consts i with
@@ -241,3 +257,5 @@ let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)
 let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
 let write_bootstrap_argument ch cp a = write_ui16 ch (bootstrap_argument_to_int cp a)
+let write_constant_attribute ch cp a =
+  write_ui16 ch (constant_to_int cp (constant_attribute_to_const a))

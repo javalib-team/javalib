@@ -359,7 +359,7 @@ and dump_attrib ch consts = function
       string_nwrite ch ("    SourceDebugExtension = "^s^"\n")
   | AttributeConstant c ->
       string_nwrite ch "    const ";
-      dump_constant_value ch c;
+      JLib.IO.printf ch "%s" (constant_attribute c);
       JLib.IO.write ch '\n';
   | AttributeCode code ->
       dump_code ch consts (Lazy.force code) (* JLib.IO.printf ch "    unexpected code attribute" *)
