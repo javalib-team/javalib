@@ -24,6 +24,18 @@ open IO
 open IO.BigEndian
 open JBasics
 
+type method_handle_kind = [
+| `GetField
+| `GetStatic
+| `PutField
+| `PutStatic
+| `InvokeVirtual
+| `InvokeStatic
+| `InvokeSpecial
+| `NewInvokeSpecial
+| `InvokeInterface
+]
+
 type ldc_value = [
   | `CValue of constant_value
   | `CMethodType of method_descriptor
@@ -77,7 +89,7 @@ let get_constant_ldc_value c n =
   match get_constant c n with
   | ConstValue v -> `CValue v
   | ConstMethodType mt -> `CMethodType mt
-  | ConstMethodHandle (mh_kind, cr) -> `CMethodHandle (mh_kind, cr)
+  | ConstMethodHandle mh -> `CMethodHandle mh
   | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value or a method type or a method handle)"))
   
 let get_constant_value c n =
@@ -144,6 +156,20 @@ let bootstrap_argument_to_const arg =
   | `MethodHandle mh -> ConstMethodHandle mh
   | `MethodType ms -> ConstMethodType ms
 
+let method_handle_to_const mh =
+  match mh with
+  | `GetField f -> (`GetField, ConstField f)
+  | `GetStatic f -> (`GetStatic, ConstField f)
+  | `PutField f -> (`PutField, ConstField f)
+  | `PutStatic f -> (`PutStatic, ConstField f)
+  | `InvokeVirtual v -> (`InvokeVirtual, ConstMethod v)
+  | `NewInvokeSpecial v -> (`NewInvokeSpecial, ConstMethod v)
+  | `InvokeStatic (`Method v) -> (`InvokeStatic, ConstMethod v)
+  | `InvokeStatic (`InterfaceMethod v) -> (`InvokeStatic, ConstInterfaceMethod v)
+  | `InvokeSpecial (`Method v) -> (`InvokeSpecial, ConstMethod v)
+  | `InvokeSpecial (`InterfaceMethod v) -> (`InvokeSpecial, ConstInterfaceMethod v)
+  | `InvokeInterface v -> (`InvokeInterface, ConstInterfaceMethod v)
+
 let get_string consts i =
   match get_constant consts i with
     | ConstStringUTF8 s -> s
@@ -197,7 +223,7 @@ let value_to_int cp v = constant_to_int cp (ConstValue v)
 let ldc_value_to_int cp = function
   | `CValue c -> constant_to_int cp (ConstValue c)
   | `CMethodType mt -> constant_to_int cp (ConstMethodType mt)
-  | `CMethodHandle (h_kind, cr) -> constant_to_int cp (ConstMethodHandle (h_kind, cr))
+  | `CMethodHandle mh -> constant_to_int cp (ConstMethodHandle mh)
 
 let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
 let field_to_int cp v = constant_to_int cp (ConstRef (ConstField v))

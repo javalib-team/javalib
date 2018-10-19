@@ -23,6 +23,19 @@
 
 open JBasics
 
+(** Method handle type. *)
+type method_handle_kind = [
+| `GetField
+| `GetStatic
+| `PutField
+| `PutStatic
+| `InvokeVirtual
+| `InvokeStatic
+| `InvokeSpecial
+| `NewInvokeSpecial
+| `InvokeInterface
+]
+
 type ldc_value = [
   | `CValue of constant_value
   | `CMethodType of method_descriptor
@@ -35,6 +48,11 @@ type ioc_method = [
 ]
 
 (** {2 Constant Pool.}  *)
+
+(** Converting to constant pool elements: *)
+
+val bootstrap_argument_to_const : bootstrap_argument -> constant
+val method_handle_to_const : method_handle -> method_handle_kind * constant_ref
 
 (** Getting a constant from the constant pool: *)
 

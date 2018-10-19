@@ -621,24 +621,28 @@ let rec expand_constant consts n =
             | _ -> raise (Class_structure_error ("Illegal constant referred in place of a MethodType constant")))
       | ConstantMethodHandle (kind, index) ->
           (match kind, expand_constant consts index with
-           | 1, ConstRef (ConstField _ as const) ->
-              ConstMethodHandle (`GetField, const)
-           | 2, ConstRef (ConstField _ as const) ->
-              ConstMethodHandle (`GetStatic, const)
-           | 3, ConstRef (ConstField _ as const) ->
-              ConstMethodHandle (`PutField, const)
-           | 4, ConstRef (ConstField _ as const) ->
-              ConstMethodHandle (`PutStatic, const)
-           | 5, ConstRef (ConstMethod _ as const) ->
-              ConstMethodHandle (`InvokeVirtual, const)
-           | 6, ConstRef (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-              ConstMethodHandle (`InvokeStatic, const)
-           | 7, ConstRef (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-              ConstMethodHandle (`InvokeSpecial, const)
-           | 8, ConstRef (ConstMethod _ as const) ->
-              ConstMethodHandle (`NewInvokeSpecial, const)
-           | 9, ConstRef (ConstInterfaceMethod _ as const) ->
-              ConstMethodHandle (`InvokeInterface, const)
+           | 1, ConstRef (ConstField f) ->
+              ConstMethodHandle (`GetField f)
+           | 2, ConstRef (ConstField f) ->
+              ConstMethodHandle (`GetStatic f)
+           | 3, ConstRef (ConstField f) ->
+              ConstMethodHandle (`PutField f)
+           | 4, ConstRef (ConstField f) ->
+              ConstMethodHandle (`PutStatic f)
+           | 5, ConstRef (ConstMethod v) ->
+              ConstMethodHandle (`InvokeVirtual v)
+           | 6, ConstRef (ConstMethod v) ->
+              ConstMethodHandle (`InvokeStatic (`Method v))
+           | 6, ConstRef (ConstInterfaceMethod v) ->
+              ConstMethodHandle (`InvokeStatic (`InterfaceMethod v))
+           | 7, ConstRef (ConstMethod v) ->
+              ConstMethodHandle (`InvokeSpecial (`Method v))
+           | 7, ConstRef (ConstInterfaceMethod v) ->
+              ConstMethodHandle (`InvokeSpecial (`InterfaceMethod v))
+           | 8, ConstRef (ConstMethod v) ->
+              ConstMethodHandle (`NewInvokeSpecial v)
+           | 9, ConstRef (ConstInterfaceMethod v) ->
+              ConstMethodHandle (`InvokeInterface v)
            | n, c ->
                let s =
                  JLib.IO.output_string () in

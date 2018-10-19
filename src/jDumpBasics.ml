@@ -171,9 +171,10 @@ let dump_constant ch = function
   | ConstMethodType ms ->
       JLib.IO.printf ch "method-type : %s"
         (method_signature "" ms)
-  | ConstMethodHandle (hk, c) ->
-      JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
-      (dump_constant_ref ch c)
+  | ConstMethodHandle mh ->
+     let (hk, c) = JBasicsLow.method_handle_to_const mh in
+     JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
+     (dump_constant_ref ch c)
   | ConstInvokeDynamic (bmi, ms) ->
       JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi

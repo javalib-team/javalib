@@ -135,7 +135,7 @@ let constant_ref = function
   | ConstMethod (ot,ms) ->
       "method : " ^ (method_signature ~callee:ot ms)
   | ConstInterfaceMethod (cn,ms) ->
-      "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)    
+      "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
 
 let constant = function
   | ConstValue v -> constant_value v
@@ -144,7 +144,8 @@ let constant = function
   | ConstStringUTF8 s -> "utf8 " ^ s
   | ConstMethodType (args,ret) ->
       "method-type : " ^ (method_descriptor args ret)
-  | ConstMethodHandle (kind,c) ->
+  | ConstMethodHandle mh ->
+      let (kind, c) = JBasicsLow.method_handle_to_const mh in
       "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant_ref c)
   | ConstInvokeDynamic (bmi,ms) ->
       "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)

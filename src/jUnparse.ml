@@ -92,7 +92,8 @@ let unparse_constant ch consts =
     | ConstMethodType md ->
         write_ui8 ch 16;
         write_string ch consts (unparse_method_descriptor md)
-    | ConstMethodHandle (kind, c) ->
+    | ConstMethodHandle mh ->
+        let (kind, c) = JBasicsLow.method_handle_to_const mh in
         write_ui8 ch 15;
         write_ui8 ch (unparse_method_handle_kind kind);
         write_constant ch consts (ConstRef c)

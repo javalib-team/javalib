@@ -101,20 +101,10 @@ type object_type =
 and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
-
-(** Method handle type. *)
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
-                        
+  
+(** Abstract datatype for Java strings *)
+type jstr
+                      
 (** Version number of the class file. Extract of the specification: An
     implementation of Java 1.k sould support class file formats of
     versions in the range of 45.0 through 44+k.0 inclusive. E.g. Java
@@ -236,6 +226,55 @@ val cms_compare : class_method_signature -> class_method_signature -> int
 (** Returns [true] if two [class_method_signature] are equal, [false] otherwise. *)
 val cms_equal : class_method_signature -> class_method_signature -> bool
 
+(** Builds a [jstr]. *)
+val make_jstr : string -> jstr
+
+(** Returns a [string] where all characters outside the ASCII printable range (32..126) are escaped. *)
+val jstr_pp   : jstr -> string
+
+(** Returns the original [string]. *)
+val jstr_raw  : jstr -> string
+
+(** {2 Bootstrap methods.} *)
+
+(** Features introduced in Java 8 to implement lambdas. *)
+  
+type jmethod_or_interface = [
+  | `Method of object_type * method_signature
+  | `InterfaceMethod of class_name * method_signature
+  ]
+
+(** Method handle. *)
+type method_handle = [
+  | `GetField of class_name * field_signature
+  | `GetStatic of class_name * field_signature
+  | `PutField of class_name * field_signature
+  | `PutStatic of class_name * field_signature
+  | `InvokeVirtual of object_type * method_signature
+  | `NewInvokeSpecial of object_type * method_signature
+  | `InvokeStatic of jmethod_or_interface
+  | `InvokeSpecial of jmethod_or_interface
+  | `InvokeInterface of class_name * method_signature
+  ]
+
+(** Bootstrap argument. *)
+type bootstrap_argument = [
+  | `String of jstr
+  | `Class of object_type
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `MethodHandle of method_handle
+  | `MethodType of value_type list * value_type option
+]
+
+(** Bootstrap method called by the [invokedynamic] instruction. *)
+type bootstrap_method = {
+    bm_ref : method_handle;
+    bm_args : bootstrap_argument list;
+}
+
 (** {2 Constant pool.} *)
 
 (** You should not need this for normal usage, as the
@@ -253,38 +292,11 @@ type descriptor =
   | SValue of value_type
   | SMethod of method_descriptor
 
-(** Abstract datatype for Java strings *)
-type jstr
-val make_jstr : string -> jstr
-val jstr_pp   : jstr -> string
-val jstr_raw  : jstr -> string
-
 (** Constant field or method reference *)
 type constant_ref =
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
-
-(** Method handle *)
-type method_handle = method_handle_kind * constant_ref
-
-(** Bootstrap argument *)
-type bootstrap_argument = [
-  | `String of jstr
-  | `Class of object_type
-  | `Int of int32
-  | `Long of int64
-  | `Float of float
-  | `Double of float
-  | `MethodHandle of method_handle
-  | `MethodType of value_type list * value_type option
-]
-
-(** Bootstrap method *)
-type bootstrap_method = {
-    bm_ref : method_handle;
-    bm_args : bootstrap_argument list;
-}
 
 (** Constant value. *)
 type constant_value =

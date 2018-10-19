@@ -106,19 +106,6 @@ type descriptor =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(* Method handle kind *)
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
-
 (* Constant value. *)
 type jstr = string
 let make_jstr s = s
@@ -131,7 +118,22 @@ type constant_ref =
   | ConstInterfaceMethod of (class_name * method_signature)
 
 (* Method Handle *)
-type method_handle = method_handle_kind * constant_ref
+type jmethod_or_interface = [
+  | `Method of object_type * method_signature
+  | `InterfaceMethod of class_name * method_signature
+  ]
+
+type method_handle = [
+  | `GetField of class_name * field_signature
+  | `GetStatic of class_name * field_signature
+  | `PutField of class_name * field_signature
+  | `PutStatic of class_name * field_signature
+  | `InvokeVirtual of object_type * method_signature
+  | `NewInvokeSpecial of object_type * method_signature
+  | `InvokeStatic of jmethod_or_interface
+  | `InvokeSpecial of jmethod_or_interface
+  | `InvokeInterface of class_name * method_signature
+  ]
 
 (* Bootstrap argument *)
 type bootstrap_argument = [

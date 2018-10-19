@@ -52,8 +52,8 @@ let opcode2instruction consts bootstrap_methods = function
 	   | `CValue (ConstClass c) -> `Class c
 	   | `CValue (ConstLong _) | `CValue (ConstDouble _) ->
               raise (Class_structure_error ("Illegal constant for Ldc1: long/double"))
-           | `CMethodType (l_args, rval) -> `MethodType (l_args, rval)
-           | `CMethodHandle (h_kind, cr) -> `MethodHandle (h_kind, cr)
+           | `CMethodType mt -> `MethodType mt
+           | `CMethodHandle mh -> `MethodHandle mh
         )
   | OpLdc2w n ->
       JCode.OpConst
