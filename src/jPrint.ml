@@ -121,16 +121,13 @@ let signature ?(jvm=false) name d =
 	let ms = make_ms name (md_args md) (md_rtype md) in
 	  method_signature ~jvm:jvm ms
 
-let constant_value = function
+let rec constant = function
   | ConstString s -> "string '" ^ (jstr_pp s) ^ "'"
   | ConstInt i -> "int " ^ (Int32.to_string i)
   | ConstFloat f -> "float " ^ (string_of_float f)
   | ConstLong i -> "long " ^ (Int64.to_string i)
   | ConstDouble f -> "double " ^ (string_of_float f)
   | ConstClass cl -> "class " ^ (object_type cl)
-
-let rec constant = function
-  | ConstValue v -> constant_value v
   | ConstField (cl,fs) ->
       "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
   | ConstMethod (ot,ms) ->

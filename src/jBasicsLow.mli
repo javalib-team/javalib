@@ -37,9 +37,12 @@ type method_handle_kind = [
 ]
 
 type ldc_value = [
-  | `CValue of constant_value
-  | `CMethodType of method_descriptor
-  | `CMethodHandle of method_handle
+  | `Int of int32
+  | `Float of float
+  | `String of jstr
+  | `Class of object_type
+  | `MethodType of method_descriptor
+  | `MethodHandle of method_handle
 ]
    
 type ioc_method = [
@@ -59,7 +62,6 @@ val constant_attribute_to_const : JClass.constant_attribute -> constant
 
 val get_constant : constant array -> int -> constant
 val get_constant_ldc_value : constant array -> int -> ldc_value
-val get_constant_value : constant array -> int -> constant_value
 val get_object_type : constant array -> int -> object_type
 val get_class : constant array -> int -> class_name
 val get_string : constant array -> int -> string
@@ -86,7 +88,6 @@ val get_bootstrap_argument_ui16 : constant array -> JLib.IO.input -> bootstrap_a
 (** Return the index of a constant, adding it to the constant pool if necessary. *)
 val constant_to_int : constant JLib.DynArray.t -> constant -> int
 val ldc_value_to_int : constant JLib.DynArray.t -> ldc_value -> int
-val value_to_int : constant JLib.DynArray.t -> constant_value -> int
 val object_type_to_int : constant JLib.DynArray.t -> object_type -> int
 val class_to_int : constant JLib.DynArray.t -> class_name -> int
 val field_to_int : constant JLib.DynArray.t ->
@@ -106,8 +107,6 @@ val bootstrap_method_to_int : bootstrap_method JLib.DynArray.t -> bootstrap_meth
 
 val write_constant :
   'a JLib.IO.output -> constant JLib.DynArray.t -> constant -> unit
-val write_value :
-  'a JLib.IO.output -> constant JLib.DynArray.t -> constant_value -> unit
 val write_object_type :
   'a JLib.IO.output -> constant JLib.DynArray.t -> object_type -> unit
 val write_class :

@@ -136,16 +136,13 @@ let method_handle_kind = function
   | `NewInvokeSpecial -> "newinvokespecial"
   | `InvokeInterface -> "invokeinterface"
 
-let dump_constant_value ch = function
+let rec dump_constant ch = function
   | ConstString s -> JLib.IO.printf ch "string '%s'" (jstr_pp s)
   | ConstInt i -> JLib.IO.printf ch "int %ld" i
   | ConstFloat f -> JLib.IO.printf ch "float %f" f
   | ConstLong i -> JLib.IO.printf ch "long %Ld" i
   | ConstDouble f -> JLib.IO.printf ch "double %f" f
   | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
-
-let rec dump_constant ch = function
-  | ConstValue v -> dump_constant_value ch v
   | ConstField (cn,fs) ->
      let fn = fs_name fs
      and ft = fs_type fs
@@ -179,12 +176,12 @@ let rec dump_constant ch = function
         (ms_name ms)
 
 let dump_bootstrap_argument ch = function
-  | `String s -> dump_constant_value ch (ConstString s)
-  | `Class cl -> dump_constant_value ch (ConstClass cl)
-  | `Int i -> dump_constant_value ch (ConstInt i)
-  | `Long i -> dump_constant_value ch (ConstLong i)
-  | `Float f -> dump_constant_value ch (ConstFloat f)
-  | `Double f -> dump_constant_value ch (ConstDouble f)
+  | `String s -> dump_constant ch (ConstString s)
+  | `Class cl -> dump_constant ch (ConstClass cl)
+  | `Int i -> dump_constant ch (ConstInt i)
+  | `Long i -> dump_constant ch (ConstLong i)
+  | `Float f -> dump_constant ch (ConstFloat f)
+  | `Double f -> dump_constant ch (ConstDouble f)
   | `MethodHandle mh -> dump_constant ch (ConstMethodHandle mh)
   | `MethodType ms -> dump_constant ch (ConstMethodType ms)
 

@@ -46,18 +46,16 @@ let opcode2instruction consts bootstrap_methods = function
   | OpLdc1w n ->
       JCode.OpConst
 	(match get_constant_ldc_value consts n with
-	   | `CValue (ConstInt c) -> `Int c
-	   | `CValue (ConstFloat c) -> `Float c
-	   | `CValue (ConstString c) -> `String c
-	   | `CValue (ConstClass c) -> `Class c
-	   | `CValue (ConstLong _) | `CValue (ConstDouble _) ->
-              raise (Class_structure_error ("Illegal constant for Ldc1: long/double"))
-           | `CMethodType mt -> `MethodType mt
-           | `CMethodHandle mh -> `MethodHandle mh
+	   | `Int _ as c-> c
+	   | `Float _ as c -> c
+	   | `String _ as c-> c
+	   | `Class _ as c -> c
+           | `MethodType _ as mt-> mt
+           | `MethodHandle _ as mh -> mh
         )
   | OpLdc2w n ->
       JCode.OpConst
-	(match get_constant_value consts n with
+	(match get_constant consts n with
 	   | ConstLong c -> `Long c
 	   | ConstDouble c -> `Double c
            | _ -> raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
@@ -249,25 +247,25 @@ let instruction2opcode consts bm_table length = function
 	   | `Int v ->
 	       if length = 1 && -1l <= v && v <= 5l
 	       then OpIConst v
-	       else opldc_w (`CValue (ConstInt v))
+	       else opldc_w (`Int v)
 	   | `Long v ->
 	       if length = 1 && (v=0L || v=1L)
 	       then OpLConst v
-	       else OpLdc2w (value_to_int consts (ConstLong v))
+	       else OpLdc2w (constant_to_int consts (ConstLong v))
 	   | `Float v ->
 	       if length = 1 && (v=0. || v=1. || v=2.)
 	       then OpFConst v
-	       else opldc_w (`CValue (ConstFloat v))
+	       else opldc_w (`Float v)
 	   | `Double v ->
 	       if length = 1 && (v=0. || v=1.)
                then OpDConst v
-	       else OpLdc2w (value_to_int consts (ConstDouble v))
+	       else OpLdc2w (constant_to_int consts (ConstDouble v))
 	   | `Byte v -> OpBIPush v
 	   | `Short v -> OpSIPush v
-	   | `String v -> opldc_w (`CValue (ConstString v))
-	   | `Class v -> opldc_w (`CValue (ConstClass v))
-           | `MethodType mt -> opldc_w (`CMethodType mt)
-           | `MethodHandle mh -> opldc_w (`CMethodHandle mh)
+	   | `String _ as c -> opldc_w c
+	   | `Class _ as c -> opldc_w c
+           | `MethodType _ as mt -> opldc_w mt
+           | `MethodHandle _ as mh -> opldc_w mh
         )
 
   | JCode.OpLoad (k, l) ->

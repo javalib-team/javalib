@@ -37,9 +37,12 @@ type method_handle_kind = [
 ]
 
 type ldc_value = [
-  | `CValue of constant_value
-  | `CMethodType of method_descriptor
-  | `CMethodHandle of method_handle
+  | `Int of int32
+  | `Float of float
+  | `String of jstr
+  | `Class of object_type
+  | `MethodType of method_descriptor
+  | `MethodHandle of method_handle
 ]
 
 type ioc_method = [
@@ -87,19 +90,17 @@ let get_constant c n =
 (* for ldc and ldc_w since Java 7 *)
 let get_constant_ldc_value c n =
   match get_constant c n with
-  | ConstValue v -> `CValue v
-  | ConstMethodType mt -> `CMethodType mt
-  | ConstMethodHandle mh -> `CMethodHandle mh
+  | ConstInt i -> `Int i
+  | ConstFloat f -> `Float f
+  | ConstString s -> `String s
+  | ConstClass cl -> `Class cl
+  | ConstMethodType mt -> `MethodType mt
+  | ConstMethodHandle mh -> `MethodHandle mh
   | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value or a method type or a method handle)"))
   
-let get_constant_value c n =
-  match get_constant c n with
-    | ConstValue v -> v
-    | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value)"))
-
 let get_object_type consts i =
   match get_constant consts i with
-    | ConstValue (ConstClass n) -> n
+    | ConstClass n -> n
     | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 
 let get_class consts i =
@@ -135,33 +136,33 @@ let get_method_handle consts i =
 
 let get_bootstrap_argument consts i =
   match get_constant consts i with
-  | ConstValue (ConstString s) -> `String s
-  | ConstValue (ConstClass cl) -> `Class cl
-  | ConstValue (ConstInt i) -> `Int i
-  | ConstValue (ConstLong i) -> `Long i
-  | ConstValue (ConstFloat f) -> `Float f
-  | ConstValue (ConstDouble f) -> `Double f
+  | ConstString s -> `String s
+  | ConstClass cl -> `Class cl
+  | ConstInt i -> `Int i
+  | ConstLong i -> `Long i
+  | ConstFloat f -> `Float f
+  | ConstDouble f -> `Double f
   | ConstMethodType mt -> `MethodType mt
   | ConstMethodHandle mh -> `MethodHandle mh
   | _ -> raise (Class_structure_error ("Illegal bootstrap argument"))
 
 let get_constant_attribute consts i =
   match get_constant consts i with
-  | ConstValue (ConstLong i) -> `Long i
-  | ConstValue (ConstFloat f) -> `Float f
-  | ConstValue (ConstDouble f) -> `Double f
-  | ConstValue (ConstInt i) -> `Int i
-  | ConstValue (ConstString s) -> `String s
+  | ConstLong i -> `Long i
+  | ConstFloat f -> `Float f
+  | ConstDouble f -> `Double f
+  | ConstInt i -> `Int i
+  | ConstString s -> `String s
   | _ -> raise (Class_structure_error ("Illegal constant attribute"))
 
 let bootstrap_argument_to_const arg =
   match arg with
-  | `String s ->  ConstValue (ConstString s)
-  | `Class cl ->  ConstValue (ConstClass cl)
-  | `Int i -> ConstValue (ConstInt i)
-  | `Long i -> ConstValue (ConstLong i)
-  | `Float f -> ConstValue (ConstFloat f)
-  | `Double f -> ConstValue (ConstDouble f)
+  | `String s ->  ConstString s
+  | `Class cl ->  ConstClass cl
+  | `Int i -> ConstInt i
+  | `Long i -> ConstLong i
+  | `Float f -> ConstFloat f
+  | `Double f -> ConstDouble f
   | `MethodHandle mh -> ConstMethodHandle mh
   | `MethodType ms -> ConstMethodType ms
 
@@ -181,11 +182,11 @@ let method_handle_to_const mh =
 
 let constant_attribute_to_const attr =
   match attr with
-  | `Long i -> ConstValue (ConstLong i)
-  | `Float f -> ConstValue (ConstFloat f)
-  | `Double f -> ConstValue (ConstDouble f)
-  | `Int i -> ConstValue (ConstInt i)
-  | `String s -> ConstValue (ConstString s)
+  | `Long i -> ConstLong i
+  | `Float f -> ConstFloat f
+  | `Double f -> ConstDouble f
+  | `Int i -> ConstInt i
+  | `String s -> ConstString s
 
 let get_string consts i =
   match get_constant consts i with
@@ -211,7 +212,7 @@ let constant_to_int cp c =
 	let i = DynArray.length cp in
 	  DynArray.add cp c;
 	  (match c with
-	     | ConstValue (ConstLong _ | ConstDouble _) ->
+	     | ConstLong _ | ConstDouble _ ->
 		 DynArray.add cp ConstUnusable
 	     | _ -> ());
 	  i
@@ -236,13 +237,15 @@ let method_handle_kind_to_int = function
   | `NewInvokeSpecial -> 8
   | `InvokeInterface -> 9
 
-let value_to_int cp v = constant_to_int cp (ConstValue v)
 let ldc_value_to_int cp = function
-  | `CValue c -> constant_to_int cp (ConstValue c)
-  | `CMethodType mt -> constant_to_int cp (ConstMethodType mt)
-  | `CMethodHandle mh -> constant_to_int cp (ConstMethodHandle mh)
+  | `Int i -> constant_to_int cp (ConstInt i)
+  | `Float f -> constant_to_int cp (ConstFloat f)
+  | `String s -> constant_to_int cp (ConstString s)
+  | `Class cl -> constant_to_int cp (ConstClass cl)
+  | `MethodType mt -> constant_to_int cp (ConstMethodType mt)
+  | `MethodHandle mh -> constant_to_int cp (ConstMethodHandle mh)
 
-let object_type_to_int cp ot = value_to_int cp (ConstClass ot)
+let object_type_to_int cp ot = constant_to_int cp (ConstClass ot)
 let field_to_int cp v = constant_to_int cp (ConstField v)
 let method_to_int cp v = constant_to_int cp (ConstMethod v)
 let interface_method_to_int cp v = constant_to_int cp (ConstInterfaceMethod v)
@@ -252,7 +255,6 @@ let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s)
 let bootstrap_argument_to_int cp a = constant_to_int cp (bootstrap_argument_to_const a)
 
 let write_constant ch cp c = write_ui16 ch (constant_to_int cp c)
-let write_value ch cp c = write_ui16 ch (value_to_int cp c)
 let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
 let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)

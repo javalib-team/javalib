@@ -41,29 +41,25 @@ let unparse_method_handle_kind = function
   | `InvokeInterface -> 9
   | _ -> assert false
 
-let unparse_constant_value ch consts = function
-  | ConstString s ->
-      write_ui8 ch 8;
-      (write_string ch consts (jstr_raw s))
-  | ConstInt i ->
-      write_ui8 ch 3;
-      write_real_i32 ch i
-  | ConstFloat f ->
-      write_ui8 ch 4;
-      write_real_i32 ch (Int32.bits_of_float f)
-  | ConstLong l ->
-      write_ui8 ch 5;
-      write_i64 ch l
-  | ConstDouble d ->
-      write_ui8 ch 6;
-      write_double ch d
-  | ConstClass c ->
-      write_ui8 ch 7;
-      write_string ch consts (unparse_constClass c)
-
-let unparse_constant ch consts =
-  function
-    | ConstValue v -> unparse_constant_value ch consts v
+let unparse_constant ch consts =  function
+    | ConstString s ->
+       write_ui8 ch 8;
+       (write_string ch consts (jstr_raw s))
+    | ConstInt i ->
+       write_ui8 ch 3;
+       write_real_i32 ch i
+    | ConstFloat f ->
+       write_ui8 ch 4;
+       write_real_i32 ch (Int32.bits_of_float f)
+    | ConstLong l ->
+       write_ui8 ch 5;
+       write_i64 ch l
+    | ConstDouble d ->
+       write_ui8 ch 6;
+       write_double ch d
+    | ConstClass c ->
+       write_ui8 ch 7;
+       write_string ch consts (unparse_constClass c)
     | ConstField (c, fs) ->
        write_ui8 ch 9;
        write_class ch consts c;
@@ -233,28 +229,28 @@ let rec unparse_element_value =
   in fun consts ch -> function
     | EVCstByte cst ->
         write_ui8 ch char_B;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstChar cst ->
         write_ui8 ch char_C;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstInt cst ->
         write_ui8 ch char_I;
-        write_ui16 ch (value_to_int consts (ConstInt cst))
+        write_ui16 ch (constant_to_int consts (ConstInt cst))
     | EVCstShort cst ->
         write_ui8 ch char_S;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstBoolean cst ->
         write_ui8 ch char_Z;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstDouble cst ->
         write_ui8 ch char_D;
-        write_ui16 ch (value_to_int consts (ConstDouble cst))
+        write_ui16 ch (constant_to_int consts (ConstDouble cst))
     | EVCstFloat cst ->
         write_ui8 ch char_F;
-        write_ui16 ch (value_to_int consts (ConstFloat cst))
+        write_ui16 ch (constant_to_int consts (ConstFloat cst))
     | EVCstLong cst ->
         write_ui8 ch char_J;
-        write_ui16 ch (value_to_int consts (ConstLong cst))
+        write_ui16 ch (constant_to_int consts (ConstLong cst))
     | EVCstString s ->
         write_ui8 ch char_s;
         write_ui16 ch (constant_to_int consts (ConstStringUTF8 s))
@@ -490,7 +486,7 @@ let unparse_class_low_level ch c =
     write_class ch' consts c.j_name;
     write_ui16 ch'
       (match c.j_super with
-	 | Some super -> constant_to_int consts (ConstValue (ConstClass (TClass super)))
+	 | Some super -> constant_to_int consts (ConstClass (TClass super))
 	 | None -> 0);
     let unparse unparse = write_with_size write_ui16 ch' unparse in
       unparse

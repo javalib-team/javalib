@@ -308,18 +308,14 @@ type descriptor =
   | SValue of value_type
   | SMethod of method_descriptor
 
-(** Constant value. *)
-type constant_value =
+(** Constant pool values. *)
+type constant =
   | ConstString of jstr
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64
   | ConstDouble of float
   | ConstClass of object_type
-
-(** Constant. *)
-type constant =
-  | ConstValue of constant_value
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)

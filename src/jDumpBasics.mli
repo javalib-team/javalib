@@ -77,9 +77,6 @@ val java_basic_type : java_basic_type -> char
 val method_handle_kind : JBasicsLow.method_handle_kind -> string
   (** [method_handle_kind k] returns the string that corresponds
       to the method handle kind [k]. *)
-val dump_constant_value : 'a JLib.IO.output -> constant_value -> unit
-  (** [dump_constant_value ch cst] prints on [ch] the constant value
-      [ch] preceded by its type ({i e.g} "int 3").*)
 val dump_constant : 'a JLib.IO.output -> constant -> unit
   (** [dump_constant ch cst] prints on [ch] the constant pool constant
       [cst] of the. *)

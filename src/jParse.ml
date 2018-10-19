@@ -199,7 +199,7 @@ let rec parse_element_value consts ch =
     match Char.chr tag with
       | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
           let constant_value_index = read_ui16 ch in
-          let cst = get_constant_value consts constant_value_index
+          let cst = get_constant consts constant_value_index
           in
             begin
               match c,cst with
@@ -317,7 +317,7 @@ let rec parse_code consts ch =
 	     | 0 -> None
 	     | ct ->
 		 match get_constant consts ct with
-		   | ConstValue (ConstClass (TClass c)) -> Some c
+		   | ConstClass (TClass c) -> Some c
 		   | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 	 in
 	   {
@@ -588,16 +588,16 @@ let parse_method consts ch =
 let rec expand_constant consts n =
   let expand name cl nt =
     match expand_constant consts cl with
-      | ConstValue (ConstClass c) ->
+      | ConstClass c ->
 	  (match expand_constant consts nt with
 	     | ConstNameAndType (n,s) -> (c,n,s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of NameAndType in " ^ name ^ " constant")))
-      | _ -> raise (Class_structure_error ("Illegal constant refered in place of a ConstValue in " ^ name ^ " constant"))
+      | _ -> raise (Class_structure_error ("Illegal constant refered in place of a ConstClass in " ^ name ^ " constant"))
   in
     match consts.(n) with
       | ConstantClass i ->
 	  (match expand_constant consts i with
-	     | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
+	     | ConstStringUTF8 s -> ConstClass (parse_objectType s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
       | ConstantField (cl,nt) ->
 	  (match expand "Field" cl nt with
@@ -660,12 +660,12 @@ let rec expand_constant consts n =
            | _ -> raise (Class_structure_error ("Illegal constant referred in place of an InvokeDynamic constant")))
       | ConstantString i ->
 	  (match expand_constant consts i with
-	     | ConstStringUTF8 s -> ConstValue (ConstString (make_jstr s))
+	     | ConstStringUTF8 s -> ConstString (make_jstr s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a String constant")))
-      | ConstantInt i -> ConstValue (ConstInt i)
-      | ConstantFloat f -> ConstValue (ConstFloat f)
-      | ConstantLong l -> ConstValue (ConstLong l)
-      | ConstantDouble f -> ConstValue (ConstDouble f)
+      | ConstantInt i -> ConstInt i
+      | ConstantFloat f -> ConstFloat f
+      | ConstantLong l -> ConstLong l
+      | ConstantDouble f -> ConstDouble f
       | ConstantNameAndType (n,t) ->
 	  (match expand_constant consts n , expand_constant consts t with
 	     | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_descriptor t)
