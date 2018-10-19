@@ -253,6 +253,21 @@ let dump_list sep print = function
         (fun item -> sep (); print item)
         tl
 
+let method_parameters_flag_to_string = function
+    | `AccFinal -> "final"
+    | `AccSynthetic -> "synthetic"
+    | `AccMandated -> "mandated"
+    | `AccRFU i -> sprintf "rfu 0x%X" i
+
+let dump_method_parameters ch mp =
+  (match mp.name with
+   | None -> ()
+   | Some name -> string_nwrite ch (sprintf "%s" name));
+  let flags = String.concat ", " (List.map method_parameters_flag_to_string mp.flags) in
+  match mp.flags with
+  | [] -> ()
+  | _ -> string_nwrite ch (sprintf "(%s)" flags)
+  
 let rec dump_element_value ch = function
   | EVCstByte cst ->
       string_nwrite ch (string_of_int cst)
@@ -309,18 +324,6 @@ and dump_annotation ch annot =
     JLib.IO.write ch '(';
     dump_pairs annot.element_value_pairs;
     JLib.IO.write ch ')'
-
-let dump_bootstrap_method ch { bm_ref; bm_args; } =
-  string_nwrite ch "    method_ref = ";
-  dump_constant ch (ConstMethodHandle bm_ref);
-  if bm_args <> []
-  then
-    begin
-      string_nwrite ch (" , bootstrap_arguments = ");
-      List.iter (fun arg ->
-          dump_bootstrap_argument ch arg;
-          string_nwrite ch "\n") bm_args
-    end
 
 let rec dump_code ch consts code =
   string_nwrite ch "    max_stack = ";
@@ -457,6 +460,14 @@ and dump_attrib ch consts = function
           dump_bootstrap_method ch m;
           JLib.IO.write ch ']')
         methods;
+      JLib.IO.write ch '\n'
+  | AttributeMethodParameters mp ->
+      string_nwrite ch "    MethodParameters = ";
+      List.iter (fun m ->
+          string_nwrite ch "\n      [";
+          dump_method_parameters ch m;
+          JLib.IO.write ch ']')
+        mp;
       JLib.IO.write ch '\n'
   | AttributeUnknown (s,_) ->
       string_nwrite ch ("    ?"^s^"\n")

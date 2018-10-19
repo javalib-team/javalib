@@ -188,6 +188,18 @@ let dump_bootstrap_argument ch = function
   | `MethodHandle mh -> dump_constant ch (ConstMethodHandle mh)
   | `MethodType ms -> dump_constant ch (ConstMethodType ms)
 
+let dump_bootstrap_method ch { bm_ref; bm_args; } =
+  JLib.IO.nwrite_string ch "    method_ref = ";
+  dump_constant ch (ConstMethodHandle bm_ref);
+  if bm_args <> []
+  then
+    begin
+      JLib.IO.nwrite_string ch (" , bootstrap_arguments = ");
+      List.iter (fun arg ->
+          dump_bootstrap_argument ch arg;
+          JLib.IO.nwrite_string ch "\n") bm_args
+    end
+
 let dump_constantpool ch =
   Array.iteri
     (fun i c ->

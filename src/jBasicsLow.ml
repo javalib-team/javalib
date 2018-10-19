@@ -152,6 +152,7 @@ let get_constant_attribute consts i =
   | ConstValue (ConstDouble f) -> `Double f
   | ConstValue (ConstInt i) -> `Int i
   | ConstValue (ConstString s) -> `String s
+  | _ -> raise (Class_structure_error ("Illegal constant attribute"))
 
 let bootstrap_argument_to_const arg =
   match arg with
