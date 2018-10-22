@@ -24,7 +24,7 @@
 open JBasics
 open JSignature
 
-(** {2 Parsing descriptors and their components } *)
+(** {1 Parsing descriptors and their components } *)
 
 (** @raise Class_structure_error if the string does not correspond the an object
     type.*)
@@ -44,7 +44,7 @@ val parse_descriptor : string -> descriptor
 
 
 
-(** {2 Parsing generic signatures} *)
+(** {1 Parsing generic signatures} *)
 
 (** [parse_ClassSignature s] parses a Signature attribute and expects
     to find a ClassSignature (as describe in paragraph 4.4.4 of the

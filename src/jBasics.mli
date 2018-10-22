@@ -23,7 +23,7 @@
 
 (** Basic elements of class files. *)
 
-(** {2 Definition of basic types and descriptors.} *)
+(** {1 Definition of basic types and descriptors.} *)
 
 (** Type representing a class name. e.g. [java.lang.Object] *)
 type class_name
@@ -117,7 +117,7 @@ type jstr
     50.0. *)
 type version = {major :int; minor:int;}
 
-(** {2 Basic types manipulation.} *)
+(** {1 Basic types manipulation.} *)
 
 (** Creating and manipulating {!class_name} values. *)
 
@@ -254,7 +254,7 @@ val jstr_pp   : jstr -> string
 (** Returns the original [string]. *)
 val jstr_raw  : jstr -> string
 
-(** {2 Bootstrap method and method handle types.} *)
+(** {1 Bootstrap method and method handle types.} *)
 
 (** Features introduced in Java 8 to implement lambdas. *)
   
@@ -263,7 +263,7 @@ type jmethod_or_interface = [
   | `InterfaceMethod of class_name * method_signature
   ]
 
-(** Method handle. *)
+(** Method handle. cf JVM Spec se8 §4.4.8. *)
 type method_handle = [
   | `GetField of class_name * field_signature
   | `GetStatic of class_name * field_signature
@@ -276,7 +276,7 @@ type method_handle = [
   | `InvokeInterface of class_name * method_signature
   ]
 
-(** Bootstrap argument. *)
+(** Bootstrap argument. cf JVM Spec se8 §4.7.23. *)
 type bootstrap_argument = [
   | `String of jstr
   | `Class of object_type
@@ -288,13 +288,14 @@ type bootstrap_argument = [
   | `MethodType of method_descriptor
 ]
 
-(** Bootstrap method called by the [invokedynamic] instruction. *)
+(** Bootstrap method called by the [invokedynamic] instruction.
+    cf JVM Spec se8 §4.7.23. *)
 type bootstrap_method = {
     bm_ref : method_handle;
     bm_args : bootstrap_argument list;
 }
 
-(** {2 Constant pool.} *)
+(** {1 Constant pool.} *)
 
 (** You should not need this for normal usage, as the
     parsing/unparsing functions take care of the constant pool. This
@@ -326,7 +327,7 @@ type constant =
   | ConstStringUTF8 of string
   | ConstUnusable
 
-(** {2 Stackmaps}  *)
+(** {1 Stackmaps}  *)
 
 (** Verification type. *)
 type verification_type =
@@ -343,7 +344,7 @@ type verification_type =
 (** Stackmap type. *)
 type stackmap = (int* verification_type list * verification_type list)
 
-(** {2 Errors}  *)
+(** {1 Errors}  *)
 
 (** The library may throw the following exceptions, in addition to [Invalid_argument].
     Any other exception (in particular, an [Assert_failure])
@@ -357,7 +358,7 @@ exception No_class_found of string
 exception Class_structure_error of string
 
 
-(** {2 Annotations} *)
+(** {1 Annotations} *)
 
 (** [element_value] represents a constant value, either a number, a string, a
     class, an enum, an array of [element_value]s or another annotation. *)
@@ -388,7 +389,7 @@ and annotation = {
 }
 
 
-(** {2 Containers.} *)
+(** {1 Containers.} *)
 
 (** This module allows to build maps of elements indexed by [class_name] values. *)
 module ClassMap : GenericMap.GenericMapSig with type key = class_name
@@ -426,7 +427,7 @@ sig
 end
 
 
-(** {2 Tuning JavaLib.} *)
+(** {1 Tuning JavaLib.} *)
 
 (** [set_permissive true] disables some checking in JavaLib.  It can
     allow to parse some files that do not strictly comply with the

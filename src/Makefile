@@ -89,9 +89,10 @@ javalib_pack.cmx: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmx)
 # doc
 doc: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.ml) ../intro.ocamldoc
 	mkdir -p $(DOCDIR)
-	$(OCAMLDOC) $(RECODE) $(INCLUDE) -I ptrees -d $(DOCDIR) -html -stars \
-		-colorize-code -intro ../intro.ocamldoc -t Javalib	\
-		$(MODULE_INTERFACES:=.mli)
+	$(OCAMLDOC) $(RECODE) $(INCLUDE) -I ptrees -d $(DOCDIR) -html -stars 	\
+		-css-style style.css -colorize-code -intro ../intro.ocamldoc	\
+		-t Javalib $(MODULE_INTERFACES:=.mli)
+	cp style.css $(DOCDIR)
 
 # cleaning
 clean:

@@ -50,7 +50,7 @@ type ioc_method = [
   | `Interface of class_name * method_signature
 ]
 
-(** {2 Constant Pool.}  *)
+(** {1 Constant Pool.}  *)
 
 (** Converting to constant pool elements: *)
 
@@ -120,7 +120,7 @@ val write_bootstrap_argument :
 val write_constant_attribute :
   'a JLib.IO.output -> constant JLib.DynArray.t -> JClass.constant_attribute -> unit
 
-(** {2 Usefull writing functions. } *)
+(** {1 Usefull writing functions. } *)
 
 (** @raise Overflow if the integer does not belong to [0x0;0xFF].  *)
 val write_ui8 : 'a JLib.IO.output -> int -> unit

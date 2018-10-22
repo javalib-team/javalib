@@ -26,7 +26,7 @@
 open JBasics
 open JCode
 
-(** {2 Common types.} *)
+(** {1 Common types.} *)
 
 (** Visibility modifiers. *)
 type access = [
@@ -39,18 +39,10 @@ type access = [
 (** Generic attributes common to classes, fields and methods. *)
 type attributes = {
   synthetic : bool;
-  (** correspond to the attribute, not to the flag (cf. JVM Spec 1.5
-      §4.2, §4.6, §4.7 and §4.8.7) *)
+  (** correspond to the attribute, not to the flag (cf. JVM Spec se8
+      table 4.7-C and §4.7.8) *)
   deprecated : bool;
   other : (string * string) list
-}
-
-(** Attribute proper to a method parameter. *)
-type method_parameter_attribute = {
-  mp_name : string option;
-  mp_final : bool;
-  mp_synthetic : bool;
-  mp_mandated : bool;
 }
 
 (** visibility modifiers for annotations. An annotation may either be visible at
@@ -61,7 +53,7 @@ type method_parameter_attribute = {
 type visibility = RTVisible | RTInvisible
 
 
-(** {2 Fields of classes and interfaces.} *)
+(** {1 Fields of classes and interfaces.} *)
 
 (** Field kind *)
 type field_kind =
@@ -86,7 +78,7 @@ type class_field = {
   cf_static : bool;
   cf_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
+      (cf. JVM Spec se8 table 4.5-A) *)
   cf_enum : bool;
   cf_kind : field_kind;
   cf_value : constant_attribute option;
@@ -104,7 +96,7 @@ type interface_field = {
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.6 and §4.8.7) *)
+      (cf. JVM Spec se8 table 4.5-A) *)
   if_value : constant_attribute option;
   (** a constant_attribute is not mandatory, especially as it can be
       initialized by the class initializer <clinit>. *)
@@ -115,7 +107,7 @@ type interface_field = {
 
 type any_field = | InterfaceField of interface_field | ClassField of class_field
 
-(** {2 Fields access functions.} *)
+(** {1 Fields access functions.} *)
 
 val get_field_signature : any_field -> field_signature
 val get_class_field_signature : any_field -> class_field_signature
@@ -124,7 +116,7 @@ val is_static_field : any_field -> bool
 val is_final_field : any_field -> bool
 
 
-(** {2 Methods of classes and interfaces.} *)
+(** {1 Methods of classes and interfaces.} *)
 
 type 'a implementation =
   | Native
@@ -137,7 +129,15 @@ type method_annotations = {
   (** [\[al1,al2\]] represents the annotations for the 2 parameters of the
       method, [al1] being the annotations for the first parameter and [al2] the
       annotations for the second parameter.  The length is smaller than the
-      number of parameters of the method (excluding the receiver this).*)
+      number of parameters of the method (excluding the receiver this). *)
+}
+
+(** Attribute proper to a method parameter. *)
+type method_parameter_attribute = {
+  mp_name : string option;
+  mp_final : bool;
+  mp_synthetic : bool;
+  mp_mandated : bool;
 }
 
 (* The final attribute has no meaning for a static method, but the JVM spec
@@ -157,7 +157,7 @@ type 'a concrete_method = {
   cm_varargs : bool;
   cm_synthetic : bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.7 and §4.8.7) *)
+      (cf. JVM Spec se8 table 4.6-A) *)
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
@@ -175,8 +175,8 @@ type abstract_method = {
   am_bridge: bool;
   am_varargs: bool;
   am_synthetic: bool;
-  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute (cf. JVM Spec
-  * 1.5 §4.7 and §4.8.7) *)
+  (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec se8 table 4.6-A) *)
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
@@ -191,7 +191,7 @@ type 'a jmethod =
   | AbstractMethod of abstract_method
   | ConcreteMethod of 'a concrete_method
 
-(** {2 Methods access functions.} *)
+(** {1 Methods access functions.} *)
 
 val get_method_signature : 'a jmethod -> method_signature
 val get_class_method_signature : 'a jmethod -> class_method_signature
@@ -200,7 +200,7 @@ val is_static_method : 'a jmethod -> bool
 val is_final_method : 'a jmethod -> bool
 val is_synchronized_method : 'a jmethod -> bool
 
-(** {2 Classes and interfaces.} *)
+(** {1 Classes and interfaces.} *)
 
 type inner_class = {
   ic_class_name : class_name option;
@@ -235,17 +235,15 @@ type 'a jclass = {
   (** introduced with Java 5 for local classes (defined in methods'
       code). The first element is innermost class that encloses the
       declaration of the current class. The second element is the
-      method that encose this class definition. cf
-      {{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS},
-      paragraph 4.8.6.*)
+      method that encose this class definition. cf JVM spec se8
+      table 4.7-C and §4.7.7. *)
   c_source_debug_extention : string option;
   (** Introduced in Java 5 for debugging purpose (no
-      semantics defined)
-      ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
+      semantics defined). cf JVM spec se8 table 4.7-C and §4.7.11. *)
   c_inner_classes : inner_class list;
   c_synthetic: bool;
   (** correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.2 and §4.8.7) *)
+      (cf. JVM Spec se8 table 4.1-A) *)
   c_enum: bool;
   c_annotations: (annotation*visibility) list;
   c_other_flags : int list;
@@ -266,8 +264,7 @@ type 'a jinterface = {
   i_deprecated : bool;
   i_source_debug_extention : string option;
   (** Introduced in Java 5 for debugging purpose (no
-      semantics defined)
-      ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}). *)
+      semantics defined). cf JVM spec se8 table 4.7-C and §4.7.11. *)
   i_inner_classes : inner_class list;
   i_initializer : 'a concrete_method option;
   (** the signature is <clinit>()V; and the method should be static  *)
@@ -284,7 +281,7 @@ type 'a interface_or_class =
   | JInterface of 'a jinterface
   | JClass of 'a jclass
 
-(** {2 Classes access functions.} *)
+(** {1 Classes access functions.} *)
 
 (** Returns the fully qualified name of a [class_name]. *)
 val get_name : 'a interface_or_class -> class_name
@@ -347,7 +344,7 @@ val get_field : 'a interface_or_class -> field_signature -> any_field
 (** Returns the map of all the fields defined in the given class or interface. *)
 val get_fields : 'a interface_or_class -> any_field FieldMap.t
 
-(** {2 Iterators}  *)
+(** {1 Iterators}  *)
 
 val cf_iter : (class_field -> unit) -> 'a interface_or_class -> unit
 val if_iter : (interface_field -> unit) -> 'a interface_or_class -> unit
@@ -364,7 +361,7 @@ val am_fold : (abstract_method -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
 val m_fold : ('a jmethod -> 'b -> 'b) -> 'a interface_or_class -> 'b -> 'b
 
 
-(** {2 Transforming code representation.} *)
+(** {1 Transforming code representation.} *)
 
 (** [map_concrete_method f cm] lazily applies [f] to the implementation of [cm]
     (if the method is native, it does nothing but changing the type).  The
@@ -386,7 +383,7 @@ val map_interface_or_class :
 val map_interface_or_class_context :
   ?force:bool -> ('a concrete_method -> 'a -> 'b) -> 'a interface_or_class -> 'b interface_or_class
 
-(** {3 Alternative transforming functions} *)
+(** {2 Alternative transforming functions} *)
 
 (** [map_concrete_method_with_native f cm] is equivalent to
     {!map_concrete_method} but allows to transform not only the code
@@ -416,7 +413,7 @@ val map_interface_or_class_with_native_context :
   ('a concrete_method -> 'a implementation -> 'b implementation) ->
   'a interface_or_class -> 'b interface_or_class
 
-(** {2 Files manipulations.} *)
+(** {1 Files manipulations.} *)
 
 (** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
 type class_path
@@ -466,7 +463,7 @@ val write_class : string -> JCode.jcode interface_or_class -> unit
     must contain the [.class] extension. *)
 val extract_class_name_from_file : string -> JBasics.class_name * string
 
-(** {3 More advanced files manipulations.} *)
+(** {2 More advanced files manipulations.} *)
 
 
 (** [iter ~debug:false f filename] applies the function successively the
@@ -515,7 +512,7 @@ val transform :
   (JCode.jcode interface_or_class -> JCode.jcode interface_or_class) ->
   string list -> unit
 
-(** {2 Dumping classes in .class format.} *)
+(** {1 Dumping classes in .class format.} *)
 
 (** [unparse_class ioc out] dump the class or interface [ioc] into [out] as a
     [.class] file.  The distance between the offset of two successive
@@ -530,12 +527,12 @@ val transform :
 val unparse_class : JCode.jcode interface_or_class -> out_channel -> unit
 
 
-(** {2 Printing functions.} *)
+(** {1 Printing functions.} *)
 
 (** Module gathering useful printing functions for basic types. *)
 module JPrint :
 sig
-  (** {2 Printing basic signatures and descriptors.} *)
+  (** {1 Printing basic signatures and descriptors.} *)
 
   (** Each of these functions gives a string representation of
       a type which has the corresponding name in JBasics.
@@ -626,7 +623,7 @@ sig
       method. *)
   val method_descriptor : ?jvm:bool -> value_type list -> value_type option -> string
 
-  (** {2 Printing stackmaps, constant pool values and exception handlers.} *)
+  (** {1 Printing stackmaps, constant pool values and exception handlers.} *)
 
   val stack_map : stackmap -> string
 
@@ -636,13 +633,13 @@ sig
 
   val exception_handler : exception_handler -> string
 
-  (** {2 Printing JVM opcodes.} *)
+  (** {1 Printing JVM opcodes.} *)
 
   val jopcode : ?jvm:bool -> jopcode -> string
 
   val jcode : ?jvm:bool -> jcode -> string list
 
-  (** {2 Outputting methods and classes.} *)
+  (** {1 Outputting methods and classes.} *)
 
   val print_method : ?jvm:bool -> 'a jmethod -> ('a -> string list) -> out_channel -> unit
 

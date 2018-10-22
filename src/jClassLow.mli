@@ -24,7 +24,7 @@
 
 open JBasics
 
-(** {2 Low level bytecode instructions.} *)
+(** {1 Low level bytecode instructions.} *)
 
 (** Instruction. *)
 type opcode =
@@ -169,7 +169,7 @@ type opcode =
 
 type opcodes = opcode array
 
-(** {2 Flags, attributes and low-level structure of class files.} *)
+(** {1 Flags, attributes and low-level structure of class files.} *)
 
 type common_flag = [
 | `AccPublic
