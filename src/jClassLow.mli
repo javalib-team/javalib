@@ -331,6 +331,6 @@ type jclass = {
   j_fields : jfield list;
   j_methods : jmethod list;
   j_attributes : attribute list;
-  j_bootsrap_table : bootstrap_method list;
+  j_bootstrap_table : bootstrap_method array;
   j_version : version;
 }

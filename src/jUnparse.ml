@@ -494,7 +494,8 @@ let unparse_class_low_level ch c =
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;
       unparse (unparse_attribute ch' consts) (c.j_attributes
-                                              @ [AttributeBootstrapMethods c.j_bootsrap_table]);
+                                              @ [AttributeBootstrapMethods
+                                                   (Array.to_list c.j_bootstrap_table)]);
       unparse_constant_pool ch consts;
       JLib.IO.nwrite_string ch (JLib.IO.close_out ch')
 

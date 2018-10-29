@@ -922,7 +922,7 @@ let low2high_class cl =
 	      | _ -> true)
 	   cl.j_attributes);
     in
-    let my_bootstrap_methods = cl.j_bootsrap_table in
+    let my_bootstrap_methods = cl.j_bootstrap_table in
       if is_interface
       then
 	begin

@@ -29,7 +29,7 @@
     an instruction can alternatively by defined as the first following
     non-OpInvalid instruction. *)
 val opcodes2code : JBasics.constant array ->
-  JBasics.bootstrap_method list ->
+  JBasics.bootstrap_method array ->
   JClassLow.opcode array ->
   JCode.jopcodes
 
@@ -51,7 +51,7 @@ val code2opcodes : JBasics.constant JLib.DynArray.t ->
 
 (** Low level to high level bytecode instruction. *)
 val opcode2instruction : JBasics.constant array ->
-                         JBasics.bootstrap_method list ->
+                         JBasics.bootstrap_method array ->
                          JClassLow.opcode ->
                          JCode.jopcode
 

@@ -736,7 +736,7 @@ let parse_class_low_level ch =
        j_fields = fields;
        j_methods = methods;
        j_attributes = attribs;
-       j_bootsrap_table = bootstrap_table;
+       j_bootstrap_table = Array.of_list bootstrap_table;
        j_version = {major=version_major; minor=version_minor};
       }
 

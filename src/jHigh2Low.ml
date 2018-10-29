@@ -339,11 +339,11 @@ let high2low_class c =
 	@ h2l_inner_classes c.c_inner_classes
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.c_other_attributes;
-     j_bootsrap_table = []; (* will be set later on *)
+     j_bootstrap_table = Array.of_list []; (* will be set later on *)
     } in
   let c'= h2l_methods consts bm_table c' c.c_methods
   in {c' with j_consts = JLib.DynArray.to_array consts;
-              j_bootsrap_table = JLib.DynArray.to_list bm_table; }
+              j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low_interface (c:JCode.jcode jinterface) =
   let consts = JLib.DynArray.of_array c.i_consts in
@@ -374,9 +374,10 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	@ h2l_inner_classes c.i_inner_classes
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.i_other_attributes;
-     j_bootsrap_table = JLib.DynArray.to_list bm_table;
+     j_bootstrap_table = Array.of_list []; (* will be set later on *)
     }
-  in {c' with j_consts = JLib.DynArray.to_array consts}
+  in {c' with j_consts = JLib.DynArray.to_array consts;
+              j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low = function
   | JInterface i -> high2low_interface i
