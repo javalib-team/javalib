@@ -69,7 +69,7 @@ and section = parse
   (* TODO : accept missing manifest version (for midlets) *)
   let sections2manifest = function
       | ((mv, v) :: main) :: sections
-	  when String.lowercase_ascii mv = "manifest-version" ->
+	  when String.lowercase mv = "manifest-version" ->
 	  {main_section =
 	      {manifest_version = List.map int_of_string (JLib.String.nsplit v ".");
 	       main_attributes = main};
@@ -77,7 +77,7 @@ and section = parse
 	      List.map
 		(function
 		   | (name, v) :: attributes
-		       when String.lowercase_ascii name = "name" ->
+		       when String.lowercase name = "name" ->
 		       {name = v ; attributes = attributes}
 		   | _ -> failwith "incorrect manifest")
 		sections}
