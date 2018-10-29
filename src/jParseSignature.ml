@@ -307,8 +307,7 @@ let parse_ClassSignature (s:string) : classSignature =
   try
     parse_ClassSignature (read_utf8 s)
   with
-    | Failure "tl"
-    | Failure "hd"
+    | Failure _ (* "tl" or "hd" *)
     | Stream.Error _
     | Stream.Failure -> raise (Class_structure_error ("Ill-formed class Signature attribute: "^s))
 
@@ -316,8 +315,7 @@ let parse_MethodTypeSignature (s:string) : methodTypeSignature =
   try
     parse_MethodTypeSignature (read_utf8 s)
   with
-    | Failure "tl"
-    | Failure "hd"
+    | Failure _ (* "tl" or "hd" *)
     | Stream.Error _
     | Stream.Failure -> raise (Class_structure_error ("Ill-formed method Signature attribute: "^s))
 
@@ -326,8 +324,7 @@ let parse_FieldTypeSignature (s:string) : fieldTypeSignature =
   try
     parse_FieldTypeSignature (read_utf8 s)
   with
-    | Failure "tl"
-    | Failure "hd"
+    | Failure _ (* "tl" or "hd" *)
     | Stream.Error _
     | Stream.Failure -> raise (Class_structure_error ("Ill-formed field Signature attribute: "^s))
 

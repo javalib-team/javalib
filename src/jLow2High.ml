@@ -20,7 +20,6 @@
 
 open JBasics
 open JClassLow
-open JCode
 open JClass
 
 let debug = ref 1
@@ -138,9 +137,10 @@ let expanse_stackmap_table stackmap_table =
 
 let low2high_code consts bootstrap_methods = function c ->
   {
-    c_max_stack = c.JClassLow.c_max_stack;
-    c_max_locals = c.JClassLow.c_max_locals;
-    c_code = JInstruction.opcodes2code (JLib.DynArray.to_array consts) bootstrap_methods c.JClassLow.c_code;
+    JCode.c_max_stack = c.JClassLow.c_max_stack;
+    JCode.c_max_locals = c.JClassLow.c_max_locals;
+    JCode.c_code = JInstruction.opcodes2code (JLib.DynArray.to_array consts)
+                                             bootstrap_methods c.JClassLow.c_code;
     c_exc_tbl = c.JClassLow.c_exc_tbl;
     c_line_number_table =
       begin
@@ -764,7 +764,9 @@ let low2high_methods cn consts bootstrap_methods = function ac ->
 	     prerr_endline
 	       ("Warning: in " ^ JDumpBasics.class_name cn
                 ^ " 2 methods have been found with the same signature (" ^ meth.m_name
-		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) m_args) ^"))");
+		^"("^ String.concat ", "
+                                    (List.map
+                                       (JDumpBasics.value_signature ~jvm:false) m_args) ^"))");
 	   MethodMap.add
 	     ms
 	     (try low2high_acmethod consts bootstrap_methods cs ms meth
@@ -1010,7 +1012,8 @@ let low2high_class cl =
 			 ("Warning: in " ^ JDumpBasics.class_name my_name
                           ^ " 2 methods have been found with the same signature ("
                           ^ meth.m_name ^"("
-                          ^ String.concat ", " (List.map (JDumpBasics.value_signature)
+                          ^ String.concat ", " (List.map
+                                                  (JDumpBasics.value_signature ~jvm:false)
 						  (md_args meth.m_descriptor))
                           ^ "))");
 		     MethodMap.add

@@ -114,10 +114,10 @@ let h2l_code2attribute consts bm_table = function
   | Java code ->
       let h2l () =
 	let code = Lazy.force code in
-	  {JClassLow.c_max_stack = code.c_max_stack;
-	   JClassLow.c_max_locals = code.c_max_locals;
-	   JClassLow.c_code = JInstruction.code2opcodes consts bm_table code.c_code;
-	   JClassLow.c_exc_tbl = code.c_exc_tbl;
+	  {JClassLow.c_max_stack = code.JCode.c_max_stack;
+	   JClassLow.c_max_locals = code.JCode.c_max_locals;
+	   JClassLow.c_code = JInstruction.code2opcodes consts bm_table code.JCode.c_code;
+	   JClassLow.c_exc_tbl = code.JCode.c_exc_tbl;
 	   JClassLow.c_attributes =
 	      (match code.c_stack_map_midp with
 		 | Some sm -> [AttributeStackMap sm]
@@ -135,7 +135,7 @@ let h2l_code2attribute consts bm_table = function
               @ (match code.c_local_variable_type_table with
                    | Some lvt -> [AttributeLocalVariableTypeTable lvt]
                    | None -> [])
-	      @ h2l_other_attributes code.c_attributes;
+	      @ h2l_other_attributes code.JCode.c_attributes;
 	  }
       in
       let code = Lazy.from_fun h2l

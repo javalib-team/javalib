@@ -377,7 +377,7 @@ let parse_full_opcode ch pos =
 	parse_opcode op ch false
 
 let parse_code ch len =
-  let ch , pos = pos_in ch in
+  let ch , pos = JLib.IO.pos_in ch in
   let code = Array.make len OpInvalid in
     while pos() < len do
       let p = pos() in
@@ -612,7 +612,7 @@ let basic_type = [|
 |]
 
 let padding ch count =
-  flush ch;
+  JLib.IO.flush ch;
   for _i = 1 + (count () - 1) mod 4 to 3 do
     write_ui8 ch 0
   done
@@ -674,7 +674,7 @@ let other count ch length instr =
         ) else
           raise (OpcodeLengthError (length,instr))
     | OpTableSwitch (def, low, high, tbl) ->
-        flush ch;
+        JLib.IO.flush ch;
         let _padding_size = (3 - (1 + (count () - 2) mod 4))
         in
           (*if length <> 13 + padding_size + 4 * (Array.length tbl)
@@ -686,7 +686,7 @@ let other count ch length instr =
           write_real_i32 ch high;
           Array.iter (write_i32 ch) tbl
     | OpLookupSwitch (def, tbl) ->
-        flush ch;
+        JLib.IO.flush ch;
         let _padding_size = (3 - (1 + (count () - 2) mod 4))
         in
           (*if length <> 9 + padding_size + 8 * (List.length tbl)
@@ -759,7 +759,7 @@ let unparse_instruction ch count length inst =
       Exit -> ()
 
 let unparse_code ch code =
-  let ch, count = pos_out ch in
+  let ch, count = JLib.IO.pos_out ch in
     Array.iteri
       (fun i opcode ->
          (* We know that unparse_instruction writes nothing for OpInvalid *)

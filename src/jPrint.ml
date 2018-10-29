@@ -40,7 +40,7 @@ let field_descriptor = value_type
 let value_type_list ?(jvm=false) ?names l =
   let prms =
     match names with
-      | None -> JLib.List.map value_type l
+      | None -> JLib.List.map (value_type ~jvm:jvm) l
       | Some names ->
 	  (* names must have the same length than l *)
 	  try

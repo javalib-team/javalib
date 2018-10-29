@@ -8,7 +8,7 @@
 
 {b {L User interface}}
 
-The following modules consitute the user interface of Javalib. They are the only
+The following modules constitute the user interface of Javalib. They are the only
 modules you should need.
 
 {!modules: Javalib JBasics JCode}

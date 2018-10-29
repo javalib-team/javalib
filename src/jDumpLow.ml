@@ -495,7 +495,7 @@ let dump ch cl =
   if cl.j_interfaces <> []
   then
     JLib.IO.printf ch "  implements %s\n"
-      (String.concat " " (List.map class_name cl.j_interfaces));
+      (String.concat " " (List.map (class_name ~jvm:false) cl.j_interfaces));
   string_nwrite ch ("    version = " ^(string_of_int cl.j_version.major)
                 ^"." ^(string_of_int cl.j_version.minor) ^"\n");
   List.iter (dump_attrib ch cl.j_consts) cl.j_attributes;

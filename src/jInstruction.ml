@@ -455,15 +455,16 @@ let instruction2opcode consts bm_table length = function
   | JCode.OpInvalid -> OpInvalid
 
 let check_space _consts offset length opcode =
-  let ch = output_string () in
-  let ch, count = pos_out ch in
+  let ch = JLib.IO.output_string () in
+  let ch, count = JLib.IO.pos_out ch in
   let offsetmod4 = offset mod 4 in
     for _i = 1 to offsetmod4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
     JParseCode.unparse_instruction ch count length opcode;
     let space_taken = count () - offsetmod4 in
-    let opcodestring = close_out ch in
+    let _ = JLib.IO.close_out ch in
+    (* let opcodestring = close_out ch in *)
     (* FIXME: this uses strange IO types and does not seem to be trigger *)
     (* if not (JBasics.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
         then failwith "check_space: count does not seems to provide the right result"; *)

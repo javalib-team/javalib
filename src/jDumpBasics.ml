@@ -87,12 +87,12 @@ let arraytype2shortstring = function
   | `ByteBool -> "B"
   | `Object -> "A"
 
-let method_signature name md =
+let method_signature ?(jvm=false) name md =
   let (sl, sr) = md_split md in
   (match sr with
    | None -> "void"
    | Some s -> value_signature s
-  ) ^ " " ^name^ "(" ^ String.concat "," (List.map value_signature sl) ^ ")"
+  ) ^ " " ^name^ "(" ^ String.concat "," (List.map (value_signature ~jvm:jvm) sl) ^ ")"
 
 let signature name = function
   | SValue v -> value_signature v ^ " " ^name

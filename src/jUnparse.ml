@@ -18,7 +18,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open JLib.IO
 open JLib.IO.BigEndian
 open JBasics
 open JBasicsLow
@@ -97,14 +96,14 @@ let unparse_constant ch consts =  function
     | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =
-  let ch'' = output_string ()
+  let ch'' = JLib.IO.output_string ()
   and i = ref 0 in
     while ! i < JLib.DynArray.length consts do
       unparse_constant ch'' consts (JLib.DynArray.unsafe_get consts ! i);
       incr i
     done;
     write_ui16 ch (JLib.DynArray.length consts);
-    JLib.IO.nwrite_string ch (close_out ch'')
+    JLib.IO.nwrite_string ch (JLib.IO.close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -165,7 +164,7 @@ let unparse_verification_type_list consts ch =
   write_with_size write_ui16 ch (unparse_verification_type consts ch)
 
 let unparse_stackmap_attribute consts stackmap =
-  let ch = output_string ()
+  let ch = JLib.IO.output_string ()
   in
     write_with_size write_ui16 ch
       (function pc, lt, st ->
@@ -173,10 +172,10 @@ let unparse_stackmap_attribute consts stackmap =
 	 unparse_verification_type_list consts ch lt;
 	 unparse_verification_type_list consts ch st)
       stackmap;
-    ("StackMap",close_out ch)
+    ("StackMap", JLib.IO.close_out ch)
 
 let unparse_stackmap_table_attribute consts stackmap_attribute =
-  let ch = output_string ()
+  let ch = JLib.IO.output_string ()
   in
     write_with_size write_ui16 ch
       (function stackmap_frame ->
@@ -209,7 +208,7 @@ let unparse_stackmap_table_attribute consts stackmap_attribute =
 	       unparse_verification_type_list consts ch lvtypes;
 	       unparse_verification_type_list consts ch svtypes
       ) stackmap_attribute;
-    ("StackMapTable",close_out ch)
+    ("StackMapTable", JLib.IO.close_out ch)
 
 
 let rec unparse_element_value =
@@ -304,11 +303,11 @@ let unparse_parameter_annotations consts ch param_annots =
   List.iter (unparse_annotations consts ch) param_annots
 
 let rec unparse_attribute_to_strings consts =
-  let ch = output_string () in
+  let ch = JLib.IO.output_string () in
     function
       | AttributeSignature s ->
 	  write_string ch consts s;
-	  ("Signature",close_out ch)
+	  ("Signature", JLib.IO.close_out ch)
       | AttributeEnclosingMethod (cn,mso) ->
 	  write_class ch consts cn;
 	  (match mso with
@@ -316,20 +315,20 @@ let rec unparse_attribute_to_strings consts =
                  write_name_and_type ch consts (n,t)
 	     | None ->
 		 write_ui16 ch 0);
-	  ("EnclosingMethod", close_out ch)
+	  ("EnclosingMethod", JLib.IO.close_out ch)
       | AttributeSourceDebugExtension s ->
 	  ("SourceDebugExtension", s)
       | AttributeSourceFile s ->
 	  write_string ch consts s;
-	  ("SourceFile",close_out ch)
+	  ("SourceFile", JLib.IO.close_out ch)
       | AttributeConstant c ->
 	  write_constant_attribute ch consts c;
-	  ("ConstantValue",close_out ch)
+	  ("ConstantValue", JLib.IO.close_out ch)
       | AttributeExceptions l ->
 	  write_with_size write_ui16 ch
 	    (function c -> write_class ch consts c)
 	    l;
-	  ("Exceptions",close_out ch)
+	  ("Exceptions", JLib.IO.close_out ch)
       | AttributeInnerClasses l ->
 	  write_with_size write_ui16 ch
 	    (function inner, outer, inner_name, flags ->
@@ -345,16 +344,16 @@ let rec unparse_attribute_to_strings consts =
 		      write_string ch consts inner_name);
 	       write_ui16 ch (unparse_flags innerclass_flags flags))
 	    l;
-	  ("InnerClasses",close_out ch)
+	  ("InnerClasses", JLib.IO.close_out ch)
       | AttributeSynthetic ->
-	  ("Synthetic",close_out ch)
+	  ("Synthetic", JLib.IO.close_out ch)
       | AttributeLineNumberTable l ->
 	  write_with_size write_ui16 ch
 	    (function pc, line ->
 	       write_ui16 ch pc;
 	       write_ui16 ch line)
 	    l;
-	  ("LineNumberTable",close_out ch)
+	  ("LineNumberTable", JLib.IO.close_out ch)
       | AttributeLocalVariableTable l ->
 	  write_with_size write_ui16 ch
 	    (function start_pc, length, name, signature, index ->
@@ -364,7 +363,7 @@ let rec unparse_attribute_to_strings consts =
 	       write_string ch consts (unparse_value_type signature);
 	       write_ui16 ch index)
 	    l;
-	  ("LocalVariableTable",close_out ch)
+	  ("LocalVariableTable", JLib.IO.close_out ch)
       | AttributeLocalVariableTypeTable l ->
           write_with_size write_ui16 ch
             (function start_pc, length, name, signature, index ->
@@ -374,32 +373,32 @@ let rec unparse_attribute_to_strings consts =
                write_string ch consts (unparse_FieldTypeSignature signature);
                write_ui16 ch index)
             l;
-          ("LocalVariableTypeTable", close_out ch)
+          ("LocalVariableTypeTable", JLib.IO.close_out ch)
       | AttributeDeprecated ->
-	  ("Deprecated",close_out ch)
+	  ("Deprecated", JLib.IO.close_out ch)
       | AttributeStackMap s ->
-	  ignore (close_out ch);
+	  ignore (JLib.IO.close_out ch);
 	  unparse_stackmap_attribute consts s
       | AttributeStackMapTable s ->
-	  ignore (close_out ch);
+	  ignore (JLib.IO.close_out ch);
 	  unparse_stackmap_table_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
       | AttributeAnnotationDefault ev ->
           unparse_element_value consts ch ev;
-          ("AnnotationDefault",close_out ch)
+          ("AnnotationDefault", JLib.IO.close_out ch)
       | AttributeRuntimeVisibleAnnotations annots ->
           unparse_annotations consts ch annots;
-          ("RuntimeVisibleAnnotations", close_out ch)
+          ("RuntimeVisibleAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeInvisibleAnnotations annots ->
           unparse_annotations consts ch annots;
-          ("RuntimeInvisibleAnnotations", close_out ch)
+          ("RuntimeInvisibleAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeVisibleParameterAnnotations param_annots ->
           unparse_parameter_annotations consts ch param_annots;
-          ("RuntimeVisibleParameterAnnotations", close_out ch)
+          ("RuntimeVisibleParameterAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeInvisibleParameterAnnotations param_annots ->
           unparse_parameter_annotations consts ch param_annots;
-          ("RuntimeInvisibleParameterAnnotations", close_out ch)
+          ("RuntimeInvisibleParameterAnnotations", JLib.IO.close_out ch)
       | AttributeCode code ->
 	  let code = Lazy.force code in
 	    write_ui16 ch code.c_max_stack;
@@ -419,7 +418,7 @@ let rec unparse_attribute_to_strings consts =
 	    write_with_size write_ui16 ch
 	      (unparse_attribute ch consts)
 	      code.c_attributes;
-	    ("Code",close_out ch)
+	    ("Code", JLib.IO.close_out ch)
 
       | AttributeBootstrapMethods bm_table ->
          write_ui16 ch (List.length bm_table);
@@ -429,7 +428,7 @@ let rec unparse_attribute_to_strings consts =
                              List.iter (function arg ->
                                                  write_bootstrap_argument ch consts arg
                                        ) bm_args) bm_table;
-         ("BootstrapMethods", close_out ch)
+         ("BootstrapMethods", JLib.IO.close_out ch)
       | AttributeMethodParameters mpl ->
          write_with_size
            write_ui8 ch
@@ -439,7 +438,7 @@ let rec unparse_attribute_to_strings consts =
                       | Some name -> write_string ch consts name);
                      write_ui16 ch (unparse_flags method_parameters_flags flags)
            ) mpl;
-         ("MethodParameters", close_out ch)
+         ("MethodParameters", JLib.IO.close_out ch)
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr
@@ -480,7 +479,7 @@ let unparse_class_low_level ch c =
   write_real_i32 ch 0xCAFEBABEl;
   write_ui16 ch c.j_version.minor;
   write_ui16 ch c.j_version.major;
-  let ch' = output_string ()
+  let ch' = JLib.IO.output_string ()
   and consts = JLib.DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags class_flags c.j_flags);
     write_class ch' consts c.j_name;
@@ -497,7 +496,7 @@ let unparse_class_low_level ch c =
       unparse (unparse_attribute ch' consts) (c.j_attributes
                                               @ [AttributeBootstrapMethods c.j_bootsrap_table]);
       unparse_constant_pool ch consts;
-      JLib.IO.nwrite_string ch (close_out ch')
+      JLib.IO.nwrite_string ch (JLib.IO.close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c

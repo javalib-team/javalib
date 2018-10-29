@@ -19,9 +19,9 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open JLib
-open IO
-open IO.BigEndian
+
+open JLib.IO.BigEndian
+open JLib.IO
 open JBasics
 
 type method_handle_kind = [
@@ -70,9 +70,9 @@ let write_string_with_length length ch s =
   nwrite_string ch s
 
 let write_with_length length ch write =
-  let ch' = output_string () in
+  let ch' = JLib.IO.output_string () in
     write ch';
-    write_string_with_length length ch (close_out ch')
+    write_string_with_length length ch (JLib.IO.close_out ch')
 
 let write_with_size (size:'a output -> int -> unit) ch write l =
   size ch (List.length l);
@@ -202,28 +202,29 @@ let constant_to_int cp c =
   if c = ConstUnusable
   then raise (Class_structure_error ("Illegal constant: unusable"));
   try
-    DynArray.index_of (fun c' -> 0 = compare c c') cp (* [nan <> nan], where as [0 = compare nan nan] *)
+    JLib.DynArray.index_of (fun c' -> 0 = compare c c') cp
+                           (* [nan <> nan], where as [0 = compare nan nan] *)
   with
       Not_found ->
-	if DynArray.length cp = 0
-	then DynArray.add cp ConstUnusable;
-	if not (DynArray.unsafe_get cp 0 = ConstUnusable)
+	if JLib.DynArray.length cp = 0
+	then JLib.DynArray.add cp ConstUnusable;
+	if not (JLib.DynArray.unsafe_get cp 0 = ConstUnusable)
 	then raise (Class_structure_error "unparsing with an incorrect constant pool");
-	let i = DynArray.length cp in
-	  DynArray.add cp c;
-	  (match c with
-	     | ConstLong _ | ConstDouble _ ->
-		 DynArray.add cp ConstUnusable
+        let i = JLib.DynArray.length cp in
+          JLib.DynArray.add cp c;
+          (match c with
+             | ConstLong _ | ConstDouble _ ->
+                 JLib.DynArray.add cp ConstUnusable
 	     | _ -> ());
 	  i
 
 let bootstrap_method_to_int bm_table bm =
   try
-    DynArray.index_of (fun bm' -> 0 = compare bm bm') bm_table
+    JLib.DynArray.index_of (fun bm' -> 0 = compare bm bm') bm_table
   with
     Not_found ->
-    let i = DynArray.length bm_table in
-    DynArray.add bm_table bm;
+    let i = JLib.DynArray.length bm_table in
+    JLib.DynArray.add bm_table bm;
     i
 
 let method_handle_kind_to_int = function
