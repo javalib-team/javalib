@@ -634,16 +634,16 @@ let rec expand_constant consts n =
               ConstMethodHandle (`PutStatic f)
            | 5, ConstMethod v ->
               ConstMethodHandle (`InvokeVirtual v)
-           | 6, ConstMethod v ->
-              ConstMethodHandle (`InvokeStatic (`Method v))
+           | 6, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`InvokeStatic (`Method (cn, ms)))
            | 6, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeStatic (`InterfaceMethod v))
-           | 7, ConstMethod v ->
-              ConstMethodHandle (`InvokeSpecial (`Method v))
+           | 7, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`InvokeSpecial (`Method (cn, ms)))
            | 7, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeSpecial (`InterfaceMethod v))
-           | 8, ConstMethod v ->
-              ConstMethodHandle (`NewInvokeSpecial v)
+           | 8, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`NewInvokeSpecial (cn, ms))
            | 9, ConstInterfaceMethod v ->
               ConstMethodHandle (`InvokeInterface v)
            | n, c ->

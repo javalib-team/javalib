@@ -259,7 +259,7 @@ val jstr_raw  : jstr -> string
 (** Features introduced in Java 8 to implement lambdas. *)
   
 type jmethod_or_interface = [
-  | `Method of object_type * method_signature
+  | `Method of class_name * method_signature
   | `InterfaceMethod of class_name * method_signature
   ]
 
@@ -270,7 +270,7 @@ type method_handle = [
   | `PutField of class_name * field_signature
   | `PutStatic of class_name * field_signature
   | `InvokeVirtual of object_type * method_signature
-  | `NewInvokeSpecial of object_type * method_signature
+  | `NewInvokeSpecial of class_name * method_signature
   | `InvokeStatic of jmethod_or_interface
   | `InvokeSpecial of jmethod_or_interface
   | `InvokeInterface of class_name * method_signature

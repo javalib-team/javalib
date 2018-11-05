@@ -173,10 +173,10 @@ let method_handle_to_const mh =
   | `PutField f -> (`PutField, ConstField f)
   | `PutStatic f -> (`PutStatic, ConstField f)
   | `InvokeVirtual v -> (`InvokeVirtual, ConstMethod v)
-  | `NewInvokeSpecial v -> (`NewInvokeSpecial, ConstMethod v)
-  | `InvokeStatic (`Method v) -> (`InvokeStatic, ConstMethod v)
+  | `NewInvokeSpecial (cn, ms) -> (`NewInvokeSpecial, ConstMethod (TClass cn, ms))
+  | `InvokeStatic (`Method (cn, ms)) -> (`InvokeStatic, ConstMethod (TClass cn, ms))
   | `InvokeStatic (`InterfaceMethod v) -> (`InvokeStatic, ConstInterfaceMethod v)
-  | `InvokeSpecial (`Method v) -> (`InvokeSpecial, ConstMethod v)
+  | `InvokeSpecial (`Method (cn, ms)) -> (`InvokeSpecial, ConstMethod (TClass cn, ms))
   | `InvokeSpecial (`InterfaceMethod v) -> (`InvokeSpecial, ConstInterfaceMethod v)
   | `InvokeInterface v -> (`InvokeInterface, ConstInterfaceMethod v)
 
