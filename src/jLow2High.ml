@@ -815,7 +815,6 @@ let low2high_innerclass = function
 let low2high_class cl =
   if cl.j_super = None && cl.j_name <> JBasics.java_lang_object
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
-  let cs = cl.j_name in
   let flags = cl.j_flags in
   let (access,flags) = flags2access (flags :> access_flag list) in
   let (accsuper,flags) = get_flag `AccSuper flags in
@@ -941,24 +940,12 @@ let low2high_class cl =
                             "A class file with its `AccInterface flag set must \
                              not have  its their `AccEnum flag set.")
             end;
-	  let (init,methods) =
-	    match
-	      List.partition
-		(fun m ->
-		   let clinit_name = ms_name clinit_signature in
-		   let clinit_desc = make_md (ms_args clinit_signature,
-                                              ms_rtype clinit_signature) in
-		     m.m_name = clinit_name
-		       && (md_args m.m_descriptor) = (md_args clinit_desc))
-		cl.j_methods
+          let my_methods =
+	    try low2high_methods my_name consts my_bootstrap_methods cl
 	    with
-	      | [m],others -> Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
-	      | [],others -> None, others
-	      | m::_::_,others ->
-		  if not (JBasics.get_permissive ())
-		  then raise (Class_structure_error
-                                "has more than one class initializer <clinit>")
-		  else Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
+	    | Class_structure_error msg ->
+	       raise (Class_structure_error
+			("in interface "^JDumpBasics.class_name my_name^": "^msg))
 	  in
 	    JInterface {
 	      i_name = my_name;
@@ -972,7 +959,6 @@ let low2high_class cl =
 	      i_source_debug_extention = my_source_debug_extention;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
-	      i_initializer = init;
 	      i_annotation = is_annotation;
               i_annotations = my_annotations;
 	      i_other_flags = flags;
@@ -998,38 +984,7 @@ let low2high_class cl =
 		       m)
 		FieldMap.empty
 		cl.j_fields;
-	      i_methods = List.fold_left
-		(fun map meth ->
-		   let ms =
-                     make_ms
-                       meth.m_name
-                       (md_args meth.m_descriptor)
-                       (md_rtype meth.m_descriptor)
-                   in
-		     if !debug > 0 && MethodMap.mem ms map
-		     then
-		       prerr_endline
-			 ("Warning: in " ^ JDumpBasics.class_name my_name
-                          ^ " 2 methods have been found with the same signature ("
-                          ^ meth.m_name ^"("
-                          ^ String.concat ", " (List.map
-                                                  (JDumpBasics.value_signature ~jvm:false)
-						  (md_args meth.m_descriptor))
-                          ^ "))");
-		     MethodMap.add
-		       ms
-		       (try low2high_acmethod consts my_bootstrap_methods cs ms meth
-			with Class_structure_error msg ->
-			  let sign =
-                            JDumpBasics.signature
-                              meth.m_name
-                              (SMethod meth.m_descriptor)
-			  in raise (Class_structure_error
-                                      ("in class " ^ JDumpBasics.class_name my_name
-                                       ^ ": method " ^ sign ^ ": " ^ msg)))
-		       map)
-		MethodMap.empty
-		methods;
+	      i_methods = my_methods;
 	    }
 	end
       else

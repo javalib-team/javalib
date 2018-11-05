@@ -306,7 +306,7 @@ let h2l_acmethod consts bm_table = function
 
 let h2l_methods consts bm_table c' mm =
   {c' with
-     j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts bm_table f::l) mm [];
+    j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts bm_table f::l) mm [];
   }
 
 let high2low_class c =
@@ -361,11 +361,8 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	  (match c.i_access with
 	     | `Default -> []
 	     | `Public -> [`AccPublic]);
-     j_fields =
-	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
-     j_methods =
-	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts bm_table m])
-	@ MethodMap.fold (fun _ms m l -> h2l_acmethod consts bm_table m::l) c.i_methods [];
+     j_fields = FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
+     j_methods = []; (*will be set later on*)
      j_attributes =
 	deprecated_to_attribute c.i_deprecated
 	@ class_generic_signature_to_attribute c.i_generic_signature
@@ -375,7 +372,8 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.i_other_attributes;
      j_bootstrap_table = Array.of_list []; (* will be set later on *)
-    }
+    } in
+  let c'= h2l_methods consts bm_table c' c.i_methods
   in {c' with j_consts = JLib.DynArray.to_array consts;
               j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 

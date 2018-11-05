@@ -266,8 +266,6 @@ type 'a jinterface = {
   (** Introduced in Java 5 for debugging purpose (no
       semantics defined). cf JVM spec se8 table 4.7-C and §4.7.11. *)
   i_inner_classes : inner_class list;
-  i_initializer : 'a concrete_method option;
-  (** the signature is <clinit>()V; and the method should be static  *)
   i_annotation: bool;
   (** [true] if and only if the interface is an annotation. *)
   i_annotations: (annotation*visibility) list;
