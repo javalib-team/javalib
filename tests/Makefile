@@ -6,9 +6,9 @@ all:javatests java/javac java/unparsed
 	@rm -f java/unparsed/out/*
 	@rm -f java/sources.txt
 	@rm -f java/classes.txt
-	@find -name "*.java" -path "./java/src/*" > java/sources.txt
+	@find ./java/src/ -type f -name "*.java" > java/sources.txt
 	bash java/javac.sh
-	@find -name "*.class" -path "./java/javac*" > java/classes.txt
+	@find ./java/javac -type f -name "*.class" > java/classes.txt
 	src/unparser java/classes.txt -out java/unparsed
 	bash java/java_exec_dump.sh javac
 	bash java/java_exec_dump.sh unparsed

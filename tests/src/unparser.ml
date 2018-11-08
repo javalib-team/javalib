@@ -2,8 +2,15 @@ open Javalib_pack
 open Javalib
 open JBasics   
 
+let remove_extension s =
+  let l = ExtLib.String.nsplit s "." in
+  let lr = match l with
+    | [] -> []
+    | _ -> List.rev(List.tl (List.rev l)) in
+  String.concat "." lr
+
 let parse_class cfile =
-  let scname = Filename.remove_extension (Filename.basename cfile) in
+  let scname = remove_extension (Filename.basename cfile) in
   let spath = Filename.dirname cfile in
   let cname = make_cn scname in
   let path = class_path spath in
