@@ -407,12 +407,8 @@ and dump_attrib ch consts = function
 	variables
   | AttributeDeprecated ->
       string_nwrite ch "    deprecated\n"
-  | AttributeStackMap stackmap_frames ->
-      string_nwrite ch "    stackmap midp = [";
-      List.iter (dump_stackmap ch) stackmap_frames;
-      string_nwrite ch "]\n"
   | AttributeStackMapTable stackmap_frames ->
-      string_nwrite ch "    stackmap java6 = [";
+      string_nwrite ch "    stackmap = [";
       List.iter (dump_java6_stackmap ch) stackmap_frames;
       string_nwrite ch "]\n"
   | AttributeAnnotationDefault a ->

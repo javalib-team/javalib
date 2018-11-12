@@ -163,17 +163,6 @@ let unparse_verification_type consts ch vtype =
 let unparse_verification_type_list consts ch =
   write_with_size write_ui16 ch (unparse_verification_type consts ch)
 
-let unparse_stackmap_attribute consts stackmap =
-  let ch = JLib.IO.output_string ()
-  in
-    write_with_size write_ui16 ch
-      (function pc, lt, st ->
-	 write_ui16 ch pc;
-	 unparse_verification_type_list consts ch lt;
-	 unparse_verification_type_list consts ch st)
-      stackmap;
-    ("StackMap", JLib.IO.close_out ch)
-
 let unparse_stackmap_table_attribute consts stackmap_attribute =
   let ch = JLib.IO.output_string ()
   in
@@ -376,9 +365,6 @@ let rec unparse_attribute_to_strings consts =
           ("LocalVariableTypeTable", JLib.IO.close_out ch)
       | AttributeDeprecated ->
 	  ("Deprecated", JLib.IO.close_out ch)
-      | AttributeStackMap s ->
-	  ignore (JLib.IO.close_out ch);
-	  unparse_stackmap_attribute consts s
       | AttributeStackMapTable s ->
 	  ignore (JLib.IO.close_out ch);
 	  unparse_stackmap_table_attribute consts s

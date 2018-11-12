@@ -464,15 +464,6 @@ and parse_attribute list consts ch =
 	| "Deprecated" -> check `Deprecated;
 	    if alen <> 0 then error ();
 	    AttributeDeprecated
-	| "StackMap" -> check `StackMap;
-	    let ch, count = JLib.IO.pos_in ch in
-	    let nb_stackmap_frames = read_ui16 ch in
-	    let stackmap =
-	      JLib.List.init nb_stackmap_frames
-		(fun _ -> parse_stackmap_frame consts ch )
-	    in
-	      if count() <> alen then error();
-	      AttributeStackMap stackmap
 	| "StackMapTable" ->
 	    (* DFr : Addition for 1.6 stackmap *)
 	    check `StackMap;

@@ -182,18 +182,7 @@ let low2high_code consts bootstrap_methods = function c ->
           | [] -> None
           | _ -> Some lvt
       end;
-    c_stack_map_midp =
-      begin
-	let rec find_StackMap = function
-	  | AttributeStackMap l :: l' ->
-	      if find_StackMap l' <> None
-	      then raise (Class_structure_error "Only one StackMap attribute can be attached to a method.");
-	      Some l
-	  | _::l -> find_StackMap l
-	  | [] -> None
-	in find_StackMap c.JClassLow.c_attributes
-      end;
-    c_stack_map_java6 =
+    c_stack_map =
       begin
 	let rec find_StackMapTable = function
 	  | AttributeStackMapTable l :: l' ->
@@ -207,7 +196,6 @@ let low2high_code consts bootstrap_methods = function c ->
     c_attributes = low2high_other_attributes consts
       (List.filter
 	 (function
-	    | AttributeStackMap _
 	    | AttributeStackMapTable _
             | AttributeLocalVariableTable _
             | AttributeLocalVariableTypeTable _

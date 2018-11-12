@@ -284,8 +284,6 @@ and attribute =
       (** (start_pc, length, name, type, index), LocalVariableTable for
           generics, described in the JVM Spec 1.5, §4.8.13 *)
   | AttributeDeprecated
-  | AttributeStackMap of (int*(verification_type list)
-			  *(verification_type list)) list
   | AttributeSignature of string
       (** Introduced in Java 5 for generics
 	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)

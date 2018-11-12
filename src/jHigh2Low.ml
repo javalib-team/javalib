@@ -119,10 +119,7 @@ let h2l_code2attribute consts bm_table = function
 	   JClassLow.c_code = JInstruction.code2opcodes consts bm_table code.JCode.c_code;
 	   JClassLow.c_exc_tbl = code.JCode.c_exc_tbl;
 	   JClassLow.c_attributes =
-	      (match code.c_stack_map_midp with
-		 | Some sm -> [AttributeStackMap sm]
-		 | None -> [])
-	      @ (match code.c_stack_map_java6 with
+	      (match code.c_stack_map with
 		   | Some sm -> [AttributeStackMapTable
 				   (h2l_stackmap_table sm)]
 		   | None -> [])
