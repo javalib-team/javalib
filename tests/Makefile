@@ -15,7 +15,9 @@ all:javatests java/javac java/unparsed
 	diff java/javac/out java/unparsed/out
 
 	rm -f javatests/out/*
-	src/jar_parser `cat java/javac/out/Properties` -out javatests/out
+	java -version # debugging
+	cat java/javac/out/Properties # debugging
+	src/jar_parser `cat java/javac/out/Properties` -out javatests/out --silent
 	find . -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
