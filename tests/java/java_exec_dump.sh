@@ -1,4 +1,4 @@
-path=$(dirname "$(realpath $0)")
+path=$(dirname $0)
 
 cd "$path/$1"
 for i in `ls *.class 2>/dev/null`
