@@ -15,14 +15,12 @@ all:javatests java/javac java/unparsed
 	diff java/javac/out java/unparsed/out
 
 	rm -f javatests/out/*
-	src/test_parser --silent javatests/huge/
+	cat java/javac/out/Properties | xargs src/jar_parser -out javatests/out
 	find . -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
 javatests:
 	mkdir -p javatests/out
-	wget -r -nH --cut-dirs=4 -np --reject="*.html,*.tmp" -e robots=off \
-	https://scm.gforge.inria.fr/anonscm/svn/javalib/tests/javatests/
 
 java/javac:
 	mkdir -p java/javac/out
