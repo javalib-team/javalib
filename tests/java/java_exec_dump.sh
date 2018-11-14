@@ -5,5 +5,4 @@ for i in `ls *.class 2>/dev/null`
 do
     name=$(echo "$i" | cut -f 1 -d '.')
     java $name > out/$name
-    cat out/$name # debugging
 done
