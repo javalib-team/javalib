@@ -1,6 +1,18 @@
-From 2.3.5 to 2.3.?
+From 2.3.5 to 3.0
 -----------------
+Major changes:
+* Java 8 compatibility:
+  - implementation of method handles and bootstrap methods
+  - adding InvokeDynamic instruction
+  - interfaces can now implement concrete methods
+  - invokestatic and invokespecial intructions can refer to interface methods
+  - new attribute MethodParameters
+
 Minor changes:
+* integration of ptrees inside Javalib_pack
+
+TODO:
+* The new attributes RuntimeVisibleTypeAnnotations and RuntimeInvisibleTypeAnnotations have no high-level representation.
 
 From 2.3.4 to 2.3.5
 -----------------
