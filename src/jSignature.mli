@@ -24,7 +24,7 @@
 open JBasics
 
 
-(** {2 Types used in type declarations of generic signatures} *)
+(** {1 Types used in type declarations of generic signatures} *)
 
 (** This is the type used for type variables as P in Collection<P>.*)
 type typeVariable = TypeVariable of string
@@ -61,7 +61,7 @@ and typeSignature =
   | GObject of fieldTypeSignature
 
 
-(** {2 Types of generic signatures} *)
+(** {1 Types of generic signatures} *)
 
 and classSignature = {
   cs_formal_type_parameters : formalTypeParameter list;

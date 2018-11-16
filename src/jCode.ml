@@ -20,7 +20,7 @@
  *)
 
 open JBasics
-
+   
 type jconst = [
   | `ANull (* AConstNull  *)
   | `Int of int32
@@ -31,7 +31,11 @@ type jconst = [
   | `Short of int
   | `String of jstr
   | `Class of object_type
+  | `MethodType of method_descriptor (* Since Java 7 *)
+  | `MethodHandle of method_handle (* Since Java 7 *)
 ]
+
+type jinterface_or_class = [ `Class | `Interface ]
 
 type jopcode =
 
@@ -123,10 +127,10 @@ type jopcode =
   (* Method invocation and return *)
   | OpInvoke of [
     | `Virtual of object_type
-    | `Special of class_name
-    | `Static of class_name
+    | `Special of jinterface_or_class * class_name
+    | `Static of jinterface_or_class * class_name
     | `Interface of class_name
-    | `Dynamic of method_handle_kind * constant * constant list
+    | `Dynamic of bootstrap_method
     ]
     * method_signature
   | OpReturn of jvm_return_type
@@ -159,8 +163,7 @@ type jcode = {
   c_line_number_table : (int * int) list option;
   c_local_variable_table : (int * int * string * value_type * int) list option;
   c_local_variable_type_table : (int * int * string * JSignature.fieldTypeSignature * int) list option;
-  c_stack_map_midp : stackmap list option;
-  c_stack_map_java6 : stackmap list option;
+  c_stack_map : stackmap list option;
   c_attributes : (string * string) list;
 }
 
@@ -172,8 +175,7 @@ let empty = {
   c_line_number_table = None;
   c_local_variable_table = None;
   c_local_variable_type_table = None;
-  c_stack_map_midp = None;
-  c_stack_map_java6 = None;
+  c_stack_map = None;
   c_attributes = [];
 }
 

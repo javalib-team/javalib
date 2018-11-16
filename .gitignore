@@ -9,3 +9,7 @@ src/META
 doc/tutorial/*.pdf
 doc/api
 src/jManifest.ml
+tests/src/test_parser
+tests/src/unparser
+tests/.errors
+src/ocaml

@@ -24,7 +24,7 @@
 
 open JBasics
 
-(** {2 Low level bytecode instructions.} *)
+(** {1 Low level bytecode instructions.} *)
 
 (** Instruction. *)
 type opcode =
@@ -169,7 +169,7 @@ type opcode =
 
 type opcodes = opcode array
 
-(** {2 Flags, attributes and low-level structure of class files.} *)
+(** {1 Flags, attributes and low-level structure of class files.} *)
 
 type common_flag = [
 | `AccPublic
@@ -251,10 +251,11 @@ type stackmap_frame =
   | AppendFrame of int * int * verification_type list
   | FullFrame of int * int * verification_type list * verification_type list
 
-type bootstrap_method = {
-  bootstrap_method_ref : int;
-  num_bootstrap_arguments : int;
-  bootstrap_arguments : int list;
+type mp_flags = [ `AccFinal | `AccSynthetic | `AccMandated | `AccRFU of int ]
+
+type method_parameters = {
+    name : string option;
+    flags : mp_flags list;
 }
 
 type code = {
@@ -267,7 +268,7 @@ type code = {
 
 and attribute =
   | AttributeSourceFile of string
-  | AttributeConstant of constant_value
+  | AttributeConstant of JClass.constant_attribute
   | AttributeCode of code Lazy.t
   | AttributeExceptions of class_name list
   | AttributeInnerClasses of
@@ -283,8 +284,6 @@ and attribute =
       (** (start_pc, length, name, type, index), LocalVariableTable for
           generics, described in the JVM Spec 1.5, §4.8.13 *)
   | AttributeDeprecated
-  | AttributeStackMap of (int*(verification_type list)
-			  *(verification_type list)) list
   | AttributeSignature of string
       (** Introduced in Java 5 for generics
 	  ({{:http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf}JVMS}).*)
@@ -304,6 +303,7 @@ and attribute =
   | AttributeRuntimeInvisibleParameterAnnotations of annotation list list
   | AttributeAnnotationDefault of element_value  (* cf. §4.8.19 of JVM Spec 5 *)
   | AttributeBootstrapMethods of bootstrap_method list
+  | AttributeMethodParameters of method_parameters list
   | AttributeUnknown of string * string
 
 type jfield = {
@@ -329,5 +329,6 @@ type jclass = {
   j_fields : jfield list;
   j_methods : jmethod list;
   j_attributes : attribute list;
+  j_bootstrap_table : bootstrap_method array;
   j_version : version;
 }

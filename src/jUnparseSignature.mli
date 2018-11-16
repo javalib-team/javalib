@@ -25,7 +25,7 @@ open JBasics
 
 val unparse_value_type : value_type -> string
 val unparse_object_type : object_type -> string
-val unparse_method_descriptor : value_type list * value_type option -> string
+val unparse_method_descriptor : method_descriptor -> string
 val unparse_descriptor : descriptor -> string
 val unparse_constClass : object_type -> string
 

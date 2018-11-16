@@ -48,7 +48,7 @@ let parse_constant max ch =
   let index() =
     let n = read_ui16 ch in
     if n = 0 || n >= max
-      then raise (Class_structure_error ("1: Illegal indexz in constant pool: " ^ string_of_int n));
+      then raise (Class_structure_error ("1: Illegal index in constant pool: " ^ string_of_int n));
       n
   in
     match cid with
@@ -119,7 +119,12 @@ let method_flags =
     `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
     `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
     `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000|]
-
+let method_parameters_flags =
+  [|`AccRFU 0x1; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+    `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+    `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+    `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccMandated|]
+  
 let parse_access_flags all_flags ch =
   let fl = read_ui16 ch in
   let flags = ref [] in
@@ -194,7 +199,7 @@ let rec parse_element_value consts ch =
     match Char.chr tag with
       | ('B' | 'C' | 'S' | 'Z' | 'I' | 'D' | 'F' | 'J' ) as c -> (* constants *)
           let constant_value_index = read_ui16 ch in
-          let cst = get_constant_value consts constant_value_index
+          let cst = get_constant consts constant_value_index
           in
             begin
               match c,cst with
@@ -312,7 +317,7 @@ let rec parse_code consts ch =
 	     | 0 -> None
 	     | ct ->
 		 match get_constant consts ct with
-		   | ConstValue (ConstClass (TClass c)) -> Some c
+		   | ConstClass (TClass c) -> Some c
 		   | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
 	 in
 	   {
@@ -328,7 +333,7 @@ let rec parse_code consts ch =
       attrib_count
       (fun _ ->
 	 parse_attribute
-	   [`LineNumberTable ; `LocalVariableTable ; `StackMap]
+	   [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
 	   consts ch) in
     {
       c_max_stack = max_stack;
@@ -373,7 +378,7 @@ and parse_attribute list consts ch =
 	    AttributeSourceFile (get_string_ui16 consts ch)
 	| "ConstantValue" -> check `ConstantValue;
 	    if alen <> 2 then error();
-	    AttributeConstant (get_constant_value consts (read_ui16 ch))
+	    AttributeConstant (get_constant_attribute consts (read_ui16 ch))
 	| "Code" -> check `Code;
 	    let ch = JLib.IO.input_string (JLib.IO.really_nread_string ch alen) in
 	    let parse_code _ =
@@ -459,15 +464,6 @@ and parse_attribute list consts ch =
 	| "Deprecated" -> check `Deprecated;
 	    if alen <> 0 then error ();
 	    AttributeDeprecated
-	| "StackMap" -> check `StackMap;
-	    let ch, count = JLib.IO.pos_in ch in
-	    let nb_stackmap_frames = read_ui16 ch in
-	    let stackmap =
-	      JLib.List.init nb_stackmap_frames
-		(fun _ -> parse_stackmap_frame consts ch )
-	    in
-	      if count() <> alen then error();
-	      AttributeStackMap stackmap
 	| "StackMapTable" ->
 	    (* DFr : Addition for 1.6 stackmap *)
 	    check `StackMap;
@@ -503,11 +499,27 @@ and parse_attribute list consts ch =
               (JLib.List.init
 	         nentry
 		   (function _ ->
-		      let bootstrap_method_ref = read_ui16 ch in
+		      let bootstrap_method_ref = get_method_handle_ui16 consts ch in
 		      let num_bootstrap_arguments = read_ui16 ch in
                       let bootstrap_arguments =
-                        JLib.List.init num_bootstrap_arguments (function _ -> read_ui16 ch) in
-                      { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments; }))
+                        JLib.List.init num_bootstrap_arguments
+                                       (function _ -> get_bootstrap_argument_ui16 consts ch) in
+                      { bm_ref = bootstrap_method_ref;
+                        bm_args = bootstrap_arguments; }))
+        | "MethodParameters" ->
+           check `MethodParameters;
+           let nentry = JLib.IO.read_byte ch in
+           AttributeMethodParameters
+             (JLib.List.init
+	        nentry
+		(function _ ->
+		          let name_index = read_ui16 ch in
+                          let name = if name_index = 0
+                                     then None
+                                     else Some (get_string consts name_index) in
+		          let flags = parse_access_flags method_parameters_flags ch in
+                          { name; flags; })
+             )
 	| _ -> raise Exit
     with
 	Exit -> AttributeUnknown (aname,JLib.IO.really_nread_string ch alen)
@@ -520,9 +532,7 @@ let parse_field consts ch =
   let attrib_to_parse =
     let base_attrib =
       [`Synthetic ; `Deprecated ; `Signature;
-       `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-       `RuntimeVisibleParameterAnnotations;
-       `RuntimeInvisibleParameterAnnotations;]
+       `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations]
     in
       if List.exists ((=)`AccStatic) acc
       then  `ConstantValue:: base_attrib
@@ -547,12 +557,15 @@ let parse_method consts ch =
   let attribs = JLib.List.init attrib_count
     (fun _ ->
        let to_parse =
-         [`Code ; `Exceptions ; `Synthetic ;
-	  `Deprecated ; `Signature;
-          `AnnotationDefault;
-          `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-          `RuntimeVisibleParameterAnnotations;
-          `RuntimeInvisibleParameterAnnotations;]
+         [`Code ; `Exceptions ;
+          `RuntimeVisibleParameterAnnotations ;
+          `RuntimeInvisibleParameterAnnotations ;
+          `AnnotationDefault ;
+          `MethodParameters ;
+          `Synthetic ;
+	  `Deprecated ; `Signature ;
+          `RuntimeVisibleAnnotations ; `RuntimeInvisibleAnnotations ;
+          ]
        in
          parse_attribute to_parse consts ch)
   in
@@ -566,16 +579,16 @@ let parse_method consts ch =
 let rec expand_constant consts n =
   let expand name cl nt =
     match expand_constant consts cl with
-      | ConstValue (ConstClass c) ->
+      | ConstClass c ->
 	  (match expand_constant consts nt with
 	     | ConstNameAndType (n,s) -> (c,n,s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of NameAndType in " ^ name ^ " constant")))
-      | _ -> raise (Class_structure_error ("Illegal constant refered in place of a ConstValue in " ^ name ^ " constant"))
+      | _ -> raise (Class_structure_error ("Illegal constant refered in place of a ConstClass in " ^ name ^ " constant"))
   in
     match consts.(n) with
       | ConstantClass i ->
 	  (match expand_constant consts i with
-	     | ConstStringUTF8 s -> ConstValue (ConstClass (parse_objectType s))
+	     | ConstStringUTF8 s -> ConstClass (parse_objectType s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Class constant")))
       | ConstantField (cl,nt) ->
 	  (match expand "Field" cl nt with
@@ -584,12 +597,15 @@ let rec expand_constant consts n =
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a Field constant")))
       | ConstantMethod (cl,nt) ->
 	  (match expand "Method" cl nt with
-	     | c, n, SMethod (args,rtype) -> ConstMethod (c, make_ms n args rtype)
+	     | c, n, SMethod md ->
+                let (args,rtype) = md_split md in
+                ConstMethod (c, make_ms n args rtype)
 	     | _, _, SValue _ -> raise (Class_structure_error ("Illegal type in Method constant")))
       | ConstantInterfaceMethod (cl,nt) ->
 	  (match expand "InterfaceMethod" cl nt with
-	     | TClass c, n, SMethod (args,rtype) ->
-                 ConstInterfaceMethod (c, make_ms n args rtype)
+	     | TClass c, n, SMethod md ->
+                let (args,rtype) = md_split md in
+                ConstInterfaceMethod (c, make_ms n args rtype)
 	     | TClass _, _, _ -> raise (Class_structure_error ("Illegal type in Interface Method constant"))
       | _, _, _ -> raise (Class_structure_error ("Illegal constant refered in place of an Interface Method constant")))
       | ConstantMethodType i ->
@@ -599,24 +615,28 @@ let rec expand_constant consts n =
             | _ -> raise (Class_structure_error ("Illegal constant referred in place of a MethodType constant")))
       | ConstantMethodHandle (kind, index) ->
           (match kind, expand_constant consts index with
-           | 1, (ConstField _ as const) ->
-               ConstMethodHandle (`GetField, const)
-           | 2, (ConstField _ as const) ->
-               ConstMethodHandle (`GetStatic, const)
-           | 3, (ConstField _ as const) ->
-               ConstMethodHandle (`PutField, const)
-           | 4, (ConstField _ as const) ->
-               ConstMethodHandle (`PutStatic, const)
-           | 5, (ConstMethod _ as const) ->
-               ConstMethodHandle (`InvokeVirtual, const)
-           | 6, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeStatic, const)
-           | 7, (ConstMethod _ | ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeSpecial, const)
-           | 8, (ConstMethod _ as const) ->
-               ConstMethodHandle (`NewInvokeSpecial, const)
-           | 9, (ConstInterfaceMethod _ as const) ->
-               ConstMethodHandle (`InvokeInterface, const)
+           | 1, ConstField f ->
+              ConstMethodHandle (`GetField f)
+           | 2, ConstField f ->
+              ConstMethodHandle (`GetStatic f)
+           | 3, ConstField f ->
+              ConstMethodHandle (`PutField f)
+           | 4, ConstField f ->
+              ConstMethodHandle (`PutStatic f)
+           | 5, ConstMethod v ->
+              ConstMethodHandle (`InvokeVirtual v)
+           | 6, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`InvokeStatic (`Method (cn, ms)))
+           | 6, ConstInterfaceMethod v ->
+              ConstMethodHandle (`InvokeStatic (`InterfaceMethod v))
+           | 7, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`InvokeSpecial (`Method (cn, ms)))
+           | 7, ConstInterfaceMethod v ->
+              ConstMethodHandle (`InvokeSpecial (`InterfaceMethod v))
+           | 8, ConstMethod (TClass cn, ms) ->
+              ConstMethodHandle (`NewInvokeSpecial (cn, ms))
+           | 9, ConstInterfaceMethod v ->
+              ConstMethodHandle (`InvokeInterface v)
            | n, c ->
                let s =
                  JLib.IO.output_string () in
@@ -625,17 +645,18 @@ let rec expand_constant consts n =
                raise (Class_structure_error ("Bad method handle constant " ^ (string_of_int n) ^ str)))
       | ConstantInvokeDynamic (bmi,nt) ->
           (match expand_constant consts nt with
-           | ConstNameAndType (n, SMethod (args,rtype)) ->
+           | ConstNameAndType (n, SMethod md) ->
+               let (args,rtype) = md_split md in
                ConstInvokeDynamic (bmi, make_ms n args rtype)
            | _ -> raise (Class_structure_error ("Illegal constant referred in place of an InvokeDynamic constant")))
       | ConstantString i ->
 	  (match expand_constant consts i with
-	     | ConstStringUTF8 s -> ConstValue (ConstString (make_jstr s))
+	     | ConstStringUTF8 s -> ConstString (make_jstr s)
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a String constant")))
-      | ConstantInt i -> ConstValue (ConstInt i)
-      | ConstantFloat f -> ConstValue (ConstFloat f)
-      | ConstantLong l -> ConstValue (ConstLong l)
-      | ConstantDouble f -> ConstValue (ConstDouble f)
+      | ConstantInt i -> ConstInt i
+      | ConstantFloat f -> ConstFloat f
+      | ConstantLong l -> ConstLong l
+      | ConstantDouble f -> ConstDouble f
       | ConstantNameAndType (n,t) ->
 	  (match expand_constant consts n , expand_constant consts t with
 	     | ConstStringUTF8 n , ConstStringUTF8 t -> ConstNameAndType (n,parse_descriptor t)
@@ -681,16 +702,23 @@ let parse_class_low_level ch =
 	attrib_count
 	(fun _ ->
            let to_parse =
-             [`Signature; `SourceFile; `Deprecated; `BootstrapMethods;
-              `InnerClasses ;`EnclosingMethod; `SourceDebugExtension;
-              `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations;
-              `RuntimeVisibleParameterAnnotations;
-              `RuntimeInvisibleParameterAnnotations;]
+             [`SourceFile; `InnerClasses ; `EnclosingMethod ;
+              `SourceDebugExtension ; `BootstrapMethods;
+              `Synthetic ; `Deprecated; `Signature;
+              `RuntimeVisibleAnnotations; `RuntimeInvisibleAnnotations; ]
            in
              parse_attribute
                to_parse
 	       consts ch)
     in
+    let (bootstrap_table, attribs) =
+      List.partition (function AttributeBootstrapMethods _ -> true | _ -> false) attribs in
+    let bootstrap_table = (match bootstrap_table with
+                           | [] -> []
+                           | (AttributeBootstrapMethods l) :: [] -> l
+                           | _ -> raise (Class_structure_error
+                                           "A class may contain at most one bootstrap table");
+                          ) in
       {j_consts = consts;
        j_flags = flags;
        j_name = this;
@@ -699,6 +727,7 @@ let parse_class_low_level ch =
        j_fields = fields;
        j_methods = methods;
        j_attributes = attribs;
+       j_bootstrap_table = Array.of_list bootstrap_table;
        j_version = {major=version_major; minor=version_minor};
       }
 

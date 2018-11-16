@@ -47,11 +47,12 @@ sig
         which binds [k] to [f d1 d2] if [m1] and [m2] binds the same [k] to
         different [d1] and [d2], respectively. If [d1] equals [d2], [f d1 d2] is
         supposed to return [d1]. *)
+
   val choose_and_remove : 'a t -> key * 'a * 'a t
     (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to [remove
         i t] and [d] equals to [find i t].
-
         @raise Not_found if [t] is empty. *)
+
   val filter : ('a -> bool) -> 'a t -> 'a t
   val filteri : (key -> 'a -> bool) -> 'a t -> 'a t
   val key_elements : 'a t -> key list

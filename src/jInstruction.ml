@@ -45,19 +45,21 @@ let opcode2instruction consts bootstrap_methods = function
   | OpLdc1 n
   | OpLdc1w n ->
       JCode.OpConst
-	(match get_constant_value consts n with
-	   | ConstInt c -> `Int c
-	   | ConstFloat c -> `Float c
-	   | ConstString c -> `String c
-	   | ConstClass c -> `Class c
-	   | ConstLong _ | ConstDouble _ -> raise (Class_structure_error ("Illegal constant for Ldc1: long/double")))
+	(match get_constant_ldc_value consts n with
+	   | `Int _ as c-> c
+	   | `Float _ as c -> c
+	   | `String _ as c-> c
+	   | `Class _ as c -> c
+           | `MethodType _ as mt-> mt
+           | `MethodHandle _ as mh -> mh
+        )
   | OpLdc2w n ->
       JCode.OpConst
-	(match get_constant_value consts n with
-	   | ConstInt _ | ConstFloat _ | ConstString _ | ConstClass _ ->
-	       raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
+	(match get_constant consts n with
 	   | ConstLong c -> `Long c
-	   | ConstDouble c -> `Double c)
+	   | ConstDouble c -> `Double c
+           | _ -> raise (Class_structure_error ("Illegal constant for Ldc2: int/float/string/class"))
+        )
 
   | OpLoad (k, l) ->
       JCode.OpLoad ((k : jvm_basic_type :> [> jvm_basic_type]), l)
@@ -179,14 +181,18 @@ let opcode2instruction consts bootstrap_methods = function
       let t, ms = get_method consts i in
 	JCode.OpInvoke (`Virtual t, ms)
   | OpInvokeNonVirtual i ->
-      (match get_method consts i with
-	 | TClass cs, ms ->
-	     JCode.OpInvoke (`Special cs, ms)
+      (match get_method_or_interface_method consts i with
+	 | `Class (TClass cs, ms) ->
+	    JCode.OpInvoke (`Special (`Class, cs), ms)
+         | `Interface (cs, ms) ->
+            JCode.OpInvoke (`Special (`Interface, cs), ms)
 	 | _ -> raise (Class_structure_error ("Illegal invokespecial: array class")))
   | OpInvokeStatic i ->
-      (match get_method consts i with
-	 | TClass cs, ms ->
-	     JCode.OpInvoke (`Static cs, ms)
+      (match get_method_or_interface_method consts i with
+	 | `Class (TClass cs, ms) ->
+	    JCode.OpInvoke (`Static (`Class, cs), ms)
+         | `Interface (cs, ms) ->
+            JCode.OpInvoke (`Static (`Interface, cs), ms)
 	 | _ -> raise (Class_structure_error ("Illegal invokestatic: array class")))
   | OpInvokeInterface (i, c) ->
       let cs, ms = get_interface_method consts i in
@@ -196,8 +202,8 @@ let opcode2instruction consts bootstrap_methods = function
   | OpInvokeDynamic i ->
       (match get_constant consts i with
        | ConstInvokeDynamic (bmi, ms) ->
-           let handle_kind, handle_const, bootstrap_method_args = List.nth bootstrap_methods bmi in
-           JCode.OpInvoke (`Dynamic (handle_kind, handle_const, bootstrap_method_args), ms)
+           let bm = bootstrap_methods.(bmi) in
+           JCode.OpInvoke (`Dynamic bm, ms)
        | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle"))
 
   | OpNew i -> JCode.OpNew (get_class consts i)
@@ -221,11 +227,11 @@ let opcode2instruction consts bootstrap_methods = function
 let opcodes2code consts bootstrap_methods opcodes =
   Array.map (opcode2instruction consts bootstrap_methods) opcodes
 
-let instruction2opcode consts length = function
+let instruction2opcode consts bm_table length = function
   | JCode.OpNop -> OpNop
   | JCode.OpConst x ->
       let opldc_w c =
-	let index = (value_to_int consts c)
+	let index = (ldc_value_to_int consts c)
 	in
           if length = 2 && index <= 0xFF
           then OpLdc1 index
@@ -241,24 +247,26 @@ let instruction2opcode consts length = function
 	   | `Int v ->
 	       if length = 1 && -1l <= v && v <= 5l
 	       then OpIConst v
-	       else opldc_w (ConstInt v)
+	       else opldc_w (`Int v)
 	   | `Long v ->
 	       if length = 1 && (v=0L || v=1L)
 	       then OpLConst v
-	       else OpLdc2w (value_to_int consts (ConstLong v))
+	       else OpLdc2w (constant_to_int consts (ConstLong v))
 	   | `Float v ->
 	       if length = 1 && (v=0. || v=1. || v=2.)
 	       then OpFConst v
-	       else opldc_w (ConstFloat v)
+	       else opldc_w (`Float v)
 	   | `Double v ->
 	       if length = 1 && (v=0. || v=1.)
                then OpDConst v
-	       else OpLdc2w (value_to_int consts (ConstDouble v))
+	       else OpLdc2w (constant_to_int consts (ConstDouble v))
 	   | `Byte v -> OpBIPush v
 	   | `Short v -> OpSIPush v
-	   | `String v -> opldc_w (ConstString v)
-	   | `Class v -> opldc_w (ConstClass v)
-	)
+	   | `String _ as c -> opldc_w c
+	   | `Class _ as c -> opldc_w c
+           | `MethodType _ as mt -> opldc_w mt
+           | `MethodHandle _ as mh -> opldc_w mh
+        )
 
   | JCode.OpLoad (k, l) ->
       (match k with
@@ -405,19 +413,26 @@ let instruction2opcode consts length = function
 	 | `Virtual t ->
 	     OpInvokeVirtual
 	       (method_to_int consts (t, ms))
-	 | `Special t ->
+	 | `Special (`Class, t) ->
 	     OpInvokeNonVirtual
 	       (method_to_int consts (TClass t, ms))
-	 | `Static t ->
+         | `Special (`Interface, t) ->
+	     OpInvokeNonVirtual
+	       (interface_method_to_int consts (t, ms))
+	 | `Static (`Class, t) ->
 	     OpInvokeStatic
 	       (method_to_int consts (TClass t, ms))
+         | `Static (`Interface, t) ->
+	     OpInvokeStatic
+	       (interface_method_to_int consts (t, ms))
 	 | `Interface t ->
 	     OpInvokeInterface
-	       (constant_to_int consts
-		  (ConstInterfaceMethod (t, ms)), count (ms_args ms))
-         | `Dynamic _ ->
-             (* TODO: use bootstrap methods table to resolve *)
-             assert false
+	       (constant_to_int consts (ConstInterfaceMethod (t, ms)),
+                count (ms_args ms))
+         | `Dynamic bm ->
+            let bmi = bootstrap_method_to_int bm_table bm in
+            let i = constant_to_int consts (ConstInvokeDynamic (bmi, ms)) in
+            OpInvokeDynamic i
       )
 
   | JCode.OpNew cs -> OpNew (class_to_int consts cs)
@@ -440,22 +455,23 @@ let instruction2opcode consts length = function
   | JCode.OpInvalid -> OpInvalid
 
 let check_space _consts offset length opcode =
-  let ch = output_string () in
-  let ch, count = pos_out ch in
+  let ch = JLib.IO.output_string () in
+  let ch, count = JLib.IO.pos_out ch in
   let offsetmod4 = offset mod 4 in
     for _i = 1 to offsetmod4 do (* Pour les instructions alignées *)
       write_byte ch 0
     done;
     JParseCode.unparse_instruction ch count length opcode;
     let space_taken = count () - offsetmod4 in
-    let opcodestring = close_out ch in
+    let _ = JLib.IO.close_out ch in
+    (* let opcodestring = close_out ch in *)
     (* FIXME: this uses strange IO types and does not seem to be trigger *)
     (* if not (JBasics.get_permissive ()) && not  (String.length opcodestring - offsetmod4 = length)
         then failwith "check_space: count does not seems to provide the right result"; *)
       length = space_taken
 
 
-let code2opcodes consts code =
+let code2opcodes consts bm_table code =
   let opcodes = Array.make (Array.length code) OpNop in
     Array.iteri
       (fun i instr ->
@@ -469,7 +485,7 @@ let code2opcodes consts code =
                done;
                !j-i
            in
-	   let opcode = instruction2opcode consts length instr in
+	   let opcode = instruction2opcode consts bm_table length instr in
 	     opcodes.(i) <- opcode;
 	     if not (JBasics.get_permissive ()) && not (check_space consts i length opcode)
 	     then

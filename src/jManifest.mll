@@ -96,7 +96,7 @@ and section = parse
 
   let midlet_main_class m =
     let s = List.assoc "MIDlet-1" m.main_section.main_attributes in
-      match List.map (JLib.String.strip) (JLib.String.nsplit s ",") with
+      match List.map (JLib.String.strip ~chars:" \t\r\n") (JLib.String.nsplit s ",") with
 	| [_name ; _icon ; main] -> main
 	| _ -> failwith "incorrect MIDlet-1 attribute"
 

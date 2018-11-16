@@ -18,7 +18,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-open JLib.IO
 open JLib.IO.BigEndian
 open JBasics
 open JBasicsLow
@@ -41,43 +40,39 @@ let unparse_method_handle_kind = function
   | `InvokeInterface -> 9
   | _ -> assert false
 
-let unparse_constant_value ch consts = function
-  | ConstString s ->
-      write_ui8 ch 8;
-      (write_string ch consts (jstr_raw s))
-  | ConstInt i ->
-      write_ui8 ch 3;
-      write_real_i32 ch i
-  | ConstFloat f ->
-      write_ui8 ch 4;
-      write_real_i32 ch (Int32.bits_of_float f)
-  | ConstLong l ->
-      write_ui8 ch 5;
-      write_i64 ch l
-  | ConstDouble d ->
-      write_ui8 ch 6;
-      write_double ch d
-  | ConstClass c ->
-      write_ui8 ch 7;
-      write_string ch consts (unparse_constClass c)
-
-let unparse_constant ch consts =
-  function
-    | ConstValue v -> unparse_constant_value ch consts v
+let unparse_constant ch consts =  function
+    | ConstString s ->
+       write_ui8 ch 8;
+       (write_string ch consts (jstr_raw s))
+    | ConstInt i ->
+       write_ui8 ch 3;
+       write_real_i32 ch i
+    | ConstFloat f ->
+       write_ui8 ch 4;
+       write_real_i32 ch (Int32.bits_of_float f)
+    | ConstLong l ->
+       write_ui8 ch 5;
+       write_i64 ch l
+    | ConstDouble d ->
+       write_ui8 ch 6;
+       write_double ch d
+    | ConstClass c ->
+       write_ui8 ch 7;
+       write_string ch consts (unparse_constClass c)
     | ConstField (c, fs) ->
-	write_ui8 ch 9;
-	write_class ch consts c;
-	write_name_and_type ch consts (fs_name fs, SValue (fs_type fs))
+       write_ui8 ch 9;
+       write_class ch consts c;
+       write_name_and_type ch consts (fs_name fs, SValue (fs_type fs))
     | ConstMethod (c, ms) ->
-	write_ui8 ch 10;
-	write_object_type ch consts c;
-	write_name_and_type ch consts
-          (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
+       write_ui8 ch 10;
+       write_object_type ch consts c;
+       write_name_and_type ch consts
+                           (ms_name ms, SMethod (make_md (ms_args ms, ms_rtype ms)))
     | ConstInterfaceMethod (c, ms) ->
-	write_ui8 ch 11;
-	write_class ch consts c;
-	write_name_and_type ch consts
-          (ms_name ms, SMethod (ms_args ms, ms_rtype ms))
+       write_ui8 ch 11;
+       write_class ch consts c;
+       write_name_and_type ch consts
+                           (ms_name ms, SMethod (make_md (ms_args ms, ms_rtype ms)))
     | ConstNameAndType (s, signature) ->
 	write_ui8 ch 12;
 	write_string ch consts s;
@@ -88,25 +83,27 @@ let unparse_constant ch consts =
     | ConstMethodType md ->
         write_ui8 ch 16;
         write_string ch consts (unparse_method_descriptor md)
-    | ConstMethodHandle (kind, c) ->
+    | ConstMethodHandle mh ->
+        let (kind, c) = JBasicsLow.method_handle_to_const mh in
         write_ui8 ch 15;
         write_ui8 ch (unparse_method_handle_kind kind);
         write_constant ch consts c
     | ConstInvokeDynamic (bmi, ms) ->
         write_ui8 ch 18;
-        write_ui8 ch bmi;
-        write_name_and_type ch consts ((ms_name ms), (SMethod (ms_args ms, ms_rtype ms)))
+        write_ui16 ch bmi;
+        write_name_and_type ch consts ((ms_name ms),
+                                       (SMethod (make_md (ms_args ms, ms_rtype ms))))
     | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =
-  let ch'' = output_string ()
+  let ch'' = JLib.IO.output_string ()
   and i = ref 0 in
     while ! i < JLib.DynArray.length consts do
       unparse_constant ch'' consts (JLib.DynArray.unsafe_get consts ! i);
       incr i
     done;
     write_ui16 ch (JLib.DynArray.length consts);
-    JLib.IO.nwrite_string ch (close_out ch'')
+    JLib.IO.nwrite_string ch (JLib.IO.close_out ch'')
 
 (* Acess (and other) flags unparsing *)
 (*************************************)
@@ -130,6 +127,11 @@ let method_flags =
    `AccFinal; `AccSynchronized; `AccBridge; `AccVarArgs;
    `AccNative; `AccRFU 0x200; `AccAbstract; `AccStrict;
    `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccRFU 0x8000]
+let method_parameters_flags =
+  [`AccRFU 0x1; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
+   `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
+   `AccRFU 0x100; `AccRFU 0x200; `AccRFU 0x400; `AccRFU 0x800;
+   `AccSynthetic; `AccRFU 0x2000; `AccRFU 0x4000; `AccMandated]
 
 let unparse_flags all_flags flags =
   let fl = ref 0
@@ -161,19 +163,8 @@ let unparse_verification_type consts ch vtype =
 let unparse_verification_type_list consts ch =
   write_with_size write_ui16 ch (unparse_verification_type consts ch)
 
-let unparse_stackmap_attribute consts stackmap =
-  let ch = output_string ()
-  in
-    write_with_size write_ui16 ch
-      (function pc, lt, st ->
-	 write_ui16 ch pc;
-	 unparse_verification_type_list consts ch lt;
-	 unparse_verification_type_list consts ch st)
-      stackmap;
-    ("StackMap",close_out ch)
-
 let unparse_stackmap_table_attribute consts stackmap_attribute =
-  let ch = output_string ()
+  let ch = JLib.IO.output_string ()
   in
     write_with_size write_ui16 ch
       (function stackmap_frame ->
@@ -206,7 +197,7 @@ let unparse_stackmap_table_attribute consts stackmap_attribute =
 	       unparse_verification_type_list consts ch lvtypes;
 	       unparse_verification_type_list consts ch svtypes
       ) stackmap_attribute;
-    ("StackMapTable",close_out ch)
+    ("StackMapTable", JLib.IO.close_out ch)
 
 
 let rec unparse_element_value =
@@ -226,28 +217,28 @@ let rec unparse_element_value =
   in fun consts ch -> function
     | EVCstByte cst ->
         write_ui8 ch char_B;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstChar cst ->
         write_ui8 ch char_C;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstInt cst ->
         write_ui8 ch char_I;
-        write_ui16 ch (value_to_int consts (ConstInt cst))
+        write_ui16 ch (constant_to_int consts (ConstInt cst))
     | EVCstShort cst ->
         write_ui8 ch char_S;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstBoolean cst ->
         write_ui8 ch char_Z;
-        write_ui16 ch (value_to_int consts (ConstInt (Int32.of_int cst)))
+        write_ui16 ch (constant_to_int consts (ConstInt (Int32.of_int cst)))
     | EVCstDouble cst ->
         write_ui8 ch char_D;
-        write_ui16 ch (value_to_int consts (ConstDouble cst))
+        write_ui16 ch (constant_to_int consts (ConstDouble cst))
     | EVCstFloat cst ->
         write_ui8 ch char_F;
-        write_ui16 ch (value_to_int consts (ConstFloat cst))
+        write_ui16 ch (constant_to_int consts (ConstFloat cst))
     | EVCstLong cst ->
         write_ui8 ch char_J;
-        write_ui16 ch (value_to_int consts (ConstLong cst))
+        write_ui16 ch (constant_to_int consts (ConstLong cst))
     | EVCstString s ->
         write_ui8 ch char_s;
         write_ui16 ch (constant_to_int consts (ConstStringUTF8 s))
@@ -301,11 +292,11 @@ let unparse_parameter_annotations consts ch param_annots =
   List.iter (unparse_annotations consts ch) param_annots
 
 let rec unparse_attribute_to_strings consts =
-  let ch = output_string () in
+  let ch = JLib.IO.output_string () in
     function
       | AttributeSignature s ->
 	  write_string ch consts s;
-	  ("Signature",close_out ch)
+	  ("Signature", JLib.IO.close_out ch)
       | AttributeEnclosingMethod (cn,mso) ->
 	  write_class ch consts cn;
 	  (match mso with
@@ -313,20 +304,20 @@ let rec unparse_attribute_to_strings consts =
                  write_name_and_type ch consts (n,t)
 	     | None ->
 		 write_ui16 ch 0);
-	  ("EnclosingMethod", close_out ch)
+	  ("EnclosingMethod", JLib.IO.close_out ch)
       | AttributeSourceDebugExtension s ->
 	  ("SourceDebugExtension", s)
       | AttributeSourceFile s ->
 	  write_string ch consts s;
-	  ("SourceFile",close_out ch)
+	  ("SourceFile", JLib.IO.close_out ch)
       | AttributeConstant c ->
-	  write_value ch consts c;
-	  ("ConstantValue",close_out ch)
+	  write_constant_attribute ch consts c;
+	  ("ConstantValue", JLib.IO.close_out ch)
       | AttributeExceptions l ->
 	  write_with_size write_ui16 ch
 	    (function c -> write_class ch consts c)
 	    l;
-	  ("Exceptions",close_out ch)
+	  ("Exceptions", JLib.IO.close_out ch)
       | AttributeInnerClasses l ->
 	  write_with_size write_ui16 ch
 	    (function inner, outer, inner_name, flags ->
@@ -342,16 +333,16 @@ let rec unparse_attribute_to_strings consts =
 		      write_string ch consts inner_name);
 	       write_ui16 ch (unparse_flags innerclass_flags flags))
 	    l;
-	  ("InnerClasses",close_out ch)
+	  ("InnerClasses", JLib.IO.close_out ch)
       | AttributeSynthetic ->
-	  ("Synthetic",close_out ch)
+	  ("Synthetic", JLib.IO.close_out ch)
       | AttributeLineNumberTable l ->
 	  write_with_size write_ui16 ch
 	    (function pc, line ->
 	       write_ui16 ch pc;
 	       write_ui16 ch line)
 	    l;
-	  ("LineNumberTable",close_out ch)
+	  ("LineNumberTable", JLib.IO.close_out ch)
       | AttributeLocalVariableTable l ->
 	  write_with_size write_ui16 ch
 	    (function start_pc, length, name, signature, index ->
@@ -361,7 +352,7 @@ let rec unparse_attribute_to_strings consts =
 	       write_string ch consts (unparse_value_type signature);
 	       write_ui16 ch index)
 	    l;
-	  ("LocalVariableTable",close_out ch)
+	  ("LocalVariableTable", JLib.IO.close_out ch)
       | AttributeLocalVariableTypeTable l ->
           write_with_size write_ui16 ch
             (function start_pc, length, name, signature, index ->
@@ -371,32 +362,29 @@ let rec unparse_attribute_to_strings consts =
                write_string ch consts (unparse_FieldTypeSignature signature);
                write_ui16 ch index)
             l;
-          ("LocalVariableTypeTable", close_out ch)
+          ("LocalVariableTypeTable", JLib.IO.close_out ch)
       | AttributeDeprecated ->
-	  ("Deprecated",close_out ch)
-      | AttributeStackMap s ->
-	  ignore (close_out ch);
-	  unparse_stackmap_attribute consts s
+	  ("Deprecated", JLib.IO.close_out ch)
       | AttributeStackMapTable s ->
-	  ignore (close_out ch);
+	  ignore (JLib.IO.close_out ch);
 	  unparse_stackmap_table_attribute consts s
       | AttributeUnknown (name, contents) ->
 	  (name,contents)
       | AttributeAnnotationDefault ev ->
           unparse_element_value consts ch ev;
-          ("AnnotationDefault",close_out ch)
+          ("AnnotationDefault", JLib.IO.close_out ch)
       | AttributeRuntimeVisibleAnnotations annots ->
           unparse_annotations consts ch annots;
-          ("RuntimeVisibleAnnotations", close_out ch)
+          ("RuntimeVisibleAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeInvisibleAnnotations annots ->
           unparse_annotations consts ch annots;
-          ("RuntimeInvisibleAnnotations", close_out ch)
+          ("RuntimeInvisibleAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeVisibleParameterAnnotations param_annots ->
           unparse_parameter_annotations consts ch param_annots;
-          ("RuntimeVisibleParameterAnnotations", close_out ch)
+          ("RuntimeVisibleParameterAnnotations", JLib.IO.close_out ch)
       | AttributeRuntimeInvisibleParameterAnnotations param_annots ->
           unparse_parameter_annotations consts ch param_annots;
-          ("RuntimeInvisibleParameterAnnotations", close_out ch)
+          ("RuntimeInvisibleParameterAnnotations", JLib.IO.close_out ch)
       | AttributeCode code ->
 	  let code = Lazy.force code in
 	    write_ui16 ch code.c_max_stack;
@@ -416,23 +404,35 @@ let rec unparse_attribute_to_strings consts =
 	    write_with_size write_ui16 ch
 	      (unparse_attribute ch consts)
 	      code.c_attributes;
-	    ("Code",close_out ch)
+	    ("Code", JLib.IO.close_out ch)
 
-      | AttributeBootstrapMethods bootstrap_methods ->
-          write_with_size write_ui16 ch
-            (function { bootstrap_method_ref; num_bootstrap_arguments; bootstrap_arguments } ->
-               write_ui16 ch bootstrap_method_ref;
-               write_ui16 ch num_bootstrap_arguments;
-               write_with_size write_ui16 ch (function _ -> ()) bootstrap_arguments)
-            bootstrap_methods;
-          ("BootstrapMethods", close_out ch)
+      | AttributeBootstrapMethods bm_table ->
+         write_ui16 ch (List.length bm_table);
+         List.iter (function { bm_ref; bm_args } ->
+                             write_ui16 ch (constant_to_int consts (ConstMethodHandle bm_ref));
+                             write_ui16 ch (List.length bm_args);
+                             List.iter (function arg ->
+                                                 write_bootstrap_argument ch consts arg
+                                       ) bm_args) bm_table;
+         ("BootstrapMethods", JLib.IO.close_out ch)
+      | AttributeMethodParameters mpl ->
+         write_with_size
+           write_ui8 ch
+           (function { name; flags } ->
+                     (match name with
+                      | None -> write_ui16 ch 0
+                      | Some name -> write_string ch consts name);
+                     write_ui16 ch (unparse_flags method_parameters_flags flags)
+           ) mpl;
+         ("MethodParameters", JLib.IO.close_out ch)
 
 and unparse_attribute ch consts attr =
   let (name,content) = unparse_attribute_to_strings consts attr
   in
     write_string ch consts name;
     write_string_with_length write_i32 ch content
-
+    
+  
 (* Fields, methods and classes *)
 (*******************************)
 
@@ -465,13 +465,13 @@ let unparse_class_low_level ch c =
   write_real_i32 ch 0xCAFEBABEl;
   write_ui16 ch c.j_version.minor;
   write_ui16 ch c.j_version.major;
-  let ch' = output_string ()
+  let ch' = JLib.IO.output_string ()
   and consts = JLib.DynArray.of_array c.j_consts in
     write_ui16 ch' (unparse_flags class_flags c.j_flags);
     write_class ch' consts c.j_name;
     write_ui16 ch'
       (match c.j_super with
-	 | Some super -> constant_to_int consts (ConstValue (ConstClass (TClass super)))
+	 | Some super -> constant_to_int consts (ConstClass (TClass super))
 	 | None -> 0);
     let unparse unparse = write_with_size write_ui16 ch' unparse in
       unparse
@@ -479,9 +479,11 @@ let unparse_class_low_level ch c =
 	c.j_interfaces;
       unparse (unparse_field ch' consts) c.j_fields;
       unparse (unparse_method ch' consts) c.j_methods;
-      unparse (unparse_attribute ch' consts) c.j_attributes;
+      unparse (unparse_attribute ch' consts) (c.j_attributes
+                                              @ [AttributeBootstrapMethods
+                                                   (Array.to_list c.j_bootstrap_table)]);
       unparse_constant_pool ch consts;
-      JLib.IO.nwrite_string ch (close_out ch')
+      JLib.IO.nwrite_string ch (JLib.IO.close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c
