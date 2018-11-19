@@ -1,0 +1,23 @@
+opam-version: "1.2"
+name: "javalib"
+version: "3.0"
+maintainer: "Nicolas Barré <nicolas.barre@irisa.fr>"
+authors: "Javalib Development team"
+homepage: "https://javalib-team.github.io/javalib/"
+bug-reports: "https://github.com/javalib-team/javalib/issues"
+license: "LGPL-2.1 with OCaml linking exception"
+dev-repo: "https://github.com/javalib-team/javalib"
+build: [
+  ["./configure.sh"]
+  [make]
+]
+install: [make "install"]
+remove: ["ocamlfind" "remove" "javalib"]
+depends: [
+  "ocamlfind"
+  "camlzip" {>= "1.05"}
+  "camlp4"
+  "extlib"
+  "camomile"
+]
+available: [ocaml-version >= "4.02"]
