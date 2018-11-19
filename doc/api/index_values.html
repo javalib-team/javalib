@@ -82,6 +82,14 @@
 
 </div>
 </td></tr>
+<tr><td><a href="JBasicsLow.html#VALbootstrap_argument_to_const">bootstrap_argument_to_const</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALbootstrap_method_to_int">bootstrap_method_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td><div class="info">
+<p>Return the index of a bootstrap method in the bootstrap method table, adding it if necessary.</p>
+
+</div>
+</td></tr>
 <tr><td align="left"><div>C</div></td></tr>
 <tr><td><a href="GenericMap.GenericMapSig.html#VALcardinal">cardinal</a> [<a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a>]</td>
 <td></td></tr>
@@ -306,6 +314,10 @@
 <td></td></tr>
 <tr><td><a href="Javalib.JPrint.html#VALconstant">constant</a> [<a href="Javalib.JPrint.html">Javalib.JPrint</a>]</td>
 <td></td></tr>
+<tr><td><a href="JDumpBasics.html#VALconstant_attribute">constant_attribute</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALconstant_attribute_to_const">constant_attribute_to_const</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td><a href="Javalib.JPrint.html#VALconstant_pool">constant_pool</a> [<a href="Javalib.JPrint.html">Javalib.JPrint</a>]</td>
 <td></td></tr>
 <tr><td><a href="JBasicsLow.html#VALconstant_to_int">constant_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
@@ -317,6 +329,8 @@
 <tr><td><a href="JLib.UTF8.Buf.html#VALcontents">contents</a> [<a href="JLib.UTF8.Buf.html">JLib.UTF8.Buf</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.UTF8.Buf.html#VALcreate">create</a> [<a href="JLib.UTF8.Buf.html">JLib.UTF8.Buf</a>]</td>
+<td></td></tr>
+<tr><td><a href="JLib.DynArray.html#VALcreate">create</a> [<a href="JLib.DynArray.html">JLib.DynArray</a>]</td>
 <td></td></tr>
 <tr><td align="left"><div>D</div></td></tr>
 <tr><td><a href="JBasics.html#VALdefault_native_throwable">default_native_throwable</a> [<a href="JBasics.html">JBasics</a>]</td>
@@ -351,19 +365,24 @@
 <td></td></tr>
 <tr><td><a href="JDumpLow.html#VALdump_attrib">dump_attrib</a> [<a href="JDumpLow.html">JDumpLow</a>]</td>
 <td></td></tr>
+<tr><td><a href="JDumpBasics.html#VALdump_bootstrap_argument">dump_bootstrap_argument</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
+<td><div class="info">
+<p><code class="code">dump_bootstrap_argument&nbsp;b</code> prints on <code class="code">ch</code> the bootstrap argument <code class="code">b</code>.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JDumpBasics.html#VALdump_bootstrap_method">dump_bootstrap_method</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
+<td><div class="info">
+<p><code class="code">dump_bootstrap_method&nbsp;m</code> prints on <code class="code">ch</code> the bootstrap method <code class="code">m</code>.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="JDumpLow.html#VALdump_code">dump_code</a> [<a href="JDumpLow.html">JDumpLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="JDumpBasics.html#VALdump_constant">dump_constant</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
 <td><div class="info">
 <p><code class="code">dump_constant&nbsp;ch&nbsp;cst</code> prints on <code class="code">ch</code> the constant pool constant
       <code class="code">cst</code> of the.</p>
-
-</div>
-</td></tr>
-<tr><td><a href="JDumpBasics.html#VALdump_constant_value">dump_constant_value</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
-<td><div class="info">
-<p><code class="code">dump_constant_value&nbsp;ch&nbsp;cst</code> prints on <code class="code">ch</code> the constant value
-      <code class="code">ch</code> preceded by its type (<i>e.g</i> "int 3").</p>
 
 </div>
 </td></tr>
@@ -560,6 +579,10 @@
 </td></tr>
 <tr><td><a href="JClass.html#VALget_access">get_access</a> [<a href="JClass.html">JClass</a>]</td>
 <td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_bootstrap_argument">get_bootstrap_argument</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_bootstrap_argument_ui16">get_bootstrap_argument_ui16</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td><a href="Javalib.html#VALget_class">get_class</a> [<a href="Javalib.html">Javalib</a>]</td>
 <td><div class="info">
 <p>Parses a single class.</p>
@@ -609,7 +632,9 @@
 <td></td></tr>
 <tr><td><a href="JBasicsLow.html#VALget_constant">get_constant</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
-<tr><td><a href="JBasicsLow.html#VALget_constant_value">get_constant_value</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<tr><td><a href="JBasicsLow.html#VALget_constant_attribute">get_constant_attribute</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_constant_ldc_value">get_constant_ldc_value</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="Javalib.html#VALget_consts">get_consts</a> [<a href="Javalib.html">Javalib</a>]</td>
 <td><div class="info">
@@ -689,6 +714,12 @@
 <tr><td><a href="JClass.html#VALget_method">get_method</a> [<a href="JClass.html">JClass</a>]</td>
 <td></td></tr>
 <tr><td><a href="JBasicsLow.html#VALget_method">get_method</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_method_handle">get_method_handle</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_method_handle_ui16">get_method_handle_ui16</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALget_method_or_interface_method">get_method_or_interface_method</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="Javalib.html#VALget_method_signature">get_method_signature</a> [<a href="Javalib.html">Javalib</a>]</td>
 <td></td></tr>
@@ -783,6 +814,8 @@
 <td></td></tr>
 <tr><td><a href="JLib.List.html#VALinit">init</a> [<a href="JLib.List.html">JLib.List</a>]</td>
 <td></td></tr>
+<tr><td><a href="JLib.IO.html#VALinput_bytes">input_bytes</a> [<a href="JLib.IO.html">JLib.IO</a>]</td>
+<td></td></tr>
 <tr><td><a href="JLib.IO.html#VALinput_channel">input_channel</a> [<a href="JLib.IO.html">JLib.IO</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.IO.html#VALinput_string">input_string</a> [<a href="JLib.IO.html">JLib.IO</a>]</td>
@@ -805,6 +838,8 @@
 <tr><td><a href="Ptset.S.html#VALinter">inter</a> [<a href="Ptset.S.html">Ptset.S</a>]</td>
 <td></td></tr>
 <tr><td><a href="Ptmap.S.html#VALinter_map2">inter_map2</a> [<a href="Ptmap.S.html">Ptmap.S</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALinterface_method_to_int">interface_method_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="Ptset.S.html#VALintersect">intersect</a> [<a href="Ptset.S.html">Ptset.S</a>]</td>
 <td></td></tr>
@@ -912,9 +947,17 @@
 <tr><td><a href="Javalib.JPrint.html#VALjopcode">jopcode</a> [<a href="Javalib.JPrint.html">Javalib.JPrint</a>]</td>
 <td></td></tr>
 <tr><td><a href="JBasics.html#VALjstr_pp">jstr_pp</a> [<a href="JBasics.html">JBasics</a>]</td>
-<td></td></tr>
+<td><div class="info">
+<p>Returns a <code class="code">string</code> where all characters outside the ASCII printable range (32..126) are escaped.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="JBasics.html#VALjstr_raw">jstr_raw</a> [<a href="JBasics.html">JBasics</a>]</td>
-<td></td></tr>
+<td><div class="info">
+<p>Returns the original <code class="code">string</code>.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="JDumpBasics.html#VALjvm_array_type">jvm_array_type</a> [<a href="JDumpBasics.html">JDumpBasics</a>]</td>
 <td><div class="info">
 <p><code class="code">jvm_array_type&nbsp;t</code> returns the lowercase character that
@@ -940,6 +983,8 @@
 </div>
 </td></tr>
 <tr><td align="left"><div>L</div></td></tr>
+<tr><td><a href="JBasicsLow.html#VALldc_value_to_int">ldc_value_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td><a href="JLib.List.html#VALlength">length</a> [<a href="JLib.List.html">JLib.List</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.Array.html#VALlength">length</a> [<a href="JLib.Array.html">JLib.Array</a>]</td>
@@ -1003,7 +1048,17 @@
 </div>
 </td></tr>
 <tr><td><a href="JBasics.html#VALmake_jstr">make_jstr</a> [<a href="JBasics.html">JBasics</a>]</td>
-<td></td></tr>
+<td><div class="info">
+<p>Builds a <code class="code">jstr</code>.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JBasics.html#VALmake_md">make_md</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Builds a <code class="code">method_descriptor</code>.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="JBasics.html#VALmake_ms">make_ms</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
 <p>Builds a <code class="code">method_signature</code>.</p>
@@ -1102,6 +1157,24 @@
 <td></td></tr>
 <tr><td><a href="JLib.Option.html#VALmay">may</a> [<a href="JLib.Option.html">JLib.Option</a>]</td>
 <td></td></tr>
+<tr><td><a href="JBasics.html#VALmd_args">md_args</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Returns the <code class="code">method_descriptor</code> arguments list.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JBasics.html#VALmd_rtype">md_rtype</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Returns the <code class="code">method_descriptor</code> return type.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JBasics.html#VALmd_split">md_split</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Splits a <code class="code">method_descriptor</code> into arguments list and return type.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="GenericMap.GenericMapSig.html#VALmem">mem</a> [<a href="GenericMap.GenericMapSig.html">GenericMap.GenericMapSig</a>]</td>
 <td></td></tr>
 <tr><td><a href="GenericSet.GenericSetSig.html#VALmem">mem</a> [<a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a>]</td>
@@ -1148,6 +1221,8 @@
 </div>
 </td></tr>
 <tr><td><a href="JBasicsLow.html#VALmethod_handle_kind_to_int">method_handle_kind_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALmethod_handle_to_const">method_handle_to_const</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="Javalib.JPrint.html#VALmethod_signature">method_signature</a> [<a href="Javalib.JPrint.html">Javalib.JPrint</a>]</td>
 <td><div class="info">
@@ -1214,6 +1289,8 @@
 </div>
 </td></tr>
 <tr><td align="left"><div>N</div></td></tr>
+<tr><td><a href="JBasicsLow.html#VALname_and_type_to_int">name_and_type_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td><a href="JLib.UTF8.html#VALnext">next</a> [<a href="JLib.UTF8.html">JLib.UTF8</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.String.html#VALnsplit">nsplit</a> [<a href="JLib.String.html">JLib.String</a>]</td>
@@ -1242,6 +1319,8 @@
 <tr><td><a href="GenericSet.GenericSetSig.html#VALof_array">of_array</a> [<a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.UChar.html#VALof_char">of_char</a> [<a href="JLib.UChar.html">JLib.UChar</a>]</td>
+<td></td></tr>
+<tr><td><a href="JLib.DynArray.html#VALof_list">of_list</a> [<a href="JLib.DynArray.html">JLib.DynArray</a>]</td>
 <td></td></tr>
 <tr><td><a href="GenericSet.GenericSetSig.html#VALof_list">of_list</a> [<a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a>]</td>
 <td></td></tr>
@@ -1482,6 +1561,8 @@
 <tr><td align="left"><div>T</div></td></tr>
 <tr><td><a href="JLib.DynArray.html#VALto_array">to_array</a> [<a href="JLib.DynArray.html">JLib.DynArray</a>]</td>
 <td></td></tr>
+<tr><td><a href="JLib.DynArray.html#VALto_list">to_list</a> [<a href="JLib.DynArray.html">JLib.DynArray</a>]</td>
+<td></td></tr>
 <tr><td><a href="JBasics.ClassMethodMaptoSet.html#VALto_set">to_set</a> [<a href="JBasics.ClassMethodMaptoSet.html">JBasics.ClassMethodMaptoSet</a>]</td>
 <td></td></tr>
 <tr><td><a href="GenericMap.MaptoSet.html#VALto_set">to_set</a> [<a href="GenericMap.MaptoSet.html">GenericMap.MaptoSet</a>]</td>
@@ -1592,8 +1673,6 @@
 
 </div>
 </td></tr>
-<tr><td><a href="JBasicsLow.html#VALvalue_to_int">value_to_int</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
-<td></td></tr>
 <tr><td><a href="Javalib.JPrint.html#VALvalue_type">value_type</a> [<a href="Javalib.JPrint.html">Javalib.JPrint</a>]</td>
 <td><div class="info">
 <p><code class="code">value_type&nbsp;~jvm&nbsp;value_type</code> gives a string representation of a
@@ -1610,6 +1689,8 @@
 </td></tr>
 <tr><td align="left"><div>W</div></td></tr>
 <tr><td><a href="JLib.IO.html#VALwrite">write</a> [<a href="JLib.IO.html">JLib.IO</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALwrite_bootstrap_argument">write_bootstrap_argument</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.IO.html#VALwrite_byte">write_byte</a> [<a href="JLib.IO.html">JLib.IO</a>]</td>
 <td></td></tr>
@@ -1636,6 +1717,8 @@
 </div>
 </td></tr>
 <tr><td><a href="JBasicsLow.html#VALwrite_constant">write_constant</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasicsLow.html#VALwrite_constant_attribute">write_constant_attribute</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.IO.BigEndian.html#VALwrite_double">write_double</a> [<a href="JLib.IO.BigEndian.html">JLib.IO.BigEndian</a>]</td>
 <td></td></tr>
@@ -1665,8 +1748,6 @@
 <td><div class="info">
 </div>
 </td></tr>
-<tr><td><a href="JBasicsLow.html#VALwrite_value">write_value</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
-<td></td></tr>
 <tr><td><a href="JBasicsLow.html#VALwrite_with_length">write_with_length</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td></td></tr>
 <tr><td><a href="JBasicsLow.html#VALwrite_with_size">write_with_size</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>

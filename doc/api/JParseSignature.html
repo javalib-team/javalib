@@ -36,8 +36,8 @@
 <link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
 <link title="JFile" rel="Chapter" href="JFile.html">
 <link title="JManifest" rel="Chapter" href="JManifest.html">
-<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Parsing descriptors and their components " rel="Section" href="#2_Parsingdescriptorsandtheircomponents">
-<link title="Parsing generic signatures" rel="Section" href="#2_Parsinggenericsignatures">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Parsing descriptors and their components " rel="Section" href="#1_Parsingdescriptorsandtheircomponents">
+<link title="Parsing generic signatures" rel="Section" href="#1_Parsinggenericsignatures">
 <title>Javalib : JParseSignature</title>
 </head>
 <body>
@@ -53,7 +53,7 @@
 </div>
 </div>
 <hr width="100%">
-<h3 id="2_Parsingdescriptorsandtheircomponents">Parsing descriptors and their components </h3>
+<h2 id="1_Parsingdescriptorsandtheircomponents">Parsing descriptors and their components </h2>
 <pre><span id="VALparse_objectType"><span class="keyword">val</span> parse_objectType</span> : <code class="type">string -> <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a></code></pre><div class="info ">
 <ul class="info-attributes">
 <li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the an object
@@ -68,7 +68,7 @@
 </ul>
 </div>
 
-<pre><span id="VALparse_method_descriptor"><span class="keyword">val</span> parse_method_descriptor</span> : <code class="type">string -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> list * <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> option</code></pre><div class="info ">
+<pre><span id="VALparse_method_descriptor"><span class="keyword">val</span> parse_method_descriptor</span> : <code class="type">string -> <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a></code></pre><div class="info ">
 <ul class="info-attributes">
 <li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a method
     descriptor.</li>
@@ -81,7 +81,7 @@
     descriptor.</li>
 </ul>
 </div>
-<h3 id="2_Parsinggenericsignatures">Parsing generic signatures</h3>
+<h2 id="1_Parsinggenericsignatures">Parsing generic signatures</h2>
 <pre><span id="VALparse_ClassSignature"><span class="keyword">val</span> parse_ClassSignature</span> : <code class="type">string -> <a href="JSignature.html#TYPEclassSignature">JSignature.classSignature</a></code></pre><div class="info ">
 <div class="info-desc">
 <p><code class="code">parse_ClassSignature&nbsp;s</code> parses a Signature attribute and expects

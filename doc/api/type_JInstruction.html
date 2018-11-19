@@ -37,16 +37,17 @@
 <code class="code"><span class="keyword">sig</span><br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;opcodes2code&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">JBasics</span>.method_handle_kind&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;list)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClassLow</span>.opcode&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcodes<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JClassLow</span>.opcode&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcodes<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;code2opcodes&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jopcodes&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClassLow</span>.opcode&nbsp;array<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;opcode2instruction&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;(<span class="constructor">JBasics</span>.method_handle_kind&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;list)<br>
-&nbsp;&nbsp;&nbsp;&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClassLow</span>.opcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClassLow</span>.opcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;instruction2opcode&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClassLow</span>.opcode<br>
 <span class="keyword">end</span></code></body></html>

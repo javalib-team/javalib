@@ -36,8 +36,8 @@
 <link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
 <link title="JFile" rel="Chapter" href="JFile.html">
 <link title="JManifest" rel="Chapter" href="JManifest.html">
-<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Low level bytecode instructions." rel="Section" href="#2_Lowlevelbytecodeinstructions">
-<link title="Flags, attributes and low-level structure of class files." rel="Section" href="#2_Flagsattributesandlowlevelstructureofclassfiles">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Low level bytecode instructions." rel="Section" href="#1_Lowlevelbytecodeinstructions">
+<link title="Flags, attributes and low-level structure of class files." rel="Section" href="#1_Flagsattributesandlowlevelstructureofclassfiles">
 <title>Javalib : JClassLow</title>
 </head>
 <body>
@@ -53,7 +53,7 @@
 </div>
 </div>
 <hr width="100%">
-<h3 id="2_Lowlevelbytecodeinstructions">Low level bytecode instructions.</h3>
+<h2 id="1_Lowlevelbytecodeinstructions">Low level bytecode instructions.</h2>
 <pre><code><span id="TYPEopcode"><span class="keyword">type</span> <code class="type"></code>opcode</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -920,7 +920,7 @@
 
 <pre><span id="TYPEopcodes"><span class="keyword">type</span> <code class="type"></code>opcodes</span> = <code class="type"><a href="JClassLow.html#TYPEopcode">opcode</a> array</code> </pre>
 
-<h3 id="2_Flagsattributesandlowlevelstructureofclassfiles">Flags, attributes and low-level structure of class files.</h3>
+<h2 id="1_Flagsattributesandlowlevelstructureofclassfiles">Flags, attributes and low-level structure of class files.</h2>
 <pre><span id="TYPEcommon_flag"><span class="keyword">type</span> <code class="type"></code>common_flag</span> = <code class="type">[ `AccFinal | `AccPublic | `AccRFU of int | `AccSynthetic ]</code> </pre>
 
 
@@ -997,26 +997,22 @@
 </div>
 
 
-<pre><code><span id="TYPEbootstrap_method"><span class="keyword">type</span> <code class="type"></code>bootstrap_method</span> = {</code></pre><table class="typetable">
+<pre><span id="TYPEmp_flags"><span class="keyword">type</span> <code class="type"></code>mp_flags</span> = <code class="type">[ `AccFinal | `AccMandated | `AccRFU of int | `AccSynthetic ]</code> </pre>
+
+
+<pre><code><span id="TYPEmethod_parameters"><span class="keyword">type</span> <code class="type"></code>method_parameters</span> = {</code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTbootstrap_method.bootstrap_method_ref">bootstrap_method_ref</span>&nbsp;: <code class="type">int</code>;</code></td>
+<code><span id="TYPEELTmethod_parameters.name">name</span>&nbsp;: <code class="type">string option</code>;</code></td>
 
 </tr>
 <tr>
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTbootstrap_method.num_bootstrap_arguments">num_bootstrap_arguments</span>&nbsp;: <code class="type">int</code>;</code></td>
-
-</tr>
-<tr>
-<td align="left" valign="top" >
-<code>&nbsp;&nbsp;</code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTbootstrap_method.bootstrap_arguments">bootstrap_arguments</span>&nbsp;: <code class="type">int list</code>;</code></td>
+<code><span id="TYPEELTmethod_parameters.flags">flags</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEmp_flags">mp_flags</a> list</code>;</code></td>
 
 </tr></table>
 }
@@ -1075,7 +1071,7 @@
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTattribute.AttributeConstant"><span class="constructor">AttributeConstant</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a></code></code></td>
+<code><span id="TYPEELTattribute.AttributeConstant"><span class="constructor">AttributeConstant</span></span> <span class="keyword">of</span> <code class="type"><a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a></code></code></td>
 
 </tr>
 <tr>
@@ -1149,13 +1145,6 @@
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeDeprecated"><span class="constructor">AttributeDeprecated</span></span></code></td>
-
-</tr>
-<tr>
-<td align="left" valign="top" >
-<code><span class="keyword">|</span></code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTattribute.AttributeStackMap"><span class="constructor">AttributeStackMap</span></span> <span class="keyword">of</span> <code class="type">(int * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list * <a href="JBasics.html#TYPEverification_type">JBasics.verification_type</a> list) list</code></code></td>
 
 </tr>
 <tr>
@@ -1250,7 +1239,14 @@
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTattribute.AttributeBootstrapMethods"><span class="constructor">AttributeBootstrapMethods</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEbootstrap_method">bootstrap_method</a> list</code></code></td>
+<code><span id="TYPEELTattribute.AttributeBootstrapMethods"><span class="constructor">AttributeBootstrapMethods</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTattribute.AttributeMethodParameters"><span class="constructor">AttributeMethodParameters</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEmethod_parameters">method_parameters</a> list</code></code></td>
 
 </tr>
 <tr>
@@ -1384,6 +1380,13 @@
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjclass.j_attributes">j_attributes</span>&nbsp;: <code class="type"><a href="JClassLow.html#TYPEattribute">attribute</a> list</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTjclass.j_bootstrap_table">j_bootstrap_table</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> array</code>;</code></td>
 
 </tr>
 <tr>

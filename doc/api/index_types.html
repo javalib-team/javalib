@@ -88,8 +88,18 @@
 </div>
 </td></tr>
 <tr><td align="left"><div>B</div></td></tr>
-<tr><td><a href="JClassLow.html#TYPEbootstrap_method">bootstrap_method</a> [<a href="JClassLow.html">JClassLow</a>]</td>
-<td></td></tr>
+<tr><td><a href="JBasics.html#TYPEbootstrap_argument">bootstrap_argument</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Bootstrap argument.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JBasics.html#TYPEbootstrap_method">bootstrap_method</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Bootstrap method called by the <code class="code">invokedynamic</code> instruction.</p>
+
+</div>
+</td></tr>
 <tr><td><a href="JBasics.html#TYPEbootstrap_method_index">bootstrap_method_index</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td></td></tr>
 <tr><td><a href="JLib.UTF8.Buf.html#TYPEbuf">buf</a> [<a href="JLib.UTF8.Buf.html">JLib.UTF8.Buf</a>]</td>
@@ -149,16 +159,14 @@
 <td></td></tr>
 <tr><td><a href="JBasics.html#TYPEconstant">constant</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
-<p>Constant.</p>
+<p>Constant pool values.</p>
 
 </div>
 </td></tr>
-<tr><td><a href="JBasics.html#TYPEconstant_value">constant_value</a> [<a href="JBasics.html">JBasics</a>]</td>
-<td><div class="info">
-<p>Constant value.</p>
-
-</div>
-</td></tr>
+<tr><td><a href="Javalib.html#TYPEconstant_attribute">constant_attribute</a> [<a href="Javalib.html">Javalib</a>]</td>
+<td></td></tr>
+<tr><td><a href="JClass.html#TYPEconstant_attribute">constant_attribute</a> [<a href="JClass.html">JClass</a>]</td>
+<td></td></tr>
 <tr><td align="left"><div>D</div></td></tr>
 <tr><td><a href="JBasics.html#TYPEdescriptor">descriptor</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
@@ -254,6 +262,8 @@
 <td></td></tr>
 <tr><td><a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> [<a href="JClass.html">JClass</a>]</td>
 <td></td></tr>
+<tr><td><a href="JBasicsLow.html#TYPEioc_method">ioc_method</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td align="left"><div>J</div></td></tr>
 <tr><td><a href="JBasics.html#TYPEjava_basic_type">java_basic_type</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
@@ -291,11 +301,15 @@
 
 </div>
 </td></tr>
+<tr><td><a href="JCode.html#TYPEjinterface_or_class">jinterface_or_class</a> [<a href="JCode.html">JCode</a>]</td>
+<td></td></tr>
 <tr><td><a href="Javalib.html#TYPEjmethod">jmethod</a> [<a href="Javalib.html">Javalib</a>]</td>
 <td></td></tr>
 <tr><td><a href="JClass.html#TYPEjmethod">jmethod</a> [<a href="JClass.html">JClass</a>]</td>
 <td></td></tr>
 <tr><td><a href="JClassLow.html#TYPEjmethod">jmethod</a> [<a href="JClassLow.html">JClassLow</a>]</td>
+<td></td></tr>
+<tr><td><a href="JBasics.html#TYPEjmethod_or_interface">jmethod_or_interface</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td></td></tr>
 <tr><td><a href="JCode.html#TYPEjopcode">jopcode</a> [<a href="JCode.html">JCode</a>]</td>
 <td></td></tr>
@@ -336,6 +350,9 @@
 <td></td></tr>
 <tr><td><a href="Ptmap.S.html#TYPEkey">key</a> [<a href="Ptmap.S.html">Ptmap.S</a>]</td>
 <td></td></tr>
+<tr><td align="left"><div>L</div></td></tr>
+<tr><td><a href="JBasicsLow.html#TYPEldc_value">ldc_value</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
+<td></td></tr>
 <tr><td align="left"><div>M</div></td></tr>
 <tr><td><a href="JManifest.html#TYPEmain_section">main_section</a> [<a href="JManifest.html">JManifest</a>]</td>
 <td></td></tr>
@@ -349,24 +366,46 @@
 <td></td></tr>
 <tr><td><a href="JBasics.html#TYPEmethod_descriptor">method_descriptor</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
-<p>Method descriptor.</p>
+<p>Type representing a method descriptor.</p>
 
 </div>
 </td></tr>
 <tr><td><a href="JClassLow.html#TYPEmethod_flag">method_flag</a> [<a href="JClassLow.html">JClassLow</a>]</td>
 <td></td></tr>
-<tr><td><a href="JBasics.html#TYPEmethod_handle_kind">method_handle_kind</a> [<a href="JBasics.html">JBasics</a>]</td>
+<tr><td><a href="JBasics.html#TYPEmethod_handle">method_handle</a> [<a href="JBasics.html">JBasics</a>]</td>
+<td><div class="info">
+<p>Method handle.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JBasicsLow.html#TYPEmethod_handle_kind">method_handle_kind</a> [<a href="JBasicsLow.html">JBasicsLow</a>]</td>
 <td><div class="info">
 <p>Method handle type.</p>
 
 </div>
 </td></tr>
+<tr><td><a href="Javalib.html#TYPEmethod_parameter_attribute">method_parameter_attribute</a> [<a href="Javalib.html">Javalib</a>]</td>
+<td><div class="info">
+<p>Attribute proper to a method parameter.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JClass.html#TYPEmethod_parameter_attribute">method_parameter_attribute</a> [<a href="JClass.html">JClass</a>]</td>
+<td><div class="info">
+<p>Attribute proper to a method parameter.</p>
+
+</div>
+</td></tr>
+<tr><td><a href="JClassLow.html#TYPEmethod_parameters">method_parameters</a> [<a href="JClassLow.html">JClassLow</a>]</td>
+<td></td></tr>
 <tr><td><a href="JBasics.html#TYPEmethod_signature">method_signature</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">
 <p>Type representing a method signature.</p>
 
 </div>
 </td></tr>
+<tr><td><a href="JClassLow.html#TYPEmp_flags">mp_flags</a> [<a href="JClassLow.html">JClassLow</a>]</td>
+<td></td></tr>
 <tr><td align="left"><div>O</div></td></tr>
 <tr><td><a href="JBasics.html#TYPEobject_type">object_type</a> [<a href="JBasics.html">JBasics</a>]</td>
 <td><div class="info">

@@ -37,6 +37,7 @@
 <code class="code"><span class="keyword">sig</span><br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_name<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_signature<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_descriptor<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;field_signature<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_field_signature<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_method_signature<br>
@@ -56,22 +57,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int2Bool</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Object</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Void</span>&nbsp;]<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;java_basic_type&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Bool</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Byte</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Char</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Short</span>&nbsp;]<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_handle_kind&nbsp;=<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">GetField</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">GetStatic</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeInterface</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeSpecial</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeStatic</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeVirtual</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">NewInvokeSpecial</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutField</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutStatic</span>&nbsp;]<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;object_type&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">TClass</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">TArray</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.value_type<br>
 &nbsp;&nbsp;<span class="keyword">and</span>&nbsp;value_type&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">TBasic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.java_basic_type<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">TObject</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jstr<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;version&nbsp;=&nbsp;{&nbsp;major&nbsp;:&nbsp;int;&nbsp;minor&nbsp;:&nbsp;int;&nbsp;}<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;java_lang_object&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;default_native_throwable&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list<br>
@@ -94,6 +86,14 @@
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;ms_compare&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;ms_equal&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;make_md&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;md_split&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_descriptor&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;md_args&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;md_rtype&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;make_fs&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;fs_hash&nbsp;:&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;fs_name&nbsp;:&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
@@ -121,30 +121,51 @@
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.class_method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;cms_equal&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.class_method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;bool<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;bootstrap_method_index&nbsp;=&nbsp;int<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_descriptor&nbsp;=<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;option<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;descriptor&nbsp;=<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">SValue</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.value_type<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">SMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jstr<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;make_jstr&nbsp;:&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.jstr<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jstr_pp&nbsp;:&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;jstr_raw&nbsp;:&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;constant_value&nbsp;=<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;jmethod_or_interface&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">InterfaceMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Method</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_handle&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">GetField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">GetStatic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeInterface</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeSpecial</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jmethod_or_interface<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeStatic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jmethod_or_interface<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeVirtual</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">NewInvokeSpecial</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutStatic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;bootstrap_argument&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Class</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keyword">of</span>&nbsp;int32<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;<span class="keyword">of</span>&nbsp;int64<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">MethodHandle</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_handle<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">MethodType</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">String</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;bootstrap_method&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bm_ref&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_handle;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;bm_args&nbsp;:&nbsp;<span class="constructor">JBasics</span>.bootstrap_argument&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;bootstrap_method_index&nbsp;=&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;descriptor&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">SValue</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.value_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">SMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;constant&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">ConstString</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jstr<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstInt</span>&nbsp;<span class="keyword">of</span>&nbsp;int32<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstFloat</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstLong</span>&nbsp;<span class="keyword">of</span>&nbsp;int64<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstDouble</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstClass</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;constant&nbsp;=<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">ConstValue</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.constant_value<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstField</span>&nbsp;<span class="keyword">of</span>&nbsp;(<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.field_signature)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;(<span class="constructor">JBasics</span>.object_type&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstInterfaceMethod</span>&nbsp;<span class="keyword">of</span>&nbsp;(<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature)<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstMethodType</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstMethodHandle</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_handle_kind&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstMethodHandle</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_handle<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstInvokeDynamic</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.bootstrap_method_index&nbsp;*<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ConstNameAndType</span>&nbsp;<span class="keyword">of</span>&nbsp;string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.descriptor<br>

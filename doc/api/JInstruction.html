@@ -52,7 +52,7 @@
 </div>
 <hr width="100%">
 
-<pre><span id="VALopcodes2code"><span class="keyword">val</span> opcodes2code</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       (<a href="JBasics.html#TYPEmethod_handle_kind">JBasics.method_handle_kind</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> list) list -><br>       <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a></code></pre><div class="info ">
+<pre><span id="VALopcodes2code"><span class="keyword">val</span> opcodes2code</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a></code></pre><div class="info ">
 <div class="info-desc">
 <p>Maps an arrray of low level bytecode to a high level code.
     Each instruction is at the index
@@ -65,7 +65,7 @@
 </div>
 </div>
 
-<pre><span id="VALcode2opcodes"><span class="keyword">val</span> code2opcodes</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array</code></pre><div class="info ">
+<pre><span id="VALcode2opcodes"><span class="keyword">val</span> code2opcodes</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array</code></pre><div class="info ">
 <div class="info-desc">
 <p>Maps a high level code to a valid arrray of low level bytecode
     instructions. The distance between the offset of two successive
@@ -82,13 +82,13 @@
 </ul>
 </div>
 
-<pre><span id="VALopcode2instruction"><span class="keyword">val</span> opcode2instruction</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       (<a href="JBasics.html#TYPEmethod_handle_kind">JBasics.method_handle_kind</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> list) list -><br>       <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a></code></pre><div class="info ">
+<pre><span id="VALopcode2instruction"><span class="keyword">val</span> opcode2instruction</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a></code></pre><div class="info ">
 <div class="info-desc">
 <p>Low level to high level bytecode instruction.</p>
 </div>
 </div>
 
-<pre><span id="VALinstruction2opcode"><span class="keyword">val</span> instruction2opcode</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> int -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre><div class="info ">
+<pre><span id="VALinstruction2opcode"><span class="keyword">val</span> instruction2opcode</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       int -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre><div class="info ">
 <div class="info-desc">
 <p>High level to low level bytecode instruction.</p>
 

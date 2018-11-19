@@ -111,7 +111,7 @@
 </div>
 </div>
 
-<pre><span id="VALmethod_signature"><span class="keyword">val</span> method_signature</span> : <code class="type">string -> <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a> -> string</code></pre><div class="info ">
+<pre><span id="VALmethod_signature"><span class="keyword">val</span> method_signature</span> : <code class="type">?jvm:bool -> string -> <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a> -> string</code></pre><div class="info ">
 <div class="info-desc">
 <p><code class="code">method_signature&nbsp;mn&nbsp;md</code>, where <code class="code">mn</code> is a method name and <code class="code">md</code> a
       method descriptor, returns the method signature as in Java (<i>      e.g.</i> "bool equals(java.lang.Object)").</p>
@@ -147,17 +147,10 @@
 </div>
 </div>
 
-<pre><span id="VALmethod_handle_kind"><span class="keyword">val</span> method_handle_kind</span> : <code class="type"><a href="JBasics.html#TYPEmethod_handle_kind">JBasics.method_handle_kind</a> -> string</code></pre><div class="info ">
+<pre><span id="VALmethod_handle_kind"><span class="keyword">val</span> method_handle_kind</span> : <code class="type"><a href="JBasicsLow.html#TYPEmethod_handle_kind">JBasicsLow.method_handle_kind</a> -> string</code></pre><div class="info ">
 <div class="info-desc">
 <p><code class="code">method_handle_kind&nbsp;k</code> returns the string that corresponds
       to the method handle kind <code class="code">k</code>.</p>
-</div>
-</div>
-
-<pre><span id="VALdump_constant_value"><span class="keyword">val</span> dump_constant_value</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> -> unit</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">dump_constant_value&nbsp;ch&nbsp;cst</code> prints on <code class="code">ch</code> the constant value
-      <code class="code">ch</code> preceded by its type (<i>e.g</i> "int 3").</p>
 </div>
 </div>
 
@@ -165,6 +158,18 @@
 <div class="info-desc">
 <p><code class="code">dump_constant&nbsp;ch&nbsp;cst</code> prints on <code class="code">ch</code> the constant pool constant
       <code class="code">cst</code> of the.</p>
+</div>
+</div>
+
+<pre><span id="VALdump_bootstrap_argument"><span class="keyword">val</span> dump_bootstrap_argument</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a> -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">dump_bootstrap_argument&nbsp;b</code> prints on <code class="code">ch</code> the bootstrap argument <code class="code">b</code>.</p>
+</div>
+</div>
+
+<pre><span id="VALdump_bootstrap_method"><span class="keyword">val</span> dump_bootstrap_method</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> -> unit</code></pre><div class="info ">
+<div class="info-desc">
+<p><code class="code">dump_bootstrap_method&nbsp;m</code> prints on <code class="code">ch</code> the bootstrap method <code class="code">m</code>.</p>
 </div>
 </div>
 
@@ -188,4 +193,5 @@
       declaration <code class="code">ex</code>.</p>
 </div>
 </div>
-</body></html>
+
+<pre><span id="VALconstant_attribute"><span class="keyword">val</span> constant_attribute</span> : <code class="type"><a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a> -> string</code></pre></body></html>

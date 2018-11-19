@@ -36,8 +36,8 @@
 <link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
 <link title="JFile" rel="Chapter" href="JFile.html">
 <link title="JManifest" rel="Chapter" href="JManifest.html">
-<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Bytecode instructions." rel="Section" href="#2_Bytecodeinstructions">
-<link title="Access functions." rel="Section" href="#2_Accessfunctions">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Bytecode instructions." rel="Section" href="#1_Bytecodeinstructions">
+<link title="Access functions." rel="Section" href="#1_Accessfunctions">
 <title>Javalib : JCode</title>
 </head>
 <body>
@@ -53,8 +53,11 @@
 </div>
 </div>
 <hr width="100%">
-<h3 id="2_Bytecodeinstructions">Bytecode instructions.</h3>
-<pre><span id="TYPEjconst"><span class="keyword">type</span> <code class="type"></code>jconst</span> = <code class="type">[ `ANull<br>       | `Byte of int<br>       | `Class of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a><br>       | `Double of float<br>       | `Float of float<br>       | `Int of int32<br>       | `Long of int64<br>       | `Short of int<br>       | `String of <a href="JBasics.html#TYPEjstr">JBasics.jstr</a> ]</code> </pre>
+<h2 id="1_Bytecodeinstructions">Bytecode instructions.</h2>
+<pre><span id="TYPEjconst"><span class="keyword">type</span> <code class="type"></code>jconst</span> = <code class="type">[ `ANull<br>       | `Byte of int<br>       | `Class of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a><br>       | `Double of float<br>       | `Float of float<br>       | `Int of int32<br>       | `Long of int64<br>       | `MethodHandle of <a href="JBasics.html#TYPEmethod_handle">JBasics.method_handle</a><br>       | `MethodType of <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a><br>       | `Short of int<br>       | `String of <a href="JBasics.html#TYPEjstr">JBasics.jstr</a> ]</code> </pre>
+
+
+<pre><span id="TYPEjinterface_or_class"><span class="keyword">type</span> <code class="type"></code>jinterface_or_class</span> = <code class="type">[ `Class | `Interface ]</code> </pre>
 
 
 <pre><code><span id="TYPEjopcode"><span class="keyword">type</span> <code class="type"></code>jopcode</span> = </code></pre><table class="typetable">
@@ -544,7 +547,7 @@
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTjopcode.OpInvoke"><span class="constructor">OpInvoke</span></span> <span class="keyword">of</span> <code class="type">[ `Dynamic of<br>         <a href="JBasics.html#TYPEmethod_handle_kind">JBasics.method_handle_kind</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a> list<br>     | `Interface of <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Special of <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Static of <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Virtual of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> ] * <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code></code></td>
+<code><span id="TYPEELTjopcode.OpInvoke"><span class="constructor">OpInvoke</span></span> <span class="keyword">of</span> <code class="type">[ `Dynamic of <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a><br>     | `Interface of <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Special of <a href="JCode.html#TYPEjinterface_or_class">jinterface_or_class</a> * <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Static of <a href="JCode.html#TYPEjinterface_or_class">jinterface_or_class</a> * <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a><br>     | `Virtual of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> ] * <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code></code></td>
 
 </tr>
 <tr>
@@ -682,7 +685,7 @@
 <code><span id="TYPEELTjcode.c_exc_tbl">c_exc_tbl</span>&nbsp;: <code class="type"><a href="JCode.html#TYPEexception_handler">exception_handler</a> list</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>The list is ordered in the same way as in the bytecode (See JVM Spec 7 $2.10).</p>
+<p>The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10).</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -718,7 +721,7 @@
 <code><span id="TYPEELTjcode.c_local_variable_type_table">c_local_variable_type_table</span>&nbsp;: <code class="type">(int * int * string * <a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> * int) list option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>LocalVariableTable for generics, described in the JVM Spec 1.5, §4.8.13</p>
+<p>LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -727,14 +730,7 @@
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTjcode.c_stack_map_midp">c_stack_map_midp</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> list option</code>;</code></td>
-
-</tr>
-<tr>
-<td align="left" valign="top" >
-<code>&nbsp;&nbsp;</code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTjcode.c_stack_map_java6">c_stack_map_java6</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> list option</code>;</code></td>
+<code><span id="TYPEELTjcode.c_stack_map">c_stack_map</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> list option</code>;</code></td>
 
 </tr>
 <tr>
@@ -758,13 +754,13 @@
 <p>Empty list of opcodes</p>
 </div>
 </div>
-<h3 id="2_Accessfunctions">Access functions.</h3>
+<h2 id="1_Accessfunctions">Access functions.</h2>
 <pre><span id="VALget_source_line_number"><span class="keyword">val</span> get_source_line_number</span> : <code class="type">int -> <a href="JCode.html#TYPEjcode">jcode</a> -> int option</code></pre><div class="info ">
 <div class="info-desc">
 <p><code class="code">get_source_line_number&nbsp;pp&nbsp;m</code> returns the source line number corresponding
     to the program point <code class="code">pp</code> of the method code <code class="code">m</code>.  The line number give a
-    rough idea and may be wrong.  It uses the attribute LineNumberTable
-    (cf. JVMS §4.7.8).</p>
+    rough idea and may be wrong. It uses the attribute LineNumberTable
+    (cf. JVM Spec se8 §4.7.12).</p>
 </div>
 </div>
 
@@ -772,8 +768,8 @@
 <div class="info-desc">
 <p><code class="code">get_source_line_number&nbsp;pp&nbsp;lnt</code> returns the source line number corresponding
     to the program point <code class="code">pp</code> given the LineNumberTable attribute <code class="code">lnt</code>. The
-    line number give a rough idea and may be wrong.  It uses the attribute
-    LineNumberTable (cf. JVMS §4.7.8).</p>
+    line number give a rough idea and may be wrong. It uses the attribute
+    LineNumberTable (cf. JVM Spec se8 §4.7.12).</p>
 </div>
 </div>
 

@@ -35,9 +35,35 @@
 </head>
 <body>
 <code class="code"><span class="keyword">sig</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_handle_kind&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">GetField</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">GetStatic</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeInterface</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeSpecial</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeStatic</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">InvokeVirtual</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">NewInvokeSpecial</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutField</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">PutStatic</span>&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;ldc_value&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Class</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keyword">of</span>&nbsp;int32<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">MethodHandle</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_handle<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">MethodType</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.method_descriptor<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">String</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;ioc_method&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Class</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Interface</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;]<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;bootstrap_argument_to_const&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_argument&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_handle_to_const&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_handle&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasicsLow</span>.method_handle_kind&nbsp;*&nbsp;<span class="constructor">JBasics</span>.constant<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;constant_attribute_to_const&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JClass</span>.constant_attribute&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_constant&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant<br>
-&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_constant_value&nbsp;:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant_value<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_constant_ldc_value&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasicsLow</span>.ldc_value<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_object_type&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.object_type<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_class&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_string&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
@@ -50,13 +76,25 @@
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_interface_method&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method_or_interface_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasicsLow</span>.ioc_method<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method_handle&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_handle<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_bootstrap_argument&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.bootstrap_argument<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_constant_attribute&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClass</span>.constant_attribute<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_class_ui16&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.input&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.class_name<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_string_ui16&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.input&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_method_handle_ui16&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.input&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_handle<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_bootstrap_argument_ui16&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;array&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.input&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.bootstrap_argument<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;constant_to_int&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
-&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;value_to_int&nbsp;:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;ldc_value_to_int&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasicsLow</span>.ldc_value&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;object_type_to_int&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;class_to_int&nbsp;:<br>
@@ -67,14 +105,19 @@
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_to_int&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;interface_method_to_int&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;*&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;string_to_int&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
-&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_handle_kind_to_int&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_handle_kind&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;method_handle_kind_to_int&nbsp;:&nbsp;<span class="constructor">JBasicsLow</span>.method_handle_kind&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;name_and_type_to_int&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;bootstrap_method_to_int&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_constant&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
-&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_value&nbsp;:<br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_object_type&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.object_type&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
@@ -86,6 +129,12 @@
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_name_and_type&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.descriptor&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_bootstrap_argument&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.bootstrap_argument&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_constant_attribute&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.constant&nbsp;<span class="constructor">JLib</span>.<span class="constructor">DynArray</span>.t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JClass</span>.constant_attribute&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_ui8&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_i8&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JLib</span>.<span class="constructor">IO</span>.output&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;unit<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;write_string_with_length&nbsp;:<br>

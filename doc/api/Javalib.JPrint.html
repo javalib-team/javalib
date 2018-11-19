@@ -34,10 +34,10 @@
 <link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
 <link title="JFile" rel="Chapter" href="JFile.html">
 <link title="JManifest" rel="Chapter" href="JManifest.html">
-<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Printing basic signatures and descriptors." rel="Section" href="#2_Printingbasicsignaturesanddescriptors">
-<link title="Printing stackmaps, constant pool values and exception handlers." rel="Section" href="#2_Printingstackmapsconstantpoolvaluesandexceptionhandlers">
-<link title="Printing JVM opcodes." rel="Section" href="#2_PrintingJVMopcodes">
-<link title="Outputting methods and classes." rel="Section" href="#2_Outputtingmethodsandclasses">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Printing basic signatures and descriptors." rel="Section" href="#1_Printingbasicsignaturesanddescriptors">
+<link title="Printing stackmaps, constant pool values and exception handlers." rel="Section" href="#1_Printingstackmapsconstantpoolvaluesandexceptionhandlers">
+<link title="Printing JVM opcodes." rel="Section" href="#1_PrintingJVMopcodes">
+<link title="Outputting methods and classes." rel="Section" href="#1_Outputtingmethodsandclasses">
 <title>Javalib : Javalib.JPrint</title>
 </head>
 <body>
@@ -51,7 +51,7 @@
 </div>
 </div>
 <hr width="100%">
-<h3 id="2_Printingbasicsignaturesanddescriptors">Printing basic signatures and descriptors.</h3><p>Each of these functions gives a string representation of
+<h2 id="1_Printingbasicsignaturesanddescriptors">Printing basic signatures and descriptors.</h2><p>Each of these functions gives a string representation of
       a type which has the corresponding name in JBasics.
       When set to true, the optional parameter <code class="code">~jvm</code> allows to get a
       string representation following the JVM specification. Otherwise,
@@ -181,13 +181,13 @@
       method.</p>
 </div>
 </div>
-<h3 id="2_Printingstackmapsconstantpoolvaluesandexceptionhandlers">Printing stackmaps, constant pool values and exception handlers.</h3>
+<h2 id="1_Printingstackmapsconstantpoolvaluesandexceptionhandlers">Printing stackmaps, constant pool values and exception handlers.</h2>
 <pre><span id="VALstack_map"><span class="keyword">val</span> stack_map</span> : <code class="type"><a href="JBasics.html#TYPEstackmap">JBasics.stackmap</a> -> string</code></pre>
 <pre><span id="VALconstant"><span class="keyword">val</span> constant</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> -> string</code></pre>
 <pre><span id="VALconstant_pool"><span class="keyword">val</span> constant_pool</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> string</code></pre>
-<pre><span id="VALexception_handler"><span class="keyword">val</span> exception_handler</span> : <code class="type"><a href="JCode.html#TYPEexception_handler">JCode.exception_handler</a> -> string</code></pre><h3 id="2_PrintingJVMopcodes">Printing JVM opcodes.</h3>
+<pre><span id="VALexception_handler"><span class="keyword">val</span> exception_handler</span> : <code class="type"><a href="JCode.html#TYPEexception_handler">JCode.exception_handler</a> -> string</code></pre><h2 id="1_PrintingJVMopcodes">Printing JVM opcodes.</h2>
 <pre><span id="VALjopcode"><span class="keyword">val</span> jopcode</span> : <code class="type">?jvm:bool -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> string</code></pre>
-<pre><span id="VALjcode"><span class="keyword">val</span> jcode</span> : <code class="type">?jvm:bool -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> -> string list</code></pre><h3 id="2_Outputtingmethodsandclasses">Outputting methods and classes.</h3>
+<pre><span id="VALjcode"><span class="keyword">val</span> jcode</span> : <code class="type">?jvm:bool -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> -> string list</code></pre><h2 id="1_Outputtingmethodsandclasses">Outputting methods and classes.</h2>
 <pre><span id="VALprint_method"><span class="keyword">val</span> print_method</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEjmethod">Javalib.jmethod</a> -> ('a -> string list) -> Stdlib.out_channel -> unit</code></pre>
 <pre><span id="VALprint_method'"><span class="keyword">val</span> print_method'</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEjmethod">Javalib.jmethod</a> -><br>       ('a -> Stdlib.Format.formatter -> unit) -> Stdlib.Format.formatter -> unit</code></pre>
 <pre><span id="VALprint_class"><span class="keyword">val</span> print_class</span> : <code class="type">?jvm:bool -><br>       'a <a href="Javalib.html#TYPEinterface_or_class">Javalib.interface_or_class</a> -><br>       ('a -> string list) -> Stdlib.out_channel -> unit</code></pre>

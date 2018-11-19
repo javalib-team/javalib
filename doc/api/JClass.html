@@ -36,15 +36,15 @@
 <link title="JHigh2Low" rel="Chapter" href="JHigh2Low.html">
 <link title="JFile" rel="Chapter" href="JFile.html">
 <link title="JManifest" rel="Chapter" href="JManifest.html">
-<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Common types." rel="Section" href="#2_Commontypes">
-<link title="Fields of classes and interfaces." rel="Section" href="#2_Fieldsofclassesandinterfaces">
-<link title="Methods of classes and interfaces." rel="Section" href="#2_Methodsofclassesandinterfaces">
-<link title="Classes and interfaces." rel="Section" href="#2_Classesandinterfaces">
-<link title="Classes access functions." rel="Section" href="#2_Classesaccessfunctions">
-<link title="Methods access functions." rel="Section" href="#2_Methodsaccessfunctions">
-<link title="Fields access functions." rel="Section" href="#2_Fieldsaccessfunctions">
-<link title="Iterators." rel="Section" href="#2_Iterators">
-<link title="Transforming code representation." rel="Section" href="#2_Transformingcoderepresentation">
+<link title="Javalib" rel="Chapter" href="Javalib.html"><link title="Common types." rel="Section" href="#1_Commontypes">
+<link title="Fields of classes and interfaces." rel="Section" href="#1_Fieldsofclassesandinterfaces">
+<link title="Methods of classes and interfaces." rel="Section" href="#1_Methodsofclassesandinterfaces">
+<link title="Classes and interfaces." rel="Section" href="#1_Classesandinterfaces">
+<link title="Classes access functions." rel="Section" href="#1_Classesaccessfunctions">
+<link title="Methods access functions." rel="Section" href="#1_Methodsaccessfunctions">
+<link title="Fields access functions." rel="Section" href="#1_Fieldsaccessfunctions">
+<link title="Iterators." rel="Section" href="#1_Iterators">
+<link title="Transforming code representation." rel="Section" href="#1_Transformingcoderepresentation">
 <title>Javalib : JClass</title>
 </head>
 <body>
@@ -60,7 +60,7 @@
 </div>
 </div>
 <hr width="100%">
-<h3 id="2_Commontypes">Common types.</h3>
+<h2 id="1_Commontypes">Common types.</h2>
 <pre><span id="TYPEaccess"><span class="keyword">type</span> <code class="type"></code>access</span> = <code class="type">[ `Default | `Private | `Protected | `Public ]</code> </pre>
 <div class="info ">
 <div class="info-desc">
@@ -77,8 +77,8 @@
 <code><span id="TYPEELTattributes.synthetic">synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>correspond to the attribute, not to the flag (cf. JVM Spec 1.5
-      §4.2, §4.6, §4.7 and §4.8.7)</p>
+<p>correspond to the attribute, not to the flag (cf. JVM Spec se8
+      table 4.7-C and §4.7.8)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -132,7 +132,7 @@
 </div>
 </div>
 
-<h3 id="2_Fieldsofclassesandinterfaces">Fields of classes and interfaces.</h3>
+<h2 id="1_Fieldsofclassesandinterfaces">Fields of classes and interfaces.</h2>
 <pre><code><span id="TYPEfield_kind"><span class="keyword">type</span> <code class="type"></code>field_kind</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -156,6 +156,9 @@
 
 </tr></table>
 
+
+
+<pre><span id="TYPEconstant_attribute"><span class="keyword">type</span> <code class="type"></code>constant_attribute</span> = <code class="type">[ `Double of float<br>       | `Float of float<br>       | `Int of int32<br>       | `Long of int64<br>       | `String of <a href="JBasics.html#TYPEjstr">JBasics.jstr</a> ]</code> </pre>
 
 
 <pre><code><span id="TYPEclass_field"><span class="keyword">type</span> <code class="type"></code>class_field</span> = {</code></pre><table class="typetable">
@@ -202,7 +205,7 @@
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
 <p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.6 and §4.8.7)</p>
+      (cf. JVM Spec se8 table 4.5-A)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -225,7 +228,7 @@
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTclass_field.cf_value">cf_value</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> option</code>;</code></td>
+<code><span id="TYPEELTclass_field.cf_value">cf_value</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEconstant_attribute">constant_attribute</a> option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
 <p>Only if the field is static final.</p>
@@ -294,8 +297,8 @@
 <code><span id="TYPEELTinterface_field.if_synthetic">if_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>corresponds to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.6 and §4.8.7)</p>
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec se8 table 4.5-A)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -304,10 +307,10 @@
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTinterface_field.if_value">if_value</span>&nbsp;: <code class="type"><a href="JBasics.html#TYPEconstant_value">JBasics.constant_value</a> option</code>;</code></td>
+<code><span id="TYPEELTinterface_field.if_value">if_value</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEconstant_attribute">constant_attribute</a> option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>a constant_value is not mandatory, especially as it can be
+<p>a constant_attribute is not mandatory, especially as it can be
       initialized by the class initializer &lt;clinit&gt;.</p>
 </div>
 </div>
@@ -361,7 +364,7 @@
 </tr></table>
 
 
-<h3 id="2_Methodsofclassesandinterfaces">Methods of classes and interfaces.</h3>
+<h2 id="1_Methodsofclassesandinterfaces">Methods of classes and interfaces.</h2>
 <pre><code><span id="TYPEimplementation"><span class="keyword">type</span> <code class="type">'a</code> implementation</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -410,6 +413,44 @@
 </tr></table>
 }
 
+
+
+<pre><code><span id="TYPEmethod_parameter_attribute"><span class="keyword">type</span> <code class="type"></code>method_parameter_attribute</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_parameter_attribute.mp_name">mp_name</span>&nbsp;: <code class="type">string option</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_parameter_attribute.mp_final">mp_final</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_parameter_attribute.mp_synthetic">mp_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTmethod_parameter_attribute.mp_mandated">mp_mandated</span>&nbsp;: <code class="type">bool</code>;</code></td>
+
+</tr></table>
+}
+
+<div class="info ">
+<div class="info-desc">
+<p>Attribute proper to a method parameter.</p>
+</div>
+</div>
 
 
 <pre><code><span id="TYPEconcrete_method"><span class="keyword">type</span> <code class="type">'a</code> concrete_method</span> = {</code></pre><table class="typetable">
@@ -490,8 +531,8 @@
 <code><span id="TYPEELTconcrete_method.cm_synthetic">cm_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>corresponds to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.7 and §4.8.7)</p>
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec se8 table 4.6-A)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -515,6 +556,13 @@
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTconcrete_method.cm_attributes">cm_attributes</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTconcrete_method.cm_parameters">cm_parameters</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEmethod_parameter_attribute">method_parameter_attribute</a> list</code>;</code></td>
 
 </tr>
 <tr>
@@ -585,8 +633,8 @@
 <code><span id="TYPEELTabstract_method.am_synthetic">am_synthetic</span>&nbsp;: <code class="type">bool</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
-<p>corresponds to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.7 and §4.8.7)</p>
+<p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
+      (cf. JVM Spec se8 table 4.6-A)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -610,6 +658,13 @@
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
 <code><span id="TYPEELTabstract_method.am_attributes">am_attributes</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEattributes">attributes</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_method.am_parameters">am_parameters</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEmethod_parameter_attribute">method_parameter_attribute</a> list</code>;</code></td>
 
 </tr>
 <tr>
@@ -653,7 +708,7 @@
 </tr></table>
 
 
-<h3 id="2_Classesandinterfaces">Classes and interfaces.</h3>
+<h2 id="1_Classesandinterfaces">Classes and interfaces.</h2>
 <pre><code><span id="TYPEinner_class"><span class="keyword">type</span> <code class="type"></code>inner_class</span> = {</code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -843,9 +898,8 @@
 <p>introduced with Java 5 for local classes (defined in methods'
       code). The first element is innermost class that encloses the
       declaration of the current class. The second element is the
-      method that encose this class definition. cf
-      <a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>,
-      paragraph 4.8.6.</p>
+      method that encose this class definition. cf JVM spec se8
+      table 4.7-C and §4.7.7.</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -858,8 +912,7 @@
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
 <p>Introduced in Java 5 for debugging purpose (no
-      semantics defined)
-      (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+      semantics defined). cf JVM spec se8 table 4.7-C and §4.7.11.</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -879,7 +932,7 @@
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
 <p>correspond to the flag ACC_SYNTHETIC, not to the Attribute
-      (cf. JVM Spec 1.5 §4.2 and §4.8.7)</p>
+      (cf. JVM Spec se8 table 4.1-A)</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -993,8 +1046,7 @@
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
 <div class="info-desc">
 <p>Introduced in Java 5 for debugging purpose (no
-      semantics defined)
-      (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+      semantics defined). cf JVM spec se8 table 4.7-C and §4.7.11.</p>
 </div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
@@ -1005,18 +1057,6 @@
 <td align="left" valign="top" >
 <code><span id="TYPEELTjinterface.i_inner_classes">i_inner_classes</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEinner_class">inner_class</a> list</code>;</code></td>
 
-</tr>
-<tr>
-<td align="left" valign="top" >
-<code>&nbsp;&nbsp;</code></td>
-<td align="left" valign="top" >
-<code><span id="TYPEELTjinterface.i_initializer">i_initializer</span>&nbsp;: <code class="type">'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> option</code>;</code></td>
-<td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-<div class="info-desc">
-<p>the signature is &lt;clinit&gt;()V; and the method should be static</p>
-</div>
-</div>
-</td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
 <tr>
 <td align="left" valign="top" >
@@ -1062,7 +1102,7 @@
 <td align="left" valign="top" >
 <code>&nbsp;&nbsp;</code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTjinterface.i_methods">i_methods</span>&nbsp;: <code class="type"><a href="JClass.html#TYPEabstract_method">abstract_method</a> JBasics.MethodMap.t</code>;</code></td>
+<code><span id="TYPEELTjinterface.i_methods">i_methods</span>&nbsp;: <code class="type">'a <a href="JClass.html#TYPEjmethod">jmethod</a> JBasics.MethodMap.t</code>;</code></td>
 
 </tr></table>
 }
@@ -1092,7 +1132,7 @@
 </tr></table>
 
 
-<h3 id="2_Classesaccessfunctions">Classes access functions.</h3>
+<h2 id="1_Classesaccessfunctions">Classes access functions.</h2>
 <pre><span id="VALget_name"><span class="keyword">val</span> get_name</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code></pre>
 <pre><span id="VALget_consts"><span class="keyword">val</span> get_consts</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> array</code></pre>
 <pre><span id="VALget_access"><span class="keyword">val</span> get_access</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> [ `Default | `Public ]</code></pre>
@@ -1102,7 +1142,7 @@
 <pre><span id="VALget_inner_classes"><span class="keyword">val</span> get_inner_classes</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JClass.html#TYPEinner_class">inner_class</a> list</code></pre>
 <pre><span id="VALget_other_attributes"><span class="keyword">val</span> get_other_attributes</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> (string * string) list</code></pre>
 <pre><span id="VALget_initializer"><span class="keyword">val</span> get_initializer</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> option</code></pre>
-<pre><span id="VALget_other_flags"><span class="keyword">val</span> get_other_flags</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> int list</code></pre><h3 id="2_Methodsaccessfunctions">Methods access functions.</h3>
+<pre><span id="VALget_other_flags"><span class="keyword">val</span> get_other_flags</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> int list</code></pre><h2 id="1_Methodsaccessfunctions">Methods access functions.</h2>
 <pre><span id="VALget_method_signature"><span class="keyword">val</span> get_method_signature</span> : <code class="type">'a <a href="JClass.html#TYPEjmethod">jmethod</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a></code></pre>
 <pre><span id="VALget_class_method_signature"><span class="keyword">val</span> get_class_method_signature</span> : <code class="type">'a <a href="JClass.html#TYPEjmethod">jmethod</a> -> <a href="JBasics.html#TYPEclass_method_signature">JBasics.class_method_signature</a></code></pre>
 <pre><span id="VALget_method_visibility"><span class="keyword">val</span> get_method_visibility</span> : <code class="type">'a <a href="JClass.html#TYPEjmethod">jmethod</a> -> <a href="JClass.html#TYPEaccess">access</a></code></pre>
@@ -1113,7 +1153,7 @@
 <pre><span id="VALget_concrete_method"><span class="keyword">val</span> get_concrete_method</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -><br>       <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> 'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a></code></pre>
 <pre><span id="VALget_methods"><span class="keyword">val</span> get_methods</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'a <a href="JClass.html#TYPEjmethod">jmethod</a> JBasics.MethodMap.t</code></pre>
 <pre><span id="VALget_concrete_methods"><span class="keyword">val</span> get_concrete_methods</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> JBasics.MethodMap.t</code></pre>
-<pre><span id="VALdefines_method"><span class="keyword">val</span> defines_method</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> bool</code></pre><h3 id="2_Fieldsaccessfunctions">Fields access functions.</h3>
+<pre><span id="VALdefines_method"><span class="keyword">val</span> defines_method</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> bool</code></pre><h2 id="1_Fieldsaccessfunctions">Fields access functions.</h2>
 <pre><span id="VALget_field_signature"><span class="keyword">val</span> get_field_signature</span> : <code class="type"><a href="JClass.html#TYPEany_field">any_field</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a></code></pre>
 <pre><span id="VALget_class_field_signature"><span class="keyword">val</span> get_class_field_signature</span> : <code class="type"><a href="JClass.html#TYPEany_field">any_field</a> -> <a href="JBasics.html#TYPEclass_field_signature">JBasics.class_field_signature</a></code></pre>
 <pre><span id="VALget_field_visibility"><span class="keyword">val</span> get_field_visibility</span> : <code class="type"><a href="JClass.html#TYPEany_field">any_field</a> -> <a href="JClass.html#TYPEaccess">access</a></code></pre>
@@ -1121,7 +1161,7 @@
 <pre><span id="VALis_final_field"><span class="keyword">val</span> is_final_field</span> : <code class="type"><a href="JClass.html#TYPEany_field">any_field</a> -> bool</code></pre>
 <pre><span id="VALget_field"><span class="keyword">val</span> get_field</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> <a href="JClass.html#TYPEany_field">any_field</a></code></pre>
 <pre><span id="VALget_fields"><span class="keyword">val</span> get_fields</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JClass.html#TYPEany_field">any_field</a> JBasics.FieldMap.t</code></pre>
-<pre><span id="VALdefines_field"><span class="keyword">val</span> defines_field</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> bool</code></pre><h3 id="2_Iterators">Iterators.</h3><p>The following functions iterate over all fields of a class or interface.</p>
+<pre><span id="VALdefines_field"><span class="keyword">val</span> defines_field</span> : <code class="type">'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> <a href="JBasics.html#TYPEfield_signature">JBasics.field_signature</a> -> bool</code></pre><h2 id="1_Iterators">Iterators.</h2><p>The following functions iterate over all fields of a class or interface.</p>
 
 <pre><span id="VALcf_iter"><span class="keyword">val</span> cf_iter</span> : <code class="type">(<a href="JClass.html#TYPEclass_field">class_field</a> -> unit) -> 'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
 <pre><span id="VALif_iter"><span class="keyword">val</span> if_iter</span> : <code class="type">(<a href="JClass.html#TYPEinterface_field">interface_field</a> -> unit) -> 'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
@@ -1141,7 +1181,7 @@
 <pre><span id="VALm_iter"><span class="keyword">val</span> m_iter</span> : <code class="type">('a <a href="JClass.html#TYPEjmethod">jmethod</a> -> unit) -> 'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> unit</code></pre>
 <pre><span id="VALcm_fold"><span class="keyword">val</span> cm_fold</span> : <code class="type">('a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> -> 'b -> 'b) -><br>       'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
 <pre><span id="VALam_fold"><span class="keyword">val</span> am_fold</span> : <code class="type">(<a href="JClass.html#TYPEabstract_method">abstract_method</a> -> 'b -> 'b) -><br>       'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre>
-<pre><span id="VALm_fold"><span class="keyword">val</span> m_fold</span> : <code class="type">('a <a href="JClass.html#TYPEjmethod">jmethod</a> -> 'b -> 'b) -> 'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre><h3 id="2_Transformingcoderepresentation">Transforming code representation.</h3>
+<pre><span id="VALm_fold"><span class="keyword">val</span> m_fold</span> : <code class="type">('a <a href="JClass.html#TYPEjmethod">jmethod</a> -> 'b -> 'b) -> 'a <a href="JClass.html#TYPEinterface_or_class">interface_or_class</a> -> 'b -> 'b</code></pre><h2 id="1_Transformingcoderepresentation">Transforming code representation.</h2>
 <pre><span id="VALmap_concrete_method"><span class="keyword">val</span> map_concrete_method</span> : <code class="type">?force:bool -><br>       ('a -> 'b) -> 'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> -> 'b <a href="JClass.html#TYPEconcrete_method">concrete_method</a></code></pre>
 <pre><span id="VALmap_concrete_method_with_native"><span class="keyword">val</span> map_concrete_method_with_native</span> : <code class="type">('a <a href="JClass.html#TYPEimplementation">implementation</a> -> 'b <a href="JClass.html#TYPEimplementation">implementation</a>) -><br>       'a <a href="JClass.html#TYPEconcrete_method">concrete_method</a> -> 'b <a href="JClass.html#TYPEconcrete_method">concrete_method</a></code></pre>
 <pre><span id="VALmap_class"><span class="keyword">val</span> map_class</span> : <code class="type">?force:bool -> ('a -> 'b) -> 'a <a href="JClass.html#TYPEjclass">jclass</a> -> 'b <a href="JClass.html#TYPEjclass">jclass</a></code></pre>

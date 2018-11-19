@@ -43,6 +43,12 @@
 &nbsp;&nbsp;}<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;visibility&nbsp;=&nbsp;<span class="constructor">RTVisible</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">RTInvisible</span><br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;field_kind&nbsp;=&nbsp;<span class="constructor">NotFinal</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Final</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Volatile</span><br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;constant_attribute&nbsp;=<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[&nbsp;<span class="keywordsign">`</span><span class="constructor">Double</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Float</span>&nbsp;<span class="keyword">of</span>&nbsp;float<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Int</span>&nbsp;<span class="keyword">of</span>&nbsp;int32<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">Long</span>&nbsp;<span class="keyword">of</span>&nbsp;int64<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="keywordsign">`</span><span class="constructor">String</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JBasics</span>.jstr&nbsp;]<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;class_field&nbsp;=&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.field_signature;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_class_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_field_signature;<br>
@@ -52,7 +58,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;cf_synthetic&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_enum&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_kind&nbsp;:&nbsp;<span class="constructor">JClass</span>.field_kind;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;cf_value&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cf_value&nbsp;:&nbsp;<span class="constructor">JClass</span>.constant_attribute&nbsp;option;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_transient&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cf_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
@@ -63,7 +69,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;if_class_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_field_signature;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if_generic_signature&nbsp;:&nbsp;<span class="constructor">JSignature</span>.fieldTypeSignature&nbsp;option;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if_synthetic&nbsp;:&nbsp;bool;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;if_value&nbsp;:&nbsp;<span class="constructor">JBasics</span>.constant_value&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;if_value&nbsp;:&nbsp;<span class="constructor">JClass</span>.constant_attribute&nbsp;option;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;if_attributes&nbsp;:&nbsp;<span class="constructor">JClass</span>.attributes;<br>
@@ -75,6 +81,12 @@
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_annotations&nbsp;=&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ma_global&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ma_parameters&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list&nbsp;list;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_parameter_attribute&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mp_name&nbsp;:&nbsp;string&nbsp;option;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mp_final&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mp_synthetic&nbsp;:&nbsp;bool;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;mp_mandated&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;}<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;concrete_method&nbsp;=&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cm_signature&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_signature;<br>
@@ -91,6 +103,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;cm_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cm_exceptions&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cm_attributes&nbsp;:&nbsp;<span class="constructor">JClass</span>.attributes;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;cm_parameters&nbsp;:&nbsp;<span class="constructor">JClass</span>.method_parameter_attribute&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cm_annotations&nbsp;:&nbsp;<span class="constructor">JClass</span>.method_annotations;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;cm_implementation&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.implementation;<br>
 &nbsp;&nbsp;}<br>
@@ -105,6 +118,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;am_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;am_exceptions&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_name&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;am_attributes&nbsp;:&nbsp;<span class="constructor">JClass</span>.attributes;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;am_parameters&nbsp;:&nbsp;<span class="constructor">JClass</span>.method_parameter_attribute&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;am_annotations&nbsp;:&nbsp;<span class="constructor">JClass</span>.method_annotations;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;am_annotation_default&nbsp;:&nbsp;<span class="constructor">JBasics</span>.element_value&nbsp;option;<br>
 &nbsp;&nbsp;}<br>
@@ -159,13 +173,12 @@
 &nbsp;&nbsp;&nbsp;&nbsp;i_deprecated&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_source_debug_extention&nbsp;:&nbsp;string&nbsp;option;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_inner_classes&nbsp;:&nbsp;<span class="constructor">JClass</span>.inner_class&nbsp;list;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;i_initializer&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.concrete_method&nbsp;option;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_annotation&nbsp;:&nbsp;bool;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_annotations&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_other_attributes&nbsp;:&nbsp;(string&nbsp;*&nbsp;string)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_other_flags&nbsp;:&nbsp;int&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;i_fields&nbsp;:&nbsp;<span class="constructor">JClass</span>.interface_field&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">FieldMap</span>.t;<br>
-&nbsp;&nbsp;&nbsp;&nbsp;i_methods&nbsp;:&nbsp;<span class="constructor">JClass</span>.abstract_method&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;i_methods&nbsp;:&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.jmethod&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">MethodMap</span>.t;<br>
 &nbsp;&nbsp;}<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;interface_or_class&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JInterface</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.jinterface<br>
