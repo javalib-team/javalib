@@ -1,13 +1,15 @@
 module DynArray : sig
 
   type 'a t
+  val create : unit -> 'a t
   val length : 'a t -> int
   val index_of : ('a -> bool) -> 'a t -> int
   val add : 'a t -> 'a -> unit
   val unsafe_get : 'a t -> int -> 'a
   val of_array : 'a array -> 'a t
   val to_array : 'a t -> 'a array
-  
+  val of_list : 'a list -> 'a t
+  val to_list : 'a t -> 'a list
 end
      
 module IO : sig
@@ -32,7 +34,8 @@ module IO : sig
   val printf : 'a output -> ('b, unit, string, unit) format4 -> 'b
   val write : 'a output -> char -> unit
   val pos_in : input -> input * (unit -> int)
-  val pos_out : 'a output -> 'a output * (unit -> int)  
+  val pos_out : 'a output -> 'a output * (unit -> int)
+  val input_bytes : Bytes.t -> input
 
   module BigEndian : sig
 

@@ -40,7 +40,7 @@ let field_descriptor = value_type
 let value_type_list ?(jvm=false) ?names l =
   let prms =
     match names with
-      | None -> JLib.List.map value_type l
+      | None -> JLib.List.map (value_type ~jvm:jvm) l
       | Some names ->
 	  (* names must have the same length than l *)
 	  try
@@ -118,19 +118,16 @@ let signature ?(jvm=false) name d =
 	let fs = make_fs name fd in
 	  field_signature ~jvm:jvm fs
     | SMethod md ->
-	let ms = make_ms name (fst md) (snd md) in
+	let ms = make_ms name (md_args md) (md_rtype md) in
 	  method_signature ~jvm:jvm ms
 
-let constant_value = function
+let rec constant = function
   | ConstString s -> "string '" ^ (jstr_pp s) ^ "'"
   | ConstInt i -> "int " ^ (Int32.to_string i)
   | ConstFloat f -> "float " ^ (string_of_float f)
   | ConstLong i -> "long " ^ (Int64.to_string i)
   | ConstDouble f -> "double " ^ (string_of_float f)
   | ConstClass cl -> "class " ^ (object_type cl)
-
-let rec constant = function
-  | ConstValue v -> constant_value v
   | ConstField (cl,fs) ->
       "field : " ^ (field_signature ~jvm:false ~declared_in:cl fs)
   | ConstMethod (ot,ms) ->
@@ -139,9 +136,11 @@ let rec constant = function
       "interface-method : " ^ (method_signature ~callee:(TClass cn) ms)
   | ConstNameAndType (s,d) -> "name-and-type : " ^ (signature s d)
   | ConstStringUTF8 s -> "utf8 " ^ s
-  | ConstMethodType (args,ret) ->
+  | ConstMethodType mt ->
+      let (args,ret) = md_split mt in
       "method-type : " ^ (method_descriptor args ret)
-  | ConstMethodHandle (kind,c) ->
+  | ConstMethodHandle mh ->
+      let (kind, c) = JBasicsLow.method_handle_to_const mh in
       "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant c)
   | ConstInvokeDynamic (bmi,ms) ->
       "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)
@@ -190,199 +189,202 @@ let exception_handler exc =
    their name. *)
 let jopcode_jvm =
   let sprintf = Printf.sprintf in
-    function
-      | OpNop -> "nop"
-      | OpConst x ->
-          (match x with
-	     | `ANull -> "aconstnull"
-	     | `Int i -> "iconst " ^ (Int32.to_string i)
-	     | `Long i -> "lconst %Ld" ^ (Int64.to_string i)
-	     | `Float f -> "fconst " ^ (string_of_float f)
-	     | `Double f -> "dconst " ^ (string_of_float f)
-	     | `Byte n -> "bipush " ^ (string_of_int n)
-	     | `Short a -> "sipush " ^ (string_of_int a)
-	     | `Class c -> "ldc class " ^ (object_type ~jvm:true c)
-	     | `String s -> "ldc string '"^ (jstr_pp s) ^"'")
+  function
+  | OpNop -> "nop"
+  | OpConst x ->
+     (match x with
+      | `ANull -> "aconstnull"
+      | `Int i -> "iconst " ^ (Int32.to_string i)
+      | `Long i -> "lconst %Ld" ^ (Int64.to_string i)
+      | `Float f -> "fconst " ^ (string_of_float f)
+      | `Double f -> "dconst " ^ (string_of_float f)
+      | `Byte n -> "bipush " ^ (string_of_int n)
+      | `Short a -> "sipush " ^ (string_of_int a)
+      | `Class c -> "ldc class " ^ (object_type ~jvm:true c)
+      | `String s -> "ldc string '"^ (jstr_pp s) ^"'"
+      | `MethodType mt -> "ldc "^(constant (ConstMethodType mt))
+      | `MethodHandle mh -> "ldc "^(constant (ConstMethodHandle mh))
+     )
 
-      | OpLoad (k,n) ->
-          (match k with
-	     | `Object -> "aload " ^(string_of_int n)
-	     | `Int2Bool | `Long | `Float | `Double as k ->
-                 sprintf "%cload %d" (JDumpBasics.jvm_basic_type k) n)
+  | OpLoad (k,n) ->
+     (match k with
+      | `Object -> "aload " ^(string_of_int n)
+      | `Int2Bool | `Long | `Float | `Double as k ->
+         sprintf "%cload %d" (JDumpBasics.jvm_basic_type k) n)
 
-      | OpArrayLoad k ->
-          (match k with
-	     | `Object -> "aaload"
-	     | `ByteBool -> "baload"
-	     | `Char -> "caload"
-	     | `Short -> "saload"
-	     | `Int -> "iaload"
-	     | `Long | `Float | `Double as k ->
-                 sprintf "%caload" (JDumpBasics.jvm_basic_type k))
+  | OpArrayLoad k ->
+     (match k with
+      | `Object -> "aaload"
+      | `ByteBool -> "baload"
+      | `Char -> "caload"
+      | `Short -> "saload"
+      | `Int -> "iaload"
+      | `Long | `Float | `Double as k ->
+         sprintf "%caload" (JDumpBasics.jvm_basic_type k))
 
-      | OpStore (k,n) ->
-          (match k with
-	     | `Object -> "astore " ^(string_of_int n)
-	     | `Int2Bool | `Long | `Float | `Double as k ->
-                 sprintf "%cstore %d" (JDumpBasics.jvm_basic_type k) n)
+  | OpStore (k,n) ->
+     (match k with
+      | `Object -> "astore " ^(string_of_int n)
+      | `Int2Bool | `Long | `Float | `Double as k ->
+         sprintf "%cstore %d" (JDumpBasics.jvm_basic_type k) n)
 
-      | OpArrayStore k ->
-          (match k with
-	     | `Object -> "aastore"
-	     | `ByteBool -> "bastore"
-	     | `Char -> "castore"
-	     | `Short -> "sastore"
-	     | `Int -> "iastore"
-	     | `Long | `Float | `Double as k ->
-                 sprintf "%castore" (JDumpBasics.jvm_basic_type k))
+  | OpArrayStore k ->
+     (match k with
+      | `Object -> "aastore"
+      | `ByteBool -> "bastore"
+      | `Char -> "castore"
+      | `Short -> "sastore"
+      | `Int -> "iastore"
+      | `Long | `Float | `Double as k ->
+         sprintf "%castore" (JDumpBasics.jvm_basic_type k))
 
-      | OpPop -> "pop"
-      | OpPop2 -> "pop2"
-      | OpDup -> "dup"
-      | OpDupX1 -> "dupX1"
-      | OpDupX2 -> "dupX2"
-      | OpDup2 -> "dup2"
-      | OpDup2X1 -> "dup2X1"
-      | OpDup2X2 -> "dup2X2"
-      | OpSwap -> "swap"
+  | OpPop -> "pop"
+  | OpPop2 -> "pop2"
+  | OpDup -> "dup"
+  | OpDupX1 -> "dupX1"
+  | OpDupX2 -> "dupX2"
+  | OpDup2 -> "dup2"
+  | OpDup2X1 -> "dup2X1"
+  | OpDup2X2 -> "dup2X2"
+  | OpSwap -> "swap"
 
-      | OpAdd k -> sprintf "%cadd" (JDumpBasics.jvm_basic_type k)
-      | OpSub k -> sprintf "%csub" (JDumpBasics.jvm_basic_type k)
-      | OpMult k -> sprintf "%cmult" (JDumpBasics.jvm_basic_type k)
-      | OpDiv k -> sprintf "%cdiv" (JDumpBasics.jvm_basic_type k)
-      | OpRem k -> sprintf "%crem" (JDumpBasics.jvm_basic_type k)
-      | OpNeg k -> sprintf "%cneg" (JDumpBasics.jvm_basic_type k)
+  | OpAdd k -> sprintf "%cadd" (JDumpBasics.jvm_basic_type k)
+  | OpSub k -> sprintf "%csub" (JDumpBasics.jvm_basic_type k)
+  | OpMult k -> sprintf "%cmult" (JDumpBasics.jvm_basic_type k)
+  | OpDiv k -> sprintf "%cdiv" (JDumpBasics.jvm_basic_type k)
+  | OpRem k -> sprintf "%crem" (JDumpBasics.jvm_basic_type k)
+  | OpNeg k -> sprintf "%cneg" (JDumpBasics.jvm_basic_type k)
 
-      | OpIShl -> "ishl"
-      | OpLShl -> "lshl"
-      | OpIShr -> "ishr"
-      | OpLShr -> "lshr"
-      | OpIUShr -> "iushr"
-      | OpLUShr -> "lushr"
-      | OpIAnd -> "iand"
-      | OpLAnd -> "land"
-      | OpIOr -> "ior"
-      | OpLOr -> "lor"
-      | OpIXor -> "ixor"
-      | OpLXor -> "lxor"
+  | OpIShl -> "ishl"
+  | OpLShl -> "lshl"
+  | OpIShr -> "ishr"
+  | OpLShr -> "lshr"
+  | OpIUShr -> "iushr"
+  | OpLUShr -> "lushr"
+  | OpIAnd -> "iand"
+  | OpLAnd -> "land"
+  | OpIOr -> "ior"
+  | OpLOr -> "lor"
+  | OpIXor -> "ixor"
+  | OpLXor -> "lxor"
 
-      | OpIInc (a,b) -> "iinc "^(string_of_int a)^" "^ (string_of_int b)
+  | OpIInc (a,b) -> "iinc "^(string_of_int a)^" "^ (string_of_int b)
 
-      | OpI2L -> "i2l"
-      | OpI2F -> "i2f"
-      | OpI2D -> "i2d"
-      | OpL2I -> "l2i"
-      | OpL2F -> "l2f"
-      | OpL2D -> "l2d"
-      | OpF2I -> "f2i"
-      | OpF2L -> "f2l"
-      | OpF2D -> "f2d"
-      | OpD2I -> "d2i"
-      | OpD2L -> "d2l"
-      | OpD2F -> "d2f"
-      | OpI2B -> "i2b"
-      | OpI2C -> "i2c"
-      | OpI2S -> "i2s"
+  | OpI2L -> "i2l"
+  | OpI2F -> "i2f"
+  | OpI2D -> "i2d"
+  | OpL2I -> "l2i"
+  | OpL2F -> "l2f"
+  | OpL2D -> "l2d"
+  | OpF2I -> "f2i"
+  | OpF2L -> "f2l"
+  | OpF2D -> "f2d"
+  | OpD2I -> "d2i"
+  | OpD2L -> "d2l"
+  | OpD2F -> "d2f"
+  | OpI2B -> "i2b"
+  | OpI2C -> "i2c"
+  | OpI2S -> "i2s"
 
-      | OpCmp x ->
-          (match x with
-	     | `L -> "lcmp"
-	     | `FL -> "fcmpl"
-	     | `FG -> "fcmpg"
-	     | `DL -> "dcmpl"
-	     | `DG -> "dcmpg")
-      | OpIf (x, n) ->
-          (match x with
-	       `Eq -> "ifeq " ^ (string_of_int n)
-	     | `Ne -> "ifne " ^ (string_of_int n)
-	     | `Lt -> "iflt " ^ (string_of_int n)
-	     | `Ge -> "ifge " ^ (string_of_int n)
-	     | `Gt -> "ifgt " ^ (string_of_int n)
-	     | `Le -> "ifle " ^ (string_of_int n)
-	     | `Null -> "ifnull " ^ (string_of_int n)
-	     | `NonNull -> "ifnonnull " ^ (string_of_int n))
-      | OpIfCmp (x, n) ->
-          (match x with
-	       `IEq -> "ifcmpeq " ^ (string_of_int n)
-	     | `INe -> "ifcmpne " ^ (string_of_int n)
-	     | `ILt -> "ifcmplt " ^ (string_of_int n)
-	     | `IGe -> "ifcmpge " ^ (string_of_int n)
-	     | `IGt -> "ifcmpgt " ^ (string_of_int n)
-	     | `ILe -> "ifcmpme " ^ (string_of_int n)
-	     | `AEq -> "ifacmpeq " ^ (string_of_int n)
-	     | `ANe -> "ifacmpne " ^ (string_of_int n))
-      | OpGoto n -> "goto " ^ (string_of_int n)
-      | OpJsr n -> "jsr " ^ (string_of_int n)
-      | OpRet n -> "ret " ^ (string_of_int n)
+  | OpCmp x ->
+     (match x with
+      | `L -> "lcmp"
+      | `FL -> "fcmpl"
+      | `FG -> "fcmpg"
+      | `DL -> "dcmpl"
+      | `DG -> "dcmpg")
+  | OpIf (x, n) ->
+     (match x with
+	`Eq -> "ifeq " ^ (string_of_int n)
+      | `Ne -> "ifne " ^ (string_of_int n)
+      | `Lt -> "iflt " ^ (string_of_int n)
+      | `Ge -> "ifge " ^ (string_of_int n)
+      | `Gt -> "ifgt " ^ (string_of_int n)
+      | `Le -> "ifle " ^ (string_of_int n)
+      | `Null -> "ifnull " ^ (string_of_int n)
+      | `NonNull -> "ifnonnull " ^ (string_of_int n))
+  | OpIfCmp (x, n) ->
+     (match x with
+	`IEq -> "ifcmpeq " ^ (string_of_int n)
+      | `INe -> "ifcmpne " ^ (string_of_int n)
+      | `ILt -> "ifcmplt " ^ (string_of_int n)
+      | `IGe -> "ifcmpge " ^ (string_of_int n)
+      | `IGt -> "ifcmpgt " ^ (string_of_int n)
+      | `ILe -> "ifcmpme " ^ (string_of_int n)
+      | `AEq -> "ifacmpeq " ^ (string_of_int n)
+      | `ANe -> "ifacmpne " ^ (string_of_int n))
+  | OpGoto n -> "goto " ^ (string_of_int n)
+  | OpJsr n -> "jsr " ^ (string_of_int n)
+  | OpRet n -> "ret " ^ (string_of_int n)
 
-      | OpTableSwitch (def,min,max,tbl) ->
-          (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
-          let inst =
-            "tableswitch (["^ Int32.to_string min
-            ^":"^ Int32.to_string max ^"] -> ["
-          and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
-          in inst^table^"],default:"^ string_of_int def^")"
+  | OpTableSwitch (def,min,max,tbl) ->
+     (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
+     let inst =
+       "tableswitch (["^ Int32.to_string min
+       ^":"^ Int32.to_string max ^"] -> ["
+     and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
+     in inst^table^"],default:"^ string_of_int def^")"
 
-      | OpLookupSwitch (default,jumps) ->
-          let inst =
-	    JLib.List.fold_left
-	      (fun s (int,offset) ->
-                 s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
-	      "lookupswitch "
-	      jumps
-          in inst ^ "_ ->" ^string_of_int default
+  | OpLookupSwitch (default,jumps) ->
+     let inst =
+       JLib.List.fold_left
+	 (fun s (int,offset) ->
+           s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
+	 "lookupswitch "
+	 jumps
+     in inst ^ "_ ->" ^string_of_int default
 
-      | OpReturn k ->
-          (match k with
-	     | `Object -> "areturn"
-	     | `Void -> "return"
-	     | `Int2Bool | `Long | `Float | `Double as k ->
-                 sprintf "%creturn" (JDumpBasics.jvm_basic_type k))
+  | OpReturn k ->
+     (match k with
+      | `Object -> "areturn"
+      | `Void -> "return"
+      | `Int2Bool | `Long | `Float | `Double as k ->
+         sprintf "%creturn" (JDumpBasics.jvm_basic_type k))
 
-      | OpGetStatic (cs, fs) ->
-	  "getstatic "^ (field_signature ~jvm:true ~declared_in:cs fs)
-      | OpPutStatic (cs, fs) ->
-	  "putstatic " ^ (field_signature ~jvm:true ~declared_in:cs fs)
-      | OpPutField (cs, fs) ->
-	  "putfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
-      | OpGetField (cs, fs) ->
-	  "getfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
-      | OpInvoke (x, ms) ->
-	  (match x with
-	     | `Virtual t ->
-	         "invokevirtual " ^
-                   (method_signature ~jvm:true ~callee:t ms)
-	     | `Special cs ->
-	         "invokespecial " ^
-                   (method_signature ~jvm:true ~callee:(TClass cs) ms)
-	     | `Static cs ->
-	         "invokestatic " ^
-                   (method_signature ~jvm:true ~callee:(TClass cs) ms)
-	     | `Interface cs ->
-	         "invokeinterface " ^
-                   (method_signature ~jvm:true ~callee:(TClass cs) ms)
-             | `Dynamic _ ->
-                 "invokedynamic " ^
-                   (method_signature ~jvm:true ms)
-	  )
-      | OpNew cs -> "new " ^ (class_name cs)
-      | OpNewArray t ->
-          (match t with
-	     | TBasic t -> "newarray " ^ (java_basic_type ~jvm:true t)
-	     | TObject c ->
-	         "anewarray " ^ (object_type ~jvm:true c)
-          )
-      | OpArrayLength -> "arraylength"
-      | OpThrow -> "athrow"
-      | OpCheckCast t -> "checkcast " ^ (object_type ~jvm:true t)
-      | OpInstanceOf t -> "instanceof " ^ (object_type ~jvm:true t)
-      | OpMonitorEnter -> "monitorenter"
-      | OpMonitorExit -> "monitorexit"
-      | OpAMultiNewArray (t,b) ->
-          "amultinewarray " ^(object_type ~jvm:true t) ^ " " ^ (string_of_int b)
-      | OpBreakpoint -> "breakpoint"
+  | OpGetStatic (cs, fs) ->
+     "getstatic "^ (field_signature ~jvm:true ~declared_in:cs fs)
+  | OpPutStatic (cs, fs) ->
+     "putstatic " ^ (field_signature ~jvm:true ~declared_in:cs fs)
+  | OpPutField (cs, fs) ->
+     "putfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
+  | OpGetField (cs, fs) ->
+     "getfield " ^ (field_signature ~jvm:true ~declared_in:cs fs)
+  | OpInvoke (x, ms) ->
+     (match x with
+      | `Virtual t ->
+	 "invokevirtual " ^
+           (method_signature ~jvm:true ~callee:t ms)
+      | `Special (_, cs) ->
+	 "invokespecial " ^
+           (method_signature ~jvm:true ~callee:(TClass cs) ms)
+      | `Static (_, cs) ->
+	 "invokestatic " ^
+           (method_signature ~jvm:true ~callee:(TClass cs) ms)
+      | `Interface cs ->
+	 "invokeinterface " ^
+           (method_signature ~jvm:true ~callee:(TClass cs) ms)
+      | `Dynamic _ ->
+         "invokedynamic " ^
+           (method_signature ~jvm:true ms)
+     )
+  | OpNew cs -> "new " ^ (class_name cs)
+  | OpNewArray t ->
+     (match t with
+      | TBasic t -> "newarray " ^ (java_basic_type ~jvm:true t)
+      | TObject c ->
+	 "anewarray " ^ (object_type ~jvm:true c)
+     )
+  | OpArrayLength -> "arraylength"
+  | OpThrow -> "athrow"
+  | OpCheckCast t -> "checkcast " ^ (object_type ~jvm:true t)
+  | OpInstanceOf t -> "instanceof " ^ (object_type ~jvm:true t)
+  | OpMonitorEnter -> "monitorenter"
+  | OpMonitorExit -> "monitorexit"
+  | OpAMultiNewArray (t,b) ->
+     "amultinewarray " ^(object_type ~jvm:true t) ^ " " ^ (string_of_int b)
+  | OpBreakpoint -> "breakpoint"
 
-      | OpInvalid -> "invalid"
+  | OpInvalid -> "invalid"
 
 let jopcode ?(jvm=false) op =
   if jvm then jopcode_jvm op
@@ -419,12 +421,20 @@ let jopcode ?(jvm=false) op =
 	  Printf.sprintf "invokeinterface %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
-      | OpInvoke ((`Static cn),ms) ->
+      | OpInvoke ((`Static (`Class, cn)),ms) ->
 	  Printf.sprintf "invokestatic %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
-      | OpInvoke ((`Special cn),ms) ->
+      | OpInvoke ((`Static (`Interface, cn)),ms) ->
+	  Printf.sprintf "invokestatic InterfaceMethod %s.%s%s : %s" (cn_name cn)
+	    (ms_name ms) (value_type_list (ms_args ms))
+	    (return_type (ms_rtype ms))
+      | OpInvoke ((`Special (`Class, cn)),ms) ->
 	  Printf.sprintf "invokespecial %s.%s%s : %s" (cn_name cn)
+	    (ms_name ms) (value_type_list (ms_args ms))
+	    (return_type (ms_rtype ms))
+      | OpInvoke ((`Special (`Interface, cn)),ms) ->
+	  Printf.sprintf "invokespecial InterfaceMethod %s.%s%s : %s" (cn_name cn)
 	    (ms_name ms) (value_type_list (ms_args ms))
 	    (return_type (ms_rtype ms))
       | _ -> jopcode_jvm op
@@ -550,7 +560,7 @@ let any_field ?(jvm=false) (f : any_field) : string =
     in
       match value with
 	  None -> ""
-	| Some cfv -> " = "^constant_value cfv
+	| Some cfv -> " = " ^ JDumpBasics.constant_attribute cfv
   in
     if jvm then field_signature ~jvm:true fs
     else
@@ -687,7 +697,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
 	      Format.pp_force_newline fmt ();
 	      MethodMap.iter
 		(fun _ m ->
-		   print_method_fmt jvm (AbstractMethod m) print_code fmt;
+		   print_method_fmt jvm m print_code fmt;
 		   Format.pp_force_newline fmt ();
 		) i.i_methods;
 	      Format.pp_close_box fmt ();

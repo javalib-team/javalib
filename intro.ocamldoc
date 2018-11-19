@@ -1,15 +1,14 @@
 {b {C 2.3.5}}
 
-{i {C Laurent Hubert and Tiphaine Turpin}}
+{i {C Nicolas Barré, Laurent Hubert and Tiphaine Turpin}}
 
-{i {C September 2018}}
+{i {C October 2018}}
 
-{2 {L Documentation}}
+{1 {L Documentation}}
 
 {b {L User interface}}
 
-The following modules consitute the user interface of Javalib. They are the only
-modules you should need.
+The following modules constitute the user interface of Javalib. They are the only modules you should need.
 
 {!modules: Javalib JBasics JCode}
 
@@ -36,4 +35,4 @@ have some feedback).
 
 {!indexlist}
 
-{i {C Others contributors: Florent Kirchner, Nicolas Barré, Nicolas Cannasse and David Pichardie}}
+{i {C Others contributors: Florent Kirchner, Nicolas Cannasse and David Pichardie}}

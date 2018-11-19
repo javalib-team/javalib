@@ -20,7 +20,6 @@
 
 open JBasics
 open JClassLow
-open JCode
 open JClass
 
 let debug = ref 1
@@ -74,21 +73,6 @@ let combine_LocalVariableTable (lvts:'s lvt list) : 's lvt =
 	  then raise (Class_structure_error "A CodeAttribute contains more than one LocalVariableTable and they are not compatible with each other")
       end;
     lvt
-
-(* resolve the constants of a bootstrap method in the constant poool *)
-let low2high_bootstrapmethod consts { bootstrap_method_ref; bootstrap_arguments; } =
-  match consts.(bootstrap_method_ref) with
-  | ConstMethodHandle (handle_kind, handle_const) ->
-      let bootstrap_method_args =
-        List.map
-          (fun bootstrap_arg_index -> match consts.(bootstrap_arg_index) with
-             | (ConstValue _ | ConstMethodHandle _ | ConstMethodType _) as arg ->
-                 arg
-             | _ ->
-                 raise (Class_structure_error "Bad argument type to bootstrap method"))
-          bootstrap_arguments in
-      handle_kind, handle_const, bootstrap_method_args
-  | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle")
 
 (* convert a list of  attributes to a list of couple of string, as for AttributeUnknown. *)
 let low2high_other_attributes consts : JClassLow.attribute list ->  (string*string) list =
@@ -153,9 +137,10 @@ let expanse_stackmap_table stackmap_table =
 
 let low2high_code consts bootstrap_methods = function c ->
   {
-    c_max_stack = c.JClassLow.c_max_stack;
-    c_max_locals = c.JClassLow.c_max_locals;
-    c_code = JInstruction.opcodes2code (JLib.DynArray.to_array consts) bootstrap_methods c.JClassLow.c_code;
+    JCode.c_max_stack = c.JClassLow.c_max_stack;
+    JCode.c_max_locals = c.JClassLow.c_max_locals;
+    JCode.c_code = JInstruction.opcodes2code (JLib.DynArray.to_array consts)
+                                             bootstrap_methods c.JClassLow.c_code;
     c_exc_tbl = c.JClassLow.c_exc_tbl;
     c_line_number_table =
       begin
@@ -197,18 +182,7 @@ let low2high_code consts bootstrap_methods = function c ->
           | [] -> None
           | _ -> Some lvt
       end;
-    c_stack_map_midp =
-      begin
-	let rec find_StackMap = function
-	  | AttributeStackMap l :: l' ->
-	      if find_StackMap l' <> None
-	      then raise (Class_structure_error "Only one StackMap attribute can be attached to a method.");
-	      Some l
-	  | _::l -> find_StackMap l
-	  | [] -> None
-	in find_StackMap c.JClassLow.c_attributes
-      end;
-    c_stack_map_java6 =
+    c_stack_map =
       begin
 	let rec find_StackMapTable = function
 	  | AttributeStackMapTable l :: l' ->
@@ -222,8 +196,9 @@ let low2high_code consts bootstrap_methods = function c ->
     c_attributes = low2high_other_attributes consts
       (List.filter
 	 (function
-	    | AttributeStackMap _
-	    | AttributeStackMapTable _ | AttributeLocalVariableTable _
+	    | AttributeStackMapTable _
+            | AttributeLocalVariableTable _
+            | AttributeLocalVariableTypeTable _
 	    | AttributeLineNumberTable _ -> false
 	    | _ -> true)
 	 c.JClassLow.c_attributes);
@@ -560,6 +535,24 @@ let low2high_amethod consts cs ms = function m ->
              "The length of an Runtime(In)VisibleParameterAnnotations \
               is longer than the number of arguments of the same method")
   in
+  let (method_parameters_att, other_att) =
+    List.partition
+      (function
+         | AttributeMethodParameters _ -> true
+         | _ -> false)
+      other_att
+  in
+  let method_parameters_att =
+    match method_parameters_att with
+    | [] -> []
+    | AttributeMethodParameters params :: [] ->
+       List.map (fun p -> { mp_name = p.name;
+                            mp_final = List.mem `AccFinal p.flags;
+                            mp_synthetic =  List.mem `AccSynthetic p.flags;
+                            mp_mandated =  List.mem `AccMandated p.flags; }) params
+    | _ -> raise (Class_structure_error
+                    "A method should contain only one MethodParameters attribute")
+  in
     {
       am_signature = ms;
       am_class_method_signature = make_cms cs ms;
@@ -574,6 +567,7 @@ let low2high_amethod consts cs ms = function m ->
       am_annotations =
         {ma_global = annotations;
          ma_parameters = parameter_annotations;};
+      am_parameters = method_parameters_att;
       am_annotation_default = default_annotation;
     }
 
@@ -702,6 +696,24 @@ let low2high_cmethod consts bootstrap_methods cs ms = function m ->
              "The length of an Runtime(In)VisibleParameterAnnotations \
               is longer than the number of arguments of the same method")
   in
+  let (method_parameters_att, other_att) =
+    List.partition
+      (function
+         | AttributeMethodParameters _ -> true
+         | _ -> false)
+      other_att
+  in
+  let method_parameters_att =
+    match method_parameters_att with
+    | [] -> []
+    | AttributeMethodParameters params :: [] ->
+       List.map (fun p -> { mp_name = p.name;
+                            mp_final = List.mem `AccFinal p.flags;
+                            mp_synthetic =  List.mem `AccSynthetic p.flags;
+                            mp_mandated =  List.mem `AccMandated p.flags; }) params
+    | _ -> raise (Class_structure_error
+                    "A method should contain only one MethodParameters attribute")
+  in
     {
       cm_signature = ms;
       cm_class_method_signature = make_cms cs ms;
@@ -720,6 +732,7 @@ let low2high_cmethod consts bootstrap_methods cs ms = function m ->
       cm_annotations =
         {ma_global = annotations;
          ma_parameters = parameter_annotations;};
+      cm_parameters = method_parameters_att;
       cm_implementation = code;
     }
 
@@ -732,13 +745,16 @@ let low2high_methods cn consts bootstrap_methods = function ac ->
   let cs = ac.j_name in
     List.fold_left
       (fun map meth ->
-	 let ms = make_ms meth.m_name (fst meth.m_descriptor) (snd meth.m_descriptor) in
+         let (m_args, m_rtype) = md_split meth.m_descriptor in
+	 let ms = make_ms meth.m_name m_args m_rtype in
 	   if !debug > 0 && MethodMap.mem ms map
 	   then
 	     prerr_endline
 	       ("Warning: in " ^ JDumpBasics.class_name cn
                 ^ " 2 methods have been found with the same signature (" ^ meth.m_name
-		^"("^ String.concat ", " (List.map (JDumpBasics.value_signature) (fst meth.m_descriptor)) ^"))");
+		^"("^ String.concat ", "
+                                    (List.map
+                                       (JDumpBasics.value_signature ~jvm:false) m_args) ^"))");
 	   MethodMap.add
 	     ms
 	     (try low2high_acmethod consts bootstrap_methods cs ms meth
@@ -787,7 +803,6 @@ let low2high_innerclass = function
 let low2high_class cl =
   if cl.j_super = None && cl.j_name <> JBasics.java_lang_object
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
-  let cs = cl.j_name in
   let flags = cl.j_flags in
   let (access,flags) = flags2access (flags :> access_flag list) in
   let (accsuper,flags) = get_flag `AccSuper flags in
@@ -881,15 +896,6 @@ let low2high_class cl =
              | _ -> annots)
         cl.j_attributes
         []
-    and my_bootstrap_methods =
-      List.fold_right
-        (fun attr acc -> match attr with
-           | AttributeBootstrapMethods methods ->
-               List.map (low2high_bootstrapmethod cl.j_consts) methods
-           | _ ->
-               acc)
-        cl.j_attributes
-        [];
     and my_other_attributes =
       low2high_other_attributes consts
 	(List.filter
@@ -903,6 +909,7 @@ let low2high_class cl =
 	      | _ -> true)
 	   cl.j_attributes);
     in
+    let my_bootstrap_methods = cl.j_bootstrap_table in
       if is_interface
       then
 	begin
@@ -921,23 +928,12 @@ let low2high_class cl =
                             "A class file with its `AccInterface flag set must \
                              not have  its their `AccEnum flag set.")
             end;
-	  let (init,methods) =
-	    match
-	      List.partition
-		(fun m ->
-		   let clinit_name = ms_name clinit_signature in
-		   let clinit_desc = (ms_args clinit_signature, ms_rtype clinit_signature) in
-		     m.m_name = clinit_name
-		       && fst m.m_descriptor = fst clinit_desc)
-		cl.j_methods
+          let my_methods =
+	    try low2high_methods my_name consts my_bootstrap_methods cl
 	    with
-	      | [m],others -> Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
-	      | [],others -> None, others
-	      | m::_::_,others ->
-		  if not (JBasics.get_permissive ())
-		  then raise (Class_structure_error
-                                "has more than one class initializer <clinit>")
-		  else Some (low2high_cmethod consts my_bootstrap_methods cs clinit_signature m),others
+	    | Class_structure_error msg ->
+	       raise (Class_structure_error
+			("in interface "^JDumpBasics.class_name my_name^": "^msg))
 	  in
 	    JInterface {
 	      i_name = my_name;
@@ -951,7 +947,6 @@ let low2high_class cl =
 	      i_source_debug_extention = my_source_debug_extention;
 	      i_inner_classes = my_inner_classes;
 	      i_other_attributes = my_other_attributes;
-	      i_initializer = init;
 	      i_annotation = is_annotation;
               i_annotations = my_annotations;
 	      i_other_flags = flags;
@@ -977,37 +972,7 @@ let low2high_class cl =
 		       m)
 		FieldMap.empty
 		cl.j_fields;
-	      i_methods = List.fold_left
-		(fun map meth ->
-		   let ms =
-                     make_ms
-                       meth.m_name
-                       (fst meth.m_descriptor)
-                       (snd meth.m_descriptor)
-                   in
-		     if !debug > 0 && MethodMap.mem ms map
-		     then
-		       prerr_endline
-			 ("Warning: in " ^ JDumpBasics.class_name my_name
-                          ^ " 2 methods have been found with the same signature ("
-                          ^ meth.m_name ^"("
-                          ^ String.concat ", " (List.map (JDumpBasics.value_signature)
-						  (fst meth.m_descriptor))
-                          ^ "))");
-		     MethodMap.add
-		       ms
-		       (try low2high_amethod consts cs ms meth
-			with Class_structure_error msg ->
-			  let sign =
-                            JDumpBasics.signature
-                              meth.m_name
-                              (SMethod meth.m_descriptor)
-			  in raise (Class_structure_error
-                                      ("in class " ^ JDumpBasics.class_name my_name
-                                       ^ ": method " ^ sign ^ ": " ^ msg)))
-		       map)
-		MethodMap.empty
-		methods;
+	      i_methods = my_methods;
 	    }
 	end
       else
@@ -1030,7 +995,7 @@ let low2high_class cl =
 		      match mso with
 		        | None -> None
 		        | Some (mn,SMethod mdesc) ->
-			    Some (make_ms mn (fst mdesc) (snd mdesc))
+			    Some (make_ms mn (md_args mdesc) (md_rtype mdesc))
 		        | Some (_,SValue _) ->
 			    raise
 			      (Class_structure_error

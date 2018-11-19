@@ -8,3 +8,7 @@ Makefile.config
 src/META
 doc/tutorial/*.pdf
 src/jManifest.ml
+tests/src/test_parser
+tests/src/unparser
+tests/.errors
+src/ocaml

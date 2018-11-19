@@ -71,18 +71,6 @@ type java_basic_type = [
 | other_num
 ]
 
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
-
 (* Java object type *)
 type object_type =
   | TClass of class_name
@@ -118,29 +106,60 @@ type descriptor =
   | SValue of field_descriptor
   | SMethod of method_descriptor
 
-(* Constant value. *)
 type jstr = string
 let make_jstr s = s
 let jstr_pp s   = String.escaped s
 let jstr_raw s  = s
 
+(* Method Handle *)
+type jmethod_or_interface = [
+  | `Method of class_name * method_signature
+  | `InterfaceMethod of class_name * method_signature
+  ]
 
-type constant_value =
+type method_handle = [
+  | `GetField of class_name * field_signature
+  | `GetStatic of class_name * field_signature
+  | `PutField of class_name * field_signature
+  | `PutStatic of class_name * field_signature
+  | `InvokeVirtual of object_type * method_signature
+  | `NewInvokeSpecial of class_name * method_signature
+  | `InvokeStatic of jmethod_or_interface
+  | `InvokeSpecial of jmethod_or_interface
+  | `InvokeInterface of class_name * method_signature
+  ]
+
+(* Bootstrap argument *)
+type bootstrap_argument = [
+  | `String of jstr
+  | `Class of object_type
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `MethodHandle of method_handle
+  | `MethodType of method_descriptor
+]
+
+(* Bootstrap method *)
+type bootstrap_method = {
+    bm_ref : method_handle;
+    bm_args : bootstrap_argument list;
+  }
+
+(* Constant. *)
+type constant =
   | ConstString of jstr
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64
   | ConstDouble of float
   | ConstClass of object_type
-
-(* Constant. *)
-type constant =
-  | ConstValue of constant_value
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
   | ConstMethodType of method_descriptor
-  | ConstMethodHandle of method_handle_kind * constant
+  | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
@@ -317,6 +336,11 @@ let make_ms mname margs mrtype =
 	mst.msi_map <- MethodSignatureMap.add ms new_ms mst.msi_map;
 	mst.msi_next <- msi + 1;
 	new_ms
+
+let make_md md = md
+let md_split md = md
+let md_args md = fst md
+let md_rtype md = snd md
 
 let make_fs fname fdesc =
   let dic = common_dictionary in

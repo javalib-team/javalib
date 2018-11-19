@@ -22,7 +22,7 @@
 
 open JBasics
 
-(** {2 Loading a single class.} *)
+(** {1 Loading a single class.} *)
 
 (** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
 type class_path
@@ -81,7 +81,7 @@ val write_class_low : string -> JClassLow.jclass -> unit
     must contain the [.class] extension. *)
 val extract_class_name_from_file : string -> JBasics.class_name * string
 
-(** {2 Reading/transforming a set of classes.} *)
+(** {1 Reading/transforming a set of classes.} *)
 
 (** [iter ~debug:false f filename] applies the function successively the
     function [f] on each classes specified by [filename]. [filename] is either a

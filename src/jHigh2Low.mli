@@ -34,8 +34,12 @@ val h2l_cfield :
 val h2l_ifield :
   JBasics.constant JLib.DynArray.t -> JClass.interface_field -> JClassLow.jfield
 val h2l_cmethod :
-  JBasics.constant JLib.DynArray.t -> JCode.jcode JClass.concrete_method -> JClassLow.jmethod
+  JBasics.constant JLib.DynArray.t ->
+  JBasics.bootstrap_method JLib.DynArray.t ->
+  JCode.jcode JClass.concrete_method -> JClassLow.jmethod
 val h2l_amethod :
   JBasics.constant JLib.DynArray.t -> JClass.abstract_method -> JClassLow.jmethod
 val h2l_acmethod :
-  JBasics.constant JLib.DynArray.t -> JCode.jcode JClass.jmethod -> JClassLow.jmethod
+  JBasics.constant JLib.DynArray.t ->
+  JBasics.bootstrap_method JLib.DynArray.t ->
+  JCode.jcode JClass.jmethod -> JClassLow.jmethod

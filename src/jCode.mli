@@ -23,20 +23,24 @@
 
 open JBasics
 
-(** {2 Bytecode instructions.} *)
+(** {1 Bytecode instructions.} *)
 (********************************)
 
 type jconst = [
-  | `ANull                            (** AConstNull  *)
-  | `Int of int32                     (** IConst / ldc / ldc_w *)
-  | `Long of int64                    (** LConst / ldc2w  *)
-  | `Float of float                   (** FConst / ldc / ldc_w *)
-  | `Double of float                  (** DConst / ldc2w  *)
-  | `Byte of int                      (** BIPush *)
-  | `Short of int                     (** SIPush *)
-  | `String of jstr                   (** ldc / ldc_w  *)
-  | `Class of object_type             (** ldc / ldc_w *)
+  | `ANull                                                (** AConstNull  *)
+  | `Int of int32                                         (** IConst / ldc / ldc_w *)
+  | `Long of int64                                        (** LConst / ldc2w  *)
+  | `Float of float                                       (** FConst / ldc / ldc_w *)
+  | `Double of float                                      (** DConst / ldc2w  *)
+  | `Byte of int                                          (** BIPush *)
+  | `Short of int                                         (** SIPush *)
+  | `String of jstr                                       (** ldc / ldc_w  *)
+  | `Class of object_type                                 (** ldc / ldc_w *)
+  | `MethodType of method_descriptor                      (** ldc / ldc_w *)
+  | `MethodHandle of method_handle                        (** ldc / ldc_w *)
 ]
+
+type jinterface_or_class = [ `Class | `Interface ]
 
 type jopcode =
 
@@ -143,15 +147,14 @@ type jopcode =
   | OpArrayStore of jvm_array_type
 
   (* Method invocation and return *)
-  | OpInvoke
-      of [
-	`Virtual of object_type
-      | `Special of class_name
-      | `Static of class_name
-      | `Interface of class_name
-      | `Dynamic of method_handle_kind * constant * constant list
-      ]
-	* method_signature
+  | OpInvoke of [
+    | `Virtual of object_type
+    | `Special of jinterface_or_class * class_name
+    | `Static of jinterface_or_class * class_name
+    | `Interface of class_name
+    | `Dynamic of bootstrap_method
+    ]
+	        * method_signature
   | OpReturn of jvm_return_type
 
   (* Exceptions and threads *)
@@ -190,33 +193,32 @@ type jcode = {
   c_max_locals : int;
   c_code : jopcodes;
   c_exc_tbl : exception_handler list;
-  (** The list is ordered in the same way as in the bytecode (See JVM Spec 7 $2.10). *)
+  (** The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10). *)
   c_line_number_table : (int * int) list option;
   (** (start_pc, line_number) *)
   c_local_variable_table : (int * int * string * value_type * int) list option;
   (** (start_pc, length, name, type, index) *)
   c_local_variable_type_table : (int * int * string * JSignature.fieldTypeSignature * int) list option;
-  (** LocalVariableTable for generics, described in the JVM Spec 1.5, §4.8.13 *)
-  c_stack_map_midp : stackmap list option;
-  c_stack_map_java6 : stackmap list option;
+  (** LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14 *)
+  c_stack_map : stackmap list option;
   c_attributes : (string * string) list;
 }
 
 (** Empty list of opcodes *)
 val empty : jcode
 
-(** {2 Access functions.} *)
+(** {1 Access functions.} *)
 
 (** [get_source_line_number pp m] returns the source line number corresponding
     to the program point [pp] of the method code [m].  The line number give a
-    rough idea and may be wrong.  It uses the attribute LineNumberTable
-    (cf. JVMS §4.7.8). *)
+    rough idea and may be wrong. It uses the attribute LineNumberTable
+    (cf. JVM Spec se8 §4.7.12). *)
 val get_source_line_number : int -> jcode -> int option
 
 (** [get_source_line_number pp lnt] returns the source line number corresponding
     to the program point [pp] given the LineNumberTable attribute [lnt]. The
-    line number give a rough idea and may be wrong.  It uses the attribute
-    LineNumberTable (cf. JVMS §4.7.8).  *)
+    line number give a rough idea and may be wrong. It uses the attribute
+    LineNumberTable (cf. JVM Spec se8 §4.7.12).  *)
 val get_source_line_number' : int -> (int * int) list -> int option
 
 (** [get_local_variable_info i pp m] returns the name and signature of

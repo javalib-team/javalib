@@ -47,11 +47,6 @@ val unparse_attribute_to_strings : JBasics.constant JLib.DynArray.t -> JClassLow
 
 (* For statistics: *)
 
-val unparse_stackmap_attribute :
-  JBasics.constant JLib.DynArray.t ->
-  (int * JBasics.verification_type list * JBasics.verification_type list) list ->
-  (string * string)
-
 val unparse_stackmap_table_attribute :
   JBasics.constant JLib.DynArray.t -> JClassLow.stackmap_frame list -> (string * string)
 

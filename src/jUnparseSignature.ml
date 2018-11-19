@@ -49,16 +49,17 @@ and unparse_value_type = function
   | TBasic b -> unparse_basic_type b
   | TObject o -> unparse_object_type o
 
-let unparse_method_descriptor (sigs, s) =
-      List.fold_left
-	(fun desc s ->
-	   desc ^ unparse_value_type s)
-	"("
-	sigs
-      ^ ")"
-      ^ (match s with
-	   | Some s -> unparse_value_type s
-	   | None -> "V")
+let unparse_method_descriptor md =
+  let (sigs, s) = md_split md in
+  List.fold_left
+    (fun desc s ->
+      desc ^ unparse_value_type s)
+    "("
+    sigs
+  ^ ")"
+  ^ (match s with
+     | Some s -> unparse_value_type s
+     | None -> "V")
 
 let unparse_descriptor = function
   | SValue v -> unparse_value_type v

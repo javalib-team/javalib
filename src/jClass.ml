@@ -38,6 +38,13 @@ type attributes = {
   other : (string * string) list
 }
 
+type method_parameter_attribute = {
+  mp_name : string option;
+  mp_final : bool;
+  mp_synthetic : bool;
+  mp_mandated : bool;
+}
+
 type visibility = RTVisible | RTInvisible
 
 type method_annotations = {
@@ -53,6 +60,14 @@ type field_kind =
   | Final
   | Volatile
 
+type constant_attribute = [
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `Int of int32
+  | `String of jstr
+  ]
+
 type class_field = {
   cf_signature : field_signature;
   cf_class_signature : class_field_signature;
@@ -62,7 +77,7 @@ type class_field = {
   cf_synthetic : bool;
   cf_enum : bool;
   cf_kind : field_kind;
-  cf_value : constant_value option; (* Only if the field is static final. *)
+  cf_value : constant_attribute option; (* Only if the field is static final. *)
   cf_transient : bool;
   cf_annotations : (annotation*visibility) list;
   cf_other_flags : int list;
@@ -76,7 +91,9 @@ type interface_field = {
   if_class_signature : class_field_signature;
   if_generic_signature : JSignature.fieldTypeSignature option;
   if_synthetic : bool;
-  if_value : constant_value option; (* a constant_value is not mandatory, especially as it can be initialized by the class initializer <clinit>. *)
+  if_value : constant_attribute option; (* a constant_attribute is not mandatory,
+                                           especially as it can be initialized by
+                                           the class initializer <clinit>. *)
   if_annotations : (annotation*visibility) list;
   if_other_flags : int list;
   if_attributes : attributes
@@ -111,6 +128,7 @@ type 'a concrete_method = {
   cm_other_flags : int list;
   cm_exceptions : class_name list;
   cm_attributes : attributes;
+  cm_parameters : method_parameter_attribute list;
   cm_annotations : method_annotations;
   cm_implementation : 'a implementation;
 }
@@ -126,6 +144,7 @@ type abstract_method = {
   am_other_flags : int list;
   am_exceptions : class_name list;
   am_attributes : attributes;
+  am_parameters : method_parameter_attribute list;
   am_annotations : method_annotations;
   am_annotation_default : element_value option;
 }
@@ -188,13 +207,12 @@ type 'a jinterface = {
   i_deprecated : bool;
   i_source_debug_extention : string option;
   i_inner_classes : inner_class list;
-  i_initializer : 'a concrete_method option; (* should be static/ signature is <clinit>()V; *)
   i_annotation: bool;
   i_annotations: (annotation*visibility) list;
   i_other_attributes : (string * string) list;
   i_other_flags : int list;
   i_fields : interface_field FieldMap.t;
-  i_methods : abstract_method MethodMap.t;
+  i_methods : 'a jmethod MethodMap.t;
 }
 
 type 'a interface_or_class =
@@ -234,18 +252,18 @@ let get_other_attributes = function
   | JClass c -> c.c_other_attributes
 
 let get_initializer = function
-  | JInterface i -> i.i_initializer
-  | JClass c ->
-      try
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap } ->
+     (try
 	match
 	  MethodMap.find
 	    clinit_signature
-	    c.c_methods
+	    mmap
 	with
-	  | ConcreteMethod m -> Some m
-	  | AbstractMethod _ -> raise (Class_structure_error "A class initializer cannot be abstract")
+	| ConcreteMethod m -> Some m
+	| AbstractMethod _ -> raise (Class_structure_error
+                                       "A class initializer cannot be abstract")
       with
-	| Not_found -> None
+      | Not_found -> None)
 
 let get_other_flags = function
   | JInterface i -> i.i_other_flags
@@ -253,52 +271,33 @@ let get_other_flags = function
 
 let get_method ioc ms =
   match ioc with
-    | JInterface {i_initializer = Some cm}
-	when (ms_equal cm.cm_signature ms) ->
-	ConcreteMethod cm
-    | JInterface i ->
-	AbstractMethod(MethodMap.find ms i.i_methods)
-    | JClass c ->
-	MethodMap.find ms c.c_methods
+  | JInterface i ->
+     MethodMap.find ms i.i_methods
+  | JClass c ->
+     MethodMap.find ms c.c_methods
 
 let get_concrete_method ioc ms =
   match ioc with
-    | JInterface {i_initializer = Some cm}
-	when (ms_equal cm.cm_signature ms) -> cm
-    | JInterface _ -> raise Not_found
-    | JClass c ->
-	(match MethodMap.find ms c.c_methods with
-	    ConcreteMethod cm -> cm
-	  | AbstractMethod _ -> raise Not_found)
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     match MethodMap.find ms mmap with
+     | ConcreteMethod cm -> cm
+     | AbstractMethod _ -> raise Not_found
 
 let get_methods = function
-  | JInterface i ->
-      let mmap =
-	MethodMap.map (fun am -> AbstractMethod am) i.i_methods in
-	(match i.i_initializer with
-	   | None -> mmap
-	   | Some cm -> MethodMap.add clinit_signature (ConcreteMethod cm) mmap
-	)
-  | JClass {c_methods = mmap} -> mmap
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} -> mmap
 
 let get_concrete_methods = function
-  | JInterface i ->
-      (match i.i_initializer with
-	 | None -> MethodMap.empty
-	 | Some cm -> MethodMap.add clinit_signature cm MethodMap.empty
-      )
-  | JClass {c_methods = mmap} ->
-      MethodMap.fold
-	(fun ms m mmap ->
-	   match m with
-	     | AbstractMethod _ -> mmap
-	     | ConcreteMethod cm ->
-		 MethodMap.add ms cm mmap
-	) mmap MethodMap.empty
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.fold
+       (fun ms m mmap ->
+	 match m with
+	 | AbstractMethod _ -> mmap
+	 | ConcreteMethod cm ->
+	    MethodMap.add ms cm mmap
+       ) mmap MethodMap.empty
 
 let get_field c fs = match c with
-  | JInterface i ->
-      InterfaceField (FieldMap.find fs i.i_fields)
+  | JInterface i -> InterfaceField (FieldMap.find fs i.i_fields)
   | JClass c -> ClassField (FieldMap.find fs c.c_fields)
 
 let get_fields = function
@@ -309,18 +308,15 @@ let get_fields = function
 
 let defines_method ioc ms =
   match ioc with
-    | JInterface i ->
-	if (ms_equal ms clinit_signature) then
-	  i.i_initializer <> None
-	else MethodMap.mem ms i.i_methods
-    | JClass c -> MethodMap.mem ms c.c_methods
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.mem ms mmap
 
 let defines_field ioc fs =
   match ioc with
-    | JInterface {i_fields = fm} ->
-	FieldMap.mem fs fm
-    | JClass {c_fields = fm} ->
-	FieldMap.mem fs fm
+  | JInterface {i_fields = fm} ->
+     FieldMap.mem fs fm
+  | JClass {c_fields = fm} ->
+     FieldMap.mem fs fm
 
 let is_static_method = function
   | AbstractMethod _ -> false
@@ -365,35 +361,7 @@ let get_field_visibility = function
 
 let get_class_field_signature = function
   | InterfaceField {if_class_signature = cfs}
-  | ClassField {cf_class_signature = cfs}
-    -> cfs
-
-(* let iter_methods f = function *)
-(*   | JInterface i -> *)
-(*       (match i.i_initializer with *)
-(* 	 | Some i -> f i.cm_signature (ConcreteMethod i) *)
-(* 	 | None -> ()) *)
-(*   | JClass c -> MethodMap.iter f c.c_methods *)
-
-(* let iter_concrete_methods f = function *)
-(*   | JInterface i -> *)
-(*       (match i.i_initializer with *)
-(* 	 | Some i -> f i.cm_signature i *)
-(* 	 | None -> ()) *)
-(*   | JClass c -> *)
-(*       MethodMap.iter *)
-(* 	(fun s m -> match m with ConcreteMethod m -> f s m | AbstractMethod _ -> ()) *)
-(* 	c.c_methods *)
-
-(* let iter_fields f = function *)
-(*   | JInterface i -> *)
-(*       FieldMap.iter *)
-(* 	(fun s fi -> f s (InterfaceField fi )) *)
-(* 	i.i_fields *)
-(*   | JClass c -> *)
-(*       FieldMap.iter *)
-(* 	(fun s fi -> f s (ClassField fi )) *)
-(* 	c.c_fields *)
+  | ClassField {cf_class_signature = cfs} -> cfs
 
 let identity = fun x -> x
 
@@ -420,71 +388,44 @@ let cf_fold f = function
 
 
 let m_iter f = function
-  | JInterface i ->
-      JLib.Option.may (fun m -> f (ConcreteMethod m)) i.i_initializer;
-      MethodMap.iter
-        (fun _ m -> f (AbstractMethod m))
-        i.i_methods
-  | JClass c ->
-      MethodMap.iter
-        (fun _ m -> f m)
-        c.c_methods
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.iter (fun _ m -> f m) mmap
 
 let cm_iter f = function
-  | JInterface i -> JLib.Option.may (fun m -> f m) i.i_initializer;
-  | JClass c ->
-      MethodMap.iter
-        (fun _ -> function
-           | AbstractMethod _ -> ()
-           | ConcreteMethod m -> f m)
-        c.c_methods
+  | JInterface {i_methods = mmap}  | JClass {c_methods = mmap} ->
+     MethodMap.iter
+       (fun _ -> function
+         | AbstractMethod _ -> ()
+         | ConcreteMethod m -> f m)
+       mmap
 
 let am_iter f = function
-  | JInterface i -> MethodMap.iter (fun _ m -> f m) i.i_methods
-  | JClass c ->
-      MethodMap.iter
-        (fun _ -> function
-           | AbstractMethod m -> f m
-           | ConcreteMethod _ -> ())
-        c.c_methods
-
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.iter
+       (fun _ -> function
+         | AbstractMethod m -> f m
+         | ConcreteMethod _ -> ())
+       mmap
 
 let am_fold f = function
-  | JInterface i ->
-      MethodMap.fold
-        (fun _ m acc -> f m acc)
-        i.i_methods
-  | JClass c ->
-      MethodMap.fold
-        (fun _ -> function
-           | AbstractMethod m -> f m
-           | ConcreteMethod _ -> (fun acc -> acc))
-        c.c_methods
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.fold
+       (fun _ -> function
+         | AbstractMethod m -> f m
+         | ConcreteMethod _ -> (fun acc -> acc))
+       mmap
 
 let cm_fold f = function
-  | JInterface {i_initializer = Some m} -> f m
-  | JInterface _ -> identity
-  | JClass c ->
-      MethodMap.fold
-        (fun _ -> function
-           | AbstractMethod _ -> (fun acc -> acc)
-           | ConcreteMethod m -> f m)
-        c.c_methods
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.fold
+       (fun _ -> function
+         | AbstractMethod _ -> (fun acc -> acc)
+         | ConcreteMethod m -> f m)
+       mmap
 
 let m_fold f = function
-  | JInterface i ->
-      (fun d ->
-         MethodMap.fold
-           (fun _ m acc -> f (AbstractMethod m) acc)
-           i.i_methods
-           (JLib.Option.map_default
-              (fun m -> f (ConcreteMethod m) d)
-              d
-              i.i_initializer))
-  | JClass c ->
-      MethodMap.fold
-        (fun _ m acc -> f m acc)
-        c.c_methods
+  | JInterface {i_methods = mmap} | JClass {c_methods = mmap} ->
+     MethodMap.fold (fun _ m acc -> f m acc) mmap
 
 (* val cm_fold : ('b -> 'a concrete_method -> 'b) -> 'b -> 'a node -> 'b *)
 (* val am_fold : ('b -> 'a abstract_method -> 'b) -> 'b -> 'a node -> 'b *)
@@ -506,6 +447,7 @@ let map_concrete_method_with_native f cm =
     cm_other_flags = cm.cm_other_flags;
     cm_exceptions = cm.cm_exceptions;
     cm_attributes = cm.cm_attributes;
+    cm_parameters = cm.cm_parameters;
     cm_annotations = cm.cm_annotations;
     cm_implementation = f cm.cm_implementation
   }
@@ -576,7 +518,7 @@ let map_class_with_native f c  =
 let map_class_context ?(force=false) f c = map_class_gen (map_method_context ~force:force) f c
 let map_class ?(force=false) f c = map_class_gen (map_method ~force:force) f c
 
-let map_interface_gen map_concrete_method f i =
+let map_interface_gen map_method f i =
   {
     i_name = i.i_name;
     i_version = i.i_version;
@@ -589,27 +531,22 @@ let map_interface_gen map_concrete_method f i =
     i_source_debug_extention = i.i_source_debug_extention;
     i_inner_classes = i.i_inner_classes;
     i_other_attributes = i.i_other_attributes;
-    i_initializer = (match i.i_initializer with
-		       | None -> None
-		       | Some cm ->
-			   Some (map_concrete_method f cm)
-		    );
     i_annotation = i.i_annotation;
     i_annotations = i.i_annotations;
     i_other_flags = i.i_other_flags;
     i_fields = i.i_fields;
-    i_methods = i.i_methods;
+    i_methods = MethodMap.map (map_method f) i.i_methods;
   }
 
 let map_interface_context ?(force=false) f i =
-  map_interface_gen (map_concrete_method_context ~force:force) f i
+  map_interface_gen (map_method_context ~force:force) f i
 let map_interface ?(force=false) f i =
-  map_interface_gen (map_concrete_method ~force:force) f i
+  map_interface_gen (map_method ~force:force) f i
 
 let map_interface_with_native_context f i =
-  map_interface_gen map_concrete_method_with_native_context f i
+  map_interface_gen map_method_with_native_context f i
 let map_interface_with_native f i  =
-  map_interface_gen map_concrete_method_with_native f i
+  map_interface_gen map_method_with_native f i
 
 let map_interface_or_class_with_native f = function
   | JInterface i -> JInterface (map_interface_with_native f i)

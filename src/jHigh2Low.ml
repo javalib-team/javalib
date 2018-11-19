@@ -50,7 +50,7 @@ let enclosingmethod_to_attribute = function
 	| None -> None
 	| Some ms ->
 	    let mname = ms_name ms in
-	    let mdesc = (ms_args ms, ms_rtype ms) in
+	    let mdesc = make_md (ms_args ms, ms_rtype ms) in
 	      Some (mname, SMethod mdesc)
       in
 	[AttributeEnclosingMethod (cs,meth)]
@@ -109,20 +109,17 @@ let h2l_stackmap_table sm : stackmap_frame list =
       ) (0,[]) sm in
     List.rev table
 
-let h2l_code2attribute consts = function
+let h2l_code2attribute consts bm_table = function
   | Native -> []
   | Java code ->
       let h2l () =
 	let code = Lazy.force code in
-	  {JClassLow.c_max_stack = code.c_max_stack;
-	   JClassLow.c_max_locals = code.c_max_locals;
-	   JClassLow.c_code = JInstruction.code2opcodes consts code.c_code;
-	   JClassLow.c_exc_tbl = code.c_exc_tbl;
+	  {JClassLow.c_max_stack = code.JCode.c_max_stack;
+	   JClassLow.c_max_locals = code.JCode.c_max_locals;
+	   JClassLow.c_code = JInstruction.code2opcodes consts bm_table code.JCode.c_code;
+	   JClassLow.c_exc_tbl = code.JCode.c_exc_tbl;
 	   JClassLow.c_attributes =
-	      (match code.c_stack_map_midp with
-		 | Some sm -> [AttributeStackMap sm]
-		 | None -> [])
-	      @ (match code.c_stack_map_java6 with
+	      (match code.c_stack_map with
 		   | Some sm -> [AttributeStackMapTable
 				   (h2l_stackmap_table sm)]
 		   | None -> [])
@@ -135,7 +132,7 @@ let h2l_code2attribute consts = function
               @ (match code.c_local_variable_type_table with
                    | Some lvt -> [AttributeLocalVariableTypeTable lvt]
                    | None -> [])
-	      @ h2l_other_attributes code.c_attributes;
+	      @ h2l_other_attributes code.JCode.c_attributes;
 	  }
       in
       let code = Lazy.from_fun h2l
@@ -230,11 +227,24 @@ let h2l_ifield _consts f =
 	@ (h2l_attributes f.if_attributes);
     }
 
-let h2l_cmethod consts m =
+let h2l_method_parameters m_params =
+  let make_flags p =
+    let flags = ref [] in
+    let () = if p.mp_final then flags := `AccFinal :: !flags;
+             if p.mp_synthetic then flags := `AccSynthetic :: !flags;
+             if p.mp_mandated then flags := `AccMandated :: !flags
+    in !flags
+  in
+  let l_params = (List.map (fun p -> { name = p.mp_name;
+                                       flags = make_flags p; } ) m_params)
+  in
+  if l_params = [] then [] else [ AttributeMethodParameters l_params ]
+  
+let h2l_cmethod consts bm_table m =
   let ms = m.cm_signature in
   let mname = ms_name ms in
-  let mdesc = (ms_args ms, ms_rtype ms) in
-  let code = h2l_code2attribute consts m.cm_implementation
+  let mdesc = make_md (ms_args ms, ms_rtype ms) in
+  let code = h2l_code2attribute consts bm_table m.cm_implementation
   in
     {m_name = mname;
      m_descriptor = mdesc;
@@ -258,13 +268,14 @@ let h2l_cmethod consts m =
         @ h2l_parameter_annotation m.cm_annotations.ma_parameters
 	@ method_generic_signature_to_attribute m.cm_generic_signature
 	@ code
-	@ h2l_attributes m.cm_attributes;
+	@ h2l_attributes m.cm_attributes
+        @ h2l_method_parameters m.cm_parameters;
     }
 
 let h2l_amethod _consts m =
   let ms = m.am_signature in
   let mname = ms_name ms in
-  let mdesc = (ms_args ms, ms_rtype ms) in
+  let mdesc = make_md (ms_args ms, ms_rtype ms) in
     {m_name = mname;
      m_descriptor = mdesc;
      m_flags =
@@ -281,21 +292,23 @@ let h2l_amethod _consts m =
 	@ method_generic_signature_to_attribute m.am_generic_signature
         @ h2l_annotations m.am_annotations.ma_global
         @ h2l_parameter_annotation m.am_annotations.ma_parameters
-	@ h2l_attributes m.am_attributes;
+	@ h2l_attributes m.am_attributes
+        @ h2l_method_parameters m.am_parameters;
     }
 
-let h2l_acmethod consts = function
+let h2l_acmethod consts bm_table = function
   | AbstractMethod m -> h2l_amethod consts m
-  | ConcreteMethod m -> h2l_cmethod consts m
+  | ConcreteMethod m -> h2l_cmethod consts bm_table m
 
 
-let h2l_methods consts c' mm =
+let h2l_methods consts bm_table c' mm =
   {c' with
-     j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts f::l) mm [];
+    j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts bm_table f::l) mm [];
   }
 
 let high2low_class c =
   let consts = JLib.DynArray.of_array c.c_consts in
+  let bm_table = JLib.DynArray.create () in
   let c' =
     {j_name = c.c_name;
      j_version = c.c_version;
@@ -323,12 +336,15 @@ let high2low_class c =
 	@ h2l_inner_classes c.c_inner_classes
 	@ (match c.c_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.c_other_attributes;
+     j_bootstrap_table = Array.of_list []; (* will be set later on *)
     } in
-  let c'= h2l_methods consts c' c.c_methods
-  in {c' with j_consts = JLib.DynArray.to_array consts}
+  let c'= h2l_methods consts bm_table c' c.c_methods
+  in {c' with j_consts = JLib.DynArray.to_array consts;
+              j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low_interface (c:JCode.jcode jinterface) =
   let consts = JLib.DynArray.of_array c.i_consts in
+  let bm_table = JLib.DynArray.create () in
   let c' =
     {j_name = c.i_name;
      j_version = c.i_version;
@@ -342,11 +358,8 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	  (match c.i_access with
 	     | `Default -> []
 	     | `Public -> [`AccPublic]);
-     j_fields =
-	FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
-     j_methods =
-	(match c.i_initializer with None -> [] | Some m -> [h2l_cmethod consts m])
-	@ MethodMap.fold (fun _ms m l -> h2l_amethod consts m::l) c.i_methods [];
+     j_fields = FieldMap.fold (fun _fs f l -> h2l_ifield consts f::l) c.i_fields [];
+     j_methods = []; (*will be set later on*)
      j_attributes =
 	deprecated_to_attribute c.i_deprecated
 	@ class_generic_signature_to_attribute c.i_generic_signature
@@ -355,8 +368,11 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	@ h2l_inner_classes c.i_inner_classes
 	@ (match c.i_sourcefile with None -> [] | Some s -> [AttributeSourceFile s])
 	@ h2l_other_attributes c.i_other_attributes;
-    }
-  in {c' with j_consts = JLib.DynArray.to_array consts}
+     j_bootstrap_table = Array.of_list []; (* will be set later on *)
+    } in
+  let c'= h2l_methods consts bm_table c' c.i_methods
+  in {c' with j_consts = JLib.DynArray.to_array consts;
+              j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low = function
   | JInterface i -> high2low_interface i

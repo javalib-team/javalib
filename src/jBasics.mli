@@ -23,7 +23,7 @@
 
 (** Basic elements of class files. *)
 
-(** {2 Definition of basic types and descriptors.} *)
+(** {1 Definition of basic types and descriptors.} *)
 
 (** Type representing a class name. e.g. [java.lang.Object] *)
 type class_name
@@ -33,6 +33,11 @@ type class_name
     and the method return type. Two methods in two different classes can
     have the same [method_signature]. *)
 type method_signature
+
+(** Type representing a method descriptor.
+    A method descriptor contains the types of parameters and the method
+    return type. *)
+type method_descriptor
 
 (** Type representing a field signature.
     A field signature contains the field name and the field type. *)
@@ -92,19 +97,6 @@ type java_basic_type = [
 | other_num
 ]
 
-(** Method handle type. *)
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
-
 (** Java object type *)
 type object_type =
   | TClass of class_name
@@ -114,7 +106,10 @@ type object_type =
 and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
-
+  
+(** Abstract datatype for Java strings *)
+type jstr
+                      
 (** Version number of the class file. Extract of the specification: An
     implementation of Java 1.k sould support class file formats of
     versions in the range of 45.0 through 44+k.0 inclusive. E.g. Java
@@ -122,7 +117,7 @@ and value_type =
     50.0. *)
 type version = {major :int; minor:int;}
 
-(** {2 Basic types manipulation.} *)
+(** {1 Basic types manipulation.} *)
 
 (** Creating and manipulating {!class_name} values. *)
 
@@ -185,6 +180,20 @@ val ms_compare : method_signature -> method_signature -> int
 (** Returns [true] if two method signatures are equal, [false] otherwise. *)
 val ms_equal : method_signature -> method_signature -> bool
 
+(** Creating and manipulating {!method_descriptor} values. *)
+
+(** Builds a [method_descriptor]. *)
+val make_md : value_type list * value_type option -> method_descriptor
+
+(** Splits a [method_descriptor] into arguments list and return type. *)
+val md_split : method_descriptor -> value_type list * value_type option
+
+(** Returns the [method_descriptor] arguments list. *)
+val md_args : method_descriptor -> value_type list
+
+(** Returns the [method_descriptor] return type. *)
+val md_rtype : method_descriptor -> value_type option
+
 (** Creating and manipulating {!field_signature} values. *)
 
 (** Builds a [field_signature]. *)
@@ -236,7 +245,57 @@ val cms_compare : class_method_signature -> class_method_signature -> int
 (** Returns [true] if two [class_method_signature] are equal, [false] otherwise. *)
 val cms_equal : class_method_signature -> class_method_signature -> bool
 
-(** {2 Constant pool.} *)
+(** Builds a [jstr]. *)
+val make_jstr : string -> jstr
+
+(** Returns a [string] where all characters outside the ASCII printable range (32..126) are escaped. *)
+val jstr_pp   : jstr -> string
+
+(** Returns the original [string]. *)
+val jstr_raw  : jstr -> string
+
+(** {1 Bootstrap method and method handle types.} *)
+
+(** Features introduced in Java 8 to implement lambdas. *)
+  
+type jmethod_or_interface = [
+  | `Method of class_name * method_signature
+  | `InterfaceMethod of class_name * method_signature
+  ]
+
+(** Method handle. cf JVM Spec se8 §4.4.8. *)
+type method_handle = [
+  | `GetField of class_name * field_signature
+  | `GetStatic of class_name * field_signature
+  | `PutField of class_name * field_signature
+  | `PutStatic of class_name * field_signature
+  | `InvokeVirtual of object_type * method_signature
+  | `NewInvokeSpecial of class_name * method_signature
+  | `InvokeStatic of jmethod_or_interface
+  | `InvokeSpecial of jmethod_or_interface
+  | `InvokeInterface of class_name * method_signature
+  ]
+
+(** Bootstrap argument. cf JVM Spec se8 §4.7.23. *)
+type bootstrap_argument = [
+  | `String of jstr
+  | `Class of object_type
+  | `Int of int32
+  | `Long of int64
+  | `Float of float
+  | `Double of float
+  | `MethodHandle of method_handle
+  | `MethodType of method_descriptor
+]
+
+(** Bootstrap method called by the [invokedynamic] instruction.
+    cf JVM Spec se8 §4.7.23. *)
+type bootstrap_method = {
+    bm_ref : method_handle;
+    bm_args : bootstrap_argument list;
+}
+
+(** {1 Constant pool.} *)
 
 (** You should not need this for normal usage, as the
     parsing/unparsing functions take care of the constant pool. This
@@ -245,44 +304,30 @@ val cms_equal : class_method_signature -> class_method_signature -> bool
 
 type bootstrap_method_index = int
 
-(** Method descriptor. *)
-type method_descriptor = value_type list * value_type option
-
 (** Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type descriptor =
   | SValue of value_type
   | SMethod of method_descriptor
 
-(** Abstract datatype for Java strings *)
-type jstr
-val make_jstr : string -> jstr
-val jstr_pp   : jstr -> string
-val jstr_raw  : jstr -> string
-
-(** Constant value. *)
-type constant_value =
+(** Constant pool values. *)
+type constant =
   | ConstString of jstr
   | ConstInt of int32
   | ConstFloat of float
   | ConstLong of int64
   | ConstDouble of float
   | ConstClass of object_type
-
-(** Constant. *)
-type constant =
-  | ConstValue of constant_value
   | ConstField of (class_name * field_signature)
   | ConstMethod of (object_type * method_signature)
   | ConstInterfaceMethod of (class_name * method_signature)
   | ConstMethodType of method_descriptor
-  | ConstMethodHandle of method_handle_kind * constant
+  | ConstMethodHandle of method_handle
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
   | ConstUnusable
 
-
-(** {2 Stackmaps}  *)
+(** {1 Stackmaps}  *)
 
 (** Verification type. *)
 type verification_type =
@@ -299,7 +344,7 @@ type verification_type =
 (** Stackmap type. *)
 type stackmap = (int* verification_type list * verification_type list)
 
-(** {2 Errors}  *)
+(** {1 Errors}  *)
 
 (** The library may throw the following exceptions, in addition to [Invalid_argument].
     Any other exception (in particular, an [Assert_failure])
@@ -313,7 +358,7 @@ exception No_class_found of string
 exception Class_structure_error of string
 
 
-(** {2 Annotations} *)
+(** {1 Annotations} *)
 
 (** [element_value] represents a constant value, either a number, a string, a
     class, an enum, an array of [element_value]s or another annotation. *)
@@ -344,7 +389,7 @@ and annotation = {
 }
 
 
-(** {2 Containers.} *)
+(** {1 Containers.} *)
 
 (** This module allows to build maps of elements indexed by [class_name] values. *)
 module ClassMap : GenericMap.GenericMapSig with type key = class_name
@@ -382,7 +427,7 @@ sig
 end
 
 
-(** {2 Tuning JavaLib.} *)
+(** {1 Tuning JavaLib.} *)
 
 (** [set_permissive true] disables some checking in JavaLib.  It can
     allow to parse some files that do not strictly comply with the

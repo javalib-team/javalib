@@ -253,6 +253,21 @@ let dump_list sep print = function
         (fun item -> sep (); print item)
         tl
 
+let method_parameters_flag_to_string = function
+    | `AccFinal -> "final"
+    | `AccSynthetic -> "synthetic"
+    | `AccMandated -> "mandated"
+    | `AccRFU i -> sprintf "rfu 0x%X" i
+
+let dump_method_parameters ch mp =
+  (match mp.name with
+   | None -> ()
+   | Some name -> string_nwrite ch (sprintf "%s" name));
+  let flags = String.concat ", " (List.map method_parameters_flag_to_string mp.flags) in
+  match mp.flags with
+  | [] -> ()
+  | _ -> string_nwrite ch (sprintf "(%s)" flags)
+  
 let rec dump_element_value ch = function
   | EVCstByte cst ->
       string_nwrite ch (string_of_int cst)
@@ -310,19 +325,6 @@ and dump_annotation ch annot =
     dump_pairs annot.element_value_pairs;
     JLib.IO.write ch ')'
 
-let dump_bootstrap_method ch { bootstrap_method_ref; bootstrap_arguments; } =
-  string_nwrite ch "    method_ref = ";
-  string_nwrite ch (string_of_int bootstrap_method_ref);
-  if bootstrap_arguments <> []
-  then
-    begin
-      string_nwrite ch (" , bootstrap_arguments = ");
-      List.iter (fun arg ->
-          string_nwrite ch (string_of_int arg);
-          string_nwrite ch "\n")
-        bootstrap_arguments
-    end
-
 let rec dump_code ch consts code =
   string_nwrite ch "    max_stack = ";
   string_nwrite ch (string_of_int code.JClassLow.c_max_stack);
@@ -360,7 +362,7 @@ and dump_attrib ch consts = function
       string_nwrite ch ("    SourceDebugExtension = "^s^"\n")
   | AttributeConstant c ->
       string_nwrite ch "    const ";
-      dump_constant_value ch c;
+      JLib.IO.printf ch "%s" (constant_attribute c);
       JLib.IO.write ch '\n';
   | AttributeCode code ->
       dump_code ch consts (Lazy.force code) (* JLib.IO.printf ch "    unexpected code attribute" *)
@@ -405,12 +407,8 @@ and dump_attrib ch consts = function
 	variables
   | AttributeDeprecated ->
       string_nwrite ch "    deprecated\n"
-  | AttributeStackMap stackmap_frames ->
-      string_nwrite ch "    stackmap midp = [";
-      List.iter (dump_stackmap ch) stackmap_frames;
-      string_nwrite ch "]\n"
   | AttributeStackMapTable stackmap_frames ->
-      string_nwrite ch "    stackmap java6 = [";
+      string_nwrite ch "    stackmap = [";
       List.iter (dump_java6_stackmap ch) stackmap_frames;
       string_nwrite ch "]\n"
   | AttributeAnnotationDefault a ->
@@ -459,6 +457,14 @@ and dump_attrib ch consts = function
           JLib.IO.write ch ']')
         methods;
       JLib.IO.write ch '\n'
+  | AttributeMethodParameters mp ->
+      string_nwrite ch "    MethodParameters = ";
+      List.iter (fun m ->
+          string_nwrite ch "\n      [";
+          dump_method_parameters ch m;
+          JLib.IO.write ch ']')
+        mp;
+      JLib.IO.write ch '\n'
   | AttributeUnknown (s,_) ->
       string_nwrite ch ("    ?"^s^"\n")
 
@@ -485,7 +491,7 @@ let dump ch cl =
   if cl.j_interfaces <> []
   then
     JLib.IO.printf ch "  implements %s\n"
-      (String.concat " " (List.map class_name cl.j_interfaces));
+      (String.concat " " (List.map (class_name ~jvm:false) cl.j_interfaces));
   string_nwrite ch ("    version = " ^(string_of_int cl.j_version.major)
                 ^"." ^(string_of_int cl.j_version.minor) ^"\n");
   List.iter (dump_attrib ch cl.j_consts) cl.j_attributes;

@@ -87,10 +87,12 @@ let arraytype2shortstring = function
   | `ByteBool -> "B"
   | `Object -> "A"
 
-let method_signature name (sl,sr) =
-		(match sr with
-		| None -> "void"
-		| Some s -> value_signature s) ^ " " ^name^ "(" ^ String.concat "," (List.map value_signature sl) ^ ")"
+let method_signature ?(jvm=false) name md =
+  let (sl, sr) = md_split md in
+  (match sr with
+   | None -> "void"
+   | Some s -> value_signature s
+  ) ^ " " ^name^ "(" ^ String.concat "," (List.map (value_signature ~jvm:jvm) sl) ^ ")"
 
 let signature name = function
   | SValue v -> value_signature v ^ " " ^name
@@ -134,47 +136,66 @@ let method_handle_kind = function
   | `NewInvokeSpecial -> "newinvokespecial"
   | `InvokeInterface -> "invokeinterface"
 
-let dump_constant_value ch = function
+let rec dump_constant ch = function
   | ConstString s -> JLib.IO.printf ch "string '%s'" (jstr_pp s)
   | ConstInt i -> JLib.IO.printf ch "int %ld" i
   | ConstFloat f -> JLib.IO.printf ch "float %f" f
   | ConstLong i -> JLib.IO.printf ch "long %Ld" i
   | ConstDouble f -> JLib.IO.printf ch "double %f" f
   | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
-
-let rec dump_constant ch = function
-  | ConstValue v -> dump_constant_value ch v
   | ConstField (cn,fs) ->
-      let fn = fs_name fs
-      and ft = fs_type fs
-      in
-        JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
+     let fn = fs_name fs
+     and ft = fs_type fs
+     in
+     JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
   | ConstMethod (cl,ms) ->
-      let mn = ms_name ms
-      and md = ms_args ms, ms_rtype ms
-      in
-        JLib.IO.printf ch "method : %s"
-          (method_signature (object_value_signature cl ^ "::" ^ mn) md)
+     let mn = ms_name ms
+     and md = make_md (ms_args ms, ms_rtype ms)
+     in
+     JLib.IO.printf ch "method : %s"
+                    (method_signature (object_value_signature cl ^ "::" ^ mn) md)
   | ConstInterfaceMethod (cn,ms) ->
-      let mn = ms_name ms
-      and md = ms_args ms, ms_rtype ms
-      in
-        JLib.IO.printf ch "interface-method : %s"
-          (method_signature (class_name cn ^ "::" ^ mn) md)
+     let mn = ms_name ms
+     and md = make_md (ms_args ms, ms_rtype ms)
+     in
+     JLib.IO.printf ch "interface-method : %s"
+                    (method_signature (class_name cn ^ "::" ^ mn) md)
   | ConstNameAndType (s,sign) -> JLib.IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> JLib.IO.printf ch "utf8 %s" s
   | ConstUnusable -> JLib.IO.printf ch "unusable"
   | ConstMethodType ms ->
       JLib.IO.printf ch "method-type : %s"
         (method_signature "" ms)
-  | ConstMethodHandle (hk, c) ->
-      JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
-      (dump_constant ch c)
+  | ConstMethodHandle mh ->
+     let (hk, c) = JBasicsLow.method_handle_to_const mh in
+     JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
+     (dump_constant ch c)
   | ConstInvokeDynamic (bmi, ms) ->
-      JLib.IO.printf ch "invole-dynamic : %d %s"
+      JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi
         (ms_name ms)
 
+let dump_bootstrap_argument ch = function
+  | `String s -> dump_constant ch (ConstString s)
+  | `Class cl -> dump_constant ch (ConstClass cl)
+  | `Int i -> dump_constant ch (ConstInt i)
+  | `Long i -> dump_constant ch (ConstLong i)
+  | `Float f -> dump_constant ch (ConstFloat f)
+  | `Double f -> dump_constant ch (ConstDouble f)
+  | `MethodHandle mh -> dump_constant ch (ConstMethodHandle mh)
+  | `MethodType ms -> dump_constant ch (ConstMethodType ms)
+
+let dump_bootstrap_method ch { bm_ref; bm_args; } =
+  JLib.IO.nwrite_string ch "    method_ref = ";
+  dump_constant ch (ConstMethodHandle bm_ref);
+  if bm_args <> []
+  then
+    begin
+      JLib.IO.nwrite_string ch (" , bootstrap_arguments = ");
+      List.iter (fun arg ->
+          dump_bootstrap_argument ch arg;
+          JLib.IO.nwrite_string ch "\n") bm_args
+    end
 
 let dump_constantpool ch =
   Array.iteri
@@ -209,3 +230,10 @@ let dump_exc ch _cl exc =
      | None -> JLib.IO.printf ch "<finally>"
      | Some cl -> JLib.IO.printf ch "class %s" (class_name cl));
   JLib.IO.printf ch ")"
+
+let constant_attribute = function
+  | `Long i -> sprintf "long %Ld" i
+  | `Float f -> sprintf "float %f" f
+  | `Double f -> sprintf "double %f" f
+  | `Int i -> sprintf "int %ld" i
+  | `String s -> sprintf "string '%s'" (jstr_pp s)
