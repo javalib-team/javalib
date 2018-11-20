@@ -6,7 +6,7 @@ authors: "Javalib Development team"
 homepage: "https://javalib-team.github.io/javalib/"
 bug-reports: "https://github.com/javalib-team/javalib/issues"
 license: "LGPL-2.1 with OCaml linking exception"
-dev-repo: "https://github.com/javalib-team/javalib.git"
+dev-repo: "git+https://github.com/javalib-team/javalib.git"
 build: [
   ["./configure.sh"]
   [make]
