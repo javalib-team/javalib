@@ -15,6 +15,7 @@ install: [make "install"]
 remove: ["ocamlfind" "remove" "javalib"]
 depends: [
   "ocaml" {>= "4.02"}
+  "conf-which" {build}
   "ocamlfind" {build}
   "camlzip" {>= "1.05"}
   "camlp4"
