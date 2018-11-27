@@ -1,6 +1,8 @@
-From 2.3.5 to 2.3.?
+From 2.3.5 to 2.3.6
 -----------------
 Minor changes:
+* ptrees integrated in Javalib_pack
+  this solves an installation problem with opam 2.0
 
 From 2.3.4 to 2.3.5
 -----------------
