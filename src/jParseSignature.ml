@@ -22,120 +22,6 @@
 open JBasics
 open JSignature
 
-(* Validate an utf8 string and return a stream of characters. *)
-let read_utf8 s =
-  JLib.UTF8.validate s;
-  let index = ref 0 in
-    Stream.from
-      (function _ ->
-	 if JLib.UTF8.out_of_range s ! index
-	 then None
-	 else
-	   let c = JLib.UTF8.look s ! index in
-	     index := JLib.UTF8.next s ! index;
-	     Some c)
-
-(* Java ident, with unicode letter and numbers, starting with a letter. *)
-let parse_ident buff =
-  let parse_char = parser
-    | [< 'c when c <> JLib.UChar.of_char ';'  (* should be a letter or a number *)
-	   && c <> JLib.UChar.of_char '/'
-	   && c <> JLib.UChar.of_char ':'
-	   && c <> JLib.UChar.of_char '.'
-	   && c <> JLib.UChar.of_char '>'
-	   && c <> JLib.UChar.of_char '<' >] -> c
-  in
-  let rec parse_more_ident buff = parser
-      (* TODO : it seems to be relatively inefficient *)
-    | [< c = parse_char;
-	 name =
-	  (JLib.UTF8.Buf.add_char buff c;
-	   parse_more_ident buff) >] -> name
-    | [< >] ->
-	JLib.UTF8.Buf.contents buff
-  in
-    parser
-      | [< c = parse_char; (* should be a letter *)
-	   name =
-	    (JLib.UTF8.Buf.add_char buff c;
-	     parse_more_ident buff) >] -> name
-
-
-(* Qualified name (internally encoded with '/'). *)
-let rec parse_name = parser
-  | [< ident = parse_ident (JLib.UTF8.Buf.create 0);
-       name = parse_more_name >] -> ident :: name
-
-and parse_more_name = parser
-  | [< 'slash when slash = JLib.UChar.of_char '/';
-       name = parse_name >] -> name
-  | [< >] -> []
-
-let get_name x = make_cn (String.concat "." (parse_name x))
-
-(* Java type. *)
-let parse_base_type = parser
-  | [< 'b when b = JLib.UChar.of_char 'B' >] -> `Byte
-  | [< 'c when c = JLib.UChar.of_char 'C' >] -> `Char
-  | [< 'd when d = JLib.UChar.of_char 'D' >] -> `Double
-  | [< 'f when f = JLib.UChar.of_char 'F' >] -> `Float
-  | [< 'i when i = JLib.UChar.of_char 'I' >] -> `Int
-  | [< 'j when j = JLib.UChar.of_char 'J' >] -> `Long
-  | [< 's when s = JLib.UChar.of_char 'S' >] -> `Short
-  | [< 'z when z = JLib.UChar.of_char 'Z' >] -> `Bool
-
-let rec parse_object_type = parser
-  | [< 'l when l = JLib.UChar.of_char 'L';
-       name = get_name;
-       'semicolon when semicolon = JLib.UChar.of_char ';' >] -> TClass name
-  | [< a = parse_array >] -> a
-
-and parse_array = parser
-  | [< 'lbracket when lbracket = JLib.UChar.of_char '['; typ = parse_type >] ->
-      TArray typ
-
-and parse_type = parser
-  | [< b = parse_base_type >] -> TBasic b
-  | [< o = parse_object_type >] -> TObject o
-
-let rec parse_types = parser
-  | [< typ = parse_type ; types = parse_types >] -> typ :: types
-  | [< >] -> []
-
-let parse_type_option = parser
-  | [< typ = parse_type >] -> Some typ
-  | [< >] -> None
-
-(* A class name, possibly an array class. *)
-let parse_ot = parser
-  | [< array = parse_array >] -> array
-  | [< name = get_name >] -> TClass name
-
-let parse_method_sig = parser
-  | [< 'lpar when lpar = JLib.UChar.of_char '(';
-       types = parse_types;
-       'rpar when rpar = JLib.UChar.of_char ')';
-       typ = parse_type_option >] ->
-     make_md (types, typ)
-
-(* Java signature. *)
-let parse_sig = parser
-    (* We cannot delete that because of "NameAndType" constants. *)
-  | [< typ = parse_type >] -> SValue typ
-  | [< sign = parse_method_sig >] -> SMethod sign
-
-let parse_method_descriptor s =
-  try
-    parse_method_sig (read_utf8 s)
-  with
-    Stream.Failure -> raise (Class_structure_error ("Illegal method signature: " ^ s))
-
-let parse_descriptor s =
-  try
-    parse_sig (read_utf8 s)
-  with
-    Stream.Failure -> raise (Class_structure_error ("Illegal signature: " ^ s))
-
 type tokens_mfd =
   | MFDChain of int * int
   | MFDSep | MFDSlash | MFDOpen | MFDClose
@@ -158,7 +44,11 @@ let tokenize_mfd s = tokenize_mfd s 0 []
 let rec parse_value_type l s =
   match l with
   | MFDChain (a, b) :: l' ->
-     if (b = a && l'=[]) then
+     if (s.[a] = 'L' || s.[a] = '[') then
+       let obj, l' = parse_object_type l s in
+       (TObject obj, l')
+     else
+       let l' = if (b = a) then l' else MFDChain (a+1, b) :: l' in
        (match s.[a] with
         | 'B' -> (TBasic `Byte, l')
         | 'C' -> (TBasic `Char, l')
@@ -168,12 +58,9 @@ let rec parse_value_type l s =
         | 'J' -> (TBasic `Long, l')
         | 'S' -> (TBasic `Short, l')
         | 'Z' -> (TBasic `Bool, l')
-        | _ -> failwith "Invalid ValueType"
+        | _ -> failwith ("Invalid ValueType : " ^ s)
        )
-     else
-       let obj, l' = parse_object_type l s in
-       (TObject obj, l')
-  | _ -> failwith "Invalid FieldDescriptor"
+  | _ -> failwith ("Invalid FieldDescriptor : " ^ s)
        
 and parse_object_type l s =
   match l with
@@ -212,7 +99,38 @@ let parse_objectType s =
   match l with
   | [] -> obj
   | _ -> failwith ("Invalid ObjectType : " ^ s)
-         
+
+let rec parse_ParameterDescriptors l s lp =
+  match l with
+  | MFDClose :: l' -> (List.rev lp, l')
+  | _ ->
+     let vt, l' = parse_value_type l s in
+     parse_ParameterDescriptors l' s (vt :: lp)
+
+let parse_MethodDescriptor l s =
+  let params, l =
+    match l with
+    | MFDOpen :: l' -> parse_ParameterDescriptors l' s []
+    | _ -> failwith "Invalid MethodDescriptor" in
+  let ret =
+    match l with
+    | MFDChain (a, b) :: l' ->
+       if (s.[a] = 'V' && a = b && l' = []) then None
+       else
+         let vt, l' = parse_value_type l s in
+         if (l' = []) then Some vt
+         else failwith ("Invalid MethodDescriptor : " ^ s)
+    | _ -> failwith ("Invalid MethodDescriptor : " ^ s) in
+  make_md (params, ret)
+
+let parse_method_descriptor s = parse_MethodDescriptor (tokenize_mfd s) s
+  
+let parse_descriptor s =
+  let l = tokenize_mfd s in
+  match l with
+  | MFDOpen :: _ -> SMethod (parse_method_descriptor s)
+  | _ -> SValue (parse_field_descriptor s)
+
 (* Java 5 signature *)
 
 type tokens =
@@ -257,9 +175,9 @@ let parse_BaseType l s =
       | 'J' -> `Long, l'
       | 'S' -> `Short, l'
       | 'Z' -> `Bool, l'
-      | _ -> failwith "Invalid BaseType"
+      | _ -> failwith ("Invalid BaseType : " ^ s)
      )
-  | _ -> failwith "Invalid BaseType"
+  | _ -> failwith ("Invalid BaseType : " ^ s)
 
 let parse_VoidDescriptor l s =
   match l with
@@ -267,9 +185,9 @@ let parse_VoidDescriptor l s =
      let l' = if (a+1 > b) then tl else failwith "Invalid VoidDescriptor" in
      (match s.[a] with
       | 'V' -> (None, l')
-      | _ -> failwith "Invalid VoidDescriptor"
+      | _ -> failwith ("Invalid VoidDescriptor : " ^ s)
      )
-  | _ -> failwith "Invalid VoidDescriptor"
+  | _ -> failwith ("Invalid VoidDescriptor : " ^ s)
        
 let rec parse_PackageSpecifier l s lpack =
   match l with
@@ -283,7 +201,7 @@ let parse_TypeVariableSignature l s =
   match l with
   | Chain (a, b) :: Sep :: l' ->
      (TypeVariable (String.sub s a (b-a+1)), l')
-  | _ -> failwith "Invalid TypeVariableSignature"
+  | _ -> failwith ("Invalid TypeVariableSignature : " ^ s)
 
 let rec parse_TypeArguments l s largs =
   match l with
@@ -310,7 +228,7 @@ and parse_SimpleClassTypeSignature l s =
   | Chain (a, b) :: l' ->
      ({ scts_name = String.sub s a (b-a+1);
         scts_type_arguments = []; }, l')
-  | _ -> failwith "InvalidSimpleClassTypeSignature"
+  | _ -> failwith ("InvalidSimpleClassTypeSignature : " ^ s)
 
 and parse_ClassTypeSignatureSuffix l s lsuff =
   match l with
@@ -329,7 +247,7 @@ and parse_ClassTypeSignature l s =
             } in
   match l with
   | Sep :: l' -> (cts, l')
-  | _ -> failwith "Invalid ClassTypeSignature"
+  | _ -> failwith ("Invalid ClassTypeSignature : " ^ s)
 
 and parse_ReferenceTypeSignature l s =
   match l with
@@ -345,9 +263,9 @@ and parse_ReferenceTypeSignature l s =
       | '[' ->
          let jts, l'' = parse_JavaTypeSignature l' s in
          (GArray jts, l'')
-      | _ -> failwith "Invalid ReferenceTypeSignature"
+      | _ -> failwith ("Invalid ReferenceTypeSignature : " ^ s)
      )
-  | _ -> failwith "Invalid ReferenceTypeSignature"
+  | _ -> failwith ("Invalid ReferenceTypeSignature : " ^ s)
 
 and parse_JavaTypeSignature l s =
   match l with
@@ -359,7 +277,7 @@ and parse_JavaTypeSignature l s =
      else
        let bt, l' = parse_BaseType l s in
        (GBasic bt, l')
-  | _ -> failwith "Invalid JavaTypeSignature"
+  | _ -> failwith ("Invalid JavaTypeSignature : " ^ s)
 
 let parse_Result l s =
   match l with
@@ -368,7 +286,7 @@ let parse_Result l s =
      else
        let jts, l' = parse_JavaTypeSignature l s in
        (Some jts, l')
-  | _ -> failwith "Invalid Result"
+  | _ -> failwith ("Invalid Result : " ^ s)
 
 let rec parse_InterfaceBounds l s lib =
   match l with
@@ -397,7 +315,7 @@ let rec parse_TypeParameters l s ltp =
                                      } :: ltp)
      )
   | CloseGen :: l' -> (List.rev ltp, l')
-  | _ -> failwith "Invalid TypeParameters"
+  | _ -> failwith ("Invalid TypeParameters : " ^ s)
 
 let parse_TypeParameters_opt l s =
   match l with
@@ -412,8 +330,8 @@ let rec parse_SuperInterfaceSignatures l s lsis =
        let sis, l'' = parse_ClassTypeSignature (Chain (a+1,b) :: l') s in
        parse_SuperInterfaceSignatures l'' s (sis :: lsis)
      else
-       failwith "Invalid SuperInterfaceSignatures"
-  | _ -> failwith "Invalid SuperInterfaceSignatures"
+       failwith ("Invalid SuperInterfaceSignatures : " ^ s)
+  | _ -> failwith ("Invalid SuperInterfaceSignatures : " ^ s)
        
 let parse_ClassSignature l s =
   let ftp, l = parse_TypeParameters_opt l s in
@@ -421,8 +339,8 @@ let parse_ClassSignature l s =
     match l with
     | Chain (a,b) :: l' ->
        if (s.[a] = 'L') then parse_ClassTypeSignature (Chain (a+1,b) :: l') s
-       else failwith "Invalid ClassSignature"
-    | _ -> failwith "Invalid ClassSignature" in
+       else failwith ("Invalid ClassSignature : " ^ s)
+    | _ -> failwith ("Invalid ClassSignature : " ^ s) in
   let sis = parse_SuperInterfaceSignatures l s [] in
   { cs_formal_type_parameters = ftp;
     cs_super_class = scs;
@@ -441,7 +359,7 @@ let rec parse_JavaTypeSignature_opt l s ljts =
 let parse_TypeSignature l s =
   match l with
   | OpenSig :: l' -> parse_JavaTypeSignature_opt l' s []
-  | _ -> failwith "Invalid TypeSignature"
+  | _ -> failwith ("Invalid TypeSignature : " ^ s)
       
 let rec parse_ThrowsSignature l s ls =
   match l with
@@ -454,8 +372,8 @@ let rec parse_ThrowsSignature l s ls =
      else if (s.[a] = 'T') then
        let cts, l'' = parse_TypeVariableSignature l' s in
        parse_ThrowsSignature l'' s (ThrowsTypeVariable cts :: ls)
-     else failwith "Invalid ThrowsSignature"
-  | _ -> failwith "Invalid ThrowsSignature"
+     else failwith ("Invalid ThrowsSignature : " ^ s)
+  | _ -> failwith ("Invalid ThrowsSignature : " ^ s)
 
 let parse_MethodSignature l s =
   let ftp, l = parse_TypeParameters_opt l s in
@@ -473,5 +391,5 @@ let parse_FieldTypeSignature s =
   let fs, l = parse_ReferenceTypeSignature (tokenize s) s in
   match l with
   | [] -> fs
-  | _ -> failwith "Invalid FieldTypeSignature"
+  | _ -> failwith ("Invalid FieldTypeSignature : " ^ s)
 
