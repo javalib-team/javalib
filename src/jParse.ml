@@ -145,16 +145,6 @@ let parse_stackmap_type_info consts ch = match JLib.IO.read_byte ch with
   | 8 -> VUninitialized (read_ui16 ch)
   | n -> raise (Class_structure_error ("Illegal stackmap type: " ^ string_of_int n))
 
-let parse_stackmap_frame consts ch =
-  let parse_type_info_array ch nb_item =
-    JLib.List.init nb_item (fun _ -> parse_stackmap_type_info consts ch)
-  in let offset = read_ui16 ch in
-  let number_of_locals = read_ui16 ch in
-  let locals = parse_type_info_array ch number_of_locals in
-  let number_of_stack_items = read_ui16 ch in
-  let stack = parse_type_info_array ch number_of_stack_items in
-    (offset,locals,stack)
-
 
 (***************************************************************************)
 (* DFr : Addition for 1.6 stackmap *****************************************)
@@ -332,9 +322,9 @@ let rec parse_code consts ch =
     JLib.List.init
       attrib_count
       (fun _ ->
-	 parse_attribute
-	   [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
-	   consts ch) in
+         parse_attribute
+           [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
+           consts ch) in
     {
       c_max_stack = max_stack;
       c_max_locals = max_locals;
