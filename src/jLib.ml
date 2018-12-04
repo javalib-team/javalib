@@ -11,18 +11,6 @@ module IO = struct
         
 end
 
-module UTF8 = struct
-  
-  include CamomileLibrary.UTF8 (* Camomile *)
-        
-end
-
-module UChar = struct
-
-  include CamomileLibrary.UChar (* Camomile *)
-  
-end
-
 module String = struct
 
   include ExtString.String (* ExtLib *)

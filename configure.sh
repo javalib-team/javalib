@@ -321,9 +321,9 @@ fi
 done
 
 #
-# Check Extlib and Camomile
+# Check Extlib
 #
-for pkg in extlib camomile; do
+for pkg in extlib; do
 location=`$FINDER query $pkg 2> /dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
@@ -365,7 +365,7 @@ echo "# $makeconfigtemplate" >> $makeconfig
 cat $makeconfigtemplate >> $makeconfig
 
 # write the package list with camlzip or zip
-echo "INCLUDE := -package unix,str,extlib,camomile,"$packagezip >>$makeconfig
+echo "INCLUDE := -package unix,str,extlib,"$packagezip >>$makeconfig
 echo -n "."
 echo " done."
 
@@ -383,7 +383,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $metaconfig
 echo "# Variables detected at configure-time" >> $metaconfig
-echo "requires = \"unix,str,extlib,camomile,camlzip,$packagezip\"" >> $metaconfig
+echo "requires = \"unix,str,extlib,camlzip,$packagezip\"" >> $metaconfig
 # The rest from template
 echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig
