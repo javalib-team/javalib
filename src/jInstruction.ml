@@ -202,8 +202,12 @@ let opcode2instruction consts bootstrap_methods = function
   | OpInvokeDynamic i ->
       (match get_constant consts i with
        | ConstInvokeDynamic (bmi, ms) ->
-           let bm = bootstrap_methods.(bmi) in
-           JCode.OpInvoke (`Dynamic bm, ms)
+          (try
+             let bm = bootstrap_methods.(bmi) in
+             JCode.OpInvoke (`Dynamic bm, ms)
+           with _ ->
+                 raise (Class_structure_error "Bad entry in bootstrap methods table")
+          )
        | _ -> raise (Class_structure_error "A bootstrap method ref should be an index into the constant ppool that selects a method handle"))
 
   | OpNew i -> JCode.OpNew (get_class consts i)
