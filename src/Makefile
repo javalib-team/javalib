@@ -57,11 +57,6 @@ ocaml:javalib.cma
 	$(OCAMLMKTOP) $(INCLUDE) -linkpkg -o $@ javalib.cma
 
 # compilation
-jParseSignature.cmo:jParseSignature.ml
-	$(OCAMLC) $(INCLUDE) $(PP) -c $<
-jParseSignature.cmx jParseSignature.o:jParseSignature.ml
-	$(OCAMLOPT) $(INCLUDE) $(PP) $(FOR_PACK) -c $<
-
 .ml.cmo:
 	$(OCAMLC) $(INCLUDE) -I ptrees -c $<
 %.cmx %.o:%.ml
@@ -109,7 +104,7 @@ cleandoc:
 
 # Dependencies
 .depend:../Makefile.config $(MODULE_INTERFACES:=.mli) $(MODULES:=.ml) 
-	$(OCAMLDEP) $(PP) -I ptrees $^ > $@
+	$(OCAMLDEP) -I ptrees $^ > $@
 
 ifneq ($(MAKECMDGOALS),clean)
 ifneq ($(MAKECMDGOALS),cleanall)

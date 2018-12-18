@@ -8,7 +8,6 @@
 ###     Check the presence of extlib (>= 1.5.1) and camlzip (>=1.04)
 ###     Check for recode
 ###     Set the debug flag
-###     Select the camlp4o executable
 ###     Infer the destdir value from the localdest flag
 ###     Infer the ocamlopt value from the debug flag
 ###     Write the variables to the Makefile.config file
@@ -310,9 +309,9 @@ gcc -lz 2>&1 | grep "undefined reference to .main." > /dev/null
 ZLIBFLAG=$?
 
 #
-# Check Camlp4, Unix, and Str
+# Check Unix, and Str
 #
-for pkg in unix str camlp4; do
+for pkg in unix str; do
 location=`$FINDER query $pkg 2> /dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
@@ -322,9 +321,9 @@ fi
 done
 
 #
-# Check Extlib and Camomile
+# Check Extlib
 #
-for pkg in extlib camomile; do
+for pkg in extlib; do
 location=`$FINDER query $pkg 2> /dev/null`
 if [ $location ]; then
   msg "inf" "Package $pkg found at $location"
@@ -366,7 +365,7 @@ echo "# $makeconfigtemplate" >> $makeconfig
 cat $makeconfigtemplate >> $makeconfig
 
 # write the package list with camlzip or zip
-echo "INCLUDE := -package unix,str,extlib,camomile,"$packagezip >>$makeconfig
+echo "INCLUDE := -package unix,str,extlib,"$packagezip >>$makeconfig
 echo -n "."
 echo " done."
 
@@ -384,7 +383,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $metaconfig
 echo "# Variables detected at configure-time" >> $metaconfig
-echo "requires = \"unix,str,extlib,camomile,camlzip,$packagezip\"" >> $metaconfig
+echo "requires = \"unix,str,extlib,camlzip,$packagezip\"" >> $metaconfig
 # The rest from template
 echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig

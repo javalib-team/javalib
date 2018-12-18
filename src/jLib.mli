@@ -55,31 +55,6 @@ module IO : sig
      
 end
 
-module UChar : sig
-
-  type t
-  val of_char : char -> t
-
-  
-end
-     
-module UTF8 : sig
-
-  type t = string 
-  type index = int 
-  val validate : t -> unit
-  val out_of_range : t -> index -> bool
-  val look : t -> index -> UChar.t         
-  val next : t -> index -> index
-  module Buf : sig
-    type buf = Buffer.t 
-    val create : int -> buf
-    val add_char : buf -> UChar.t -> unit
-    val contents : buf -> t
-  end       
-end
-
-
 module String : sig
 
   val nsplit : string -> string -> string list
