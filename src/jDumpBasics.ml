@@ -174,6 +174,8 @@ let rec dump_constant ch = function
       JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi
         (ms_name ms)
+  | ConstModule s -> JLib.IO.printf ch "module %s" s
+  | ConstPackage s -> JLib.IO.printf ch "package %s" s
 
 let dump_bootstrap_argument ch = function
   | `String s -> dump_constant ch (ConstString s)

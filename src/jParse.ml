@@ -41,6 +41,8 @@ type tmp_constant =
   | ConstantDouble of float
   | ConstantNameAndType of int * int
   | ConstantStringUTF8 of string
+  | ConstantModule of int
+  | ConstantPackage of int
   | ConstantUnusable
 
 let parse_constant max ch =
@@ -66,17 +68,6 @@ let parse_constant max ch =
 	  let n1 = index() in
 	  let n2 = index() in
             ConstantInterfaceMethod (n1,n2)
-      | 15 ->
-          let kind = JLib.IO.read_byte ch in
-          let n2 = index() in
-            ConstantMethodHandle (kind,n2)
-      | 16 ->
-          let n1 = index() in
-            ConstantMethodType n1
-      | 18 ->
-          let n1 = read_ui16 ch in
-          let n2 = index() in
-            ConstantInvokeDynamic (n1,n2)
       | 8 ->
 	  ConstantString (index())
       | 3 ->
@@ -96,8 +87,23 @@ let parse_constant max ch =
 	  let len = read_ui16 ch in
 	  let str = JLib.IO.really_nread_string ch len in
 	    ConstantStringUTF8 str
+      | 15 ->
+          let kind = JLib.IO.read_byte ch in
+          let n2 = index() in
+            ConstantMethodHandle (kind,n2)
+      | 16 ->
+          let n1 = index() in
+            ConstantMethodType n1
+      | 18 ->
+          let n1 = read_ui16 ch in
+          let n2 = index() in
+            ConstantInvokeDynamic (n1,n2)
+      | 19 ->
+         ConstantModule(index())
+      | 20 ->
+         ConstantPackage(index())
       | cid ->
-	  raise (Class_structure_error ("Illegaly constant kind: " ^ string_of_int cid))
+	  raise (Class_structure_error ("Illegal constant kind: " ^ string_of_int cid))
 
 let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
@@ -654,6 +660,14 @@ let rec expand_constant consts n =
 		 raise (Class_structure_error ("Illegal type in a NameAndType constant"))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a NameAndType constant")))
       | ConstantStringUTF8 s -> ConstStringUTF8 s
+      | ConstantModule i ->
+         (match expand_constant consts i with
+	  | ConstStringUTF8 s -> ConstModule s
+	  | _ -> raise (Class_structure_error ("Illegal constant refered in place of a module name")))
+      | ConstantPackage i ->
+         (match expand_constant consts i with
+	  | ConstStringUTF8 s -> ConstPackage s
+	  | _ -> raise (Class_structure_error ("Illegal constant refered in place of a package name")))
       | ConstantUnusable -> ConstUnusable
 
 let parse_class_low_level ch =

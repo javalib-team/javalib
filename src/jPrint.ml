@@ -144,6 +144,8 @@ let rec constant = function
       "method-handle : " ^ (JDumpBasics.method_handle_kind kind) ^ (constant c)
   | ConstInvokeDynamic (bmi,ms) ->
       "invoke-dynamic : #" ^ (string_of_int bmi) ^ " : " ^ (method_signature ms)
+  | ConstModule s -> "module " ^ s
+  | ConstPackage s -> "package " ^ s
   | ConstUnusable -> "unusable"
 
 let constant_pool p =

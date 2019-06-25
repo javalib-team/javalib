@@ -163,6 +163,8 @@ type constant =
   | ConstInvokeDynamic of bootstrap_method_index * method_signature
   | ConstNameAndType of string * descriptor
   | ConstStringUTF8 of string
+  | ConstModule of string
+  | ConstPackage of string
   | ConstUnusable
 
 (* Stackmap type. *)

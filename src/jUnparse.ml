@@ -93,6 +93,12 @@ let unparse_constant ch consts =  function
         write_ui16 ch bmi;
         write_name_and_type ch consts ((ms_name ms),
                                        (SMethod (make_md (ms_args ms, ms_rtype ms))))
+    | ConstModule s ->
+       write_ui8 ch 19;
+       write_constant ch consts (ConstStringUTF8 s)
+    | ConstPackage s ->
+       write_ui8 ch 20;
+       write_constant ch consts (ConstStringUTF8 s)
     | ConstUnusable -> ()
 
 let unparse_constant_pool ch consts =
