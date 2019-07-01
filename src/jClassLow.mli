@@ -219,6 +219,7 @@ type class_flag = [
 | `AccEnum
 | `AccInterface
 | `AccSuper
+| `AccModule
 ]
 
 type access_flag = [
@@ -238,6 +239,7 @@ type access_flag = [
 | `AccVarArgs
 | `AccAnnotation
 | `AccEnum
+| `AccModule
 ]
 
 

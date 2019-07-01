@@ -109,7 +109,7 @@ let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
     `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
     `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
-    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
+    `AccSynthetic; `AccAnnotation; `AccEnum; `AccModule|]
 let innerclass_flags =
   [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
     `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;

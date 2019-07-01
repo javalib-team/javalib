@@ -198,6 +198,7 @@ let access_flags = function
 	      | `AccBridge -> "bridge"
 	      | `AccSuper -> "`AccSuper"
 	      | `AccSynthetic -> "synthetic"
+              | `AccModule -> "module"
 	      | `AccRFU i -> Printf.sprintf "rfu 0x%X" i
 	   ) flags) ^ " "
 
