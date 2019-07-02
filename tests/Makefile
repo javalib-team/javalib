@@ -2,7 +2,7 @@ all:javatests
 	make -C src/
 	src/test_parser --silent javatests/huge/
 
-	find . -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors
+	find ./out -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
 javatests:
