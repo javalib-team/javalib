@@ -473,23 +473,24 @@ let unparse_class_low_level ch c =
   write_ui16 ch c.j_version.major;
   let ch' = JLib.IO.output_string ()
   and consts = JLib.DynArray.of_array c.j_consts in
-    write_ui16 ch' (unparse_flags class_flags c.j_flags);
-    write_class ch' consts c.j_name;
-    write_ui16 ch'
-      (match c.j_super with
-	 | Some super -> constant_to_int consts (ConstClass (TClass super))
-	 | None -> 0);
-    let unparse unparse = write_with_size write_ui16 ch' unparse in
-      unparse
-	(function int -> write_class ch' consts int)
-	c.j_interfaces;
-      unparse (unparse_field ch' consts) c.j_fields;
-      unparse (unparse_method ch' consts) c.j_methods;
-      unparse (unparse_attribute ch' consts) (c.j_attributes
-                                              @ [AttributeBootstrapMethods
-                                                   (Array.to_list c.j_bootstrap_table)]);
-      unparse_constant_pool ch consts;
-      JLib.IO.nwrite_string ch (JLib.IO.close_out ch')
+  write_ui16 ch' (unparse_flags class_flags c.j_flags);
+  write_class ch' consts c.j_name;
+  write_ui16 ch'
+    (match c.j_super with
+     | Some super -> constant_to_int consts (ConstClass (TClass super))
+     | None -> 0);
+  let unparse unparse = write_with_size write_ui16 ch' unparse in
+  let bm_table = Array.to_list c.j_bootstrap_table in
+  unparse
+    (function int -> write_class ch' consts int)
+    c.j_interfaces;
+  unparse (unparse_field ch' consts) c.j_fields;
+  unparse (unparse_method ch' consts) c.j_methods;
+  unparse (unparse_attribute ch' consts) (if bm_table = [] then c.j_attributes
+                                          else c.j_attributes
+                                               @ [AttributeBootstrapMethods bm_table]);
+  unparse_constant_pool ch consts;
+  JLib.IO.nwrite_string ch (JLib.IO.close_out ch')
 
 let unparse_class_low_level ch c =
   try unparse_class_low_level ch c
