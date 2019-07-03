@@ -14,7 +14,7 @@ all:javatests java/javac java/unparsed
 	bash java/java_exec_dump.sh unparsed
 	diff java/javac/out java/unparsed/out
 
-	rm -f javatests/out/*
+	find ./javatests/out -name "*.class" -delete
 	if [ -s `cat java/javac/out/Properties` ]; then \
 	src/jar_parser `cat java/javac/out/Properties` -out javatests/out --silent; \
 	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors; \
@@ -25,9 +25,10 @@ all:javatests java/javac java/unparsed
 	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>>.errors
 
 	if [ -s `cat java/javac/out/JmodPath` ]; then \
+	cat java/javac/out/JmodPath; \
 	rm -rf ./javatests/jmods/*; \
 	bash java/java_jmods.sh; \
-	find ./javatests/jmods/classes -type f -name "*.class" > javatests/jmods/classes.txt; \
+	find ./javatests/jmods -type f -name "*.class" > javatests/jmods/classes.txt; \
 	rm -f javatests/out/*; \
 	src/unparser javatests/jmods/classes.txt -out javatests/out; \
 	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>>.errors; \
