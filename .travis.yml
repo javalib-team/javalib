@@ -16,11 +16,7 @@ matrix:
       sudo: required
       env :
         - OCAML_VERSION=4.08.0
-      jdk :
-        - openjdk11
     - os: osx
-      jdk :
-        - oraclejdk11
 
 notifications:
   email : false

@@ -6,6 +6,7 @@ then
     sudo apt-get update
     sudo apt-get install opam
 else
+    brew install adoptopenjdk/openjdk/adoptopenjdk-openjdk10
     brew install opam ocaml camlp4
     export OCAML_VERSION="system"
 fi
