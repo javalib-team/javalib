@@ -1,6 +1,6 @@
 echo "Working on branch" $TRAVIS_BRANCH
 
-OPAM_DEPENDS="ocamlfind camlzip extlib camomile"
+OPAM_DEPENDS="ocamlfind camlzip extlib"
 
 opam switch create $OCAML_VERSION
 opam switch $OCAML_VERSION

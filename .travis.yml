@@ -19,6 +19,8 @@ matrix:
       jdk :
         - openjdk11
     - os: osx
+      jdk :
+        - oraclejdk11
 
 notifications:
   email : false
