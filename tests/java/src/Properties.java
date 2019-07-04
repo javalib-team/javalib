@@ -2,6 +2,8 @@ public class Properties {
     public static void main(String[] args)
         throws Exception {
         String value = System.getProperty("sun.boot.class.path");
-        System.out.println(value);
+	if (value != null) {
+	    System.out.println(value);
+	}
     }
 }
