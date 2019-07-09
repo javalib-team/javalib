@@ -204,25 +204,7 @@ let access_flags = function
 
 let string_nwrite ch s = JLib.IO.nwrite_string ch s
                         
-let dump_java6_stackmap ch frame =
-  match frame with
-    | SameFrame k -> JLib.IO.printf ch "SameFrame(tag:%d)\n" k
-    | SameLocals (k,vtype) ->
-	JLib.IO.printf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
-    | SameLocalsExtended (k,i,vtype) ->
-	JLib.IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
-	  k i (dump_verification_type vtype)
-    | ChopFrame (k,i) ->
-	JLib.IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
-    | SameFrameExtended (k,i) ->
-	JLib.IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
-    | AppendFrame (k,i,vtypes) ->
-	let svtypes = String.concat "," (List.map dump_verification_type vtypes) in
-	  JLib.IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
-    | FullFrame (k,offset,locals,stack) ->
-	JLib.IO.printf ch "FullFrame(tag:%d," k;
-	dump_stackmap ch (offset,locals,stack);
-	string_nwrite ch ")\n"
+let dump_java6_stackmap ch frame = dump_stackmap ch frame
 
 let dump_inner_classes ch icl =
   List.iter

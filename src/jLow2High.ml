@@ -96,44 +96,7 @@ let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
 	   al);
   }
 
-let expanse_stackmap_table stackmap_table =
-  let (_,stackmap) =
-    List.fold_left
-      (fun ((pc,l,_),stackmap) frame ->
-	 match frame with
-	   | SameFrame k ->
-	       let offset = pc + k + 1 in
-	       let s = (offset,l,[]) in
-		 (s,s::stackmap)
-	   | SameLocals (k,vtype) ->
-	       let offset = pc + k - 64 + 1 in
-	       let s = (offset,l,[vtype]) in
-		 (s,s::stackmap)
-	   | SameLocalsExtended (_,offset_delta,vtype) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l,[vtype]) in
-		 (s,s::stackmap)
-	   | ChopFrame (k,offset_delta) ->
-	       let offset = pc + offset_delta + 1 in
-	       let nb_chop = 251 - k in
-	       let l_chop = List.rev
-		 (JLib.List.drop nb_chop (List.rev l)) in
-	       let s = (offset,l_chop,[]) in
-		 (s,s::stackmap)
-	   | SameFrameExtended (_,offset_delta) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l,[]) in
-		 (s,s::stackmap)
-	   | AppendFrame (_,offset_delta,vtype_list) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l@vtype_list,[]) in
-		 (s,s::stackmap)
-	   | FullFrame (_,offset_delta,lv,sv) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,lv,sv) in
-		 (s,s::stackmap)
-      ) ((-1,[],[]),[]) stackmap_table in
-    List.rev stackmap
+let expanse_stackmap_table stackmap_table = stackmap_table
 
 let low2high_code consts bootstrap_methods = function c ->
   {

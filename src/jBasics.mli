@@ -344,7 +344,14 @@ type verification_type =
   | VUninitialized of int (** creation point *)
 
 (** Stackmap type. *)
-type stackmap = (int* verification_type list * verification_type list)
+type stackmap_frame =
+  | SameFrame of int
+  | SameLocals of int * verification_type
+  | SameLocalsExtended of int * int * verification_type
+  | ChopFrame of int * int
+  | SameFrameExtended of int * int
+  | AppendFrame of int * int * verification_type list
+  | FullFrame of int * int * verification_type list * verification_type list
 
 (** {1 Errors}  *)
 

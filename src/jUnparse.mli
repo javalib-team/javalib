@@ -48,7 +48,7 @@ val unparse_attribute_to_strings : JBasics.constant JLib.DynArray.t -> JClassLow
 (* For statistics: *)
 
 val unparse_stackmap_table_attribute :
-  JBasics.constant JLib.DynArray.t -> JClassLow.stackmap_frame list -> (string * string)
+  JBasics.constant JLib.DynArray.t -> JBasics.stackmap_frame list -> (string * string)
 
 val unparse_constant_pool :
   'a JLib.IO.output ->

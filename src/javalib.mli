@@ -623,7 +623,7 @@ sig
 
   (** {1 Printing stackmaps, constant pool values and exception handlers.} *)
 
-  val stack_map : stackmap -> string
+  (* val stack_map : stackmap_frame -> string *)
 
   val constant : constant -> string
 

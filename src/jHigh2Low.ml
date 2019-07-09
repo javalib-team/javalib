@@ -95,26 +95,7 @@ let h2l_inner_classes = function
       in
 	[AttributeInnerClasses (List.rev_map h2l_ic icl)]
 
-(* This function only build full frames and append frames (hack, this
-   is not correct !).  We don't try to compress the stackmap
-   information like javac. *)
-let h2l_stackmap_table sm : stackmap_frame list =
-  let (_,table) =
-    List.fold_left
-      (fun (last,table) (pc,lv,sv) ->
-	 if (last = 0) then
-           if sv = [] && List.length lv > 0 && List.length lv < 4 then
-             (pc,AppendFrame(251+(List.length lv),pc,lv)::table)
-           else
-	     (pc,FullFrame(255,pc,lv,sv)::table)
-	 else
-	   let offset_delta = pc - last - 1 in
-           if sv = [] && List.length lv > 0 && List.length lv < 4 then
-             (pc,AppendFrame(251+(List.length lv),offset_delta,lv)::table)
-           else
-	     (pc,FullFrame(255,offset_delta,lv,sv)::table)
-      ) (0,[]) sm in
-    List.rev table
+let h2l_stackmap_table sm : stackmap_frame list = sm
 
 let h2l_code2attribute consts bm_table = function
   | Native -> []
