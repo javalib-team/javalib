@@ -156,27 +156,10 @@ let constant_pool p =
 	   !s ^ "    " ^ (string_of_int i) ^ "  " ^ (constant c) ^ "\n") p;
     !s
 
-(* let stack_map (offset,locals,stack) =
- *   let verif_info = function
- *     | VTop -> "Top"
- *     | VInteger -> "Integer"
- *     | VFloat -> "Float"
- *     | VDouble -> "Double"
- *     | VLong -> "Long"
- *     | VNull -> "Null"
- *     | VUninitializedThis -> "UninitializedThis"
- *     | VObject c -> "Object " ^(object_type c)
- *     | VUninitialized off -> "Uninitialized " ^(string_of_int off)
- *   in
- *   let s = ref (Printf.sprintf "\n      offset=%d,\n      locals=[" offset) in
- *     JLib.List.iter
- *       (fun t ->
- * 	 s := !s ^ Printf.sprintf  "\n        %s" (verif_info t)) locals;
- *     s := !s ^ "],\n      stack=[";
- *     JLib.List.iter
- *       (fun t ->
- * 	 s := Printf.sprintf "\n        %s" (verif_info t)) stack;
- *     !s *)
+let stack_map frame =
+  let ch = JLib.IO.output_string () in
+  let () = JDumpBasics.dump_stackmap ch frame in
+  JLib.IO.close_out ch
 
 open JCode
 let exception_handler exc =
