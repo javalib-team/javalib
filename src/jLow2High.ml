@@ -774,7 +774,8 @@ let low2high_class cl =
   let (is_annotation,flags) = get_flag `AccAnnotation flags in
   let (is_enum,flags) = get_flag `AccEnum flags in
   let (is_module,flags) = get_flag `AccModule flags in
-  if cl.j_super = None && cl.j_name <> JBasics.java_lang_object && not is_module
+  if not (JBasics.get_permissive ()) &&
+       cl.j_super = None && cl.j_name <> JBasics.java_lang_object && not is_module
   then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
   let flags =
     List.map
