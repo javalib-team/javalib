@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "javalib"
-version: "3.0"
+version: "3.1"
 maintainer: "Nicolas Barré <nicolas.barre@irisa.fr>"
 authors: "Javalib Development team"
 homepage: "https://javalib-team.github.io/javalib/"
