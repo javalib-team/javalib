@@ -105,7 +105,7 @@ val dump_constantpool : 'a JLib.IO.output -> constant array -> unit
 val dump_verification_type : verification_type -> string
 
 val dump_stackmap :
-  'a JLib.IO.output -> stackmap -> unit
+  'a JLib.IO.output -> stackmap_frame -> unit
     (** [dump_stackmap ch sm] prints on [ch] the stackmap [sm]. *)
 
 val dump_exc : 'a JLib.IO.output -> 'b -> JCode.exception_handler -> unit

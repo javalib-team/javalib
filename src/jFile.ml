@@ -27,8 +27,8 @@ open JClassLow
 let sep =
   match Sys.os_type with
     | "Unix"
-    | "Cygwin" -> ":"
-    | "Win32" -> ";"
+    | "Cygwin" -> ':'
+    | "Win32" -> ';'
     | _ -> assert false
 
 let replace_dot =
@@ -75,14 +75,14 @@ let open_path s =
 type directories = string list
 
 let make_directories dirs =
-  match JLib.String.nsplit dirs sep with
+  match String.split_on_char sep dirs with
     | [] -> [Filename.current_dir_name]
     | cp ->
 	List.filter is_dir cp
 
 let class_path cp =
   let cp_list =
-    match JLib.String.nsplit cp sep with
+    match String.split_on_char sep cp with
       | [] -> [Filename.current_dir_name]
       | cp -> cp
   in

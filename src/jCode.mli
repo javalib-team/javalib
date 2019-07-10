@@ -200,7 +200,7 @@ type jcode = {
   (** (start_pc, length, name, type, index) *)
   c_local_variable_type_table : (int * int * string * JSignature.fieldTypeSignature * int) list option;
   (** LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14 *)
-  c_stack_map : stackmap list option;
+  c_stack_map : stackmap_frame list option;
   c_attributes : (string * string) list;
 }
 

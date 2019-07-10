@@ -29,7 +29,7 @@ type class_path
 
 (** [sep] is the class path separator. It contains a colon (:) under
     Unix and Cygwin and a semi-colon (;) under Windows (or MinGW). *)
-val sep : string
+val sep : char
 
 (** [class_path cp] opens a class path from the list [cp] of
     directories and jar (or zip) files separated by {!JFile.sep}.  jar

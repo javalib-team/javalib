@@ -93,7 +93,7 @@ let parse_field_descriptor s =
 let parse_objectType s =
   let s =
     match s.[0] with
-    | '[' | 'L' -> s
+    | '[' -> s
     | _ -> Printf.sprintf "L%s;" s in
   let obj, l = parse_object_type (tokenize_mfd s) s in
   match l with

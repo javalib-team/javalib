@@ -10,12 +10,12 @@ matrix:
       dist: trusty
       sudo: required
       env :
-        - OCAML_VERSION=4.02.3
+        - OCAML_VERSION=4.07.0
     - os: linux
       dist: trusty
       sudo: required
       env :
-        - OCAML_VERSION=4.07.0
+        - OCAML_VERSION=4.08.0
     - os: osx
 
 notifications:
