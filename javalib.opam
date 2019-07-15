@@ -17,7 +17,6 @@ depends: [
   "conf-which" {build}
   "ocamlfind" {build}
   "camlzip" {>= "1.05"}
-  "camlp4"
   "extlib"
 ]
 
