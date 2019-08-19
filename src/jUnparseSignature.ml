@@ -113,7 +113,7 @@ and unparse_ClassTypeSignature (cts:classTypeSignature) : string =
   ^ String.concat "."
     (List.map
        unparse_SimpleClassTypeSignature
-       (cts.cts_enclosing_classes @ [cts.cts_simple_class_type_signature]))
+       (cts.cts_simple_class_type_signature :: cts.cts_enclosing_classes))
   ^ ";"
 
 and unparse_FieldTypeSignature : fieldTypeSignature -> string = function

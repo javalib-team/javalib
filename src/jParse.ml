@@ -41,6 +41,8 @@ type tmp_constant =
   | ConstantDouble of float
   | ConstantNameAndType of int * int
   | ConstantStringUTF8 of string
+  | ConstantModule of int
+  | ConstantPackage of int
   | ConstantUnusable
 
 let parse_constant max ch =
@@ -66,17 +68,6 @@ let parse_constant max ch =
 	  let n1 = index() in
 	  let n2 = index() in
             ConstantInterfaceMethod (n1,n2)
-      | 15 ->
-          let kind = JLib.IO.read_byte ch in
-          let n2 = index() in
-            ConstantMethodHandle (kind,n2)
-      | 16 ->
-          let n1 = index() in
-            ConstantMethodType n1
-      | 18 ->
-          let n1 = read_ui16 ch in
-          let n2 = index() in
-            ConstantInvokeDynamic (n1,n2)
       | 8 ->
 	  ConstantString (index())
       | 3 ->
@@ -96,14 +87,29 @@ let parse_constant max ch =
 	  let len = read_ui16 ch in
 	  let str = JLib.IO.really_nread_string ch len in
 	    ConstantStringUTF8 str
+      | 15 ->
+          let kind = JLib.IO.read_byte ch in
+          let n2 = index() in
+            ConstantMethodHandle (kind,n2)
+      | 16 ->
+          let n1 = index() in
+            ConstantMethodType n1
+      | 18 ->
+          let n1 = read_ui16 ch in
+          let n2 = index() in
+            ConstantInvokeDynamic (n1,n2)
+      | 19 ->
+         ConstantModule(index())
+      | 20 ->
+         ConstantPackage(index())
       | cid ->
-	  raise (Class_structure_error ("Illegaly constant kind: " ^ string_of_int cid))
+	  raise (Class_structure_error ("Illegal constant kind: " ^ string_of_int cid))
 
 let class_flags =
   [|`AccPublic; `AccRFU 0x2; `AccRFU 0x4; `AccRFU 0x8;
     `AccFinal; `AccSuper; `AccRFU 0x40; `AccRFU 0x80;
     `AccRFU 0x100; `AccInterface; `AccAbstract; `AccRFU 0x800;
-    `AccSynthetic; `AccAnnotation; `AccEnum; `AccRFU 0x8000|]
+    `AccSynthetic; `AccAnnotation; `AccEnum; `AccModule|]
 let innerclass_flags =
   [|`AccPublic; `AccPrivate; `AccProtected; `AccStatic;
     `AccFinal; `AccRFU 0x20; `AccRFU 0x40; `AccRFU 0x80;
@@ -144,16 +150,6 @@ let parse_stackmap_type_info consts ch = match JLib.IO.read_byte ch with
   | 7 -> VObject (get_object_type consts (read_ui16 ch))
   | 8 -> VUninitialized (read_ui16 ch)
   | n -> raise (Class_structure_error ("Illegal stackmap type: " ^ string_of_int n))
-
-let parse_stackmap_frame consts ch =
-  let parse_type_info_array ch nb_item =
-    JLib.List.init nb_item (fun _ -> parse_stackmap_type_info consts ch)
-  in let offset = read_ui16 ch in
-  let number_of_locals = read_ui16 ch in
-  let locals = parse_type_info_array ch number_of_locals in
-  let number_of_stack_items = read_ui16 ch in
-  let stack = parse_type_info_array ch number_of_stack_items in
-    (offset,locals,stack)
 
 
 (***************************************************************************)
@@ -332,9 +328,9 @@ let rec parse_code consts ch =
     JLib.List.init
       attrib_count
       (fun _ ->
-	 parse_attribute
-	   [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
-	   consts ch) in
+         parse_attribute
+           [`LineNumberTable ; `LocalVariableTable ; `LocalVariableTypeTable; `StackMap]
+           consts ch) in
     {
       c_max_stack = max_stack;
       c_max_locals = max_locals;
@@ -664,6 +660,14 @@ let rec expand_constant consts n =
 		 raise (Class_structure_error ("Illegal type in a NameAndType constant"))
 	     | _ -> raise (Class_structure_error ("Illegal constant refered in place of a NameAndType constant")))
       | ConstantStringUTF8 s -> ConstStringUTF8 s
+      | ConstantModule i ->
+         (match expand_constant consts i with
+	  | ConstStringUTF8 s -> ConstModule s
+	  | _ -> raise (Class_structure_error ("Illegal constant refered in place of a module name")))
+      | ConstantPackage i ->
+         (match expand_constant consts i with
+	  | ConstStringUTF8 s -> ConstPackage s
+	  | _ -> raise (Class_structure_error ("Illegal constant refered in place of a package name")))
       | ConstantUnusable -> ConstUnusable
 
 let parse_class_low_level ch =

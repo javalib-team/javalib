@@ -96,44 +96,7 @@ let low2high_attributes consts (al:JClassLow.attribute list) :attributes =
 	   al);
   }
 
-let expanse_stackmap_table stackmap_table =
-  let (_,stackmap) =
-    List.fold_left
-      (fun ((pc,l,_),stackmap) frame ->
-	 match frame with
-	   | SameFrame k ->
-	       let offset = pc + k + 1 in
-	       let s = (offset,l,[]) in
-		 (s,s::stackmap)
-	   | SameLocals (k,vtype) ->
-	       let offset = pc + k - 64 + 1 in
-	       let s = (offset,l,[vtype]) in
-		 (s,s::stackmap)
-	   | SameLocalsExtended (_,offset_delta,vtype) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l,[vtype]) in
-		 (s,s::stackmap)
-	   | ChopFrame (k,offset_delta) ->
-	       let offset = pc + offset_delta + 1 in
-	       let nb_chop = 251 - k in
-	       let l_chop = List.rev
-		 (JLib.List.drop nb_chop (List.rev l)) in
-	       let s = (offset,l_chop,[]) in
-		 (s,s::stackmap)
-	   | SameFrameExtended (_,offset_delta) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l,[]) in
-		 (s,s::stackmap)
-	   | AppendFrame (_,offset_delta,vtype_list) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,l@vtype_list,[]) in
-		 (s,s::stackmap)
-	   | FullFrame (_,offset_delta,lv,sv) ->
-	       let offset = pc + offset_delta + 1 in
-	       let s = (offset,lv,sv) in
-		 (s,s::stackmap)
-      ) ((-1,[],[]),[]) stackmap_table in
-    List.rev stackmap
+let expanse_stackmap_table stackmap_table = stackmap_table
 
 let low2high_code consts bootstrap_methods = function c ->
   {
@@ -801,8 +764,6 @@ let low2high_innerclass = function
 	}
 
 let low2high_class cl =
-  if cl.j_super = None && cl.j_name <> JBasics.java_lang_object
-  then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
   let flags = cl.j_flags in
   let (access,flags) = flags2access (flags :> access_flag list) in
   let (accsuper,flags) = get_flag `AccSuper flags in
@@ -812,6 +773,10 @@ let low2high_class cl =
   let (is_synthetic,flags) = get_flag `AccSynthetic flags in
   let (is_annotation,flags) = get_flag `AccAnnotation flags in
   let (is_enum,flags) = get_flag `AccEnum flags in
+  let (is_module,flags) = get_flag `AccModule flags in
+  if not (JBasics.get_permissive ()) &&
+       cl.j_super = None && cl.j_name <> JBasics.java_lang_object && not is_module
+  then raise (Class_structure_error "Only java.lang.Object is allowed not to have a super-class.");
   let flags =
     List.map
       (function

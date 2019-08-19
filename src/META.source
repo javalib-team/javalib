@@ -1,4 +1,4 @@
-version = "JAVALIB_TRUNK"
+version = "3.0"
 description = "library to parse Java .class files"
 archive(native) = "javalib.cmxa"
 archive(byte) = "javalib.cma"

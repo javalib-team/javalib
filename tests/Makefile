@@ -6,6 +6,8 @@ all:javatests java/javac java/unparsed
 	@rm -f java/unparsed/out/*
 	@rm -f java/sources.txt
 	@rm -f java/classes.txt
+	@find ./javatests/out -name "*.class" -delete
+	@rm -rf ./javatests/out/*
 	@find ./java/src/ -type f -name "*.java" > java/sources.txt
 	bash java/javac.sh
 	@find ./java/javac -type f -name "*.class" > java/classes.txt
@@ -14,21 +16,40 @@ all:javatests java/javac java/unparsed
 	bash java/java_exec_dump.sh unparsed
 	diff java/javac/out java/unparsed/out
 
-	rm -f javatests/out/*
-	src/jar_parser `cat java/javac/out/Properties` -out javatests/out --silent
-	find . -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors
+	find ./javatests/out -name "*.class" -delete
+	rm -rf ./javatests/out/*
+	if [ -s java/javac/out/Properties ]; then \
+	src/jar_parser `cat java/javac/out/Properties` -out javatests/out --silent; \
+	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>.errors; \
+	fi
+
+	find ./javatests/out -name "*.class" -delete
+	rm -rf ./javatests/out/*
 	src/test_parser --silent javatests/huge/
-	find . -type f -name '*.class' | xargs javap 1>/dev/null 2>>.errors
+	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>>.errors
+
+	if [ -s java/javac/out/JmodPath ]; then \
+	rm -rf ./javatests/jmods/*; \
+	bash java/java_jmods.sh; \
+	find ./javatests/jmods -type f -name "*.class" > javatests/jmods/classes.txt; \
+	find ./javatests/out -name "*.class" -delete; \
+	src/unparser javatests/jmods/classes.txt -out javatests/out; \
+	find ./javatests/out -type f -name '*.class' | xargs javap 1>/dev/null 2>>.errors; \
+	fi
+
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
 
-javatests: javatests/huge
-	mkdir -p javatests/out
+javatests: javatests/huge javatests/jmods
+	mkdir -p javatests
 
 javatests/huge:
-	mkdir -p javatests
+	mkdir -p javatests/out
 	wget -r -nH --cut-dirs=4 -np --reject="*.html,*.tmp" -e robots=off \
 	https://scm.gforge.inria.fr/anonscm/svn/javalib/tests/javatests/
+
+javatests/jmods:
+	mkdir -p javatests/jmods
 
 java/javac:
 	mkdir -p java/javac/out

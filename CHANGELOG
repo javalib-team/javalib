@@ -1,3 +1,23 @@
+From 3.0 to 3.1
+---------------
+Major changes:
+* Java 9 compatibility:
+  - adding constant pool tags ConstantModule and ConstantPackage
+  - a module is represented as a class with no methods and fields, and contains only attributes
+  - except for the tag ConstantDynamic, Javalib should be able to parse Java 11 classes
+    (the tag ConstantDynamic never appears in openjdk11 and it is not clear if the java compiler can generate it)
+* Stackmaps:
+  - reverting to low level format of stackmap frames to ensure correctness
+  - fixes a bug after unparsing because the trick of replacing all frames by a FullFrame was not correct
+
+Minor changes:
+* JFile: sep is now a char, not a string anymore
+* Permissive: if JBasics.get_permissive() is true, we allow a class that is not Object to have no super class
+
+Bug fixes:
+* JParseSignature:
+  - bugfix for parsing the signature of a class starting by 'L'
+
 From 2.3.5 to 3.0
 -----------------
 Major changes:

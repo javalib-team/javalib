@@ -174,6 +174,8 @@ let rec dump_constant ch = function
       JLib.IO.printf ch "invoke-dynamic : %d %s"
         bmi
         (ms_name ms)
+  | ConstModule s -> JLib.IO.printf ch "module %s" s
+  | ConstPackage s -> JLib.IO.printf ch "package %s" s
 
 let dump_bootstrap_argument ch = function
   | `String s -> dump_constant ch (ConstString s)
@@ -216,11 +218,34 @@ let dump_verification_type = function
   | VObject c -> sprintf "Object %s" (object_value_signature c)
   | VUninitialized off -> sprintf "Uninitialized %d" off
 
-let dump_stackmap ch (offset,locals,stack) =
-  JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
-  List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) locals;
-  JLib.IO.printf ch "],\n      stack=[";
-  List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) stack
+(* let dump_stackmap ch (offset,locals,stack) =
+ *   JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+ *   List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) locals;
+ *   JLib.IO.printf ch "],\n      stack=[";
+ *   List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) stack *)
+
+let dump_stackmap ch frame =
+  match frame with
+  | SameFrame k -> JLib.IO.printf ch "SameFrame(tag:%d)\n" k
+  | SameLocals (k,vtype) ->
+     JLib.IO.printf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
+  | SameLocalsExtended (k,i,vtype) ->
+     JLib.IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
+       k i (dump_verification_type vtype)
+  | ChopFrame (k,i) ->
+     JLib.IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
+  | SameFrameExtended (k,i) ->
+     JLib.IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
+  | AppendFrame (k,i,vtypes) ->
+     let svtypes = String.concat "," (List.map dump_verification_type vtypes) in
+     JLib.IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
+  | FullFrame (k,offset,locals,stack) ->
+     JLib.IO.printf ch "FullFrame(tag:%d," k;
+     JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+     List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) locals;
+     JLib.IO.printf ch "],\n      stack=[";
+     List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) stack;
+     JLib.IO.nwrite_string ch ")\n"
 
 open JCode
 
