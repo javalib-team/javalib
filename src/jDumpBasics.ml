@@ -168,7 +168,7 @@ let rec dump_constant ch = function
         (method_signature "" ms)
   | ConstMethodHandle mh ->
      let (hk, c) = JBasicsLow.method_handle_to_const mh in
-     JLib.IO.printf ch "method-handle : %s" (method_handle_kind hk);
+     JLib.IO.printf ch "method-handle : %s, " (method_handle_kind hk);
      (dump_constant ch c)
   | ConstInvokeDynamic (bmi, ms) ->
       JLib.IO.printf ch "invoke-dynamic : %d %s"
@@ -188,16 +188,18 @@ let dump_bootstrap_argument ch = function
   | `MethodType ms -> dump_constant ch (ConstMethodType ms)
 
 let dump_bootstrap_method ch { bm_ref; bm_args; } =
-  JLib.IO.nwrite_string ch "    method_ref = ";
+  JLib.IO.nwrite_string ch "\t method_ref {\n\t   ";
   dump_constant ch (ConstMethodHandle bm_ref);
+  JLib.IO.nwrite_string ch "\n\t }\n\t";
   if bm_args <> []
   then
     begin
-      JLib.IO.nwrite_string ch (" , bootstrap_arguments = ");
+      JLib.IO.nwrite_string ch (" bootstrap_arguments {\n\t");
       List.iter (fun arg ->
+          JLib.IO.nwrite_string ch "   ";
           dump_bootstrap_argument ch arg;
-          JLib.IO.nwrite_string ch "\n") bm_args
-    end
+          JLib.IO.nwrite_string ch "\n\t") bm_args
+    end; JLib.IO.nwrite_string ch " }"
 
 let dump_constantpool ch =
   Array.iteri

@@ -348,9 +348,12 @@ let jopcode_jvm =
       | `Interface cs ->
 	 "invokeinterface " ^
            (method_signature ~jvm:true ~callee:(TClass cs) ms)
-      | `Dynamic _ ->
+      | `Dynamic bm ->
+         let ch = JLib.IO.output_string () in
+         let () = JDumpBasics.dump_bootstrap_method ch bm in
          "invokedynamic " ^
-           (method_signature ~jvm:true ms)
+           (method_signature ~jvm:true ms) ^ "\n"
+           ^ (JLib.IO.close_out ch)
      )
   | OpNew cs -> "new " ^ (class_name cs)
   | OpNewArray t ->
