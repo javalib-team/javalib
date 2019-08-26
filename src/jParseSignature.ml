@@ -135,7 +135,7 @@ let parse_descriptor s =
 
 type tokens =
   | Chain of int * int
-  | Slash | Sep | WildStar | WildPlus | WildMinus
+  | Slash | Sep
   | Suffix | Bound | Throws
   | OpenSig | CloseSig
   | OpenGen | CloseGen
@@ -150,9 +150,6 @@ let rec tokenize s i l =
     | '(' -> tokenize s (i+1) (OpenSig :: l)
     | ')' -> tokenize s (i+1) (CloseSig :: l)
     | '/' -> tokenize s (i+1) (Slash :: l)
-    | '*' -> tokenize s (i+1) (WildStar :: l)
-    | '+' -> tokenize s (i+1) (WildPlus :: l)
-    | '-' -> tokenize s (i+1) (WildMinus :: l)
     | ':' -> tokenize s (i+1) (Bound :: l)
     | '^' -> tokenize s (i+1) (Throws :: l)
     | ';' -> tokenize s (i+1) (Sep :: l)
@@ -205,14 +202,19 @@ let parse_TypeVariableSignature l s =
 
 let rec parse_TypeArguments l s largs =
   match l with
-  | WildStar :: l' ->
-     parse_TypeArguments l' s (ArgumentIsAny :: largs)
-  | WildPlus :: l' ->
-     let rts, l'' = parse_ReferenceTypeSignature l' s in
-     parse_TypeArguments l'' s (ArgumentExtends rts :: largs)
-  | WildMinus :: l' ->
-     let rts, l'' = parse_ReferenceTypeSignature l' s in
-     parse_TypeArguments l'' s (ArgumentInherits rts :: largs)
+  | Chain (a,b) :: l' ->
+     let l' = if a = b then l' else Chain (a+1,b) :: l' in
+     if s.[a] = '+' then
+       let rts, l'' = parse_ReferenceTypeSignature l' s in
+       parse_TypeArguments l'' s (ArgumentExtends rts :: largs)
+     else if s.[a] = '-' then
+       let rts, l'' = parse_ReferenceTypeSignature l' s in
+       parse_TypeArguments l'' s (ArgumentInherits rts :: largs)
+     else if s.[a] = '*' then
+       parse_TypeArguments l' s (ArgumentIsAny :: largs)
+     else
+       let rts, l'' = parse_ReferenceTypeSignature l s in
+       parse_TypeArguments l'' s (ArgumentIs rts :: largs)
   | CloseGen :: l' ->
      (List.rev largs, l')
   | l' ->
