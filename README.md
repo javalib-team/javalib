@@ -17,7 +17,6 @@ We recommend you to install every required library and *Ocaml* version with [opa
 - [ocamlfind](http://projects.camlcity.org/projects/findlib.html) >= 1.5.1
 - [camlzip](https://github.com/xavierleroy/camlzip) >= 1.05
 - [extlib](https://github.com/ygrek/ocaml-extlib)
-- [camomile](https://github.com/yoriyuki/Camomile)
 
 ### Configuration and installation
 
