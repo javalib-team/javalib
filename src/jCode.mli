@@ -230,3 +230,7 @@ val get_source_line_number' : int -> (int * int) list -> int option
 *)
 val get_local_variable_info :
   int -> int -> jcode -> (string * value_type) option
+
+(** {2 Modification functions.} *)
+
+val insert_code_fragment : jcode -> int -> jopcodes -> jcode

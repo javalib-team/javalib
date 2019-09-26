@@ -226,3 +226,21 @@ let get_source_line_number pp code =
     | None -> None
     | Some lnt ->
         get_source_line_number' pp lnt
+
+let insert_code_fragment code pp ins_opcodes =
+  let old_opcodes = code.c_code in
+  let old_op = old_opcodes.(pp) in
+  let () = match old_op with
+    | OpInvalid -> failwith "Cannot insert a code fragment in place of an OpInvalid."
+    | _ -> () in
+  let n_old = Array.length old_opcodes in
+  let n_pp = let n = ref 1 in
+             let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
+                        n := !n + 1
+                      done in !n in
+  let n_ins = Array.length ins_opcodes in
+  let new_opcodes = Array.make (n_old + n_ins - n_pp) OpInvalid in
+  let () = Array.blit old_opcodes 0 new_opcodes 0 pp in
+  let () = Array.blit old_opcodes (pp+n_pp) new_opcodes (pp+n_ins) (n_old-pp-n_pp) in
+  let () = Array.blit ins_opcodes 0 new_opcodes pp n_ins in
+  { code with c_code = new_opcodes }
