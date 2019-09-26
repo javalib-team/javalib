@@ -227,6 +227,20 @@ let get_source_line_number pp code =
     | Some lnt ->
         get_source_line_number' pp lnt
 
+let renumber_instruction pp_ins n_ins pp opcode =
+  let gen_opcode offset op_plus op_minus op =
+    let pp_jump = pp + offset in
+     if offset > 0 && pp_jump > pp_ins && pp_ins > pp then op_plus
+     else if offset < 0 && pp_jump < pp_ins && pp_ins < pp then op_minus
+     else op
+  in
+  match opcode with
+  | OpGoto offset as op ->
+     gen_opcode offset (OpGoto (offset+n_ins)) (OpGoto (offset-n_ins)) op
+  | OpIfCmp (kind, offset) as op ->
+     gen_opcode offset (OpIfCmp (kind, offset+n_ins)) (OpIfCmp (kind, offset-n_ins)) op
+  | op -> op       
+      
 let insert_code_fragment code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let old_op = old_opcodes.(pp) in
@@ -239,6 +253,9 @@ let insert_code_fragment code pp ins_opcodes =
                         n := !n + 1
                       done in !n in
   let n_ins = Array.length ins_opcodes in
+  let old_opcodes = Array.mapi
+                      (fun pp0 opcode ->
+                        renumber_instruction pp (n_ins-n_pp) pp0 opcode) old_opcodes in
   let new_opcodes = Array.make (n_old + n_ins - n_pp) OpInvalid in
   let () = Array.blit old_opcodes 0 new_opcodes 0 pp in
   let () = Array.blit old_opcodes (pp+n_pp) new_opcodes (pp+n_ins) (n_old-pp-n_pp) in
