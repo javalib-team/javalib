@@ -256,6 +256,17 @@ let renumber_instruction pp_ins n_ins pp opcode =
                     Array.map (fun offset -> gen_offset offset) jumps)
   | op -> op       
       
+let renumber_lnt lnt pp n_ins =
+  let shift_line line =
+    if line <= pp then line else line+n_ins
+  in
+  match lnt with
+  | None -> None
+  | Some l ->
+     Some (List.map
+             (fun (l_byte, l_src) ->
+               (shift_line l_byte, l_src)) l)
+  
 let insert_code_fragment code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let old_op = old_opcodes.(pp) in
@@ -275,4 +286,6 @@ let insert_code_fragment code pp ins_opcodes =
   let () = Array.blit old_opcodes 0 new_opcodes 0 pp in
   let () = Array.blit old_opcodes (pp+n_pp) new_opcodes (pp+n_ins) (n_old-pp-n_pp) in
   let () = Array.blit ins_opcodes 0 new_opcodes pp n_ins in
-  { code with c_code = new_opcodes }
+  let lnt = code.c_line_number_table in
+  { code with c_code = new_opcodes;
+              c_line_number_table = renumber_lnt lnt pp (n_ins-n_pp)}
