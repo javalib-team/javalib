@@ -228,17 +228,32 @@ let get_source_line_number pp code =
         get_source_line_number' pp lnt
 
 let renumber_instruction pp_ins n_ins pp opcode =
-  let gen_opcode offset op_plus op_minus op =
+  let gen_offset offset =
     let pp_jump = pp + offset in
-     if offset > 0 && pp_jump > pp_ins && pp_ins > pp then op_plus
-     else if offset < 0 && pp_jump < pp_ins && pp_ins < pp then op_minus
-     else op
+    if offset > 0 && pp_jump > pp_ins && pp_ins > pp then offset+n_ins
+    else if offset < 0 && pp_jump < pp_ins && pp_ins < pp then offset-n_ins
+    else offset
   in
   match opcode with
-  | OpGoto offset as op ->
-     gen_opcode offset (OpGoto (offset+n_ins)) (OpGoto (offset-n_ins)) op
-  | OpIfCmp (kind, offset) as op ->
-     gen_opcode offset (OpIfCmp (kind, offset+n_ins)) (OpIfCmp (kind, offset-n_ins)) op
+  | OpGoto offset ->
+     let offset = gen_offset offset in
+     OpGoto offset
+  | OpIfCmp (kind, offset) ->
+     let offset = gen_offset offset in
+     OpIfCmp (kind, offset)
+  | OpIf (kind, offset) ->
+     let offset = gen_offset offset in
+     OpIf (kind, offset)
+  | OpJsr offset ->
+     let offset = gen_offset offset in
+     OpJsr offset
+  | OpLookupSwitch (default, l) ->
+     let default = gen_offset default in
+     OpLookupSwitch (default,
+                     List.map (fun (mch, offset) -> (mch, gen_offset offset)) l)
+  | OpTableSwitch (default, low, high, jumps) ->
+     OpTableSwitch (gen_offset default, low, high,
+                    Array.map (fun offset -> gen_offset offset) jumps)
   | op -> op       
       
 let insert_code_fragment code pp ins_opcodes =
