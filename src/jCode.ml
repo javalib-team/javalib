@@ -256,17 +256,77 @@ let renumber_instruction pp_ins n_ins pp opcode =
                     Array.map (fun offset -> gen_offset offset) jumps)
   | op -> op       
       
-let renumber_lnt lnt pp n_ins =
+let renumber_tables lnt lvt lvtt pp n_ins =
   let shift_line line =
     if line <= pp then line else line+n_ins
   in
-  match lnt with
+  let renumber_lvt lvt =
+    match lvt with
+    | None -> None
+    | Some l ->
+       Some (List.map
+               (fun (start_pc, length, name, typ, index) ->
+                 (shift_line start_pc, length, name, typ, index)) l)
+  in
+  let lnt' =
+    match lnt with
+    | None -> None
+    | Some l ->
+       Some (List.map
+               (fun (l_byte, l_src) ->
+                 (shift_line l_byte, l_src)) l)
+  and lvt' = renumber_lvt lvt
+  and lvtt' = renumber_lvt lvtt in
+  (lnt', lvt', lvtt')
+
+let get_offset_delta frame =
+  match frame with
+  | SameFrame index -> index
+  | SameLocals (index, _) -> index-64
+  | SameLocalsExtended (_, offset, _) -> offset
+  | ChopFrame (_, offset) -> offset
+  | SameFrameExtended (_, offset) -> offset
+  | AppendFrame (_, offset, _) -> offset
+  | FullFrame (_, offset, _, _) -> offset
+
+let get_stackmap_pps (stackmap : stackmap_frame list) =
+  let l = List.fold_left
+            (fun acc frame -> ((List.hd acc)
+                               + (get_offset_delta frame) + 1)::acc
+            ) [-1] stackmap in
+  List.tl (List.rev l)
+
+let renumber_stackmap smt pp_ins n_ins =
+  let shift_frame frame =
+    match frame with
+    | SameFrame index ->
+       let offset = index+n_ins in
+       if offset <= 63 then SameFrame offset
+       else SameFrameExtended (251, offset)
+    | SameLocals (index, v) ->
+       let offset = index-64+n_ins in
+       if offset <= 63 then SameLocals (index+n_ins, v)
+       else SameLocalsExtended (247, offset, v)
+    | SameLocalsExtended (index, offset, v) ->
+       SameLocalsExtended (index, offset+n_ins, v)
+    | ChopFrame (index, offset) -> ChopFrame (index, offset+n_ins)
+    | SameFrameExtended (index, offset) ->
+       SameFrameExtended (index, offset+n_ins)
+    | AppendFrame (index, offset, v) -> AppendFrame (index, offset+n_ins, v)
+    | FullFrame (index, offset, v1, v2) -> FullFrame (index, offset+n_ins, v1, v2)
+  in
+  match smt with
   | None -> None
-  | Some l ->
-     Some (List.map
-             (fun (l_byte, l_src) ->
-               (shift_line l_byte, l_src)) l)
-  
+  | Some stackmap ->
+     let pps = get_stackmap_pps stackmap in
+     let stackmap' = List.map2
+                       (fun pp_frame frame ->
+                         if pp_frame > pp_ins then
+                           shift_frame frame
+                         else frame
+                       ) pps stackmap in
+     Some stackmap'
+
 let insert_code_fragment code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let old_op = old_opcodes.(pp) in
@@ -286,6 +346,13 @@ let insert_code_fragment code pp ins_opcodes =
   let () = Array.blit old_opcodes 0 new_opcodes 0 pp in
   let () = Array.blit old_opcodes (pp+n_pp) new_opcodes (pp+n_ins) (n_old-pp-n_pp) in
   let () = Array.blit ins_opcodes 0 new_opcodes pp n_ins in
-  let lnt = code.c_line_number_table in
+  let (lnt, lvt, lvtt) = (renumber_tables
+                            code.c_line_number_table
+                            code.c_local_variable_table
+                            code.c_local_variable_type_table pp (n_ins-n_pp)) in
+  let stackmap = renumber_stackmap code.c_stack_map pp (n_ins-n_pp) in
   { code with c_code = new_opcodes;
-              c_line_number_table = renumber_lnt lnt pp (n_ins-n_pp)}
+              c_line_number_table = lnt;
+              c_local_variable_table = lvt;
+              c_local_variable_type_table = lvtt;
+              c_stack_map = stackmap }
