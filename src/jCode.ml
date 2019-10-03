@@ -260,13 +260,20 @@ let renumber_tables lnt lvt lvtt pp n_ins =
   let shift_line line =
     if line <= pp then line else line+n_ins
   in
+  let shift_pc_length pc length =
+    if pc <= pp then
+      if length <= pp then (pc, length)
+      else (pc, length+n_ins)
+    else (pc+n_ins,length)
+  in
   let renumber_lvt lvt =
     match lvt with
     | None -> None
     | Some l ->
        Some (List.map
                (fun (start_pc, length, name, typ, index) ->
-                 (shift_line start_pc, length, name, typ, index)) l)
+                 let (start_pc, length) = shift_pc_length start_pc length in
+                 (start_pc, length, name, typ, index)) l)
   in
   let lnt' =
     match lnt with
@@ -319,10 +326,12 @@ let renumber_stackmap smt pp_ins n_ins =
   | None -> None
   | Some stackmap ->
      let pps = get_stackmap_pps stackmap in
+     let first = ref true in
      let stackmap' = List.map2
                        (fun pp_frame frame ->
-                         if pp_frame > pp_ins then
-                           shift_frame frame
+                         if pp_frame > pp_ins && !first then
+                           (first := false;
+                            shift_frame frame)
                          else frame
                        ) pps stackmap in
      Some stackmap'
