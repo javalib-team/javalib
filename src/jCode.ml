@@ -231,7 +231,7 @@ let renumber_instruction pp_ins n_ins pp opcode =
   let gen_offset offset =
     let pp_jump = pp + offset in
     if offset > 0 && pp_jump > pp_ins && pp_ins > pp then offset+n_ins
-    else if offset < 0 && pp_jump < pp_ins && pp_ins < pp then offset-n_ins
+    else if offset < 0 && pp_jump <= pp_ins && pp_ins < pp then offset-n_ins
     else offset
   in
   match opcode with
@@ -262,7 +262,7 @@ let renumber_tables lnt lvt lvtt pp n_ins =
   in
   let shift_pc_length pc length =
     if pc <= pp then
-      if length <= pp then (pc, length)
+      if (pc+length-1) <= pp then (pc, length)
       else (pc, length+n_ins)
     else (pc+n_ins,length)
   in
