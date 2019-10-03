@@ -233,4 +233,6 @@ val get_local_variable_info :
 
 (** {2 Modification functions.} *)
 
-val insert_code_fragment : jcode -> int -> jopcodes -> jcode
+val replace_code : jcode -> int -> jopcode list -> jcode
+
+val insert_code : jcode -> int -> jopcode list -> jcode

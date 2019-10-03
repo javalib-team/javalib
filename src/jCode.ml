@@ -327,7 +327,26 @@ let renumber_stackmap smt pp_ins n_ins =
                        ) pps stackmap in
      Some stackmap'
 
-let insert_code_fragment code pp ins_opcodes =
+let renumber_exception_table (exn_table : exception_handler list) pp_ins n_ins =
+  let shift_handler handler =
+    let (e_start, e_end) =
+      if handler.e_start > pp_ins then
+        (handler.e_start+n_ins, handler.e_end+n_ins)
+      else if handler.e_end > pp_ins then
+        (handler.e_start, handler.e_end+n_ins)
+      else (handler.e_start, handler.e_end)
+    and e_handler =
+      if handler.e_handler > pp_ins then
+        handler.e_handler+n_ins
+      else handler.e_handler
+    in { e_start = e_start;
+         e_end = e_end;
+         e_handler = e_handler;
+         e_catch_type = handler.e_catch_type }
+  in
+  List.map (fun handler -> shift_handler handler) exn_table
+
+let replace_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let old_op = old_opcodes.(pp) in
   let () = match old_op with
@@ -338,21 +357,39 @@ let insert_code_fragment code pp ins_opcodes =
              let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
                         n := !n + 1
                       done in !n in
-  let n_ins = Array.length ins_opcodes in
+  let n_ins = List.length ins_opcodes in
   let old_opcodes = Array.mapi
                       (fun pp0 opcode ->
                         renumber_instruction pp (n_ins-n_pp) pp0 opcode) old_opcodes in
   let new_opcodes = Array.make (n_old + n_ins - n_pp) OpInvalid in
   let () = Array.blit old_opcodes 0 new_opcodes 0 pp in
   let () = Array.blit old_opcodes (pp+n_pp) new_opcodes (pp+n_ins) (n_old-pp-n_pp) in
-  let () = Array.blit ins_opcodes 0 new_opcodes pp n_ins in
+  let () = Array.blit (Array.of_list ins_opcodes) 0 new_opcodes pp n_ins in
   let (lnt, lvt, lvtt) = (renumber_tables
                             code.c_line_number_table
                             code.c_local_variable_table
                             code.c_local_variable_type_table pp (n_ins-n_pp)) in
   let stackmap = renumber_stackmap code.c_stack_map pp (n_ins-n_pp) in
+  let exn_table = renumber_exception_table code.c_exc_tbl pp (n_ins-n_pp) in
   { code with c_code = new_opcodes;
               c_line_number_table = lnt;
               c_local_variable_table = lvt;
               c_local_variable_type_table = lvtt;
-              c_stack_map = stackmap }
+              c_stack_map = stackmap;
+              c_exc_tbl = exn_table }
+
+let insert_code code pp ins_opcodes =
+  let old_opcodes = code.c_code in
+  let old_op = old_opcodes.(pp) in
+  let () = match old_op with
+    | OpInvalid -> failwith "Cannot insert a code fragment before an OpInvalid."
+    | _ -> () in
+  let n_old = Array.length old_opcodes in
+  let n_pp = let n = ref 1 in
+             let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
+                        n := !n + 1
+                      done in !n in
+  let curr_op = Array.sub old_opcodes pp n_pp in
+  let () = curr_op.(0) <- renumber_instruction (pp-1)
+                            (List.length ins_opcodes) pp curr_op.(0) in
+  replace_code code pp (ins_opcodes @ (Array.to_list curr_op))
