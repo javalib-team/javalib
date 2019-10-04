@@ -355,6 +355,32 @@ let renumber_exception_table (exn_table : exception_handler list) pp_ins n_ins =
   in
   List.map (fun handler -> shift_handler handler) exn_table
 
+let patch_switch pp_ins n_ins opcodes =
+  let first_switch_pp opcodes =
+    let contains_switch = ref false in
+    let i = ref 0 in
+    while !i < Array.length opcodes && not(!contains_switch) do
+      match opcodes.(!i) with
+      | OpTableSwitch _ | OpLookupSwitch _ ->
+         contains_switch := true
+      | _ -> i := !i + 1
+    done;
+    if !contains_switch then !i else -1
+  in
+  let pp_switch = first_switch_pp opcodes in
+  if pp_switch >= pp_ins then
+    let ins_mod4 = n_ins mod 4 in
+    if ins_mod4 == 0 then
+      []
+    else if ins_mod4 == 1 then
+      [OpNop; OpNop; OpNop]
+    else if ins_mod4 == 2 then
+      [OpNop; OpNop]
+    else
+      [OpNop]
+  else
+    []
+
 let replace_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let old_op = old_opcodes.(pp) in
@@ -366,6 +392,8 @@ let replace_code code pp ins_opcodes =
              let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
                         n := !n + 1
                       done in !n in
+  let ins_opcodes = (patch_switch pp ((List.length ins_opcodes)-n_pp) old_opcodes)
+                    @ ins_opcodes in
   let n_ins = List.length ins_opcodes in
   let old_opcodes = Array.mapi
                       (fun pp0 opcode ->
