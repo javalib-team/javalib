@@ -381,20 +381,29 @@ let patch_switch pp_ins n_ins opcodes =
   else
     []
 
+let count_opinvalids_before_next_op opcodes pp =
+  let n_ops = Array.length opcodes in
+  let n = ref 0 in
+  let () = while (pp + !n < n_ops && opcodes.(pp + !n + 1) = OpInvalid) do
+             n := !n + 1
+           done
+  in !n
+
+let check_not_invalid opcodes pp message =
+  let op = opcodes.(pp) in
+  match op with
+  | OpInvalid -> failwith message
+  | _ -> ()
+
 let replace_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
-  let old_op = old_opcodes.(pp) in
-  let () = match old_op with
-    | OpInvalid -> failwith "Cannot insert a code fragment in place of an OpInvalid."
-    | _ -> () in
-  let n_old = Array.length old_opcodes in
-  let n_pp = let n = ref 1 in
-             let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
-                        n := !n + 1
-                      done in !n in
+  let () = check_not_invalid old_opcodes pp
+             "Cannot insert a code fragment in place of an OpInvalid." in
+  let n_pp = 1 + (count_opinvalids_before_next_op old_opcodes pp) in
   let ins_opcodes = (patch_switch pp ((List.length ins_opcodes)-n_pp) old_opcodes)
                     @ ins_opcodes in
   let n_ins = List.length ins_opcodes in
+  let n_old = Array.length old_opcodes in
   let old_opcodes = Array.mapi
                       (fun pp0 opcode ->
                         renumber_instruction pp (n_ins-n_pp) pp0 opcode) old_opcodes in
@@ -417,15 +426,9 @@ let replace_code code pp ins_opcodes =
 
 let insert_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
-  let old_op = old_opcodes.(pp) in
-  let () = match old_op with
-    | OpInvalid -> failwith "Cannot insert a code fragment before an OpInvalid."
-    | _ -> () in
-  let n_old = Array.length old_opcodes in
-  let n_pp = let n = ref 1 in
-             let () = while (pp + !n < n_old && old_opcodes.(pp + !n) = OpInvalid) do
-                        n := !n + 1
-                      done in !n in
+  let () = check_not_invalid old_opcodes pp
+             "Cannot insert a code fragment before an OpInvalid." in
+  let n_pp = 1 + (count_opinvalids_before_next_op old_opcodes pp) in
   let curr_op = Array.sub old_opcodes pp n_pp in
   let () = curr_op.(0) <- renumber_instruction (pp-1)
                             (List.length ins_opcodes) pp curr_op.(0) in
