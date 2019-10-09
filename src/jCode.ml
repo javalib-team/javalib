@@ -395,6 +395,93 @@ let check_not_invalid opcodes pp message =
   | OpInvalid -> failwith message
   | _ -> ()
 
+let count_stack_allocation opcode =
+  match opcode with
+  | OpArrayLoad _ -> -1
+  | OpArrayStore _ -> -3
+  | OpLoad _ -> 1
+  | OpNewArray _ -> 0
+  | OpReturn `Void -> 0
+  | OpReturn _ -> -1
+  | OpArrayLength -> 0
+  | OpStore _ -> -1
+  | OpThrow -> 0
+  | OpConst _ -> 1
+  | OpCheckCast _ -> 0
+
+  | OpI2L | OpI2F | OpI2D
+    | OpL2I | OpL2F | OpL2D
+    | OpF2I | OpF2L | OpF2D
+    | OpD2I | OpD2L | OpD2F
+    | OpI2B | OpI2C | OpI2S -> 0
+                             
+  | OpAdd _ | OpSub _ | OpMult _ | OpDiv _ -> -1  
+  | OpCmp _ -> -1
+  | OpNeg _ -> 0
+  | OpRem _ -> -1
+  | OpDup | OpDupX1 | OpDupX2 -> 1
+  | OpDup2 | OpDup2X1 | OpDup2X2 -> 2 (* can be 1 sometimes *)
+
+  | OpGetField _ -> 0
+  | OpGetStatic _ -> 1
+  | OpGoto _ -> 0
+  | OpIfCmp _ -> -2
+  | OpIf _ -> -1
+  | OpIInc _ -> 0
+  | OpInstanceOf _ -> 0
+
+  | OpIShl | OpLShl
+  | OpIShr | OpLShr
+  | OpIUShr | OpLUShr
+  | OpIAnd | OpLAnd
+  | OpIOr | OpLOr
+  | OpIXor | OpLXor -> -1
+
+  | OpJsr _ -> 1
+  | OpLookupSwitch _ -> -1
+  | OpMonitorEnter | OpMonitorExit -> -1
+  | OpAMultiNewArray (_,n) -> 1-n
+  | OpNew _ -> 1
+  | OpNop -> 0
+  | OpPop -> -1
+  | OpPop2 -> -2 (* can be -1 sometimes *)
+  | OpPutField _ -> -2
+  | OpPutStatic _ -> -1
+  | OpRet _ -> 0
+  | OpSwap -> 0
+  | OpTableSwitch _ -> -1
+
+  | OpInvoke (`Interface _, ms)
+    | OpInvoke (`Special _, ms)
+    | OpInvoke (`Virtual _, ms) ->
+     let n_args = List.length (ms_args ms) in 
+     let n_ret = match ms_rtype ms with
+       | None -> 0
+       | _ -> 1 in
+     n_ret-n_args-1
+  | OpInvoke (`Static _, ms) ->
+     let n_args = List.length (ms_args ms) in
+     let n_ret = match ms_rtype ms with
+       | None -> 0
+       | _ -> 1 in
+     n_ret-n_args
+  | OpInvoke (`Dynamic _, ms) ->
+     let n_args = List.length (ms_args ms) in
+     1-n_args
+  | OpBreakpoint
+  | OpInvalid -> 0
+
+let eval_max_stack_allocation opcodes =
+  let n = ref 0 in
+  let n_max = ref 0 in
+  Array.iter (fun op ->
+      (match op with
+       | OpPop2 -> n := !n+1 (* for security *)
+       | _ -> ());
+      n := !n + (count_stack_allocation op);
+      if !n > !n_max then n_max := !n) opcodes;
+  !n_max
+               
 let replace_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let () = check_not_invalid old_opcodes pp
@@ -417,7 +504,9 @@ let replace_code code pp ins_opcodes =
                             code.c_local_variable_type_table pp (n_ins-n_pp)) in
   let stackmap = renumber_stackmap code.c_stack_map pp (n_ins-n_pp) in
   let exn_table = renumber_exception_table code.c_exc_tbl pp (n_ins-n_pp) in
-  { code with c_code = new_opcodes;
+  let max_stack = eval_max_stack_allocation new_opcodes in
+  { code with c_max_stack = max_stack;
+              c_code = new_opcodes;
               c_line_number_table = lnt;
               c_local_variable_table = lvt;
               c_local_variable_type_table = lvtt;
