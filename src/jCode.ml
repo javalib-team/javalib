@@ -395,92 +395,338 @@ let check_not_invalid opcodes pp message =
   | OpInvalid -> failwith message
   | _ -> ()
 
-let count_stack_allocation opcode =
-  match opcode with
-  | OpArrayLoad _ -> -1
-  | OpArrayStore _ -> -3
-  | OpLoad _ -> 1
-  | OpNewArray _ -> 0
-  | OpReturn `Void -> 0
-  | OpReturn _ -> -1
-  | OpArrayLength -> 0
-  | OpStore _ -> -1
-  | OpThrow -> 0
-  | OpConst _ -> 1
-  | OpCheckCast _ -> 0
+(*********** TYPES *************)
 
-  | OpI2L | OpI2F | OpI2D
-    | OpL2I | OpL2F | OpL2D
-    | OpF2I | OpF2L | OpF2D
-    | OpD2I | OpD2L | OpD2F
-    | OpI2B | OpI2C | OpI2S -> 0
-                             
-  | OpAdd _ | OpSub _ | OpMult _ | OpDiv _ -> -1  
-  | OpCmp _ -> -1
-  | OpNeg _ -> 0
-  | OpRem _ -> -1
-  | OpDup | OpDupX1 | OpDupX2 -> 1
-  | OpDup2 | OpDup2X1 | OpDup2X2 -> 2 (* can be 1 sometimes *)
+(* For stack type inference only *)
+type op_size = Op32 | Op64
 
-  | OpGetField _ -> 0
-  | OpGetStatic _ -> 1
-  | OpGoto _ -> 0
-  | OpIfCmp _ -> -2
-  | OpIf _ -> -1
-  | OpIInc _ -> 0
-  | OpInstanceOf _ -> 0
+(******* STACK MANIPULATION **************)
 
-  | OpIShl | OpLShl
-  | OpIShr | OpLShr
-  | OpIUShr | OpLUShr
-  | OpIAnd | OpLAnd
-  | OpIOr | OpLOr
-  | OpIXor | OpLXor -> -1
+(** [Bad_stack] is raised in case the stack does not fit the length/content
+      constraint of the bytecode instruction being transformed. *)
+exception Bad_stack
 
-  | OpJsr _ -> 1
-  | OpLookupSwitch _ -> -1
-  | OpMonitorEnter | OpMonitorExit -> -1
-  | OpAMultiNewArray (_,n) -> 1-n
-  | OpNew _ -> 1
-  | OpNop -> 0
-  | OpPop -> -1
-  | OpPop2 -> -2 (* can be -1 sometimes *)
-  | OpPutField _ -> -2
-  | OpPutStatic _ -> -1
-  | OpRet _ -> 0
-  | OpSwap -> 0
-  | OpTableSwitch _ -> -1
+(* Returns the top element of the stack *)
+let top = function [] -> raise Bad_stack | x :: _ -> x
 
-  | OpInvoke (`Interface _, ms)
-    | OpInvoke (`Special _, ms)
-    | OpInvoke (`Virtual _, ms) ->
-     let n_args = List.length (ms_args ms) in 
-     let n_ret = match ms_rtype ms with
-       | None -> 0
-       | _ -> 1 in
-     n_ret-n_args-1
-  | OpInvoke (`Static _, ms) ->
-     let n_args = List.length (ms_args ms) in
-     let n_ret = match ms_rtype ms with
-       | None -> 0
-       | _ -> 1 in
-     n_ret-n_args
-  | OpInvoke (`Dynamic _, ms) ->
-     let n_args = List.length (ms_args ms) in
-     1-n_args
-  | OpBreakpoint
-  | OpInvalid -> 0
+(* Pops one element off the stack *)
+let pop = function [] -> raise Bad_stack | _ :: q -> q
 
-let eval_max_stack_allocation opcodes =
-  let n = ref 0 in
-  let n_max = ref 0 in
-  Array.iter (fun op ->
-      (match op with
-       | OpPop2 -> n := !n+1 (* for security *)
-       | _ -> ());
-      n := !n + (count_stack_allocation op);
-      if !n > !n_max then n_max := !n) opcodes;
-  !n_max
+(* Pops n elements off the stack *)
+let rec popn n s = if n = 0 then s else pop (popn (n - 1) s)
+
+let pop2 s = popn 2 s
+
+let pop3 s = popn 3 s
+
+(**************** STACK TYPE INFERENCE ****)
+
+exception Subroutine
+
+let convert_type = function
+  | `Int
+  | `Short
+  | `Char
+  | `Byte
+  | `Int2Bool
+  | `ByteBool
+  | `Bool
+  | `Float
+  | `Object ->
+      Op32
+  | `Long | `Double ->
+      Op64
+
+let convert_const = function
+  | `String _
+  | `Class _
+  | `ANull
+  | `Byte _
+  | `Short _
+  | `Float _
+  | `Int _
+  | `MethodHandle _
+  | `MethodType _ ->
+      Op32
+  | `Long _ | `Double _ ->
+      Op64
+
+let rec convert_field_type = function
+  | TBasic t ->
+      convert_type t
+  | TObject t ->
+      convert_object_type t
+
+and convert_object_type = function TClass _ -> Op32 | TArray _ -> Op32
+
+(* For an opcode and the previous type inference stack, return the updated
+* stack.*)
+let type_next = function
+  | OpNop -> (
+      function s -> s )
+  | OpConst x -> (
+      function s -> convert_const x :: s )
+  | OpLoad (k, _) -> (
+      function s -> convert_type k :: s )
+  | OpArrayLoad k -> (
+      function s -> convert_type k :: pop2 s )
+  | OpStore (_, _) -> (
+      function s -> pop s )
+  | OpArrayStore _ ->
+      pop3
+  | OpPop ->
+      pop
+  | OpPop2 -> (
+      function s -> ( match top s with Op32 -> pop2 s | Op64 -> pop s ) )
+  | OpDup -> (
+      function s -> top s :: s )
+  | OpDupX1 -> (
+      function s -> top s :: top (pop s) :: top s :: pop2 s )
+  | OpDupX2 -> (
+      function
+      | s -> (
+        match top (pop s) with
+        | Op32 ->
+            top s :: top (pop s) :: top (pop2 s) :: top s :: pop3 s
+        | Op64 ->
+            top s :: top (pop s) :: top s :: pop2 s ) )
+  | OpDup2 -> (
+      function
+      | s -> (
+        match top s with
+        | Op32 ->
+            top s :: top (pop s) :: top s :: top (pop s) :: pop2 s
+        | Op64 ->
+            top s :: s ) )
+  | OpDup2X1 -> (
+      function
+      | s -> (
+        match top s with
+        | Op32 ->
+            top s
+            :: top (pop s)
+            :: top (pop2 s)
+            :: top s
+            :: top (pop s)
+            :: pop3 s
+        | Op64 ->
+            top s :: top (pop s) :: top s :: pop2 s ) )
+  | OpDup2X2 -> (
+      function
+      | s -> (
+        match top s with
+        | Op32 -> (
+          match top (pop2 s) with
+          | Op32 ->
+              top s
+              :: top (pop s)
+              :: top (pop2 s)
+              :: top (pop3 s)
+              :: top s
+              :: top (pop s)
+              :: pop (pop3 s)
+          | Op64 ->
+              top s
+              :: top (pop s)
+              :: top (pop2 s)
+              :: top s
+              :: top (pop s)
+              :: pop3 s )
+        | Op64 -> (
+          match top (pop s) with
+          | Op32 ->
+              top s :: top (pop s) :: top (pop2 s) :: top s :: pop3 s
+          | Op64 ->
+              top s :: top (pop s) :: top s :: pop2 s ) ) )
+  | OpSwap -> (
+      function s -> top (pop s) :: top s :: pop2 s )
+  | OpAdd k | OpSub k | OpMult k | OpDiv k | OpRem k -> (
+      function s -> convert_type k :: pop2 s )
+  | OpNeg k -> (
+      function s -> convert_type k :: pop s )
+  | OpIShl | OpIShr | OpIAnd | OpIOr | OpIXor | OpIUShr -> (
+      function s -> Op32 :: pop2 s )
+  | OpLShr | OpLShl -> (
+      function s -> pop s )
+  | OpLAnd | OpLOr | OpLXor | OpLUShr -> (
+      function s -> Op64 :: pop2 s )
+  | OpIInc (_, _) -> (
+      function s -> s )
+  | OpI2L -> (
+      function s -> Op64 :: pop s )
+  | OpI2F -> (
+      function s -> Op32 :: pop s )
+  | OpI2D -> (
+      function s -> Op64 :: pop s )
+  | OpL2I -> (
+      function s -> Op32 :: pop s )
+  | OpL2F -> (
+      function s -> Op32 :: pop s )
+  | OpL2D -> (
+      function s -> Op64 :: pop s )
+  | OpF2I -> (
+      function s -> Op32 :: pop s )
+  | OpF2L -> (
+      function s -> Op64 :: pop s )
+  | OpF2D -> (
+      function s -> Op64 :: pop s )
+  | OpD2I -> (
+      function s -> Op32 :: pop s )
+  | OpD2L -> (
+      function s -> Op64 :: pop s )
+  | OpD2F -> (
+      function s -> Op32 :: pop s )
+  | OpI2B -> (
+      function s -> s )
+  | OpI2C -> (
+      function s -> s )
+  | OpI2S -> (
+      function s -> s )
+  | OpCmp _ -> (
+      function s -> Op32 :: pop2 s )
+  | OpIf (_, _) ->
+      pop
+  | OpIfCmp (_, _) ->
+      pop2
+  | OpGoto _ -> (
+      function s -> s )
+  | OpJsr _ ->
+      raise Subroutine
+  | OpRet _ ->
+      raise Subroutine
+  | OpTableSwitch _ ->
+      pop
+  | OpLookupSwitch _ ->
+      pop
+  | OpReturn _ -> (
+      function _ -> [] )
+  | OpGetField (_, fs) -> (
+      function s -> convert_field_type (fs_type fs) :: pop s )
+  | OpGetStatic (_, fs) -> (
+      function s -> convert_field_type (fs_type fs) :: s )
+  | OpPutStatic _ ->
+      pop
+  | OpPutField _ ->
+      pop2
+  | OpInvoke (x, ms) -> (
+      function
+      | s -> (
+          let s =
+            match x with
+            | `Dynamic _ | `Static _ ->
+                popn (List.length (ms_args ms)) s
+            | _ ->
+                popn (List.length (ms_args ms)) (pop s)
+          in
+          match ms_rtype ms with
+          | None ->
+              s
+          | Some t ->
+              convert_field_type t :: s ) )
+  | OpNew _ -> (
+      function s -> Op32 :: s )
+  | OpNewArray _ -> (
+      function s -> Op32 :: pop s )
+  | OpArrayLength -> (
+      function s -> Op32 :: pop s )
+  | OpThrow -> (
+      function _ -> [] )
+  | OpCheckCast _ -> (
+      function s -> s )
+  | OpInstanceOf _ -> (
+      function s -> Op32 :: pop s )
+  | OpMonitorEnter ->
+      pop
+  | OpMonitorExit ->
+      pop
+  | OpAMultiNewArray (_, b) -> (
+      function s -> Op32 :: popn b s )
+  | OpBreakpoint ->
+      failwith "breakpoint"
+  | OpInvalid ->
+      failwith "invalid"
+
+exception End_of_method
+
+let next c i =
+  try
+    let k = ref (i + 1) in
+    while c.(!k) = OpInvalid do
+      incr k
+    done ;
+    !k
+  with _ -> raise End_of_method
+
+(*Computes successors of instruction i. They can be several successors in case
+* of conditionnal instruction.*)
+let normal_next opcodes i =
+  match opcodes.(i) with
+  | OpIf (_, n) | OpIfCmp (_, n) ->
+      [next opcodes i; i + n]
+  | OpGoto n ->
+      [i + n]
+  | OpJsr _ | OpRet _ ->
+      raise Subroutine
+  | OpTableSwitch (default, _, _, table) ->
+      List.map (( + ) i) (default :: Array.to_list table)
+  | OpLookupSwitch (default, npairs) ->
+      List.map (( + ) i) (default :: List.map snd npairs)
+  | OpReturn _ ->
+      []
+  | OpThrow ->
+      []
+  | OpBreakpoint ->
+      failwith "breakpoint"
+  | OpInvalid ->
+      failwith "invalid"
+  | _ ->
+      [next opcodes i]
+
+let compute_handlers handlers i =
+  let handlers =
+    List.filter (fun e -> e.e_start <= i && i < e.e_end) handlers
+  in
+  let handlers = List.map (fun e -> e.e_handler) handlers in
+  handlers
+
+let succs opcodes handlers i = normal_next opcodes i @ compute_handlers handlers i
+
+let get_stack_size stack =
+  let rec get_stack_size stack acc =
+    match stack with
+    | [] -> acc
+    | Op32 :: stack' -> get_stack_size stack' (1+acc)
+    | Op64 :: stack' -> get_stack_size stack' (2+acc)
+  in
+  get_stack_size stack 0
+
+let compute_max_stack opcodes handlers =
+  let n = Array.length opcodes in
+  let stacks = Array.make n None in
+  let pp = ref 0 in
+  let s = ref [] in
+  while !pp < n-1 do
+    let op = opcodes.(!pp) in
+    let s_curr = match stacks.(!pp) with
+      | None -> !s
+      | Some s' -> s' in
+    let () = s := type_next op s_curr in
+    let succ_l = succs opcodes handlers !pp in
+    let () = List.iter
+               (fun i ->
+                 if i > !pp then
+                   match stacks.(i) with
+                   | None ->
+                      stacks.(i) <- Some !s
+                   | Some _ -> ()
+               ) succ_l in
+    pp := next opcodes !pp
+  done;
+  Array.fold_left
+    (fun m s -> match s with
+                | None -> m
+                | Some s' -> let sz = get_stack_size s' in
+                             if sz > m then sz else m ) 0 stacks
                
 let replace_code code pp ins_opcodes =
   let old_opcodes = code.c_code in
@@ -504,7 +750,7 @@ let replace_code code pp ins_opcodes =
                             code.c_local_variable_type_table pp (n_ins-n_pp)) in
   let stackmap = renumber_stackmap code.c_stack_map pp (n_ins-n_pp) in
   let exn_table = renumber_exception_table code.c_exc_tbl pp (n_ins-n_pp) in
-  let max_stack = eval_max_stack_allocation new_opcodes in
+  let max_stack = compute_max_stack new_opcodes exn_table in
   { code with c_max_stack = max_stack;
               c_code = new_opcodes;
               c_line_number_table = lnt;
