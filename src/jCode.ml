@@ -647,6 +647,7 @@ let type_next = function
       failwith "invalid"
 
 exception End_of_method
+exception Beginning_of_method
 
 let next c i =
   try
@@ -657,6 +658,15 @@ let next c i =
     !k
   with _ -> raise End_of_method
 
+let prev c i =
+  try
+    let k = ref (i - 1) in
+    while c.(!k) = OpInvalid do
+      decr k
+    done ;
+    !k
+  with _ -> raise Beginning_of_method
+          
 (*Computes successors of instruction i. They can be several successors in case
 * of conditionnal instruction.*)
 let normal_next opcodes i =
@@ -728,7 +738,7 @@ let compute_max_stack opcodes handlers =
                 | Some s' -> let sz = get_stack_size s' in
                              if sz > m then sz else m ) 0 stacks
                
-let replace_code code pp ins_opcodes =
+let replace_code ?(update_max_stack=false) code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let () = check_not_invalid old_opcodes pp
              "Cannot insert a code fragment in place of an OpInvalid." in
@@ -750,7 +760,10 @@ let replace_code code pp ins_opcodes =
                             code.c_local_variable_type_table pp (n_ins-n_pp)) in
   let stackmap = renumber_stackmap code.c_stack_map pp (n_ins-n_pp) in
   let exn_table = renumber_exception_table code.c_exc_tbl pp (n_ins-n_pp) in
-  let max_stack = compute_max_stack new_opcodes exn_table in
+  let max_stack = if update_max_stack then
+                    compute_max_stack new_opcodes exn_table
+                  else code.c_max_stack
+  in
   { code with c_max_stack = max_stack;
               c_code = new_opcodes;
               c_line_number_table = lnt;
@@ -759,7 +772,7 @@ let replace_code code pp ins_opcodes =
               c_stack_map = stackmap;
               c_exc_tbl = exn_table }
 
-let insert_code code pp ins_opcodes =
+let insert_code ?(update_max_stack=false) code pp ins_opcodes =
   let old_opcodes = code.c_code in
   let () = check_not_invalid old_opcodes pp
              "Cannot insert a code fragment before an OpInvalid." in
@@ -767,4 +780,45 @@ let insert_code code pp ins_opcodes =
   let curr_op = Array.sub old_opcodes pp n_pp in
   let () = curr_op.(0) <- renumber_instruction (pp-1)
                             (List.length ins_opcodes) pp curr_op.(0) in
-  replace_code code pp (ins_opcodes @ (Array.to_list curr_op))
+  replace_code code ~update_max_stack pp (ins_opcodes @ (Array.to_list curr_op))
+
+let apply_ntimes f v0 n =
+  let rec apply_f_ntimes v0 n =
+    if n = 0 then
+      v0
+    else if n > 0 then
+      apply_f_ntimes (f v0) (n-1)
+    else
+      failwith "Bad negative argument."
+  in apply_f_ntimes v0 n
+
+let assert_npush opcodes pp1 pp2 n =
+  if pp1 >= pp2 then
+    failwith "pp1 should be strictly lower than pp2"
+  else
+    let (s,pp) = apply_ntimes
+                   (fun (s,pp) ->
+                     (type_next opcodes.(pp) s,
+                      next opcodes pp)
+                   ) ([],pp1) n in
+    if (List.length s != n || pp != pp2) then
+      failwith "Wrong number of arguments pushed on the stack."
+
+let replace_invokedynamic code pp cn =
+  match code.c_code.(pp) with
+  | OpInvoke (`Dynamic bm, ms) ->
+     let args = ms_args ms in
+     let ms_init = make_ms "<init>" args None in
+     let code = replace_code code pp
+                  [OpInvoke (`Special (`Class, cn), ms_init);
+                   OpInvalid; OpInvalid] in
+     let opcodes = code.c_code in
+     let n_args = List.length args in
+     let pp_ins = apply_ntimes (fun i -> prev opcodes i) pp n_args in
+     let () = assert_npush opcodes pp_ins pp n_args in
+     let new_code = insert_code ~update_max_stack:true code pp_ins
+                      [OpNew cn; OpInvalid; OpInvalid; OpDup] in
+     new_code
+  | _ -> failwith "No invokedynamic found at given program point."
+
+
