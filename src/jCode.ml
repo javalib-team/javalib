@@ -692,14 +692,7 @@ let normal_next opcodes i =
   | _ ->
       [next opcodes i]
 
-let compute_handlers handlers i =
-  let handlers =
-    List.filter (fun e -> e.e_start <= i && i < e.e_end) handlers
-  in
-  let handlers = List.map (fun e -> e.e_handler) handlers in
-  handlers
-
-let succs opcodes handlers i = normal_next opcodes i @ compute_handlers handlers i
+let succs opcodes i = normal_next opcodes i
 
 let get_stack_size stack =
   let rec get_stack_size stack acc =
@@ -710,9 +703,13 @@ let get_stack_size stack =
   in
   get_stack_size stack 0
 
+let update_handlers_stacks handlers stacks =
+  List.iter (fun h -> stacks.(h.e_start) <- Some [Op32]) handlers
+
 let compute_max_stack opcodes handlers =
   let n = Array.length opcodes in
   let stacks = Array.make n None in
+  let () = update_handlers_stacks handlers stacks in
   let pp = ref 0 in
   let s = ref [] in
   while !pp < n-1 do
@@ -721,7 +718,7 @@ let compute_max_stack opcodes handlers =
       | None -> !s
       | Some s' -> s' in
     let () = s := type_next op s_curr in
-    let succ_l = succs opcodes handlers !pp in
+    let succ_l = succs opcodes !pp in
     let () = List.iter
                (fun i ->
                  if i > !pp then
@@ -804,6 +801,36 @@ let assert_npush opcodes pp1 pp2 n =
     if (List.length s != n || pp != pp2) then
       failwith "Wrong number of arguments pushed on the stack."
 
+type lambda_info = {
+  functional_interface : class_method_signature;
+  captured_arguments : value_type list;
+  checkcast_arguments : value_type list;
+  lambda_handle : method_handle;
+}
+
+let get_bm_args bm =
+  match bm.bm_args with
+  | (`MethodType invoked_md) :: (`MethodHandle mh)
+    :: (`MethodType checkcast_md) :: [] ->
+     (invoked_md, checkcast_md, mh)
+  | _ -> failwith "Bad bootstrap arguments for a lambda expression."
+
+let build_lambda_info bm ms =
+  let m_name = ms_name ms in
+  let captured_args = ms_args ms in
+  let interface_name = match ms_rtype ms with
+    | Some (TObject (TClass cn)) -> cn
+    | _ -> failwith "Bad functional interface name in invokedynamic parameter."
+  in
+  let (invoked_md, checkcast_md, mh) = get_bm_args bm in
+  { functional_interface = make_cms interface_name
+                             (make_ms m_name
+                                (md_args invoked_md)
+                                (md_rtype invoked_md));
+    captured_arguments = captured_args;
+    checkcast_arguments = md_args checkcast_md;
+    lambda_handle = mh }
+
 let replace_invokedynamic code pp cn =
   match code.c_code.(pp) with
   | OpInvoke (`Dynamic bm, ms) ->
@@ -818,7 +845,6 @@ let replace_invokedynamic code pp cn =
      let () = assert_npush opcodes pp_ins pp n_args in
      let new_code = insert_code ~update_max_stack:true code pp_ins
                       [OpNew cn; OpInvalid; OpInvalid; OpDup] in
-     new_code
+     let info = build_lambda_info bm ms in
+     (new_code, info)
   | _ -> failwith "No invokedynamic found at given program point."
-
-

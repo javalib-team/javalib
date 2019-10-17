@@ -231,7 +231,7 @@ val get_source_line_number' : int -> (int * int) list -> int option
 val get_local_variable_info :
   int -> int -> jcode -> (string * value_type) option
 
-(** {2 Modification functions.} *)
+(** {1 Code modification functions.} *)
 
 (** [replace_code code pp l] replaces the opcode present at program
    point [pp] in the [code] with the instructions contained in [l].
@@ -252,4 +252,13 @@ val replace_code : ?update_max_stack:bool ->
 val insert_code : ?update_max_stack:bool ->
                   jcode -> int -> jopcode list -> jcode
 
-val replace_invokedynamic : jcode -> int -> class_name -> jcode
+(** {1 Lambda manipulation.} **)
+  
+type lambda_info = {
+  functional_interface : class_method_signature;
+  captured_arguments : value_type list;
+  checkcast_arguments : value_type list;
+  lambda_handle : method_handle;
+  }
+
+val replace_invokedynamic : jcode -> int -> class_name -> jcode*lambda_info
