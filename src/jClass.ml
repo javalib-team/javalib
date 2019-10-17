@@ -563,3 +563,83 @@ let map_interface_or_class ?(force=false) f = function
 let map_interface_or_class_context ?(force=false) f = function
   | JInterface i -> JInterface (map_interface_context ~force:force f i)
   | JClass c -> JClass (map_class_context ~force:force f c)
+
+let add_methods ioc methods =
+  let merge_methods_with cmethods =
+    MethodMap.merge (fun m1 m2 -> m2) methods cmethods in
+  match ioc with
+  | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
+  | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
+
+open JCode
+
+let get_lambda_ms cn info =
+  let mh = info.lambda_handle in
+  match mh with
+  | `InvokeStatic (`InterfaceMethod (lcn, ms))
+    | `InvokeStatic (`Method (lcn, ms)) ->
+     if lcn = cn then ms
+     else failwith "The code of a lambda expression should be within \
+                    the same class where this lambda is defined."
+  | _ -> failwith "Lambda invocation type not implemented."
+
+let make_public_method m =
+  match m with
+  | AbstractMethod am -> AbstractMethod { am with am_access = `Public }
+  | ConcreteMethod cm -> ConcreteMethod { cm with cm_access = `Public }
+
+let vtype_to_rtype v : jvm_return_type =
+  match v with
+  | None -> `Void
+  | Some (TObject _) -> `Object
+  | Some (TBasic b) ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int -> `Int2Bool
+     | `Double -> `Double
+     | `Float -> `Float
+     | `Long -> `Long
+
+let vtype_size v =
+  match v with
+  | TObject _ -> 1
+  | TBasic b ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int | `Float -> 1
+     | `Double | `Long -> 2
+
+let make_empty_method cn ms =
+  let rtype = ms_rtype ms in
+  let opcodes = Array.of_list [OpReturn (vtype_to_rtype rtype)] in
+  let args = ms_args ms in
+  let nargs = List.fold_left (+) 0 (List.map vtype_size args) in
+  let code = {
+      c_max_stack = 1;
+      c_max_locals = 1 + nargs;
+      c_code = opcodes;
+      c_exc_tbl = [];
+      c_line_number_table = None;
+      c_local_variable_table = None;
+      c_local_variable_type_table = None;
+      c_stack_map = None;
+      c_attributes = [];
+    } in
+  ConcreteMethod {
+      cm_signature = ms;
+      cm_class_method_signature = make_cms cn ms;
+      cm_static = false;
+      cm_final = false;
+      cm_synchronized = false;
+      cm_strict = false;
+      cm_access = `Public;
+      cm_generic_signature = None;
+      cm_bridge = false;
+      cm_varargs = false;
+      cm_synthetic = false;
+      cm_other_flags = [];
+      cm_exceptions = [];
+      cm_attributes = { synthetic = false; deprecated = false; other = [] };
+      cm_parameters = [];
+      cm_annotations = { ma_global = []; ma_parameters = [] };
+      cm_implementation = Java (lazy code);
+    }
+
