@@ -384,7 +384,7 @@ let patch_switch pp_ins n_ins opcodes =
 let count_opinvalids_before_next_op opcodes pp =
   let n_ops = Array.length opcodes in
   let n = ref 0 in
-  let () = while (pp + !n < n_ops && opcodes.(pp + !n + 1) = OpInvalid) do
+  let () = while (pp + !n + 1 < n_ops && opcodes.(pp + !n + 1) = OpInvalid) do
              n := !n + 1
            done
   in !n

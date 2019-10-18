@@ -564,14 +564,14 @@ let map_interface_or_class_context ?(force=false) f = function
   | JInterface i -> JInterface (map_interface_context ~force:force f i)
   | JClass c -> JClass (map_class_context ~force:force f c)
 
+open JCode
+
 let add_methods ioc methods =
   let merge_methods_with cmethods =
-    MethodMap.merge (fun m1 m2 -> m2) methods cmethods in
+    MethodMap.merge (fun _ m2 -> m2) methods cmethods in
   match ioc with
   | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
   | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
-
-open JCode
 
 let get_lambda_ms cn info =
   let mh = info.lambda_handle in
@@ -588,7 +588,17 @@ let make_public_method m =
   | AbstractMethod am -> AbstractMethod { am with am_access = `Public }
   | ConcreteMethod cm -> ConcreteMethod { cm with cm_access = `Public }
 
-let vtype_to_rtype v : jvm_return_type =
+let vtype_to_jvm_type v : jvm_type =
+  match v with
+  | TObject _ -> `Object
+  | TBasic b ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int -> `Int2Bool
+     | `Double -> `Double
+     | `Float -> `Float
+     | `Long -> `Long
+
+let vtype_to_jvm_rtype v : jvm_return_type =
   match v with
   | None -> `Void
   | Some (TObject _) -> `Object
@@ -609,7 +619,7 @@ let vtype_size v =
 
 let make_empty_method cn ms =
   let rtype = ms_rtype ms in
-  let opcodes = Array.of_list [OpReturn (vtype_to_rtype rtype)] in
+  let opcodes = Array.of_list [OpReturn (vtype_to_jvm_rtype rtype)] in
   let args = ms_args ms in
   let nargs = List.fold_left (+) 0 (List.map vtype_size args) in
   let code = {
@@ -643,3 +653,187 @@ let make_empty_method cn ms =
       cm_implementation = Java (lazy code);
     }
 
+let insert_method_code ?(update_max_stack=false) m pp opcodes =
+  let cm, code = match m with
+    | AbstractMethod _ ->
+       failwith "An abstract method has no code."
+    | ConcreteMethod cm ->
+       match cm.cm_implementation with
+       | Native ->
+          failwith "A native method has no code."
+       | Java lcode -> (cm, Lazy.force lcode)
+  in
+  let new_code = insert_code ~update_max_stack code pp opcodes in
+  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
+  m'
+
+let combine3 l1 l2 l3 =
+  let rec combine3 l1 l2 l3 lres =
+    match (l1,l2,l3) with
+    | ([],[],[]) -> lres
+    | (v1::tl1, v2::tl2, v3::tl3) ->
+       combine3 tl1 tl2 tl3 ((v1, v2, v3) :: lres)
+    | _ -> raise (Invalid_argument "Cannot combine lists of different sizes")
+  in List.rev (combine3 l1 l2 l3 [])
+
+let init_fields_opcodes cn arg_types field_names =
+  let arg_sizes = List.map (fun v -> vtype_size v) arg_types in
+  let opcodes = ref [] in
+  let next_local = ref 1 in
+  let () = List.iter (fun (vtype, sz, fname) ->
+               opcodes := [ OpLoad (`Object, 0);
+                            OpLoad (vtype_to_jvm_type vtype, !next_local);
+                            OpPutField (cn, make_fs fname vtype);
+                            OpInvalid; OpInvalid ] :: !opcodes;
+               next_local := !next_local + sz)
+             (combine3 arg_types arg_sizes field_names) in
+  List.flatten (List.rev !opcodes)
+
+let get_fields_opcodes cn arg_types field_names =
+  let opcodes = ref [] in
+  let () = List.iter (fun (vtype, fname) ->
+               opcodes := [ OpLoad (`Object, 0);
+                            OpGetField (cn, make_fs fname vtype);
+                            OpInvalid; OpInvalid ] :: !opcodes;
+             ) (List.combine arg_types field_names) in
+  List.flatten (List.rev !opcodes)
+
+let get_object_type v =
+  match v with
+  | TObject o -> o
+  | _ -> failwith "Value type is not an Object."
+
+let get_arguments_opcodes info =
+  let args = ms_args (snd (cms_split info.functional_interface)) in
+  let check_args = info.checkcast_arguments in
+  let arg_sizes = List.map (fun v -> vtype_size v) args in
+  let opcodes = ref [] in
+  let next_local = ref 1 in
+  let () = List.iter (fun (vtype, sz, checktype) ->
+               let check_opcodes = if vtype = checktype then []
+                                   else [OpCheckCast (get_object_type checktype);
+                                         OpInvalid; OpInvalid] in
+               opcodes := ((OpLoad (vtype_to_jvm_type vtype, !next_local))
+                           :: check_opcodes) :: !opcodes;
+               next_local := !next_local + sz)
+             (combine3 args arg_sizes check_args) in
+  List.flatten (List.rev !opcodes)
+
+let invoke_lambda_opcodes info =
+  let mh = info.lambda_handle in
+  match mh with
+  | `InvokeStatic (`InterfaceMethod (cn, ms)) ->
+     [ OpInvoke (`Static (`Interface, cn), ms);
+       OpInvalid; OpInvalid ]
+  | `InvokeStatic (`Method (cn, ms)) ->
+     [ OpInvoke (`Static (`Class, cn), ms);
+       OpInvalid; OpInvalid ]
+  | _ -> failwith "Lambda invocation type not implemented."
+
+let make_init_method cn arg_types field_names =
+  let ms = make_ms "<init>" arg_types None in
+  let m = make_empty_method cn ms in
+  let ms_obj = make_ms "<init>" [] None in
+  let cn_obj = make_cn "java.lang.Object" in
+  let opcodes_creation = [OpLoad (`Object, 0);
+                          OpInvoke (`Special (`Class, cn_obj), ms_obj);
+                          OpInvalid; OpInvalid] in
+  let opcodes_putfields = init_fields_opcodes cn arg_types field_names in
+  insert_method_code ~update_max_stack:true m 0 (opcodes_creation @ opcodes_putfields)
+
+let make_functional_method cn info field_names =
+  let arg_types = info.captured_arguments in
+  let _, ms_func = cms_split info.functional_interface in
+  let m_func = make_empty_method cn ms_func in
+  let fields_opcodes = get_fields_opcodes cn arg_types field_names in
+  let args_opcodes = get_arguments_opcodes info in
+  let invoke_opcodes = invoke_lambda_opcodes info in
+  insert_method_code ~update_max_stack:true m_func 0 (fields_opcodes
+                                                      @ args_opcodes
+                                                      @ invoke_opcodes)
+
+let make_class_field cn fname ftype =
+  let fs = make_fs fname ftype in
+  let cfs = make_cfs cn fs in
+  { cf_signature = fs;
+    cf_class_signature = cfs;
+    cf_generic_signature = None;
+    cf_access = `Private;
+    cf_static = false;
+    cf_synthetic = false;
+    cf_enum = false;
+    cf_kind = NotFinal;
+    cf_value = None;
+    cf_transient = false;
+    cf_annotations = [];
+    cf_other_flags = [];
+    cf_attributes = { synthetic = false; deprecated = false; other = [] };
+  }
+
+let make_lambda_class version cn info =
+  let iname, ms_func = cms_split info.functional_interface in
+  let arg_types = info.captured_arguments in
+  let field_names = List.init (List.length arg_types)
+                      (fun i -> Printf.sprintf "arg%d" (i+1)) in
+  let fields = List.fold_left (fun m (fname, ftype) ->
+                   let cf = make_class_field cn fname ftype in
+                   FieldMap.add cf.cf_signature cf m
+                 ) FieldMap.empty (List.combine field_names arg_types) in
+  let ms_init = make_ms "<init>" arg_types None in
+  let m_init = make_init_method cn arg_types field_names in
+  let m_func = make_functional_method cn info field_names in
+  let methods = MethodMap.add ms_func m_func
+                  (MethodMap.add ms_init m_init MethodMap.empty) in
+  JClass {
+      c_name = cn;
+      c_version = version;
+      c_access = `Default;
+      c_final = false;
+      c_abstract = false;
+      c_super_class = Some (make_cn "java.lang.Object");
+      c_generic_signature = None;
+      c_fields = fields;
+      c_interfaces = [iname];
+      c_consts = [||];
+      c_sourcefile = None;
+      c_deprecated = false;
+      c_enclosing_method = None;
+      c_source_debug_extention = None;
+      c_inner_classes = [];
+      c_synthetic = false;
+      c_enum = false;
+      c_annotations = [];
+      c_other_flags = [];
+      c_other_attributes = [];
+      c_methods = methods;
+    }
+
+let get_version ioc =
+  match ioc with
+  | JClass c -> c.c_version
+  | JInterface i -> i.i_version
+
+let remove_invokedynamic ioc ms pp name =
+  let m = get_method ioc ms in
+  let cm, code = match m with
+    | AbstractMethod _ ->
+       failwith "An abstract method can not contain an invokedynamic instruction."
+    | ConcreteMethod cm ->
+       match cm.cm_implementation with
+       | Native ->
+          failwith "A native method can not contain an invokedynamic instruction."
+       | Java lcode -> (cm, Lazy.force lcode)
+  in
+  let parent_cname = get_name ioc in
+  let cname = make_cn name in
+  let new_code, info = replace_invokedynamic code pp cname in
+  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
+  let lambda_ms = get_lambda_ms parent_cname info in
+  let lambda_m = get_method ioc lambda_ms in
+  let lambda_m' = make_public_method lambda_m in
+  let methods = MethodMap.add lambda_ms lambda_m'
+                  (MethodMap.add ms m' MethodMap.empty) in
+  let ioc' = add_methods ioc methods in
+  let version = get_version ioc in
+  let ioc_lambda = make_lambda_class version cname info in
+  (ioc', ioc_lambda)
