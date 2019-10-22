@@ -524,6 +524,14 @@ val transform :
     {!JBasics.set_permissive} has been called with [true]. *)
 val unparse_class : JCode.jcode interface_or_class -> out_channel -> unit
 
+val remove_invokedynamic : JCode.jcode interface_or_class ->
+                           method_signature -> int -> string ->
+                           JCode.jcode interface_or_class * JCode.jcode interface_or_class
+
+val remove_invokedynamics : JCode.jcode interface_or_class ->
+                            method_signature -> string ->
+                            (JCode.jcode interface_or_class
+                             * JCode.jcode interface_or_class ClassMap.t)
 
 (** {1 Printing functions.} *)
 

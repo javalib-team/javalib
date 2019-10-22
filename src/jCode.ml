@@ -790,8 +790,8 @@ let apply_ntimes f v0 n =
   in apply_f_ntimes v0 n
 
 let assert_npush opcodes pp1 pp2 n =
-  if pp1 >= pp2 then
-    failwith "pp1 should be strictly lower than pp2"
+  if pp1 > pp2 then
+    failwith "pp1 should be lower than pp2"
   else
     let (s,pp) = apply_ntimes
                    (fun (s,pp) ->

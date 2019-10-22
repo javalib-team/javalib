@@ -813,17 +813,19 @@ let get_version ioc =
   | JClass c -> c.c_version
   | JInterface i -> i.i_version
 
-let remove_invokedynamic ioc ms pp name =
+let get_cm_code ioc ms =
   let m = get_method ioc ms in
-  let cm, code = match m with
-    | AbstractMethod _ ->
-       failwith "An abstract method can not contain an invokedynamic instruction."
-    | ConcreteMethod cm ->
-       match cm.cm_implementation with
-       | Native ->
-          failwith "A native method can not contain an invokedynamic instruction."
-       | Java lcode -> (cm, Lazy.force lcode)
-  in
+  match m with
+  | AbstractMethod _ ->
+     failwith "An abstract method can not contain an invokedynamic instruction."
+  | ConcreteMethod cm ->
+     match cm.cm_implementation with
+     | Native ->
+        failwith "A native method can not contain an invokedynamic instruction."
+     | Java lcode -> (cm, Lazy.force lcode)
+
+let remove_invokedynamic ioc ms pp name =
+  let cm, code = get_cm_code ioc ms in
   let parent_cname = get_name ioc in
   let cname = make_cn name in
   let new_code, info = replace_invokedynamic code pp cname in
@@ -837,3 +839,35 @@ let remove_invokedynamic ioc ms pp name =
   let version = get_version ioc in
   let ioc_lambda = make_lambda_class version cname info in
   (ioc', ioc_lambda)
+
+let iter_code_lambdas ioc code pp prefix mmap cmap =
+  match code.c_code.(pp) with
+  | OpInvoke (`Dynamic _, _) ->
+     let lambda_cname = make_cn (Printf.sprintf "%s%d" prefix pp) in
+     let new_code, info = replace_invokedynamic code pp lambda_cname in
+     let parent_cname = get_name ioc in
+     let lambda_ms = get_lambda_ms parent_cname info in
+     let lambda_m = get_method ioc lambda_ms in
+     let lambda_m' = make_public_method lambda_m in
+     let methods = MethodMap.add lambda_ms lambda_m' mmap in
+     let version = get_version ioc in
+     let ioc_lambda = make_lambda_class version lambda_cname info in
+     let lambda_classes = ClassMap.add lambda_cname ioc_lambda cmap in
+     (pp+7, new_code, methods, lambda_classes)
+  | _ -> (pp+1, code, mmap, cmap)
+       
+let remove_invokedynamics ioc ms prefix =
+  let cm, code = get_cm_code ioc ms in
+  let mmap = ref MethodMap.empty in
+  let cmap = ref ClassMap.empty in
+  let pp = ref 0 in
+  let new_code = ref code in
+  let () = while !pp < Array.length !new_code.c_code do
+             let (tpp, tcode, tmethods, tlambda_classes) =
+               iter_code_lambdas ioc !new_code !pp prefix !mmap !cmap in
+             (pp := tpp; new_code := tcode;
+              mmap := tmethods; cmap := tlambda_classes)
+           done in
+  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy !new_code) } in
+  let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
+  (ioc', !cmap)
