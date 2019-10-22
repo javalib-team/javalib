@@ -683,6 +683,7 @@ let init_fields_opcodes cn arg_types field_names =
   let () = List.iter (fun (vtype, sz, fname) ->
                opcodes := [ OpLoad (`Object, 0);
                             OpLoad (vtype_to_jvm_type vtype, !next_local);
+                            OpInvalid;
                             OpPutField (cn, make_fs fname vtype);
                             OpInvalid; OpInvalid ] :: !opcodes;
                next_local := !next_local + sz)
@@ -714,7 +715,7 @@ let get_arguments_opcodes info =
                                    else [OpCheckCast (get_object_type checktype);
                                          OpInvalid; OpInvalid] in
                opcodes := ((OpLoad (vtype_to_jvm_type vtype, !next_local))
-                           :: check_opcodes) :: !opcodes;
+                          :: OpInvalid :: check_opcodes) :: !opcodes;
                next_local := !next_local + sz)
              (combine3 args arg_sizes check_args) in
   List.flatten (List.rev !opcodes)
