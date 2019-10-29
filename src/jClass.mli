@@ -362,7 +362,11 @@ val remove_invokedynamic : JCode.jcode interface_or_class ->
                            method_signature -> int -> string ->
                            JCode.jcode interface_or_class * JCode.jcode interface_or_class
 
-val remove_invokedynamics : JCode.jcode interface_or_class ->
-                            method_signature -> string ->
+val remove_invokedynamics_in_method : JCode.jcode interface_or_class ->
+                                      method_signature -> string ->
+                                      (JCode.jcode interface_or_class
+                                       * JCode.jcode interface_or_class ClassMap.t)
+
+val remove_invokedynamics : JCode.jcode interface_or_class -> string ->
                             (JCode.jcode interface_or_class
                              * JCode.jcode interface_or_class ClassMap.t)

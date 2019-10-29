@@ -568,7 +568,8 @@ open JCode
 
 let add_methods ioc methods =
   let merge_methods_with cmethods =
-    MethodMap.merge (fun m1 _ -> m1) methods cmethods in
+    MethodMap.fold (fun ms m methods ->
+        MethodMap.add ms m methods) methods cmethods in
   match ioc with
   | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
   | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
@@ -895,7 +896,7 @@ let remove_invokedynamic ioc ms pp prefix =
   let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
   (ioc', ioc_lambda)
        
-let remove_invokedynamics ioc ms prefix =
+let remove_invokedynamics_in_method ioc ms prefix =
   let cm, code = get_cm_code ioc ms in
   let mmap = ref MethodMap.empty in
   let cmap = ref ClassMap.empty in
@@ -910,3 +911,14 @@ let remove_invokedynamics ioc ms prefix =
   let m' = ConcreteMethod { cm with cm_implementation = Java (lazy !new_code) } in
   let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
   (ioc', !cmap)
+
+let remove_invokedynamics ioc prefix =
+  let methods = get_methods ioc in
+  let m_counter = ref 0 in
+  let ioc', cmap = MethodMap.fold (fun ms _ (ioc, cmap) ->
+                       m_counter := !m_counter + 1;
+                       let prefix = prefix ^ "_" ^ (string_of_int !m_counter) ^ "_" in
+                       let ioc', cmap' = remove_invokedynamics_in_method ioc ms prefix in
+                       (ioc', ClassMap.merge (fun c _ -> c) cmap cmap')
+                     ) methods (ioc, ClassMap.empty) in
+  (ioc', cmap)
