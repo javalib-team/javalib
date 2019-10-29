@@ -568,7 +568,7 @@ open JCode
 
 let add_methods ioc methods =
   let merge_methods_with cmethods =
-    MethodMap.merge (fun _ m2 -> m2) methods cmethods in
+    MethodMap.merge (fun m1 _ -> m1) methods cmethods in
   match ioc with
   | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
   | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
