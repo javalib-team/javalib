@@ -573,38 +573,19 @@ let add_methods ioc methods =
   | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
   | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
 
-(* let get_lambda_ms cn info =
- *   let mh = info.lambda_handle in
- *   match mh with
- *   | `InvokeStatic (`InterfaceMethod (lcn, ms))
- *     | `InvokeStatic (`Method (lcn, ms)) ->
- *      if lcn = cn then ms
- *      else failwith "The code of a lambda expression should be within \
- *                     the same class where this lambda is defined."
- *   | `InvokeVirtual (_, ms) -> ms
- *   | `InvokeInterface (_, ms) -> ms
- *   | `InvokeSpecial (`InterfaceMethod (_, ms))
- *     | `InvokeSpecial (`Method (_, ms)) -> ms
- *   | _ -> failwith "Lambda invocation type not implemented." *)
-
-let get_lambda_ms info =
+let get_bridge_md cn info =
   let mh = info.lambda_handle in
   match mh with
   | `InvokeStatic (`InterfaceMethod (_, ms))
-    | `InvokeStatic (`Method (_, ms)) -> ms
-  | `InvokeVirtual (_, ms) -> ms
-  | `InvokeInterface (_, ms) -> ms
+    | `InvokeStatic (`Method (_, ms)) ->
+     make_md ((ms_args ms), (ms_rtype ms))
+  | `InvokeVirtual (_, ms)
+    | `InvokeInterface (_, ms) ->
+     make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
   | `InvokeSpecial (`InterfaceMethod (_, ms))
-    | `InvokeSpecial (`Method (_, ms)) -> ms
+    | `InvokeSpecial (`Method (_, ms)) ->
+     make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
   | _ -> failwith "Lambda invocation type not implemented."
-
-(* let make_public_method m =
- *   match m with
- *   | AbstractMethod _ ->
- *      failwith "A lambda expression can not be abstract."
- *   | ConcreteMethod cm ->
- *      if cm.cm_static then ConcreteMethod { cm with cm_access = `Public }
- *      else m *)
 
 let vtype_to_jvm_type v : jvm_type =
   match v with
@@ -805,8 +786,8 @@ let make_functional_method bridge_icn bridge_ms cn info field_names =
                                                       @ invoke_opcodes)
 
 let make_bridge_method cn bridge_name info =
-  let lambda_ms = get_lambda_ms info in
-  let bridge_ms = make_ms bridge_name (ms_args lambda_ms) (ms_rtype lambda_ms) in
+  let bridge_md = get_bridge_md cn info in
+  let bridge_ms = make_ms bridge_name (md_args bridge_md) (md_rtype bridge_md) in
   let m_bridge = make_empty_method cn bridge_ms true in
   let args_opcodes = get_ms_opcodes bridge_ms true in
   let invoke_opcodes = invoke_lambda_opcodes info in
@@ -904,22 +885,6 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in
      (pp+7, new_code, methods, lambda_classes)
   | _ -> (pp+1, code, mmap, cmap)
-
-(* let remove_invokedynamic ioc ms pp name =
- *   let cm, code = get_cm_code ioc ms in
- *   let parent_cname = get_name ioc in
- *   let cname = make_cn name in
- *   let new_code, info = replace_invokedynamic code pp cname in
- *   let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
- *   let lambda_ms = get_lambda_ms parent_cname info in
- *   let lambda_m = get_method ioc lambda_ms in
- *   let lambda_m' = make_public_method lambda_m in
- *   let methods = MethodMap.add lambda_ms lambda_m'
- *                   (MethodMap.add ms m' MethodMap.empty) in
- *   let ioc' = add_methods ioc methods in
- *   let version = get_version ioc in
- *   let ioc_lambda = make_lambda_class version cname info in
- *   (ioc', ioc_lambda) *)
 
 let remove_invokedynamic ioc ms pp prefix =
   let cm, code = get_cm_code ioc ms in
