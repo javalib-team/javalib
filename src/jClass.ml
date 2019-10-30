@@ -913,7 +913,7 @@ let remove_invokedynamics_in_method ioc ms prefix =
   (ioc', !cmap)
 
 let remove_invokedynamics ioc prefix =
-  let methods = get_methods ioc in
+  let methods = get_concrete_methods ioc in
   let m_counter = ref 0 in
   let ioc', cmap = MethodMap.fold (fun ms _ (ioc, cmap) ->
                        m_counter := !m_counter + 1;
