@@ -261,6 +261,11 @@ type lambda_info = {
   lambda_handle : method_handle;
   }
 
+(** [build_lambda_info bm ms] builds an information caracterizing the
+   construction of the lambda expression referenced by the opcode
+   [OpInvoke (`Dynamic bm, ms)]. *)
+val build_lambda_info : bootstrap_method -> method_signature -> lambda_info
+                 
 (** [replace_invokedynamic code pp cn] replaces an [invokedynamic]
    instruction to be found at program point [pp] in the [code] by an
    [invokespecial] instruction calling the constructor of the class
