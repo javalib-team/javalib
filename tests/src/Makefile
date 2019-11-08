@@ -1,7 +1,7 @@
 -include ../../Makefile.config
 
 INC_PATH=-I ../../src
-BIN=jar_parser unparser test_parser
+BIN=jar_parser unparser test_parser replace_dynamics
 
 .PHONY:clean cleanall
 
