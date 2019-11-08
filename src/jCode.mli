@@ -252,7 +252,7 @@ val replace_code : ?update_max_stack:bool ->
 val insert_code : ?update_max_stack:bool ->
                   jcode -> int -> jopcode list -> jcode
 
-(** {1 Lambda manipulation.} **)
+(** {1 Lambda manipulation.} *)
   
 type lambda_info = {
   functional_interface : class_method_signature;
@@ -261,4 +261,14 @@ type lambda_info = {
   lambda_handle : method_handle;
   }
 
+(** [replace_invokedynamic code pp cn] replaces an [invokedynamic]
+   instruction to be found at program point [pp] in the [code] by an
+   [invokespecial] instruction calling the constructor of the class
+   named [cn]. An exception is raised if [pp] does not refer to an
+   [invokedynamic] instruction. For consistency, such instance of [cn]
+   needs to be created by inserting the [new cn; dup] instructions
+   before the arguments captured by the [invokedynamic]
+   instruction. @return a couple [(code',info)] containing the
+   modified [code'] and all the [info] necessary to forge a class [cn]
+   representing the lambda callsite. *)
 val replace_invokedynamic : jcode -> int -> class_name -> jcode*lambda_info
