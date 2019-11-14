@@ -6,7 +6,9 @@ then
     sudo apt-get update
     sudo apt-get install opam
 else
-    brew install opam ocaml
+    brew install gpatch
+    brew install opam
+    brew install ocaml
     export OCAML_VERSION="system"
 fi
 
