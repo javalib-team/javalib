@@ -1,4 +1,4 @@
-JAVA_CLASSES=HelloWorld JmodPath LambdaInvoke* Loader Properties TestArray
+JAVA_CLASSES=HelloWorld JmodPath LambdaInvoke* Properties TestArray
 
 all:javatests java/javac java/unparsed
 	make -C src/
