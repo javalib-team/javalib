@@ -43,7 +43,7 @@ class ExampleLambda implements J {
     public static void main(String [] argv) {
 	Supplier<Integer> supplier = null;
 	try {
-	    supplier = () -> new Integer(42+Integer.parseInt(argv[0]));
+	    supplier = () -> Integer.valueOf(42+Integer.parseInt(argv[0]));
 	    System.out.println(supplier.get());
 	} catch (Exception e) {
 	    System.out.println("First argument should be an int.");

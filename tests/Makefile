@@ -2,7 +2,7 @@ JAVA_CLASSES=HelloWorld JmodPath LambdaInvoke* Properties TestArray
 
 all:javatests java/javac java/unparsed
 	make -C src/
-	java --version # For debugging
+	javac -version # For debugging
 	@rm -f java/javac/*.class
 	@rm -f java/unparsed/*.class
 	@rm -f java/javac/out/*
