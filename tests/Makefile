@@ -2,6 +2,7 @@ JAVA_CLASSES=HelloWorld JmodPath LambdaInvoke* Properties TestArray
 
 all:javatests java/javac java/unparsed
 	make -C src/
+	java --version # For debugging
 	@rm -f java/javac/*.class
 	@rm -f java/unparsed/*.class
 	@rm -f java/javac/out/*
@@ -16,7 +17,7 @@ all:javatests java/javac java/unparsed
 	src/unparser java/classes.txt -out java/unparsed
 	bash java/java_exec_dump.sh javac
 	bash java/java_exec_dump.sh unparsed
-	javac -g -parameters -sourcepath java/src -d java/javac java/src/ExampleLambda.java
+	javac -g -parameters -Xlint:deprecation -sourcepath java/src -d java/javac java/src/ExampleLambda.java
 	java -classpath java/javac ExampleLambda -10 test > java/javac/out/ExampleLambda
 	src/replace_dynamics java/javac -out java/unparsed
 	java -classpath java/unparsed ExampleLambda -10 test > java/unparsed/out/ExampleLambda
