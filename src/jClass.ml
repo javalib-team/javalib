@@ -868,9 +868,19 @@ let get_cm_code ioc ms =
         failwith "A native method can not contain an invokedynamic instruction."
      | Java lcode -> (cm, Lazy.force lcode)
 
+let is_metafactory bm =
+  match bm.bm_ref with
+  | `InvokeStatic (`Method (cn, ms)) ->
+     if (cn_name cn) = "java.lang.invoke.LambdaMetafactory"
+        && (ms_name ms) = "metafactory" then
+       true
+     else
+       false
+  | _ -> false
+
 let iter_code_lambdas ioc code pp prefix mmap cmap =
   match code.c_code.(pp) with
-  | OpInvoke (`Dynamic _, _) ->
+  | OpInvoke (`Dynamic bm, _) when is_metafactory bm ->
      let forged_name = Printf.sprintf "%s%d" prefix pp in
      let lambda_cn = make_cn forged_name in
      let new_code, info = replace_invokedynamic code pp lambda_cn in
