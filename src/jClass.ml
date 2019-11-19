@@ -586,6 +586,8 @@ let get_bridge_md cn info =
   | `InvokeSpecial (`InterfaceMethod (_, ms))
     | `InvokeSpecial (`Method (_, ms)) ->
      make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
+  | `NewInvokeSpecial (cn, ms) ->
+     make_md ((ms_args ms), Some (TObject (TClass cn)))
   | _ -> failwith "Lambda invocation type not implemented."
 
 let vtype_to_jvm_type v : jvm_type =
@@ -753,6 +755,9 @@ let invoke_lambda_opcodes info =
   | `InvokeSpecial (`Method (cn, ms)) ->
      [ OpInvoke (`Special (`Class, cn), ms);
        OpInvalid; OpInvalid ]
+  | `NewInvokeSpecial (cn, ms) ->
+     [ OpInvoke (`Special (`Class, cn), ms);
+       OpInvalid; OpInvalid ]
   | _ -> failwith "Lambda invocation type not implemented."
 
 let invoke_bridge_opcodes icn ms =
@@ -775,6 +780,11 @@ let make_init_method cn arg_types field_names =
   let opcodes_putfields = init_fields_opcodes cn arg_types field_names in
   insert_method_code ~update_max_stack:true m 0 (opcodes_creation @ opcodes_putfields)
 
+let get_newinvokespecial_opcodes mh =
+  match mh with
+  | `NewInvokeSpecial (cn, _) -> [ OpNew cn; OpInvalid; OpInvalid; OpDup ]
+  | _ -> []
+       
 let make_functional_method bridge_icn bridge_ms cn info field_names =
   let arg_types = info.captured_arguments in
   let _, ms_func = cms_split info.functional_interface in
@@ -790,10 +800,11 @@ let make_bridge_method cn bridge_name info =
   let bridge_md = get_bridge_md cn info in
   let bridge_ms = make_ms bridge_name (md_args bridge_md) (md_rtype bridge_md) in
   let m_bridge = make_empty_method cn bridge_ms true in
+  let newinvokespecial_opcodes = get_newinvokespecial_opcodes info.lambda_handle in
   let args_opcodes = get_ms_opcodes bridge_ms true in
   let invoke_opcodes = invoke_lambda_opcodes info in
   let m_bridge = insert_method_code ~update_max_stack:true m_bridge 0
-                   (args_opcodes @ invoke_opcodes) in
+                   (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in
   (bridge_ms, m_bridge)
 
 let make_class_field cn fname ftype =

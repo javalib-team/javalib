@@ -80,5 +80,8 @@ class ExampleLambda implements J {
 
 	Supplier<String> ss = e.get_s();
 	System.out.println(ss.get());
+
+	Function<String,String> func  = String::new;
+	System.out.println(func.apply("Test New Invoke Special"));
     }
 }
