@@ -875,9 +875,8 @@ let get_cm_code ioc ms =
      failwith "An abstract method can not contain an invokedynamic instruction."
   | ConcreteMethod cm ->
      match cm.cm_implementation with
-     | Native ->
-        failwith "A native method can not contain an invokedynamic instruction."
-     | Java lcode -> (cm, Lazy.force lcode)
+     | Native -> None
+     | Java lcode -> Some (cm, Lazy.force lcode)
 
 let is_metafactory bm =
   match bm.bm_ref with
@@ -909,29 +908,33 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
   | _ -> (pp+1, code, mmap, cmap)
 
 let remove_invokedynamic ioc ms pp prefix =
-  let cm, code = get_cm_code ioc ms in
-  let (_, new_code, methods, lambda_classes) =
-    iter_code_lambdas ioc code pp prefix MethodMap.empty ClassMap.empty in
-  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
-  let ioc' = add_methods ioc (MethodMap.add ms m' methods) in
-  let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
-  (ioc', ioc_lambda)
+  match get_cm_code ioc ms with
+  | None -> failwith "A native method can not contain an invokedynamic instruction."
+  | Some (cm, code) -> 
+     let (_, new_code, methods, lambda_classes) =
+       iter_code_lambdas ioc code pp prefix MethodMap.empty ClassMap.empty in
+     let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
+     let ioc' = add_methods ioc (MethodMap.add ms m' methods) in
+     let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
+     (ioc', ioc_lambda)
        
 let remove_invokedynamics_in_method ioc ms prefix =
-  let cm, code = get_cm_code ioc ms in
-  let mmap = ref MethodMap.empty in
-  let cmap = ref ClassMap.empty in
-  let pp = ref 0 in
-  let new_code = ref code in
-  let () = while !pp < Array.length !new_code.c_code do
-             let (tpp, tcode, tmethods, tlambda_classes) =
-               iter_code_lambdas ioc !new_code !pp prefix !mmap !cmap in
-             (pp := tpp; new_code := tcode;
-              mmap := tmethods; cmap := tlambda_classes)
-           done in
-  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy !new_code) } in
-  let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
-  (ioc', !cmap)
+  match get_cm_code ioc ms with
+  | None -> (ioc, ClassMap.empty)
+  | Some (cm, code) ->
+     let mmap = ref MethodMap.empty in
+     let cmap = ref ClassMap.empty in
+     let pp = ref 0 in
+     let new_code = ref code in
+     let () = while !pp < Array.length !new_code.c_code do
+                let (tpp, tcode, tmethods, tlambda_classes) =
+                  iter_code_lambdas ioc !new_code !pp prefix !mmap !cmap in
+                (pp := tpp; new_code := tcode;
+                 mmap := tmethods; cmap := tlambda_classes)
+              done in
+     let m' = ConcreteMethod { cm with cm_implementation = Java (lazy !new_code) } in
+     let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
+     (ioc', !cmap)
 
 let remove_invokedynamics ioc prefix =
   let methods = get_concrete_methods ioc in
