@@ -761,13 +761,7 @@ let invoke_lambda_opcodes info =
   | _ -> failwith "Lambda invocation type not implemented."
 
 let invoke_bridge_opcodes icn ms =
-  match icn with
-  | `Class c_n ->
-     [ OpInvoke (`Static (`Class, c_n), ms);
-       OpInvalid; OpInvalid ]
-  | `Interface i_n ->
-     [ OpInvoke (`Static (`Interface, i_n), ms);
-       OpInvalid; OpInvalid ]
+  [ OpInvoke (`Static icn, ms); OpInvalid; OpInvalid ]
 
 let make_init_method cn arg_types field_names =
   let ms = make_ms "<init>" arg_types None in
@@ -806,6 +800,23 @@ let make_bridge_method cn bridge_name info =
   let m_bridge = insert_method_code ~update_max_stack:true m_bridge 0
                    (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in
   (bridge_ms, m_bridge)
+
+let get_callsite_ms ms_name info =
+  let args = info.captured_arguments in
+  let rtype,_ = cms_split info.functional_interface in
+  make_ms ms_name args (Some (TObject (TClass rtype)))
+
+let make_callsite_method lambda_cn ms_name info =
+  let ms_call = get_callsite_ms ms_name info in
+  let m_callsite = make_empty_method lambda_cn ms_call true in
+  let ms_init = make_ms "<init>" info.captured_arguments None in
+  let args_opcodes = get_ms_opcodes ms_call true in
+  let m_callsite = insert_method_code ~update_max_stack:true m_callsite 0
+                     ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]
+                      @ args_opcodes
+                      @ [ OpInvoke (`Special (`Class, lambda_cn), ms_init);
+                          OpInvalid; OpInvalid ]) in
+  (ms_call, m_callsite)
 
 let make_class_field cn fname ftype =
   let fs = make_fs fname ftype in
@@ -888,19 +899,31 @@ let is_metafactory bm =
        false
   | _ -> false
 
+let replace_invokedynamic code pp icn ms_name =
+  match code.c_code.(pp) with
+  | OpInvoke (`Dynamic bm, ms) ->
+     let info = build_lambda_info bm ms in
+     let ms_call = get_callsite_ms ms_name info in
+     let new_code = replace_code code pp (invoke_bridge_opcodes icn ms_call) in
+     (new_code, info)
+  | _ -> failwith "No invokedynamic found at given program point."
+
 let iter_code_lambdas ioc code pp prefix mmap cmap =
   match code.c_code.(pp) with
   | OpInvoke (`Dynamic bm, _) when is_metafactory bm ->
-     let forged_name = Printf.sprintf "%s%d" prefix pp in
-     let lambda_cn = make_cn forged_name in
-     let new_code, info = replace_invokedynamic code pp lambda_cn in
      let parent_cn = get_name ioc in
+     let forged_name = Printf.sprintf "%s%d" prefix pp in
      let bridge_icn = match ioc with
-       | JClass _ -> `Class parent_cn
-       | JInterface _ -> `Interface parent_cn in
+       | JClass _ -> (`Class, parent_cn)
+       | JInterface _ -> (`Interface, parent_cn) in
+     let callsite_name = "callsite_" ^ forged_name in
+     let new_code, info = replace_invokedynamic code pp bridge_icn callsite_name in
+     let lambda_cn = make_cn forged_name in
+     let call_ms, m_callsite = make_callsite_method lambda_cn callsite_name info in
      let bridge_name = "access_" ^ forged_name in
      let bridge_ms, m_bridge = make_bridge_method parent_cn bridge_name info in
-     let methods = MethodMap.add bridge_ms m_bridge mmap in
+     let methods = MethodMap.add call_ms m_callsite mmap in
+     let methods = MethodMap.add bridge_ms m_bridge methods in
      let version = get_version ioc in
      let ioc_lambda = make_lambda_class version lambda_cn info bridge_icn bridge_ms in
      let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in

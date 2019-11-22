@@ -265,15 +265,3 @@ type lambda_info = {
    construction of the lambda expression referenced by the opcode
    [OpInvoke (`Dynamic bm, ms)]. *)
 val build_lambda_info : bootstrap_method -> method_signature -> lambda_info
-                 
-(** [replace_invokedynamic code pp cn] replaces an [invokedynamic]
-   instruction to be found at program point [pp] in the [code] by an
-   [invokespecial] instruction calling the constructor of the class
-   named [cn]. An exception is raised if [pp] does not refer to an
-   [invokedynamic] instruction. For consistency, such instance of [cn]
-   needs to be created by inserting the [new cn; dup] instructions
-   before the arguments captured by the [invokedynamic]
-   instruction. @return a couple [(code',info)] containing the
-   modified [code'] and all the [info] necessary to forge a class [cn]
-   representing the lambda callsite. *)
-val replace_invokedynamic : jcode -> int -> class_name -> jcode*lambda_info

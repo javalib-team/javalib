@@ -40,6 +40,10 @@ class ExampleLambda implements J {
 	return () -> "special("+this.s1+")";
     }
 
+    public String get() {
+	return this.s1;
+    }
+
     public static void main(String [] argv) {
 	Supplier<Integer> supplier = null;
 	try {
@@ -81,7 +85,10 @@ class ExampleLambda implements J {
 	Supplier<String> ss = e.get_s();
 	System.out.println(ss.get());
 
-	Function<String,String> func  = String::new;
+	Function<String,String> func = String::new;
 	System.out.println(func.apply("Test New Invoke Special"));
+
+	Supplier<String> ss2 = e::get;
+	System.out.println(ss2.get());
     }
 }
