@@ -907,7 +907,10 @@ let replace_invokedynamic code pp icn ms_name =
   | OpInvoke (`Dynamic bm, ms) ->
      let info = build_lambda_info bm ms in
      let ms_call = get_callsite_ms ms_name info in
-     let new_code = replace_code code pp (invoke_bridge_opcodes icn ms_call) in
+     let new_code = replace_code code pp
+                      ((invoke_bridge_opcodes icn ms_call) @ [OpNop; OpNop]) in
+     (* The OpNop instruction are inserted such that the program
+        points of code and new_code remain the same. *)
      (new_code, info)
   | _ -> failwith "No invokedynamic found at given program point."
 
@@ -930,7 +933,7 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      let version = get_version ioc in
      let ioc_lambda = make_lambda_class version lambda_cn info bridge_icn bridge_ms in
      let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in
-     (pp+7, new_code, methods, lambda_classes)
+     (pp+5, new_code, methods, lambda_classes)
   | _ -> (pp+1, code, mmap, cmap)
 
 let remove_invokedynamic ioc ms pp prefix =
