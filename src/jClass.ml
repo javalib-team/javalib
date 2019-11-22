@@ -588,7 +588,10 @@ let get_bridge_md cn info =
      make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
   | `NewInvokeSpecial (cn, ms) ->
      make_md ((ms_args ms), Some (TObject (TClass cn)))
-  | _ -> failwith "Lambda invocation type not implemented."
+  | `GetField _ -> failwith "GetField reference not implemented."
+  | `GetStatic _ -> failwith "GetStatic reference not implemented."
+  | `PutField _ -> failwith "PutField reference not implemented."
+  | `PutStatic _ -> failwith "PutStatic reference not implemented."
 
 let vtype_to_jvm_type v : jvm_type =
   match v with
