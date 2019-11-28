@@ -936,7 +936,7 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      (pp+5, new_code, methods, lambda_classes)
   | _ -> (pp+1, code, mmap, cmap)
 
-let remove_invokedynamic ioc ms pp prefix =
+let remove_invokedynamic ioc ms pp ~prefix =
   match get_cm_code ioc ms with
   | None -> failwith "A native method can not contain an invokedynamic instruction."
   | Some (cm, code) -> 
@@ -947,7 +947,7 @@ let remove_invokedynamic ioc ms pp prefix =
      let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
      (ioc', ioc_lambda)
        
-let remove_invokedynamics_in_method ioc ms prefix =
+let remove_invokedynamics_in_method ioc ms ~prefix =
   match get_cm_code ioc ms with
   | None -> (ioc, ClassMap.empty)
   | Some (cm, code) ->
@@ -965,13 +965,13 @@ let remove_invokedynamics_in_method ioc ms prefix =
      let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
      (ioc', !cmap)
 
-let remove_invokedynamics ioc prefix =
+let remove_invokedynamics ioc ~prefix =
   let methods = get_concrete_methods ioc in
   let m_counter = ref 0 in
   let ioc', cmap = MethodMap.fold (fun ms _ (ioc, cmap) ->
                        m_counter := !m_counter + 1;
                        let prefix = prefix ^ "_" ^ (string_of_int !m_counter) ^ "_" in
-                       let ioc', cmap' = remove_invokedynamics_in_method ioc ms prefix in
+                       let ioc', cmap' = remove_invokedynamics_in_method ioc ms ~prefix in
                        (ioc', ClassMap.merge (fun c _ -> c) cmap cmap')
                      ) methods (ioc, ClassMap.empty) in
   (ioc', cmap)

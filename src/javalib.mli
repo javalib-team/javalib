@@ -434,7 +434,7 @@ val map_interface_or_class_with_native_context :
    exception if [pp] does not refer to an [invokedynamic]
    instruction. *)
 val remove_invokedynamic : JCode.jcode interface_or_class ->
-                           method_signature -> int -> string ->
+                           method_signature -> int -> prefix:string ->
                            JCode.jcode interface_or_class * JCode.jcode interface_or_class
 
 
@@ -450,7 +450,7 @@ val remove_invokedynamic : JCode.jcode interface_or_class ->
 
    @raise Not_found if method [ms] can't be found in [ioc] *)
 val remove_invokedynamics_in_method : JCode.jcode interface_or_class ->
-                                      method_signature -> string ->
+                                      method_signature -> prefix:string ->
                                       (JCode.jcode interface_or_class
                                        * JCode.jcode interface_or_class ClassMap.t)
 
@@ -459,7 +459,7 @@ val remove_invokedynamics_in_method : JCode.jcode interface_or_class ->
    [ioc]. Some unique generated ids are concatenated to the [prefix]
    in order to forge different class names associated to each
    implementation of the functional interfaces. *)
-val remove_invokedynamics : JCode.jcode interface_or_class -> string ->
+val remove_invokedynamics : JCode.jcode interface_or_class -> prefix:string ->
                             (JCode.jcode interface_or_class
                              * JCode.jcode interface_or_class ClassMap.t)
 
