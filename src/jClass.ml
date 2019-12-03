@@ -622,7 +622,7 @@ let vtype_size v =
      | `Bool | `Byte | `Char | `Short | `Int | `Float -> 1
      | `Double | `Long -> 2
 
-let make_empty_method cn ms is_static =
+let make_empty_method lnt cn ms is_static =
   let rtype = ms_rtype ms in
   let opcodes = Array.of_list [OpReturn (vtype_to_jvm_rtype rtype)] in
   let args = ms_args ms in
@@ -632,7 +632,7 @@ let make_empty_method cn ms is_static =
       c_max_locals = 1 + nargs;
       c_code = opcodes;
       c_exc_tbl = [];
-      c_line_number_table = None;
+      c_line_number_table = lnt;
       c_local_variable_table = None;
       c_local_variable_type_table = None;
       c_stack_map = None;
@@ -766,9 +766,9 @@ let invoke_lambda_opcodes info =
 let invoke_bridge_opcodes icn ms =
   [ OpInvoke (`Static icn, ms); OpInvalid; OpInvalid ]
 
-let make_init_method cn arg_types field_names =
+let make_init_method lnt cn arg_types field_names =
   let ms = make_ms "<init>" arg_types None in
-  let m = make_empty_method cn ms false in
+  let m = make_empty_method lnt cn ms false in
   let ms_obj = make_ms "<init>" [] None in
   let cn_obj = make_cn "java.lang.Object" in
   let opcodes_creation = [OpLoad (`Object, 0);
@@ -782,10 +782,10 @@ let get_newinvokespecial_opcodes mh =
   | `NewInvokeSpecial (cn, _) -> [ OpNew cn; OpInvalid; OpInvalid; OpDup ]
   | _ -> []
        
-let make_functional_method bridge_icn bridge_ms cn info field_names =
+let make_functional_method lnt bridge_icn bridge_ms cn info field_names =
   let arg_types = info.captured_arguments in
   let _, ms_func = cms_split info.functional_interface in
-  let m_func = make_empty_method cn ms_func false in
+  let m_func = make_empty_method lnt cn ms_func false in
   let fields_opcodes = get_fields_opcodes cn arg_types field_names in
   let args_opcodes = get_arguments_opcodes info false in
   let invoke_opcodes = invoke_bridge_opcodes bridge_icn bridge_ms in
@@ -793,10 +793,10 @@ let make_functional_method bridge_icn bridge_ms cn info field_names =
                                                       @ args_opcodes
                                                       @ invoke_opcodes)
 
-let make_bridge_method cn bridge_name info =
+let make_bridge_method lnt cn bridge_name info =
   let bridge_md = get_bridge_md cn info in
   let bridge_ms = make_ms bridge_name (md_args bridge_md) (md_rtype bridge_md) in
-  let m_bridge = make_empty_method cn bridge_ms true in
+  let m_bridge = make_empty_method lnt cn bridge_ms true in
   let newinvokespecial_opcodes = get_newinvokespecial_opcodes info.lambda_handle in
   let args_opcodes = get_ms_opcodes bridge_ms true in
   let invoke_opcodes = invoke_lambda_opcodes info in
@@ -809,9 +809,9 @@ let get_callsite_ms ms_name info =
   let rtype,_ = cms_split info.functional_interface in
   make_ms ms_name args (Some (TObject (TClass rtype)))
 
-let make_callsite_method lambda_cn ms_name info =
+let make_callsite_method lnt lambda_cn ms_name info =
   let ms_call = get_callsite_ms ms_name info in
-  let m_callsite = make_empty_method lambda_cn ms_call true in
+  let m_callsite = make_empty_method lnt lambda_cn ms_call true in
   let ms_init = make_ms "<init>" info.captured_arguments None in
   let args_opcodes = get_ms_opcodes ms_call true in
   let m_callsite = insert_method_code ~update_max_stack:true m_callsite 0
@@ -839,7 +839,7 @@ let make_class_field cn fname ftype =
     cf_attributes = { synthetic = true; deprecated = false; other = [] };
   }
 
-let make_lambda_class version cn info bridge_icn bridge_ms =
+let make_lambda_class version sourcefile lnt cn info bridge_icn bridge_ms =
   let iname, ms_func = cms_split info.functional_interface in
   let arg_types = info.captured_arguments in
   let field_names = List.init (List.length arg_types)
@@ -849,8 +849,8 @@ let make_lambda_class version cn info bridge_icn bridge_ms =
                    FieldMap.add cf.cf_signature cf m
                  ) FieldMap.empty (List.combine field_names arg_types) in
   let ms_init = make_ms "<init>" arg_types None in
-  let m_init = make_init_method cn arg_types field_names in
-  let m_func = make_functional_method bridge_icn bridge_ms cn info field_names in
+  let m_init = make_init_method lnt cn arg_types field_names in
+  let m_func = make_functional_method lnt bridge_icn bridge_ms cn info field_names in
   let methods = MethodMap.add ms_func m_func
                   (MethodMap.add ms_init m_init MethodMap.empty) in
   JClass {
@@ -864,7 +864,7 @@ let make_lambda_class version cn info bridge_icn bridge_ms =
       c_fields = fields;
       c_interfaces = [iname];
       c_consts = [||];
-      c_sourcefile = None;
+      c_sourcefile = sourcefile;
       c_deprecated = false;
       c_enclosing_method = None;
       c_source_debug_extention = None;
@@ -914,9 +914,16 @@ let replace_invokedynamic code pp icn ms_name =
      (new_code, info)
   | _ -> failwith "No invokedynamic found at given program point."
 
+let make_lnt code pp =
+  let line = get_source_line_number pp code in
+  match line with
+  | None -> None
+  | Some i -> Some [(0, i)]
+
 let iter_code_lambdas ioc code pp prefix mmap cmap =
   match code.c_code.(pp) with
   | OpInvoke (`Dynamic bm, _) when is_metafactory bm ->
+     let lnt = make_lnt code pp in
      let parent_cn = get_name ioc in
      let forged_name = Printf.sprintf "%s%d" prefix pp in
      let bridge_icn = match ioc with
@@ -925,13 +932,15 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      let callsite_name = "callsite_" ^ forged_name in
      let new_code, info = replace_invokedynamic code pp bridge_icn callsite_name in
      let lambda_cn = make_cn forged_name in
-     let call_ms, m_callsite = make_callsite_method lambda_cn callsite_name info in
+     let call_ms, m_callsite = make_callsite_method lnt lambda_cn callsite_name info in
      let bridge_name = "access_" ^ forged_name in
-     let bridge_ms, m_bridge = make_bridge_method parent_cn bridge_name info in
+     let bridge_ms, m_bridge = make_bridge_method lnt parent_cn bridge_name info in
      let methods = MethodMap.add call_ms m_callsite mmap in
      let methods = MethodMap.add bridge_ms m_bridge methods in
      let version = get_version ioc in
-     let ioc_lambda = make_lambda_class version lambda_cn info bridge_icn bridge_ms in
+     let sourcefile = get_sourcefile ioc in
+     let ioc_lambda = make_lambda_class version sourcefile
+                        lnt lambda_cn info bridge_icn bridge_ms in
      let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in
      (pp+5, new_code, methods, lambda_classes)
   | _ -> (pp+1, code, mmap, cmap)
