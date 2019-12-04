@@ -943,8 +943,8 @@ let replace_invokedynamic code pp icn ms_name =
      let ms_call = get_callsite_ms ms_name info in
      let callsite_call = Array.of_list ((invoke_bridge_opcodes icn ms_call)
                                         @ [OpNop; OpNop]) in
-     (* The OpNop instruction are inserted such that the program
-        points of code and new_code remain the same. *)
+     (* The OpNop instructions are inserted to fill the original size
+        of the invokedynamic instruction. *)
      let n = Array.length callsite_call in
      let () = Array.blit callsite_call 0 code.c_code pp n in
      info
