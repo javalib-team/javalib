@@ -622,6 +622,9 @@ let vtype_size v =
      | `Bool | `Byte | `Char | `Short | `Int | `Float -> 1
      | `Double | `Long -> 2
 
+let get_stack_size args =
+  List.fold_left (+) 0 (List.map vtype_size args)
+  
 let make_empty_method lnt cn ms is_static =
   let rtype = ms_rtype ms in
   let opcodes = Array.of_list [OpReturn (vtype_to_jvm_rtype rtype)] in
@@ -658,7 +661,21 @@ let make_empty_method lnt cn ms is_static =
       cm_implementation = Java (lazy code);
     }
 
-let insert_method_code ?(update_max_stack=false) m pp opcodes =
+(* let insert_method_code ?(update_max_stack=false) m pp opcodes =
+ *   let cm, code = match m with
+ *     | AbstractMethod _ ->
+ *        failwith "An abstract method has no code."
+ *     | ConcreteMethod cm ->
+ *        match cm.cm_implementation with
+ *        | Native ->
+ *           failwith "A native method has no code."
+ *        | Java lcode -> (cm, Lazy.force lcode)
+ *   in
+ *   let new_code = insert_code ~update_max_stack code pp opcodes in
+ *   let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
+ *   m' *)
+
+let insert_method_code stack_incr m opcodes =
   let cm, code = match m with
     | AbstractMethod _ ->
        failwith "An abstract method has no code."
@@ -668,10 +685,13 @@ let insert_method_code ?(update_max_stack=false) m pp opcodes =
           failwith "A native method has no code."
        | Java lcode -> (cm, Lazy.force lcode)
   in
-  let new_code = insert_code ~update_max_stack code pp opcodes in
+  let max_stack = code.c_max_stack + stack_incr in
+  let new_opcodes = Array.append (Array.of_list opcodes) code.c_code in
+  let new_code = { code with c_max_stack = max_stack;
+                             c_code = new_opcodes } in
   let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
   m'
-
+  
 let combine3 l1 l2 l3 =
   let rec combine3 l1 l2 l3 lres =
     match (l1,l2,l3) with
@@ -723,7 +743,8 @@ let get_arguments_opcodes info is_static =
                           :: OpInvalid :: check_opcodes) :: !opcodes;
                next_local := !next_local + sz)
              (combine3 args arg_sizes check_args) in
-  List.flatten (List.rev !opcodes)
+  let stack_incr = get_stack_size args in
+  (List.flatten (List.rev !opcodes), stack_incr)
 
 let get_ms_opcodes ms is_static =
   let args = ms_args ms in
@@ -775,32 +796,39 @@ let make_init_method lnt cn arg_types field_names =
                           OpInvoke (`Special (`Class, cn_obj), ms_obj);
                           OpInvalid; OpInvalid] in
   let opcodes_putfields = init_fields_opcodes cn arg_types field_names in
-  insert_method_code ~update_max_stack:true m 0 (opcodes_creation @ opcodes_putfields)
+  (* insert_method_code ~update_max_stack:true m 0 (opcodes_creation @ opcodes_putfields) *)
+  let stack_incr = max 1 (get_stack_size arg_types) in
+  insert_method_code stack_incr m (opcodes_creation @ opcodes_putfields)
 
 let get_newinvokespecial_opcodes mh =
   match mh with
-  | `NewInvokeSpecial (cn, _) -> [ OpNew cn; OpInvalid; OpInvalid; OpDup ]
-  | _ -> []
+  | `NewInvokeSpecial (cn, _) -> ([ OpNew cn; OpInvalid; OpInvalid; OpDup ], 2)
+  | _ -> ([], 0)
        
 let make_functional_method lnt bridge_icn bridge_ms cn info field_names =
   let arg_types = info.captured_arguments in
   let _, ms_func = cms_split info.functional_interface in
   let m_func = make_empty_method lnt cn ms_func false in
   let fields_opcodes = get_fields_opcodes cn arg_types field_names in
-  let args_opcodes = get_arguments_opcodes info false in
+  let args_opcodes, n = get_arguments_opcodes info false in
   let invoke_opcodes = invoke_bridge_opcodes bridge_icn bridge_ms in
-  insert_method_code ~update_max_stack:true m_func 0 (fields_opcodes
-                                                      @ args_opcodes
-                                                      @ invoke_opcodes)
+  (* insert_method_code ~update_max_stack:true m_func 0 (fields_opcodes
+   *                                                     @ args_opcodes
+   *                                                     @ invoke_opcodes) *)
+  let stack_incr = n + (get_stack_size arg_types) in
+  insert_method_code stack_incr m_func (fields_opcodes @ args_opcodes @ invoke_opcodes)
 
 let make_bridge_method lnt cn bridge_name info =
   let bridge_md = get_bridge_md cn info in
   let bridge_ms = make_ms bridge_name (md_args bridge_md) (md_rtype bridge_md) in
   let m_bridge = make_empty_method lnt cn bridge_ms true in
-  let newinvokespecial_opcodes = get_newinvokespecial_opcodes info.lambda_handle in
+  let newinvokespecial_opcodes, n = get_newinvokespecial_opcodes info.lambda_handle in
   let args_opcodes = get_ms_opcodes bridge_ms true in
   let invoke_opcodes = invoke_lambda_opcodes info in
-  let m_bridge = insert_method_code ~update_max_stack:true m_bridge 0
+  (* let m_bridge = insert_method_code ~update_max_stack:true m_bridge 0
+   *                  (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in *)
+  let stack_incr = n + (get_stack_size (ms_args bridge_ms)) in
+  let m_bridge = insert_method_code stack_incr m_bridge
                    (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in
   (bridge_ms, m_bridge)
 
@@ -814,7 +842,13 @@ let make_callsite_method lnt lambda_cn ms_name info =
   let m_callsite = make_empty_method lnt lambda_cn ms_call true in
   let ms_init = make_ms "<init>" info.captured_arguments None in
   let args_opcodes = get_ms_opcodes ms_call true in
-  let m_callsite = insert_method_code ~update_max_stack:true m_callsite 0
+  (* let m_callsite = insert_method_code ~update_max_stack:true m_callsite 0
+   *                    ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]
+   *                     @ args_opcodes
+   *                     @ [ OpInvoke (`Special (`Class, lambda_cn), ms_init);
+   *                         OpInvalid; OpInvalid ]) in *)
+  let stack_incr = 2 + (get_stack_size (ms_args ms_call)) in
+  let m_callsite = insert_method_code stack_incr m_callsite
                      ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]
                       @ args_opcodes
                       @ [ OpInvoke (`Special (`Class, lambda_cn), ms_init);
@@ -890,7 +924,7 @@ let get_cm_code ioc ms =
   | ConcreteMethod cm ->
      match cm.cm_implementation with
      | Native -> None
-     | Java lcode -> Some (cm, Lazy.force lcode)
+     | Java lcode -> Some (Lazy.force lcode)
 
 let is_metafactory bm =
   match bm.bm_ref with
@@ -907,11 +941,13 @@ let replace_invokedynamic code pp icn ms_name =
   | OpInvoke (`Dynamic bm, ms) ->
      let info = build_lambda_info bm ms in
      let ms_call = get_callsite_ms ms_name info in
-     let new_code = replace_code code pp
-                      ((invoke_bridge_opcodes icn ms_call) @ [OpNop; OpNop]) in
+     let callsite_call = Array.of_list ((invoke_bridge_opcodes icn ms_call)
+                                        @ [OpNop; OpNop]) in
      (* The OpNop instruction are inserted such that the program
         points of code and new_code remain the same. *)
-     (new_code, info)
+     let n = Array.length callsite_call in
+     let () = Array.blit callsite_call 0 code.c_code pp n in
+     info
   | _ -> failwith "No invokedynamic found at given program point."
 
 let make_lnt code pp =
@@ -930,7 +966,7 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
        | JClass _ -> (`Class, parent_cn)
        | JInterface _ -> (`Interface, parent_cn) in
      let callsite_name = "callsite_" ^ forged_name in
-     let new_code, info = replace_invokedynamic code pp bridge_icn callsite_name in
+     let info = replace_invokedynamic code pp bridge_icn callsite_name in
      let lambda_cn = make_cn forged_name in
      let call_ms, m_callsite = make_callsite_method lnt lambda_cn callsite_name info in
      let bridge_name = "access_" ^ forged_name in
@@ -942,36 +978,32 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      let ioc_lambda = make_lambda_class version sourcefile
                         lnt lambda_cn info bridge_icn bridge_ms in
      let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in
-     (pp+5, new_code, methods, lambda_classes)
-  | _ -> (pp+1, code, mmap, cmap)
+     (pp+5, methods, lambda_classes)
+  | _ -> (pp+1, mmap, cmap)
 
 let remove_invokedynamic ioc ms pp ~prefix =
   match get_cm_code ioc ms with
   | None -> failwith "A native method can not contain an invokedynamic instruction."
-  | Some (cm, code) -> 
-     let (_, new_code, methods, lambda_classes) =
+  | Some code -> 
+     let (_, methods, lambda_classes) =
        iter_code_lambdas ioc code pp prefix MethodMap.empty ClassMap.empty in
-     let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
-     let ioc' = add_methods ioc (MethodMap.add ms m' methods) in
+     let ioc' = add_methods ioc methods in
      let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
      (ioc', ioc_lambda)
        
 let remove_invokedynamics_in_method ioc ms ~prefix =
   match get_cm_code ioc ms with
   | None -> (ioc, ClassMap.empty)
-  | Some (cm, code) ->
+  | Some code ->
      let mmap = ref MethodMap.empty in
      let cmap = ref ClassMap.empty in
      let pp = ref 0 in
-     let new_code = ref code in
-     let () = while !pp < Array.length !new_code.c_code do
-                let (tpp, tcode, tmethods, tlambda_classes) =
-                  iter_code_lambdas ioc !new_code !pp prefix !mmap !cmap in
-                (pp := tpp; new_code := tcode;
-                 mmap := tmethods; cmap := tlambda_classes)
+     let () = while !pp < Array.length code.c_code do
+                let (tpp, tmethods, tlambda_classes) =
+                  iter_code_lambdas ioc code !pp prefix !mmap !cmap in
+                (pp := tpp; mmap := tmethods; cmap := tlambda_classes)
               done in
-     let m' = ConcreteMethod { cm with cm_implementation = Java (lazy !new_code) } in
-     let ioc' = add_methods ioc (MethodMap.add ms m' !mmap) in
+     let ioc' = add_methods ioc !mmap in
      (ioc', !cmap)
 
 let remove_invokedynamics ioc ~prefix =
