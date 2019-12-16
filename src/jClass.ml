@@ -661,20 +661,6 @@ let make_empty_method lnt cn ms is_static =
       cm_implementation = Java (lazy code);
     }
 
-(* let insert_method_code ?(update_max_stack=false) m pp opcodes =
- *   let cm, code = match m with
- *     | AbstractMethod _ ->
- *        failwith "An abstract method has no code."
- *     | ConcreteMethod cm ->
- *        match cm.cm_implementation with
- *        | Native ->
- *           failwith "A native method has no code."
- *        | Java lcode -> (cm, Lazy.force lcode)
- *   in
- *   let new_code = insert_code ~update_max_stack code pp opcodes in
- *   let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
- *   m' *)
-
 let insert_method_code stack_incr m opcodes =
   let cm, code = match m with
     | AbstractMethod _ ->
@@ -796,7 +782,6 @@ let make_init_method lnt cn arg_types field_names =
                           OpInvoke (`Special (`Class, cn_obj), ms_obj);
                           OpInvalid; OpInvalid] in
   let opcodes_putfields = init_fields_opcodes cn arg_types field_names in
-  (* insert_method_code ~update_max_stack:true m 0 (opcodes_creation @ opcodes_putfields) *)
   let stack_incr = max 1 (get_stack_size arg_types) in
   insert_method_code stack_incr m (opcodes_creation @ opcodes_putfields)
 
@@ -812,9 +797,6 @@ let make_functional_method lnt bridge_icn bridge_ms cn info field_names =
   let fields_opcodes = get_fields_opcodes cn arg_types field_names in
   let args_opcodes, n = get_arguments_opcodes info false in
   let invoke_opcodes = invoke_bridge_opcodes bridge_icn bridge_ms in
-  (* insert_method_code ~update_max_stack:true m_func 0 (fields_opcodes
-   *                                                     @ args_opcodes
-   *                                                     @ invoke_opcodes) *)
   let stack_incr = n + (get_stack_size arg_types) in
   insert_method_code stack_incr m_func (fields_opcodes @ args_opcodes @ invoke_opcodes)
 
@@ -825,8 +807,6 @@ let make_bridge_method lnt cn bridge_name info =
   let newinvokespecial_opcodes, n = get_newinvokespecial_opcodes info.lambda_handle in
   let args_opcodes = get_ms_opcodes bridge_ms true in
   let invoke_opcodes = invoke_lambda_opcodes info in
-  (* let m_bridge = insert_method_code ~update_max_stack:true m_bridge 0
-   *                  (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in *)
   let stack_incr = n + (get_stack_size (ms_args bridge_ms)) in
   let m_bridge = insert_method_code stack_incr m_bridge
                    (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in
@@ -842,11 +822,6 @@ let make_callsite_method lnt lambda_cn ms_name info =
   let m_callsite = make_empty_method lnt lambda_cn ms_call true in
   let ms_init = make_ms "<init>" info.captured_arguments None in
   let args_opcodes = get_ms_opcodes ms_call true in
-  (* let m_callsite = insert_method_code ~update_max_stack:true m_callsite 0
-   *                    ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]
-   *                     @ args_opcodes
-   *                     @ [ OpInvoke (`Special (`Class, lambda_cn), ms_init);
-   *                         OpInvalid; OpInvalid ]) in *)
   let stack_incr = 2 + (get_stack_size (ms_args ms_call)) in
   let m_callsite = insert_method_code stack_incr m_callsite
                      ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]

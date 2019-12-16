@@ -414,21 +414,24 @@ val map_interface_or_class_with_native_context :
 (** {2 Transforming invokedynamic instructions.} *)
 
 (** [remove_invokedynamic ioc ms pp prefix] returns a couple of
-   interface or classes [(ioc',ioc_lambda)], where [ioc'] is the same
-   as [ioc] except for a modification of the code contained in method
-   [ms] and the creation of a public bridge method being an entry
-   point to the lambda code. The forged class [ioc_lambda] captures
-   the arguments of the lambda expression in private fields, through
-   its constructor, which would normally be captured by the original
+   interface or classes [(ioc',ioc_lambda)], where [ioc'] is a
+   modified version of [ioc] and [ioc_lambda] is a forged class
+   implementing the functional interface of the lambda expression to
+   be found in [ioc] at program point [pp] of method [ms].
+
+   The class [ioc'] contains two additional public static bridge
+   methods, named [callsite_prefix_pp] and [access_prefix_pp], which
+   respectively wrap the callsite creation and the lambda method
+   call. The [invokedynamic] instruction at program point [pp] of
+   method [ms] is replaced by an [invokestatic] call to the
+   [callsite_] bridge method.
+
+   The forged class [ioc_lambda], named [prefix_pp], captures the
+   arguments of the lambda expression in private fields, through its
+   constructor, which would normally be captured by the original
    [invokedynamic] instruction. The class [ioc_lambda] also implements
    the functional interface defined by the lambda expression by
-   calling the bridge method created in [ioc]. In order to make it
-   work, the [invokedynamic] instruction to be found at program point
-   [pp] of method [ms] is replaced by an [invokespecial] instruction
-   calling the constructor of the class [ioc_lambda]. Also, two
-   instructions, [new ioc_lambda] followed by [dup], are inserted in
-   method [ms] before the arguments to capture. The class name of
-   [ioc_lambda] is forged using [prefix] and [pp].
+   calling the bridge method [access_] created in [ioc].
 
    @raise Not_found if method [ms] can't be found in [ioc], and an
    exception if [pp] does not refer to an [invokedynamic]
