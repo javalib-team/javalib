@@ -411,6 +411,61 @@ val map_interface_or_class_with_native_context :
   ('a concrete_method -> 'a implementation -> 'b implementation) ->
   'a interface_or_class -> 'b interface_or_class
 
+(** {2 Transforming invokedynamic instructions.} *)
+
+(** [remove_invokedynamic ioc ms pp prefix] returns a couple of
+   interface or classes [(ioc',ioc_lambda)], where [ioc'] is a
+   modified version of [ioc] and [ioc_lambda] is a forged class
+   implementing the functional interface of the lambda expression to
+   be found in [ioc] at program point [pp] of method [ms].
+
+   The class [ioc'] contains two additional public static bridge
+   methods, named [callsite_prefix_pp] and [access_prefix_pp], which
+   respectively wrap the callsite creation and the lambda method
+   call. The [invokedynamic] instruction at program point [pp] of
+   method [ms] is replaced by an [invokestatic] call to the
+   [callsite_] bridge method.
+
+   The forged class [ioc_lambda], named [prefix_pp], captures the
+   arguments of the lambda expression in private fields, through its
+   constructor, which would normally be captured by the original
+   [invokedynamic] instruction. The class [ioc_lambda] also implements
+   the functional interface defined by the lambda expression by
+   calling the bridge method [access_] created in [ioc].
+
+   @raise Not_found if method [ms] can't be found in [ioc], and an
+   exception if [pp] does not refer to an [invokedynamic]
+   instruction. *)
+val remove_invokedynamic : JCode.jcode interface_or_class ->
+                           method_signature -> int -> prefix:string ->
+                           JCode.jcode interface_or_class * JCode.jcode interface_or_class
+
+
+(** [remove_invokedynamics_in_method ioc ms prefix] iters the method
+   {!remove_invokedynamic} on all the program points containing
+   [invokedynamic] instructions in method [ms] of class [ioc]. The
+   result is a couple [(ioc', cmap)], where [ioc'] is the rewritten
+   class and [cmap] is a  {!JBasics.ClassMap} containing all the forged
+   classes implementing the different functional interfaces associated
+   with each lambda expression. The [prefix] is passed to
+   {!remove_invokedynamic} in order to generate the forged class
+   names.
+
+   @raise Not_found if method [ms] can't be found in [ioc] *)
+val remove_invokedynamics_in_method : JCode.jcode interface_or_class ->
+                                      method_signature -> prefix:string ->
+                                      (JCode.jcode interface_or_class
+                                       * JCode.jcode interface_or_class ClassMap.t)
+
+(** [remove_invokedynamics ioc prefix] iters the method
+   {!remove_invokedynamics_in_method} on all the methods of class
+   [ioc]. Some unique generated ids are concatenated to the [prefix]
+   in order to forge different class names associated to each
+   implementation of the functional interfaces. *)
+val remove_invokedynamics : JCode.jcode interface_or_class -> prefix:string ->
+                            (JCode.jcode interface_or_class
+                             * JCode.jcode interface_or_class ClassMap.t)
+
 (** {1 Files manipulations.} *)
 
 (** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
@@ -523,7 +578,6 @@ val transform :
     than the available space (number of OpInvalid + 1) except if
     {!JBasics.set_permissive} has been called with [true]. *)
 val unparse_class : JCode.jcode interface_or_class -> out_channel -> unit
-
 
 (** {1 Printing functions.} *)
 
