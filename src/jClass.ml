@@ -817,9 +817,9 @@ let get_callsite_ms ms_name info =
   let rtype,_ = cms_split info.functional_interface in
   make_ms ms_name args (Some (TObject (TClass rtype)))
 
-let make_callsite_method lnt lambda_cn ms_name info =
+let make_callsite_method lnt parent_cn lambda_cn ms_name info =
   let ms_call = get_callsite_ms ms_name info in
-  let m_callsite = make_empty_method lnt lambda_cn ms_call true in
+  let m_callsite = make_empty_method lnt parent_cn ms_call true in
   let ms_init = make_ms "<init>" info.captured_arguments None in
   let args_opcodes = get_ms_opcodes ms_call true in
   let stack_incr = 2 + (get_stack_size (ms_args ms_call)) in
@@ -943,7 +943,7 @@ let iter_code_lambdas ioc code pp prefix mmap cmap =
      let callsite_name = "callsite_" ^ forged_name in
      let info = replace_invokedynamic code pp bridge_icn callsite_name in
      let lambda_cn = make_cn forged_name in
-     let call_ms, m_callsite = make_callsite_method lnt lambda_cn callsite_name info in
+     let call_ms, m_callsite = make_callsite_method lnt parent_cn lambda_cn callsite_name info in
      let bridge_name = "access_" ^ forged_name in
      let bridge_ms, m_bridge = make_bridge_method lnt parent_cn bridge_name info in
      let methods = MethodMap.add call_ms m_callsite mmap in
