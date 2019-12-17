@@ -851,7 +851,7 @@ let make_class_field cn fname ftype =
 let make_lambda_class version sourcefile lnt cn info bridge_icn bridge_ms =
   let iname, ms_func = cms_split info.functional_interface in
   let arg_types = info.captured_arguments in
-  let field_names = List.init (List.length arg_types)
+  let field_names = JLib.List.init (List.length arg_types)
                       (fun i -> Printf.sprintf "arg%d" (i+1)) in
   let fields = List.fold_left (fun m (fname, ftype) ->
                    let cf = make_class_field cn fname ftype in
