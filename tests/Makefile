@@ -1,5 +1,8 @@
+JAVA_CLASSES=HelloWorld JmodPath LambdaInvoke* Properties TestArray
+
 all:javatests java/javac java/unparsed
 	make -C src/
+	javac -version # For debugging
 	@rm -f java/javac/*.class
 	@rm -f java/unparsed/*.class
 	@rm -f java/javac/out/*
@@ -8,12 +11,17 @@ all:javatests java/javac java/unparsed
 	@rm -f java/classes.txt
 	@find ./javatests/out -name "*.class" -delete
 	@rm -rf ./javatests/out/*
-	@find ./java/src/ -type f -name "*.java" > java/sources.txt
+	echo $(JAVA_CLASSES:%=./java/src/%.java) > java/sources.txt
 	bash java/javac.sh
 	@find ./java/javac -type f -name "*.class" > java/classes.txt
 	src/unparser java/classes.txt -out java/unparsed
 	bash java/java_exec_dump.sh javac
 	bash java/java_exec_dump.sh unparsed
+	javac -g -parameters -Xlint:deprecation -sourcepath java/src -d java/javac java/src/ExampleLambda.java
+	java -classpath java/javac ExampleLambda -10 test > java/javac/out/ExampleLambda
+	src/replace_dynamics java/javac -out java/unparsed
+	java -classpath java/unparsed ExampleLambda -10 test > java/unparsed/out/ExampleLambda
+
 	diff java/javac/out java/unparsed/out
 
 	find ./javatests/out -name "*.class" -delete

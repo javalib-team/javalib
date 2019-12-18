@@ -294,6 +294,19 @@ let h2l_methods consts bm_table c' mm =
     j_methods = MethodMap.fold (fun _fs f l -> h2l_acmethod consts bm_table f::l) mm [];
   }
 
+let remove_constant_dynamic consts max =
+  let () = Array.iteri
+             (fun i c ->
+               match c with
+               | ConstInvokeDynamic (index,_) ->
+                  if index > max then
+                    consts.(i) <- ConstString
+                                    (make_jstr
+                                       (Printf.sprintf "Removed Dynamic %d" index))
+               | _ -> ()
+             ) consts in
+  consts
+
 let high2low_class c =
   let consts = JLib.DynArray.of_array c.c_consts in
   let bm_table = JLib.DynArray.create () in
@@ -326,8 +339,10 @@ let high2low_class c =
 	@ h2l_other_attributes c.c_other_attributes;
      j_bootstrap_table = Array.of_list []; (* will be set later on *)
     } in
-  let c'= h2l_methods consts bm_table c' c.c_methods
-  in {c' with j_consts = JLib.DynArray.to_array consts;
+  let c'= h2l_methods consts bm_table c' c.c_methods in
+  let max_dynamic = (JLib.DynArray.length bm_table) - 1
+  in {c' with j_consts = remove_constant_dynamic
+                           (JLib.DynArray.to_array consts) max_dynamic;
               j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low_interface (c:JCode.jcode jinterface) =
@@ -358,8 +373,10 @@ let high2low_interface (c:JCode.jcode jinterface) =
 	@ h2l_other_attributes c.i_other_attributes;
      j_bootstrap_table = Array.of_list []; (* will be set later on *)
     } in
-  let c'= h2l_methods consts bm_table c' c.i_methods
-  in {c' with j_consts = JLib.DynArray.to_array consts;
+  let c'= h2l_methods consts bm_table c' c.i_methods in
+  let max_dynamic = (JLib.DynArray.length bm_table) - 1
+  in {c' with j_consts = remove_constant_dynamic
+                           (JLib.DynArray.to_array consts) max_dynamic;
               j_bootstrap_table = JLib.DynArray.to_array bm_table; }
 
 let high2low = function

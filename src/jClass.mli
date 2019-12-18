@@ -357,3 +357,16 @@ val map_interface_with_native_context :
 val map_interface_or_class_with_native_context :
   ('a concrete_method -> 'a implementation -> 'b implementation) ->
   'a interface_or_class -> 'b interface_or_class
+
+val remove_invokedynamic : JCode.jcode interface_or_class ->
+                           method_signature -> int -> prefix:string ->
+                           JCode.jcode interface_or_class * JCode.jcode interface_or_class
+
+val remove_invokedynamics_in_method : JCode.jcode interface_or_class ->
+                                      method_signature -> prefix:string ->
+                                      (JCode.jcode interface_or_class
+                                       * JCode.jcode interface_or_class ClassMap.t)
+
+val remove_invokedynamics : JCode.jcode interface_or_class -> prefix:string ->
+                            (JCode.jcode interface_or_class
+                             * JCode.jcode interface_or_class ClassMap.t)

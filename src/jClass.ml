@@ -563,3 +563,431 @@ let map_interface_or_class ?(force=false) f = function
 let map_interface_or_class_context ?(force=false) f = function
   | JInterface i -> JInterface (map_interface_context ~force:force f i)
   | JClass c -> JClass (map_class_context ~force:force f c)
+
+open JCode
+
+let add_methods ioc methods =
+  let merge_methods_with cmethods =
+    MethodMap.fold (fun ms m methods ->
+        MethodMap.add ms m methods) methods cmethods in
+  match ioc with
+  | JInterface i -> JInterface { i with i_methods = merge_methods_with i.i_methods }
+  | JClass c -> JClass { c with c_methods = merge_methods_with c.c_methods }
+
+let get_bridge_md cn info =
+  let mh = info.lambda_handle in
+  match mh with
+  | `InvokeStatic (`InterfaceMethod (_, ms))
+    | `InvokeStatic (`Method (_, ms)) ->
+     make_md ((ms_args ms), (ms_rtype ms))
+  | `InvokeVirtual (_, ms)
+    | `InvokeInterface (_, ms) ->
+     make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
+  | `InvokeSpecial (`InterfaceMethod (_, ms))
+    | `InvokeSpecial (`Method (_, ms)) ->
+     make_md ((TObject (TClass cn)) :: (ms_args ms), (ms_rtype ms))
+  | `NewInvokeSpecial (cn, ms) ->
+     make_md ((ms_args ms), Some (TObject (TClass cn)))
+  | `GetField _ -> failwith "GetField reference not implemented."
+  | `GetStatic _ -> failwith "GetStatic reference not implemented."
+  | `PutField _ -> failwith "PutField reference not implemented."
+  | `PutStatic _ -> failwith "PutStatic reference not implemented."
+
+let vtype_to_jvm_type v : jvm_type =
+  match v with
+  | TObject _ -> `Object
+  | TBasic b ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int -> `Int2Bool
+     | `Double -> `Double
+     | `Float -> `Float
+     | `Long -> `Long
+
+let vtype_to_jvm_rtype v : jvm_return_type =
+  match v with
+  | None -> `Void
+  | Some (TObject _) -> `Object
+  | Some (TBasic b) ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int -> `Int2Bool
+     | `Double -> `Double
+     | `Float -> `Float
+     | `Long -> `Long
+
+let vtype_size v =
+  match v with
+  | TObject _ -> 1
+  | TBasic b ->
+     match b with
+     | `Bool | `Byte | `Char | `Short | `Int | `Float -> 1
+     | `Double | `Long -> 2
+
+let get_stack_size args =
+  List.fold_left (+) 0 (List.map vtype_size args)
+  
+let make_empty_method lnt cn ms is_static =
+  let rtype = ms_rtype ms in
+  let opcodes = Array.of_list [OpReturn (vtype_to_jvm_rtype rtype)] in
+  let args = ms_args ms in
+  let nargs = List.fold_left (+) 0 (List.map vtype_size args) in
+  let code = {
+      c_max_stack = 1;
+      c_max_locals = 1 + nargs;
+      c_code = opcodes;
+      c_exc_tbl = [];
+      c_line_number_table = lnt;
+      c_local_variable_table = None;
+      c_local_variable_type_table = None;
+      c_stack_map = None;
+      c_attributes = [];
+    } in
+  ConcreteMethod {
+      cm_signature = ms;
+      cm_class_method_signature = make_cms cn ms;
+      cm_static = is_static;
+      cm_final = false;
+      cm_synchronized = false;
+      cm_strict = false;
+      cm_access = `Public;
+      cm_generic_signature = None;
+      cm_bridge = false;
+      cm_varargs = false;
+      cm_synthetic = true;
+      cm_other_flags = [];
+      cm_exceptions = [];
+      cm_attributes = { synthetic = true; deprecated = false; other = [] };
+      cm_parameters = [];
+      cm_annotations = { ma_global = []; ma_parameters = [] };
+      cm_implementation = Java (lazy code);
+    }
+
+let insert_method_code stack_incr m opcodes =
+  let cm, code = match m with
+    | AbstractMethod _ ->
+       failwith "An abstract method has no code."
+    | ConcreteMethod cm ->
+       match cm.cm_implementation with
+       | Native ->
+          failwith "A native method has no code."
+       | Java lcode -> (cm, Lazy.force lcode)
+  in
+  let max_stack = code.c_max_stack + stack_incr in
+  let new_opcodes = Array.append (Array.of_list opcodes) code.c_code in
+  let new_code = { code with c_max_stack = max_stack;
+                             c_code = new_opcodes } in
+  let m' = ConcreteMethod { cm with cm_implementation = Java (lazy new_code) } in
+  m'
+  
+let combine3 l1 l2 l3 =
+  let rec combine3 l1 l2 l3 lres =
+    match (l1,l2,l3) with
+    | ([],[],[]) -> lres
+    | (v1::tl1, v2::tl2, v3::tl3) ->
+       combine3 tl1 tl2 tl3 ((v1, v2, v3) :: lres)
+    | _ -> raise (Invalid_argument "Cannot combine lists of different sizes")
+  in List.rev (combine3 l1 l2 l3 [])
+
+let init_fields_opcodes cn arg_types field_names =
+  let arg_sizes = List.map (fun v -> vtype_size v) arg_types in
+  let opcodes = ref [] in
+  let next_local = ref 1 in
+  let () = List.iter (fun (vtype, sz, fname) ->
+               opcodes := [ OpLoad (`Object, 0);
+                            OpLoad (vtype_to_jvm_type vtype, !next_local);
+                            OpInvalid;
+                            OpPutField (cn, make_fs fname vtype);
+                            OpInvalid; OpInvalid ] :: !opcodes;
+               next_local := !next_local + sz)
+             (combine3 arg_types arg_sizes field_names) in
+  List.flatten (List.rev !opcodes)
+
+let get_fields_opcodes cn arg_types field_names =
+  let opcodes = ref [] in
+  let () = List.iter (fun (vtype, fname) ->
+               opcodes := [ OpLoad (`Object, 0);
+                            OpGetField (cn, make_fs fname vtype);
+                            OpInvalid; OpInvalid ] :: !opcodes;
+             ) (List.combine arg_types field_names) in
+  List.flatten (List.rev !opcodes)
+
+let get_object_type v =
+  match v with
+  | TObject o -> o
+  | _ -> failwith "Value type is not an Object."
+
+let get_arguments_opcodes info is_static =
+  let args = ms_args (snd (cms_split info.functional_interface)) in
+  let check_args = info.checkcast_arguments in
+  let arg_sizes = List.map (fun v -> vtype_size v) args in
+  let opcodes = ref [] in
+  let next_local = ref (if is_static then 0 else 1)  in
+  let () = List.iter (fun (vtype, sz, checktype) ->
+               let check_opcodes = if vtype = checktype then []
+                                   else [OpCheckCast (get_object_type checktype);
+                                         OpInvalid; OpInvalid] in
+               opcodes := ((OpLoad (vtype_to_jvm_type vtype, !next_local))
+                          :: OpInvalid :: check_opcodes) :: !opcodes;
+               next_local := !next_local + sz)
+             (combine3 args arg_sizes check_args) in
+  let stack_incr = get_stack_size args in
+  (List.flatten (List.rev !opcodes), stack_incr)
+
+let get_ms_opcodes ms is_static =
+  let args = ms_args ms in
+  let arg_sizes = List.map (fun v -> vtype_size v) args in
+  let opcodes = ref [] in
+  let next_local = ref (if is_static then 0 else 1) in
+  let () = List.iter (fun (vtype, sz) ->
+               opcodes := [ OpLoad (vtype_to_jvm_type vtype, !next_local);
+                            OpInvalid ] :: !opcodes;
+               next_local := !next_local + sz
+             ) (List.combine args arg_sizes) in
+  List.flatten (List.rev !opcodes)
+
+let invoke_lambda_opcodes info =
+  let mh = info.lambda_handle in
+  match mh with
+  | `InvokeStatic (`InterfaceMethod (cn, ms)) ->
+     [ OpInvoke (`Static (`Interface, cn), ms);
+       OpInvalid; OpInvalid ]
+  | `InvokeStatic (`Method (cn, ms)) ->
+     [ OpInvoke (`Static (`Class, cn), ms);
+       OpInvalid; OpInvalid ]
+  | `InvokeVirtual (ot, ms) ->
+     [ OpInvoke (`Virtual ot, ms);
+       OpInvalid; OpInvalid ]
+  | `InvokeInterface (cn, ms) ->
+     [ OpInvoke (`Interface cn, ms);
+       OpInvalid; OpInvalid; OpInvalid; OpInvalid ]
+  | `InvokeSpecial (`InterfaceMethod (cn, ms)) ->
+     [ OpInvoke (`Special (`Interface, cn), ms);
+       OpInvalid; OpInvalid ]
+  | `InvokeSpecial (`Method (cn, ms)) ->
+     [ OpInvoke (`Special (`Class, cn), ms);
+       OpInvalid; OpInvalid ]
+  | `NewInvokeSpecial (cn, ms) ->
+     [ OpInvoke (`Special (`Class, cn), ms);
+       OpInvalid; OpInvalid ]
+  | _ -> failwith "Lambda invocation type not implemented."
+
+let invoke_bridge_opcodes icn ms =
+  [ OpInvoke (`Static icn, ms); OpInvalid; OpInvalid ]
+
+let make_init_method lnt cn arg_types field_names =
+  let ms = make_ms "<init>" arg_types None in
+  let m = make_empty_method lnt cn ms false in
+  let ms_obj = make_ms "<init>" [] None in
+  let cn_obj = make_cn "java.lang.Object" in
+  let opcodes_creation = [OpLoad (`Object, 0);
+                          OpInvoke (`Special (`Class, cn_obj), ms_obj);
+                          OpInvalid; OpInvalid] in
+  let opcodes_putfields = init_fields_opcodes cn arg_types field_names in
+  let stack_incr = max 1 (get_stack_size arg_types) in
+  insert_method_code stack_incr m (opcodes_creation @ opcodes_putfields)
+
+let get_newinvokespecial_opcodes mh =
+  match mh with
+  | `NewInvokeSpecial (cn, _) -> ([ OpNew cn; OpInvalid; OpInvalid; OpDup ], 2)
+  | _ -> ([], 0)
+       
+let make_functional_method lnt bridge_icn bridge_ms cn info field_names =
+  let arg_types = info.captured_arguments in
+  let _, ms_func = cms_split info.functional_interface in
+  let m_func = make_empty_method lnt cn ms_func false in
+  let fields_opcodes = get_fields_opcodes cn arg_types field_names in
+  let args_opcodes, n = get_arguments_opcodes info false in
+  let invoke_opcodes = invoke_bridge_opcodes bridge_icn bridge_ms in
+  let stack_incr = n + (get_stack_size arg_types) in
+  insert_method_code stack_incr m_func (fields_opcodes @ args_opcodes @ invoke_opcodes)
+
+let make_bridge_method lnt cn bridge_name info =
+  let bridge_md = get_bridge_md cn info in
+  let bridge_ms = make_ms bridge_name (md_args bridge_md) (md_rtype bridge_md) in
+  let m_bridge = make_empty_method lnt cn bridge_ms true in
+  let newinvokespecial_opcodes, n = get_newinvokespecial_opcodes info.lambda_handle in
+  let args_opcodes = get_ms_opcodes bridge_ms true in
+  let invoke_opcodes = invoke_lambda_opcodes info in
+  let stack_incr = n + (get_stack_size (ms_args bridge_ms)) in
+  let m_bridge = insert_method_code stack_incr m_bridge
+                   (newinvokespecial_opcodes @ args_opcodes @ invoke_opcodes) in
+  (bridge_ms, m_bridge)
+
+let get_callsite_ms ms_name info =
+  let args = info.captured_arguments in
+  let rtype,_ = cms_split info.functional_interface in
+  make_ms ms_name args (Some (TObject (TClass rtype)))
+
+let make_callsite_method lnt parent_cn lambda_cn ms_name info =
+  let ms_call = get_callsite_ms ms_name info in
+  let m_callsite = make_empty_method lnt parent_cn ms_call true in
+  let ms_init = make_ms "<init>" info.captured_arguments None in
+  let args_opcodes = get_ms_opcodes ms_call true in
+  let stack_incr = 2 + (get_stack_size (ms_args ms_call)) in
+  let m_callsite = insert_method_code stack_incr m_callsite
+                     ([ OpNew lambda_cn; OpInvalid; OpInvalid; OpDup ]
+                      @ args_opcodes
+                      @ [ OpInvoke (`Special (`Class, lambda_cn), ms_init);
+                          OpInvalid; OpInvalid ]) in
+  (ms_call, m_callsite)
+
+let make_class_field cn fname ftype =
+  let fs = make_fs fname ftype in
+  let cfs = make_cfs cn fs in
+  { cf_signature = fs;
+    cf_class_signature = cfs;
+    cf_generic_signature = None;
+    cf_access = `Private;
+    cf_static = false;
+    cf_synthetic = true;
+    cf_enum = false;
+    cf_kind = NotFinal;
+    cf_value = None;
+    cf_transient = false;
+    cf_annotations = [];
+    cf_other_flags = [];
+    cf_attributes = { synthetic = true; deprecated = false; other = [] };
+  }
+
+let make_lambda_class version sourcefile lnt cn info bridge_icn bridge_ms =
+  let iname, ms_func = cms_split info.functional_interface in
+  let arg_types = info.captured_arguments in
+  let field_names = JLib.List.init (List.length arg_types)
+                      (fun i -> Printf.sprintf "arg%d" (i+1)) in
+  let fields = List.fold_left (fun m (fname, ftype) ->
+                   let cf = make_class_field cn fname ftype in
+                   FieldMap.add cf.cf_signature cf m
+                 ) FieldMap.empty (List.combine field_names arg_types) in
+  let ms_init = make_ms "<init>" arg_types None in
+  let m_init = make_init_method lnt cn arg_types field_names in
+  let m_func = make_functional_method lnt bridge_icn bridge_ms cn info field_names in
+  let methods = MethodMap.add ms_func m_func
+                  (MethodMap.add ms_init m_init MethodMap.empty) in
+  JClass {
+      c_name = cn;
+      c_version = version;
+      c_access = `Default;
+      c_final = false;
+      c_abstract = false;
+      c_super_class = Some (make_cn "java.lang.Object");
+      c_generic_signature = None;
+      c_fields = fields;
+      c_interfaces = [iname];
+      c_consts = [||];
+      c_sourcefile = sourcefile;
+      c_deprecated = false;
+      c_enclosing_method = None;
+      c_source_debug_extention = None;
+      c_inner_classes = [];
+      c_synthetic = true;
+      c_enum = false;
+      c_annotations = [];
+      c_other_flags = [];
+      c_other_attributes = [];
+      c_methods = methods;
+    }
+
+let get_version ioc =
+  match ioc with
+  | JClass c -> c.c_version
+  | JInterface i -> i.i_version
+
+let get_cm_code ioc ms =
+  let m = get_method ioc ms in
+  match m with
+  | AbstractMethod _ ->
+     failwith "An abstract method can not contain an invokedynamic instruction."
+  | ConcreteMethod cm ->
+     match cm.cm_implementation with
+     | Native -> None
+     | Java lcode -> Some (Lazy.force lcode)
+
+let is_metafactory bm =
+  match bm.bm_ref with
+  | `InvokeStatic (`Method (cn, ms)) ->
+     if (cn_name cn) = "java.lang.invoke.LambdaMetafactory"
+        && (ms_name ms) = "metafactory" then
+       true
+     else
+       false
+  | _ -> false
+
+let replace_invokedynamic code pp icn ms_name =
+  match code.c_code.(pp) with
+  | OpInvoke (`Dynamic bm, ms) ->
+     let info = build_lambda_info bm ms in
+     let ms_call = get_callsite_ms ms_name info in
+     let callsite_call = Array.of_list ((invoke_bridge_opcodes icn ms_call)
+                                        @ [OpNop; OpNop]) in
+     (* The OpNop instructions are inserted to fill the original size
+        of the invokedynamic instruction. *)
+     let n = Array.length callsite_call in
+     let () = Array.blit callsite_call 0 code.c_code pp n in
+     info
+  | _ -> failwith "No invokedynamic found at given program point."
+
+let make_lnt code pp =
+  let line = get_source_line_number pp code in
+  match line with
+  | None -> None
+  | Some i -> Some [(0, i)]
+
+let iter_code_lambdas ioc code pp prefix mmap cmap =
+  match code.c_code.(pp) with
+  | OpInvoke (`Dynamic bm, _) when is_metafactory bm ->
+     let lnt = make_lnt code pp in
+     let parent_cn = get_name ioc in
+     let forged_name = Printf.sprintf "%s%d" prefix pp in
+     let bridge_icn = match ioc with
+       | JClass _ -> (`Class, parent_cn)
+       | JInterface _ -> (`Interface, parent_cn) in
+     let callsite_name = "callsite_" ^ forged_name in
+     let info = replace_invokedynamic code pp bridge_icn callsite_name in
+     let lambda_cn = make_cn forged_name in
+     let call_ms, m_callsite = make_callsite_method lnt parent_cn lambda_cn callsite_name info in
+     let bridge_name = "access_" ^ forged_name in
+     let bridge_ms, m_bridge = make_bridge_method lnt parent_cn bridge_name info in
+     let methods = MethodMap.add call_ms m_callsite mmap in
+     let methods = MethodMap.add bridge_ms m_bridge methods in
+     let version = get_version ioc in
+     let sourcefile = get_sourcefile ioc in
+     let ioc_lambda = make_lambda_class version sourcefile
+                        lnt lambda_cn info bridge_icn bridge_ms in
+     let lambda_classes = ClassMap.add lambda_cn ioc_lambda cmap in
+     (pp+5, methods, lambda_classes)
+  | _ -> (pp+1, mmap, cmap)
+
+let remove_invokedynamic ioc ms pp ~prefix =
+  match get_cm_code ioc ms with
+  | None -> failwith "A native method can not contain an invokedynamic instruction."
+  | Some code -> 
+     let (_, methods, lambda_classes) =
+       iter_code_lambdas ioc code pp prefix MethodMap.empty ClassMap.empty in
+     let ioc' = add_methods ioc methods in
+     let _, ioc_lambda, _ = ClassMap.choose_and_remove lambda_classes in
+     (ioc', ioc_lambda)
+       
+let remove_invokedynamics_in_method ioc ms ~prefix =
+  match get_cm_code ioc ms with
+  | None -> (ioc, ClassMap.empty)
+  | Some code ->
+     let mmap = ref MethodMap.empty in
+     let cmap = ref ClassMap.empty in
+     let pp = ref 0 in
+     let () = while !pp < Array.length code.c_code do
+                let (tpp, tmethods, tlambda_classes) =
+                  iter_code_lambdas ioc code !pp prefix !mmap !cmap in
+                (pp := tpp; mmap := tmethods; cmap := tlambda_classes)
+              done in
+     let ioc' = add_methods ioc !mmap in
+     (ioc', !cmap)
+
+let remove_invokedynamics ioc ~prefix =
+  let methods = get_concrete_methods ioc in
+  let m_counter = ref 0 in
+  let ioc', cmap = MethodMap.fold (fun ms _ (ioc, cmap) ->
+                       m_counter := !m_counter + 1;
+                       let prefix = prefix ^ "_" ^ (string_of_int !m_counter) ^ "_" in
+                       let ioc', cmap' = remove_invokedynamics_in_method ioc ms ~prefix in
+                       (ioc', ClassMap.merge (fun c _ -> c) cmap cmap')
+                     ) methods (ioc, ClassMap.empty) in
+  (ioc', cmap)

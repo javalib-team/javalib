@@ -30,4 +30,3 @@ module JPrint =
 struct
   include JPrint
 end
-

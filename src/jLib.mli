@@ -10,6 +10,7 @@ module DynArray : sig
   val to_array : 'a t -> 'a array
   val of_list : 'a list -> 'a t
   val to_list : 'a t -> 'a list
+  val iter : ('a -> unit) -> 'a t -> unit
 end
      
 module IO : sig
