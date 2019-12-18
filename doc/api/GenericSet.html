@@ -45,17 +45,14 @@
 </div>
 <h1>Module <a href="type_GenericSet.html">GenericSet</a></h1>
 
-<pre><span id="MODULEGenericSet"><span class="keyword">module</span> GenericSet</span>: <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-<div class="info-desc">
-<p>Provide a way to create GenericSet specifying how to hash.</p>
-</div>
+<pre><span class="keyword">module</span> GenericSet: <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Provide a way to create GenericSet specifying how to hash.<br>
 </div>
 <hr width="100%">
 
-<pre><span id="MODULETYPES"><span class="keyword">module type</span> <a href="GenericSet.S.html">S</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-<p>This module type must be implemented to obtain an instantiated GenericSet.</p>
-
+<pre><span class="keyword">module type</span> <a href="GenericSet.S.html">S</a> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+This module type must be implemented to obtain an instantiated GenericSet.
 </div>
 
-<pre><span id="MODULETYPEGenericSetSig"><span class="keyword">module type</span> <a href="GenericSet.GenericSetSig.html">GenericSetSig</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.GenericSetSig.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
-<pre><span id="MODULEMake"><span class="keyword">module</span> <a href="GenericSet.Make.html">Make</a></span>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">El</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericSet.S.html">S</a></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="type"><a href="GenericSet.GenericSetSig.html">GenericSetSig</a></code><code class="type">  with type elt= El.t</code></div></pre></body></html>
+<pre><span class="keyword">module type</span> <a href="GenericSet.GenericSetSig.html">GenericSetSig</a> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericSet.GenericSetSig.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span class="keyword">module</span> <a href="GenericSet.Make.html">Make</a>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">El</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericSet.S.html">S</a></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="type"><a href="GenericSet.GenericSetSig.html">GenericSetSig</a></code><code class="type">  with type elt= El.t</code></div></pre></body></html>

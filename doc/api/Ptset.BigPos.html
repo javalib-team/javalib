@@ -43,7 +43,7 @@
 &nbsp;</div>
 <h1>Module <a href="type_Ptset.BigPos.html">Ptset.BigPos</a></h1>
 
-<pre><span id="MODULEBigPos"><span class="keyword">module</span> BigPos</span>: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre><hr width="100%">
+<pre><span class="keyword">module</span> BigPos: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre><hr width="100%">
 
 <pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
 
@@ -72,33 +72,28 @@
 <pre><span id="VALexists"><span class="keyword">val</span> exists</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre>
 <pre><span id="VALfilter"><span class="keyword">val</span> filter</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALpartition"><span class="keyword">val</span> partition</span> : <code class="type">(int -> bool) -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> * <a href="Ptset.S.html#TYPEt">t</a></code></pre>
-<pre><span id="VALsplit"><span class="keyword">val</span> split</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> * bool * <a href="Ptset.S.html#TYPEt">t</a></code></pre><p>Warning: <code class="code">min_elt</code> and <code class="code">max_elt</code> are linear w.r.t. the size of the
+<pre><span id="VALsplit"><span class="keyword">val</span> split</span> : <code class="type">int -> <a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> * bool * <a href="Ptset.S.html#TYPEt">t</a></code></pre><br>
+Warning: <code class="code">min_elt</code> and <code class="code">max_elt</code> are linear w.r.t. the size of the
       set. In other words, <code class="code">min_elt&nbsp;t</code> is barely more efficient than <code class="code">fold<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;min&nbsp;t&nbsp;(choose&nbsp;t)</code>.</p>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;min&nbsp;t&nbsp;(choose&nbsp;t)</code>.<br>
 
 <pre><span id="VALmin_elt"><span class="keyword">val</span> min_elt</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre>
-<pre><span id="VALmax_elt"><span class="keyword">val</span> max_elt</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><p>Additional functions not appearing in the signature <code class="code"><span class="constructor">Set</span>.<span class="constructor">S</span></code> from
-      ocaml standard library.</p>
-<p><code class="code">intersect&nbsp;u&nbsp;v</code> determines if sets <code class="code">u</code> and <code class="code">v</code> have a non-empty
-      intersection.</p>
+<pre><span id="VALmax_elt"><span class="keyword">val</span> max_elt</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int</code></pre><br>
+Additional functions not appearing in the signature <code class="code"><span class="constructor">Set</span>.<span class="constructor">S</span></code> from
+      ocaml standard library.<br>
+<br>
+<code class="code">intersect&nbsp;u&nbsp;v</code> determines if sets <code class="code">u</code> and <code class="code">v</code> have a non-empty
+      intersection.<br>
 
 <pre><span id="VALintersect"><span class="keyword">val</span> intersect</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> <a href="Ptset.S.html#TYPEt">t</a> -> bool</code></pre>
 <pre><span id="VALchoose_and_remove"><span class="keyword">val</span> choose_and_remove</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> int * <a href="Ptset.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">choose_and_remove&nbsp;t</code> is equivalent (but more efficient) to
-      <code class="code">(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keyword">let</span>&nbsp;i&nbsp;=&nbsp;choose&nbsp;t&nbsp;<span class="keyword">in</span>&nbsp;(i,remove&nbsp;i&nbsp;t))&nbsp;t</code></p>
-</div>
-<ul class="info-attributes">
-<li><b>Author(s):</b> Laurent Hubert</li>
-</ul>
+<code class="code">choose_and_remove&nbsp;t</code> is equivalent (but more efficient) to
+      <code class="code">(<span class="keyword">fun</span>&nbsp;t&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keyword">let</span>&nbsp;i&nbsp;=&nbsp;choose&nbsp;t&nbsp;<span class="keyword">in</span>&nbsp;(i,remove&nbsp;i&nbsp;t))&nbsp;t</code><br>
+<b>Author(s):</b> Laurent Hubert<br>
 </div>
 
 <pre><span id="VALto_string"><span class="keyword">val</span> to_string</span> : <code class="type"><a href="Ptset.S.html#TYPEt">t</a> -> string</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">to_string&nbsp;s</code> return a string representation of <code class="code">s</code></p>
-</div>
-<ul class="info-attributes">
-<li><b>Author(s):</b> David Pichardie</li>
-</ul>
+<code class="code">to_string&nbsp;s</code> return a string representation of <code class="code">s</code><br>
+<b>Author(s):</b> David Pichardie<br>
 </div>
 </body></html>

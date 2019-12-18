@@ -45,7 +45,7 @@
 </div>
 <h1>Module <a href="type_JLib.IO.html">JLib.IO</a></h1>
 
-<pre><span id="MODULEIO"><span class="keyword">module</span> IO</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<pre><span class="keyword">module</span> IO: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
 
 <pre><span id="TYPEinput"><span class="keyword">type</span> <code class="type"></code>input</span> </pre>
 
@@ -55,22 +55,22 @@
 
 <pre><span id="EXCEPTIONOverflow"><span class="keyword">exception</span> Overflow</span> <span class="keyword">of</span> <code class="type">string</code></pre>
 
-<pre><span id="VALinput_channel"><span class="keyword">val</span> input_channel</span> : <code class="type">Stdlib.in_channel -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
-<pre><span id="VALoutput_channel"><span class="keyword">val</span> output_channel</span> : <code class="type">Stdlib.out_channel -> unit <a href="JLib.IO.html#TYPEoutput">output</a></code></pre>
+<pre><span id="VALinput_channel"><span class="keyword">val</span> input_channel</span> : <code class="type">Pervasives.in_channel -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
+<pre><span id="VALoutput_channel"><span class="keyword">val</span> output_channel</span> : <code class="type">Pervasives.out_channel -> unit <a href="JLib.IO.html#TYPEoutput">output</a></code></pre>
 <pre><span id="VALinput_string"><span class="keyword">val</span> input_string</span> : <code class="type">string -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
 <pre><span id="VALflush"><span class="keyword">val</span> flush</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> unit</code></pre>
 <pre><span id="VALread_byte"><span class="keyword">val</span> read_byte</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int</code></pre>
 <pre><span id="VALread_signed_byte"><span class="keyword">val</span> read_signed_byte</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int</code></pre>
-<pre><span id="VALreally_nread"><span class="keyword">val</span> really_nread</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int -> Stdlib.Bytes.t</code></pre>
+<pre><span id="VALreally_nread"><span class="keyword">val</span> really_nread</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int -> Bytes.t</code></pre>
 <pre><span id="VALreally_nread_string"><span class="keyword">val</span> really_nread_string</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> int -> string</code></pre>
 <pre><span id="VALwrite_byte"><span class="keyword">val</span> write_byte</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> int -> unit</code></pre>
 <pre><span id="VALnwrite_string"><span class="keyword">val</span> nwrite_string</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> string -> unit</code></pre>
 <pre><span id="VALoutput_string"><span class="keyword">val</span> output_string</span> : <code class="type">unit -> string <a href="JLib.IO.html#TYPEoutput">output</a></code></pre>
 <pre><span id="VALclose_out"><span class="keyword">val</span> close_out</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> 'a</code></pre>
 <pre><span id="VALclose_in"><span class="keyword">val</span> close_in</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> unit</code></pre>
-<pre><span id="VALprintf"><span class="keyword">val</span> printf</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> ('b, unit, string, unit) Stdlib.format4 -> 'b</code></pre>
+<pre><span id="VALprintf"><span class="keyword">val</span> printf</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> ('b, unit, string, unit) Pervasives.format4 -> 'b</code></pre>
 <pre><span id="VALwrite"><span class="keyword">val</span> write</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> char -> unit</code></pre>
 <pre><span id="VALpos_in"><span class="keyword">val</span> pos_in</span> : <code class="type"><a href="JLib.IO.html#TYPEinput">input</a> -> <a href="JLib.IO.html#TYPEinput">input</a> * (unit -> int)</code></pre>
 <pre><span id="VALpos_out"><span class="keyword">val</span> pos_out</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">output</a> -> 'a <a href="JLib.IO.html#TYPEoutput">output</a> * (unit -> int)</code></pre>
-<pre><span id="VALinput_bytes"><span class="keyword">val</span> input_bytes</span> : <code class="type">Stdlib.Bytes.t -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
-<pre><span id="MODULEBigEndian"><span class="keyword">module</span> <a href="JLib.IO.BigEndian.html">BigEndian</a></span>: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.BigEndian.html">..</a> <code class="code"><span class="keyword">end</span></code></pre></body></html>
+<pre><span id="VALinput_bytes"><span class="keyword">val</span> input_bytes</span> : <code class="type">Bytes.t -> <a href="JLib.IO.html#TYPEinput">input</a></code></pre>
+<pre><span class="keyword">module</span> <a href="JLib.IO.BigEndian.html">BigEndian</a>: <code class="code"><span class="keyword">sig</span></code> <a href="JLib.IO.BigEndian.html">..</a> <code class="code"><span class="keyword">end</span></code></pre></body></html>

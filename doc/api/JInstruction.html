@@ -45,58 +45,45 @@
 </div>
 <h1>Module <a href="type_JInstruction.html">JInstruction</a></h1>
 
-<pre><span id="MODULEJInstruction"><span class="keyword">module</span> JInstruction</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JInstruction.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-<div class="info-desc">
-<p>Conversion between low and high level representations of instructions.</p>
-</div>
+<pre><span class="keyword">module</span> JInstruction: <code class="code"><span class="keyword">sig</span></code> <a href="JInstruction.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Conversion between low and high level representations of instructions.<br>
 </div>
 <hr width="100%">
 
 <pre><span id="VALopcodes2code"><span class="keyword">val</span> opcodes2code</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array -> <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a></code></pre><div class="info ">
-<div class="info-desc">
-<p>Maps an arrray of low level bytecode to a high level code.
+Maps an arrray of low level bytecode to a high level code.
     Each instruction is at the index
     corresponding to its absolute offset. The array is padded with the
     OpInvalid instruction. The absolute and relative offset that appear
     in the instructions are therefore valid positions in the array.
     OpInvalid may be interpreted as nop, or the direct successor of
     an instruction can alternatively by defined as the first following
-    non-OpInvalid instruction.</p>
-</div>
+    non-OpInvalid instruction.<br>
 </div>
 
 <pre><span id="VALcode2opcodes"><span class="keyword">val</span> code2opcodes</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JCode.html#TYPEjopcodes">JCode.jopcodes</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> array</code></pre><div class="info ">
-<div class="info-desc">
-<p>Maps a high level code to a valid arrray of low level bytecode
+Maps a high level code to a valid arrray of low level bytecode
     instructions. The distance between the offset of two successive
     non-OpInvalid instructions is assumed to be at least the length of the
     optimal coding for the first instruction (for example, iload_0 vs iload
     0). The opcode may be encoded with the non-optimal form to fill the
-    available space.</p>
-</div>
-<ul class="info-attributes">
-<li><b>Raises</b> <code>Class_structure_error</code> if the length of an opcode produced is greater
+    available space.<br>
+<b>Raises</b> <code>Class_structure_error</code> if the length of an opcode produced is greater
     than the available space (number of OpInvalid + 1) except if
     <a href="JBasics.html#VALset_permissive"><code class="code"><span class="constructor">JBasics</span>.set_permissive</code></a> has been called with <code class="code"><span class="keyword">true</span></code>.  Note that this
-    will only be an issue when dumping the code to a class file.</li>
-</ul>
+    will only be an issue when dumping the code to a class file.<br>
 </div>
 
 <pre><span id="VALopcode2instruction"><span class="keyword">val</span> opcode2instruction</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> array -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a> -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a></code></pre><div class="info ">
-<div class="info-desc">
-<p>Low level to high level bytecode instruction.</p>
-</div>
+Low level to high level bytecode instruction.<br>
 </div>
 
 <pre><span id="VALinstruction2opcode"><span class="keyword">val</span> instruction2opcode</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       int -> <a href="JCode.html#TYPEjopcode">JCode.jopcode</a> -> <a href="JClassLow.html#TYPEopcode">JClassLow.opcode</a></code></pre><div class="info ">
-<div class="info-desc">
-<p>High level to low level bytecode instruction.</p>
+High level to low level bytecode instruction.
+<p>
 
-<p><code class="code">instruction2opcode&nbsp;consts&nbsp;length&nbsp;instr</code> tries to produce an
-    opcode which could be unparsed in <code class="code">length</code> byte(s).</p>
-</div>
-<ul class="info-attributes">
-<li><b>Raises</b> <code>JBasics.Class_structure_error</code> if the class has not a valid structure.</li>
-</ul>
+    <code class="code">instruction2opcode&nbsp;consts&nbsp;length&nbsp;instr</code> tries to produce an
+    opcode which could be unparsed in <code class="code">length</code> byte(s).<br>
+<b>Raises</b> <code>JBasics.Class_structure_error</code> if the class has not a valid structure.<br>
 </div>
 </body></html>

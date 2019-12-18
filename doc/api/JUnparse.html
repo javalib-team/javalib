@@ -45,43 +45,32 @@
 </div>
 <h1>Module <a href="type_JUnparse.html">JUnparse</a></h1>
 
-<pre><span id="MODULEJUnparse"><span class="keyword">module</span> JUnparse</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JUnparse.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-<div class="info-desc">
-<p>Unparsing (compilation) of either high or low level class
-    representations into class files.</p>
-</div>
+<pre><span class="keyword">module</span> JUnparse: <code class="code"><span class="keyword">sig</span></code> <a href="JUnparse.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Unparsing (compilation) of either high or low level class
+    representations into class files.<br>
 </div>
 <hr width="100%">
-<p>Provided constants are kept unchanged. Missing constant are added at
-    the end of the constant pool if needed.</p>
+<br>
+Provided constants are kept unchanged. Missing constant are added at
+    the end of the constant pool if needed.<br>
 
 <pre><span id="VALunparse_class_low_level"><span class="keyword">val</span> unparse_class_low_level</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a> -> unit</code></pre><div class="info ">
-<div class="info-desc">
-<p>Unparses a class to a file. See <a href="JInstruction.html#VALcode2opcodes"><code class="code"><span class="constructor">JInstruction</span>.code2opcodes</code></a> for more
-    information.</p>
-</div>
-<ul class="info-attributes">
-<li><b>Raises</b> <code>JParseCode.OpcodeLengthError</code> if an opcode cannot be encoded in the
-    allocated place.</li>
-</ul>
+Unparses a class to a file. See <a href="JInstruction.html#VALcode2opcodes"><code class="code"><span class="constructor">JInstruction</span>.code2opcodes</code></a> for more
+    information.<br>
+<b>Raises</b> <code>JParseCode.OpcodeLengthError</code> if an opcode cannot be encoded in the
+    allocated place.<br>
 </div>
 
 <pre><span id="VALunparse_class"><span class="keyword">val</span> unparse_class</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -> unit</code></pre><div class="info ">
-<div class="info-desc">
-<p>Unparses a class to a file. See <a href="JInstruction.html#VALcode2opcodes"><code class="code"><span class="constructor">JInstruction</span>.code2opcodes</code></a> for more
-    information.</p>
-</div>
-<ul class="info-attributes">
-<li><b>Raises</b> <code>JParseCode.OpcodeLengthError</code> if an opcode cannot be encoded in the
-    allocated place.</li>
-</ul>
+Unparses a class to a file. See <a href="JInstruction.html#VALcode2opcodes"><code class="code"><span class="constructor">JInstruction</span>.code2opcodes</code></a> for more
+    information.<br>
+<b>Raises</b> <code>JParseCode.OpcodeLengthError</code> if an opcode cannot be encoded in the
+    allocated place.<br>
 </div>
 
 <pre><span id="VALunparse_attribute_to_strings"><span class="keyword">val</span> unparse_attribute_to_strings</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JClassLow.html#TYPEattribute">JClassLow.attribute</a> -> string * string</code></pre><div class="info ">
-<div class="info-desc">
-<p>Unparses an attribute to a couple <code class="code">(name,&nbsp;content)</code> where <code class="code">name</code>
+Unparses an attribute to a couple <code class="code">(name,&nbsp;content)</code> where <code class="code">name</code>
     is the code-name of the attribute and <code class="code">content</code> as encoded in a
-    <code class="code">.<span class="keyword">class</span></code> file.</p>
-</div>
+    <code class="code">.<span class="keyword">class</span></code> file.<br>
 </div>
 </body></html>

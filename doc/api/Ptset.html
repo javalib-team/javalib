@@ -43,20 +43,21 @@
 </div>
 <h1>Module <a href="type_Ptset.html">Ptset</a></h1>
 
-<pre><span id="MODULEPtset"><span class="keyword">module</span> Ptset</span>: <code class="code"><span class="keyword">sig</span></code> <a href="Ptset.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-<div class="info-desc">
-<p>Sets of integers implemented as Patricia trees.</p>
+<pre><span class="keyword">module</span> Ptset: <code class="code"><span class="keyword">sig</span></code> <a href="Ptset.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Sets of integers implemented as Patricia trees.
+<p>
 
-<p>This implementation follows Chris Okasaki and Andrew Gill's paper
-    <em>Fast Mergeable Integer Maps</em>.</p>
+    This implementation follows Chris Okasaki and Andrew Gill's paper
+    <em>Fast Mergeable Integer Maps</em>.
+<p>
 
-<p>Patricia trees provide faster operations than standard library's
+    Patricia trees provide faster operations than standard library's
     module <code class="code"><span class="constructor">Set</span></code>, and especially very fast <code class="code">union</code>, <code class="code">subset</code>, <code class="code">inter</code>
-    and <code class="code">diff</code> operations.</p>
-</div>
+    and <code class="code">diff</code> operations.<br>
 </div>
 <hr width="100%">
-<p>The idea behind Patricia trees is to build a <em>trie</em> on the
+<br>
+The idea behind Patricia trees is to build a <em>trie</em> on the
     binary digits of the elements, and to compact the representation
     by branching only one the relevant bits (i.e. the ones for which
     there is at least on element in each subtree). We implement here
@@ -68,20 +69,23 @@
     the prefix (from the root of the trie) and <code class="code">m</code> is the branching
     bit (a power of 2). <code class="code">l</code> and <code class="code">r</code> contain the subsets for which the
     branching bit is respectively 0 and 1. Invariant: the trees <code class="code">l</code>
-    and <code class="code">r</code> are not empty.</p>
-<p>The docuemntation is given for function that differs from <code class="code"><span class="constructor">Set</span>.<span class="constructor">S</span><br>
-&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;elt&nbsp;=&nbsp;int</code>.</p>
+    and <code class="code">r</code> are not empty.<br>
+<br>
+The docuemntation is given for function that differs from <code class="code"><span class="constructor">Set</span>.<span class="constructor">S</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;elt&nbsp;=&nbsp;int</code>.<br>
 
-<pre><span id="MODULETYPES"><span class="keyword">module type</span> <a href="Ptset.S.html">S</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptset.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span class="keyword">module type</span> <a href="Ptset.S.html">S</a> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptset.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
 <pre><span class="keyword">include</span> <a href="Ptset.S.html">Ptset.S</a></pre>
-<p>Big-endian Patricia trees</p>
+<br>
+Big-endian Patricia trees<br>
 
-<pre><span id="MODULEBig"><span class="keyword">module</span> <a href="Ptset.Big.html">Big</a></span>: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre><p>Big-endian Patricia trees with non-negative elements. Changes:</p>
-<ul>
+<pre><span class="keyword">module</span> <a href="Ptset.Big.html">Big</a>: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre><br>
+Big-endian Patricia trees with non-negative elements. Changes:<ul>
 <li><code class="code">add</code> and <code class="code">singleton</code> raise <code class="code"><span class="constructor">Invalid_arg</span></code> if a negative element is given</li>
 <li><code class="code">mem</code> is slightly faster (the Patricia tree is now a search tree)</li>
 <li><code class="code">min_elt</code> and <code class="code">max_elt</code> are now O(log(N))</li>
 <li><code class="code">elements</code> returns a list with elements in ascending order</li>
 </ul>
+<br>
 
-<pre><span id="MODULEBigPos"><span class="keyword">module</span> <a href="Ptset.BigPos.html">BigPos</a></span>: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre></body></html>
+<pre><span class="keyword">module</span> <a href="Ptset.BigPos.html">BigPos</a>: <code class="type"><a href="Ptset.S.html">S</a></code><code class="type"> </code></pre></body></html>

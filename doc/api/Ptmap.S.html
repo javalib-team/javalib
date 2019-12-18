@@ -41,7 +41,7 @@
 &nbsp;</div>
 <h1>Module type <a href="type_Ptmap.S.html">Ptmap.S</a></h1>
 
-<pre><span id="MODULETYPES"><span class="keyword">module type</span> S</span> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
+<pre><span class="keyword">module type</span> S = <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><hr width="100%">
 
 <pre><span id="TYPEt"><span class="keyword">type</span> <code class="type">+'a</code> t</span> </pre>
 
@@ -52,25 +52,19 @@
 <pre><span id="VALempty"><span class="keyword">val</span> empty</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALis_empty"><span class="keyword">val</span> is_empty</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> bool</code></pre>
 <pre><span id="VALadd"><span class="keyword">val</span> add</span> : <code class="type">?merge:('a -> 'a -> 'a) -> int -> 'a -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">add&nbsp;~merge:f&nbsp;k&nbsp;d&nbsp;m</code> returns a map containing the same bindings as
+<code class="code">add&nbsp;~merge:f&nbsp;k&nbsp;d&nbsp;m</code> returns a map containing the same bindings as
       <code class="code">m</code>, plus a binding of <code class="code">k</code> to <code class="code">d</code>.  If <code class="code">k</code> was already bound to
       <code class="code">d'</code> in <code class="code">m</code>, then the value <code class="code">f&nbsp;d'&nbsp;d</code> is added instead of <code class="code">d</code>.  If
       no merge function is specified, then the previous bindings is
-      simply discard.</p>
-</div>
+      simply discard.<br>
 </div>
 
 <pre><span id="VALmodify"><span class="keyword">val</span> modify</span> : <code class="type">int -> ('a option -> 'a) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALfind"><span class="keyword">val</span> find</span> : <code class="type">int -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a</code></pre>
 <pre><span id="VALfindi_element"><span class="keyword">val</span> findi_element</span> : <code class="type">(int -> 'a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> int * 'a</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">findi_element&nbsp;f&nbsp;t</code> returns the first couple (index,element) in map <code class="code">t</code> for which <code class="code">f&nbsp;ind&nbsp;elt</code>, with <code class="code">ind</code> an index and <code class="code">elt</code> the corresponding element, returns true.</p>
-</div>
-<ul class="info-attributes">
-<li><b>Raises</b> <code>Not_found</code> if <code class="code">t</code> is empty or if <code class="code">f</code> returns false for all
-    elements.</li>
-</ul>
+<code class="code">findi_element&nbsp;f&nbsp;t</code> returns the first couple (index,element) in map <code class="code">t</code> for which <code class="code">f&nbsp;ind&nbsp;elt</code>, with <code class="code">ind</code> an index and <code class="code">elt</code> the corresponding element, returns true.<br>
+<b>Raises</b> <code>Not_found</code> if <code class="code">t</code> is empty or if <code class="code">f</code> returns false for all
+    elements.<br>
 </div>
 
 <pre><span id="VALfind_element"><span class="keyword">val</span> find_element</span> : <code class="type">('a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a</code></pre>
@@ -83,59 +77,45 @@
 <pre><span id="VALcompare"><span class="keyword">val</span> compare</span> : <code class="type">('a -> 'a -> int) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> int</code></pre>
 <pre><span id="VALequal"><span class="keyword">val</span> equal</span> : <code class="type">('a -> 'a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> bool</code></pre>
 <pre><span id="VALmerge"><span class="keyword">val</span> merge</span> : <code class="type">('a -> 'a -> 'a) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">merge&nbsp;f&nbsp;m1&nbsp;m2</code> returns a map that binds every key <code class="code">k</code> that is
+<code class="code">merge&nbsp;f&nbsp;m1&nbsp;m2</code> returns a map that binds every key <code class="code">k</code> that is
 			either bound in <code class="code">m1</code> or/and in <code class="code">m2</code>. 
 			If <code class="code">k</code> was bound to <code class="code">d1</code> in <code class="code">m1</code> and <code class="code">d2</code> in <code class="code">m2</code>, it is now bound to <code class="code">f&nbsp;d1&nbsp;d2</code>. 
 			If <code class="code">k</code> was bound to <code class="code">d1</code> in <code class="code">m1</code> but is not bound in <code class="code">m2</code>, it is still
 			bound to <code class="code">d1</code>.
 			If <code class="code">k</code> was bound to <code class="code">d2</code> in <code class="code">m2</code> but is not bound in <code class="code">m1</code>, it is still
 			bound to <code class="code">d2</code>.
-			Precondition on <code class="code">f</code>: if <code class="code">d1</code> equals <code class="code">d2</code>, <code class="code">f&nbsp;d1&nbsp;d2</code> is supposed to return <code class="code">d1</code>.</p>
-</div>
+			Precondition on <code class="code">f</code>: if <code class="code">d1</code> equals <code class="code">d2</code>, <code class="code">f&nbsp;d1&nbsp;d2</code> is supposed to return <code class="code">d1</code>.<br>
 </div>
 
 <pre><span id="VALmerge_first"><span class="keyword">val</span> merge_first</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">merge_first&nbsp;m1&nbsp;m2</code> is the same as <code class="code">merge&nbsp;(<span class="keyword">fun</span>&nbsp;a&nbsp;_&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;a)&nbsp;m1&nbsp;m2</code> but it
-      reuses more data from the first map.</p>
-</div>
+<code class="code">merge_first&nbsp;m1&nbsp;m2</code> is the same as <code class="code">merge&nbsp;(<span class="keyword">fun</span>&nbsp;a&nbsp;_&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;a)&nbsp;m1&nbsp;m2</code> but it
+      reuses more data from the first map.<br>
 </div>
 
 <pre><span id="VALdiff"><span class="keyword">val</span> diff</span> : <code class="type">('a -> 'a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALchoose_and_remove"><span class="keyword">val</span> choose_and_remove</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> int * 'a * 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">choose_and_remove&nbsp;t</code> returns (i,d,t') such that <code class="code">t'</code> equals to
-      <code class="code">remove&nbsp;i&nbsp;t</code> and <code class="code">d</code> equals to <code class="code">find&nbsp;i&nbsp;t</code>.</p>
-</div>
-<ul class="info-attributes">
-<li><b>Author(s):</b> Laurent Hubert</li>
-<li><b>Raises</b> <code>Not_found</code> if <code class="code">t</code> is empty.</li>
-</ul>
+<code class="code">choose_and_remove&nbsp;t</code> returns (i,d,t') such that <code class="code">t'</code> equals to
+      <code class="code">remove&nbsp;i&nbsp;t</code> and <code class="code">d</code> equals to <code class="code">find&nbsp;i&nbsp;t</code>.<br>
+<b>Author(s):</b> Laurent Hubert<br>
+<b>Raises</b> <code>Not_found</code> if <code class="code">t</code> is empty.<br>
 </div>
 
 <pre><span id="VALinter"><span class="keyword">val</span> inter</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">inter&nbsp;m1&nbsp;m2</code> returns a map with all the bindings <code class="code">(k,d)</code> of <code class="code">m1</code> such
-      that <code class="code">mem&nbsp;k&nbsp;m2</code>.</p>
-</div>
+<code class="code">inter&nbsp;m1&nbsp;m2</code> returns a map with all the bindings <code class="code">(k,d)</code> of <code class="code">m1</code> such
+      that <code class="code">mem&nbsp;k&nbsp;m2</code>.<br>
 </div>
 
 <pre><span id="VALinter_map2"><span class="keyword">val</span> inter_map2</span> : <code class="type">('a -> 'a -> 'a) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALkeys_subset"><span class="keyword">val</span> keys_subset</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">keys_subset&nbsp;m1&nbsp;m2</code> returns <code class="code"><span class="keyword">true</span></code> if the set of keys in <code class="code">m1</code> is a subset of
-      the set of keys in <code class="code">m2</code>, <code class="code"><span class="keyword">false</span></code> otherwise.</p>
-</div>
+<code class="code">keys_subset&nbsp;m1&nbsp;m2</code> returns <code class="code"><span class="keyword">true</span></code> if the set of keys in <code class="code">m1</code> is a subset of
+      the set of keys in <code class="code">m2</code>, <code class="code"><span class="keyword">false</span></code> otherwise.<br>
 </div>
 
 <pre><span id="VALsubset"><span class="keyword">val</span> subset</span> : <code class="type">('a -> 'a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> bool</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">subset&nbsp;sub&nbsp;m1&nbsp;m2</code> returns <code class="code"><span class="keyword">true</span></code> if the set of keys in <code class="code">m1</code> is a subset of
+<code class="code">subset&nbsp;sub&nbsp;m1&nbsp;m2</code> returns <code class="code"><span class="keyword">true</span></code> if the set of keys in <code class="code">m1</code> is a subset of
       the set of keys in <code class="code">m2</code>, and if for all value <code class="code">v1</code> in <code class="code">m1</code>, and <code class="code">v2</code> in <code class="code">m2</code>,
       at the same position, <code class="code">sub&nbsp;v1&nbsp;v2=<span class="keyword">true</span></code> holds,
-      <code class="code"><span class="keyword">false</span></code> otherwise.</p>
-</div>
+      <code class="code"><span class="keyword">false</span></code> otherwise.<br>
 </div>
 
 <pre><span id="VALcardinal"><span class="keyword">val</span> cardinal</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> int</code></pre>
@@ -145,8 +125,6 @@
 <pre><span id="VALfilter_map"><span class="keyword">val</span> filter_map</span> : <code class="type">('a -> 'b option) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'b <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALpartition"><span class="keyword">val</span> partition</span> : <code class="type">('a -> bool) -> 'a <a href="Ptmap.S.html#TYPEt">t</a> -> 'a <a href="Ptmap.S.html#TYPEt">t</a> * 'a <a href="Ptmap.S.html#TYPEt">t</a></code></pre>
 <pre><span id="VALelements"><span class="keyword">val</span> elements</span> : <code class="type">'a <a href="Ptmap.S.html#TYPEt">t</a> -> (int * 'a) list</code></pre><div class="info ">
-<div class="info-desc">
-<p><code class="code">elements&nbsp;m</code> return the unsorted list of bindings of <code class="code">m</code>.</p>
-</div>
+<code class="code">elements&nbsp;m</code> return the unsorted list of bindings of <code class="code">m</code>.<br>
 </div>
 </body></html>

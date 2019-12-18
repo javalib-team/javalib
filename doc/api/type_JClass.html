@@ -77,7 +77,7 @@
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;any_field&nbsp;=<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">InterfaceField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JClass</span>.interface_field<br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">ClassField</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="constructor">JClass</span>.class_field<br>
-&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;implementation&nbsp;=&nbsp;<span class="constructor">Native</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Java</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Stdlib</span>.<span class="constructor">Lazy</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;implementation&nbsp;=&nbsp;<span class="constructor">Native</span>&nbsp;<span class="keywordsign">|</span>&nbsp;<span class="constructor">Java</span>&nbsp;<span class="keyword">of</span>&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">Lazy</span>.t<br>
 &nbsp;&nbsp;<span class="keyword">type</span>&nbsp;method_annotations&nbsp;=&nbsp;{<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ma_global&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list;<br>
 &nbsp;&nbsp;&nbsp;&nbsp;ma_parameters&nbsp;:&nbsp;(<span class="constructor">JBasics</span>.annotation&nbsp;*&nbsp;<span class="constructor">JClass</span>.visibility)&nbsp;list&nbsp;list;<br>
@@ -307,4 +307,22 @@
 &nbsp;&nbsp;&nbsp;&nbsp;(<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.concrete_method&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.implementation&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">JClass</span>.implementation)&nbsp;<span class="keywordsign">-&gt;</span><br>
 &nbsp;&nbsp;&nbsp;&nbsp;<span class="keywordsign">'</span>a&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="keywordsign">'</span>b&nbsp;<span class="constructor">JClass</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;remove_invokedynamic&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;prefix:string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;remove_invokedynamics_in_method&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;prefix:string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">ClassMap</span>.t<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;remove_invokedynamics&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;prefix:string&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;*<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="constructor">JClass</span>.interface_or_class&nbsp;<span class="constructor">JBasics</span>.<span class="constructor">ClassMap</span>.t<br>
 <span class="keyword">end</span></code></body></html>

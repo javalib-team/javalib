@@ -154,4 +154,18 @@
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_source_line_number'&nbsp;:&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(int&nbsp;*&nbsp;int)&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;option<br>
 &nbsp;&nbsp;<span class="keyword">val</span>&nbsp;get_local_variable_info&nbsp;:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;(string&nbsp;*&nbsp;<span class="constructor">JBasics</span>.value_type)&nbsp;option<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;replace_code&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?update_max_stack:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;insert_code&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;?update_max_stack:bool&nbsp;<span class="keywordsign">-&gt;</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JCode</span>.jcode&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;int&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jopcode&nbsp;list&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.jcode<br>
+&nbsp;&nbsp;<span class="keyword">type</span>&nbsp;lambda_info&nbsp;=&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;functional_interface&nbsp;:&nbsp;<span class="constructor">JBasics</span>.class_method_signature;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;captured_arguments&nbsp;:&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;checkcast_arguments&nbsp;:&nbsp;<span class="constructor">JBasics</span>.value_type&nbsp;list;<br>
+&nbsp;&nbsp;&nbsp;&nbsp;lambda_handle&nbsp;:&nbsp;<span class="constructor">JBasics</span>.method_handle;<br>
+&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;<span class="keyword">val</span>&nbsp;build_lambda_info&nbsp;:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<span class="constructor">JBasics</span>.bootstrap_method&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JBasics</span>.method_signature&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;<span class="constructor">JCode</span>.lambda_info<br>
 <span class="keyword">end</span></code></body></html>

@@ -45,13 +45,12 @@
 </div>
 <h1>Module <a href="type_JManifest.html">JManifest</a></h1>
 
-<pre><span id="MODULEJManifest"><span class="keyword">module</span> JManifest</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JManifest.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-<div class="info-desc">
-<p>Accessing meta-information in jar files.</p>
-</div>
+<pre><span class="keyword">module</span> JManifest: <code class="code"><span class="keyword">sig</span></code> <a href="JManifest.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+Accessing meta-information in jar files.<br>
 </div>
 <hr width="100%">
-<p>The type of manifest files:</p>
+<br>
+The type of manifest files:<br>
 
 <pre><code><span id="TYPEmain_section"><span class="keyword">type</span> <code class="type"></code>main_section</span> = {</code></pre><table class="typetable">
 <tr>
@@ -111,29 +110,22 @@
 
 
 <pre><span id="VALjar2manifest"><span class="keyword">val</span> jar2manifest</span> : <code class="type">string -> <a href="JManifest.html#TYPEmanifest">manifest</a></code></pre><div class="info ">
-<div class="info-desc">
-<p>Read a manifest from a jar file (which must end with .jar).</p>
-</div>
+Read a manifest from a jar file (which must end with .jar).<br>
 </div>
 
 <pre><span id="VALmidlet_main_class"><span class="keyword">val</span> midlet_main_class</span> : <code class="type"><a href="JManifest.html#TYPEmanifest">manifest</a> -> string</code></pre><div class="info ">
-<div class="info-desc">
-<p>Get a midlet's main class from the MIDlet-1 attribute of its manifest.</p>
+Get a midlet's main class from the MIDlet-1 attribute of its manifest.<br>
 </div>
-</div>
-<p>Other functions</p>
+<br>
+Other functions<br>
 
-<pre><span id="VALsections"><span class="keyword">val</span> sections</span> : <code class="type">Stdlib.Lexing.lexbuf -> (string * string) list list</code></pre><div class="info ">
-<div class="info-desc">
-<p>Read a list of sections. This function may be used for reading
+<pre><span id="VALsections"><span class="keyword">val</span> sections</span> : <code class="type">Lexing.lexbuf -> (string * string) list list</code></pre><div class="info ">
+Read a list of sections. This function may be used for reading
     various files from the META-INF directory of a jar file, including
-    the MANIFEST.MF file</p>
-</div>
+    the MANIFEST.MF file<br>
 </div>
 
 <pre><span id="VALsections2manifest"><span class="keyword">val</span> sections2manifest</span> : <code class="type">(string * string) list list -> <a href="JManifest.html#TYPEmanifest">manifest</a></code></pre><div class="info ">
-<div class="info-desc">
-<p>Interpret a list of section as a manifest.</p>
-</div>
+Interpret a list of section as a manifest.<br>
 </div>
 </body></html>
