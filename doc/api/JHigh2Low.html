@@ -45,17 +45,20 @@
 </div>
 <h1>Module <a href="type_JHigh2Low.html">JHigh2Low</a></h1>
 
-<pre><span class="keyword">module</span> JHigh2Low: <code class="code"><span class="keyword">sig</span></code> <a href="JHigh2Low.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-Tranformation of high level classes to low level classes.<br>
+<pre><span id="MODULEJHigh2Low"><span class="keyword">module</span> JHigh2Low</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JHigh2Low.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Tranformation of high level classes to low level classes.</p>
+</div>
 </div>
 <hr width="100%">
 
 <pre><span id="VALhigh2low"><span class="keyword">val</span> high2low</span> : <code class="type"><a href="JCode.html#TYPEjcode">JCode.jcode</a> <a href="JClass.html#TYPEinterface_or_class">JClass.interface_or_class</a> -> <a href="JClassLow.html#TYPEjclass">JClassLow.jclass</a></code></pre><div class="info ">
-Convert a high level class to a lower level class.<br>
+<div class="info-desc">
+<p>Convert a high level class to a lower level class.</p>
 </div>
-<br>
-h2l_* functions are used in the JDump module so functions of
-    JDumpLow can be used.<br>
+</div>
+<p>h2l_* functions are used in the JDump module so functions of
+    JDumpLow can be used.</p>
 
 <pre><span id="VALh2l_cfield"><span class="keyword">val</span> h2l_cfield</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JClass.html#TYPEclass_field">JClass.class_field</a> -> <a href="JClassLow.html#TYPEjfield">JClassLow.jfield</a></code></pre>
 <pre><span id="VALh2l_ifield"><span class="keyword">val</span> h2l_ifield</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -><br>       <a href="JClass.html#TYPEinterface_field">JClass.interface_field</a> -> <a href="JClassLow.html#TYPEjfield">JClassLow.jfield</a></code></pre>

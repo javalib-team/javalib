@@ -49,13 +49,13 @@
 </div>
 <h1>Module <a href="type_JCode.html">JCode</a></h1>
 
-<pre><span class="keyword">module</span> JCode: <code class="code"><span class="keyword">sig</span></code> <a href="JCode.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-High level Ocaml representation of JVM opcodes.<br>
+<pre><span id="MODULEJCode"><span class="keyword">module</span> JCode</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JCode.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>High level Ocaml representation of JVM opcodes.</p>
+</div>
 </div>
 <hr width="100%">
-<br>
-<h1 id="1_Bytecodeinstructions">Bytecode instructions.</h1><br>
-
+<h2 id="1_Bytecodeinstructions">Bytecode instructions.</h2>
 <pre><span id="TYPEjconst"><span class="keyword">type</span> <code class="type"></code>jconst</span> = <code class="type">[ `ANull<br>       | `Byte of int<br>       | `Class of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a><br>       | `Double of float<br>       | `Float of float<br>       | `Int of int32<br>       | `Long of int64<br>       | `MethodHandle of <a href="JBasics.html#TYPEmethod_handle">JBasics.method_handle</a><br>       | `MethodType of <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a><br>       | `Short of int<br>       | `String of <a href="JBasics.html#TYPEjstr">JBasics.jstr</a> ]</code> </pre>
 
 
@@ -83,7 +83,9 @@ High level Ocaml representation of JVM opcodes.<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjopcode.OpIInc"><span class="constructor">OpIInc</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-index, increment<br>
+<div class="info-desc">
+<p>index, increment</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -436,7 +438,9 @@ index, increment<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjopcode.OpTableSwitch"><span class="constructor">OpTableSwitch</span></span> <span class="keyword">of</span> <code class="type">int * int32 * int32 * int array</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-(default,low,high,jump offsets)<br>
+<div class="info-desc">
+<p>(default,low,high,jump offsets)</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -446,7 +450,9 @@ index, increment<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjopcode.OpLookupSwitch"><span class="constructor">OpLookupSwitch</span></span> <span class="keyword">of</span> <code class="type">int * (int32 * int) list</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-(default, (match,offset) list)<br>
+<div class="info-desc">
+<p>(default, (match,offset) list)</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -470,7 +476,9 @@ index, increment<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjopcode.OpAMultiNewArray"><span class="constructor">OpAMultiNewArray</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> * int</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-ClassInfo, dims<br>
+<div class="info-desc">
+<p>ClassInfo, dims</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -592,14 +600,16 @@ ClassInfo, dims<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjopcode.OpInvalid"><span class="constructor">OpInvalid</span></span></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-if <code class="code">opcodes.(i)&nbsp;=&nbsp;<span class="constructor">OpInvalid</span></code> it means that there is an opcode that
+<div class="info-desc">
+<p>if <code class="code">opcodes.(i)&nbsp;=&nbsp;<span class="constructor">OpInvalid</span></code> it means that there is an opcode that
           starts at position j, with j&lt;i, an covers positions up to k, with
           k&gt;=i.  If an opcode array is forged, the number of OpInvalid plus one
           must match the number of bytes on which the preceding instruction must
           be encoded. E.g. <code class="code">[|<span class="constructor">OpLoad</span>&nbsp;(<span class="keywordsign">`</span><span class="constructor">Int2Bool</span>,1);&nbsp;<span class="constructor">OpInvalid</span>|]</code> is encoded as
           an <code class="code">iload&nbsp;0X01</code>; <code class="code">[|<span class="constructor">OpLoad</span>&nbsp;(<span class="keywordsign">`</span><span class="constructor">Int2Bool</span>,1)|]</code> is encoded as an <code class="code">iload_1</code>;
           <code class="code">[|<span class="constructor">OpLoad</span>&nbsp;(<span class="keywordsign">`</span><span class="constructor">Int2Bool</span>,1);&nbsp;<span class="constructor">OpInvalid</span>;&nbsp;<span class="constructor">OpInvalid</span>;&nbsp;<span class="constructor">OpInvalid</span>|]</code> is encoded
-          as an <code class="code">wide;iload&nbsp;0x0001</code>.<br>
+          as an <code class="code">wide;iload&nbsp;0x0001</code>.</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
@@ -641,11 +651,12 @@ if <code class="code">opcodes.(i)&nbsp;=&nbsp;<span class="constructor">OpInvali
 }
 
 <div class="info ">
-Exception handler.<br>
+<div class="info-desc">
+<p>Exception handler.</p>
+</div>
 </div>
 
-<br>
-High level representation of code.<br>
+<p>High level representation of code.</p>
 
 <pre><code><span id="TYPEjcode"><span class="keyword">type</span> <code class="type"></code>jcode</span> = {</code></pre><table class="typetable">
 <tr>
@@ -675,7 +686,9 @@ High level representation of code.<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTjcode.c_exc_tbl">c_exc_tbl</span>&nbsp;: <code class="type"><a href="JCode.html#TYPEexception_handler">exception_handler</a> list</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10).<br>
+<div class="info-desc">
+<p>The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10).</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -685,7 +698,9 @@ The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10)
 <td align="left" valign="top" >
 <code><span id="TYPEELTjcode.c_line_number_table">c_line_number_table</span>&nbsp;: <code class="type">(int * int) list option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-(start_pc, line_number)<br>
+<div class="info-desc">
+<p>(start_pc, line_number)</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -695,7 +710,9 @@ The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10)
 <td align="left" valign="top" >
 <code><span id="TYPEELTjcode.c_local_variable_table">c_local_variable_table</span>&nbsp;: <code class="type">(int * int * string * <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> * int) list option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-(start_pc, length, name, type, index)<br>
+<div class="info-desc">
+<p>(start_pc, length, name, type, index)</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -705,7 +722,9 @@ The list is ordered in the same way as in the bytecode (See JVM Spec se8 §2.10)
 <td align="left" valign="top" >
 <code><span id="TYPEELTjcode.c_local_variable_type_table">c_local_variable_type_table</span>&nbsp;: <code class="type">(int * int * string * <a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> * int) list option</code>;</code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14<br>
+<div class="info-desc">
+<p>LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -726,62 +745,70 @@ LocalVariableTable for generics, described in the JVM Spec se8, §4.7.14<br>
 }
 
 <div class="info ">
-Code structure.<br>
+<div class="info-desc">
+<p>Code structure.</p>
+</div>
 </div>
 
 
 <pre><span id="VALempty"><span class="keyword">val</span> empty</span> : <code class="type"><a href="JCode.html#TYPEjcode">jcode</a></code></pre><div class="info ">
-Empty list of opcodes<br>
+<div class="info-desc">
+<p>Empty list of opcodes</p>
 </div>
-<br>
-<h1 id="1_Accessfunctions">Access functions.</h1><br>
-
+</div>
+<h2 id="1_Accessfunctions">Access functions.</h2>
 <pre><span id="VALget_source_line_number"><span class="keyword">val</span> get_source_line_number</span> : <code class="type">int -> <a href="JCode.html#TYPEjcode">jcode</a> -> int option</code></pre><div class="info ">
-<code class="code">get_source_line_number&nbsp;pp&nbsp;m</code> returns the source line number corresponding
+<div class="info-desc">
+<p><code class="code">get_source_line_number&nbsp;pp&nbsp;m</code> returns the source line number corresponding
     to the program point <code class="code">pp</code> of the method code <code class="code">m</code>.  The line number give a
     rough idea and may be wrong. It uses the attribute LineNumberTable
-    (cf. JVM Spec se8 §4.7.12).<br>
+    (cf. JVM Spec se8 §4.7.12).</p>
+</div>
 </div>
 
 <pre><span id="VALget_source_line_number'"><span class="keyword">val</span> get_source_line_number'</span> : <code class="type">int -> (int * int) list -> int option</code></pre><div class="info ">
-<code class="code">get_source_line_number&nbsp;pp&nbsp;lnt</code> returns the source line number corresponding
+<div class="info-desc">
+<p><code class="code">get_source_line_number&nbsp;pp&nbsp;lnt</code> returns the source line number corresponding
     to the program point <code class="code">pp</code> given the LineNumberTable attribute <code class="code">lnt</code>. The
     line number give a rough idea and may be wrong. It uses the attribute
-    LineNumberTable (cf. JVM Spec se8 §4.7.12).<br>
+    LineNumberTable (cf. JVM Spec se8 §4.7.12).</p>
+</div>
 </div>
 
 <pre><span id="VALget_local_variable_info"><span class="keyword">val</span> get_local_variable_info</span> : <code class="type">int -> int -> <a href="JCode.html#TYPEjcode">jcode</a> -> (string * <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a>) option</code></pre><div class="info ">
-<code class="code">get_local_variable_info&nbsp;i&nbsp;pp&nbsp;m</code> returns the name and signature of
+<div class="info-desc">
+<p><code class="code">get_local_variable_info&nbsp;i&nbsp;pp&nbsp;m</code> returns the name and signature of
     the local variable <code class="code">i</code> at program point <code class="code">pp</code> in the method code
     <code class="code">m</code> (including the <code class="code">pp</code> of the first assignement of <code class="code">i</code>, it's not
     the case in <code class="code">c_local_variable_table</code>), if they are defined in the
     local variable table (The bytecode needs to be compiled with the
-    -g option). Otherwise the value <code class="code"><span class="constructor">None</span></code> is returned.<br>
+    -g option). Otherwise the value <code class="code"><span class="constructor">None</span></code> is returned.</p>
 </div>
-<br>
-<h1 id="1_Codemodificationfunctions">Code modification functions.</h1><br>
-
+</div>
+<h2 id="1_Codemodificationfunctions">Code modification functions.</h2>
 <pre><span id="VALreplace_code"><span class="keyword">val</span> replace_code</span> : <code class="type">?update_max_stack:bool -><br>       <a href="JCode.html#TYPEjcode">jcode</a> -> int -> <a href="JCode.html#TYPEjopcode">jopcode</a> list -> <a href="JCode.html#TYPEjcode">jcode</a></code></pre><div class="info ">
-<code class="code">replace_code&nbsp;code&nbsp;pp&nbsp;l</code> replaces the opcode present at program
+<div class="info-desc">
+<p><code class="code">replace_code&nbsp;code&nbsp;pp&nbsp;l</code> replaces the opcode present at program
    point <code class="code">pp</code> in the <code class="code">code</code> with the instructions contained in <code class="code">l</code>.
    For consistency, the program point <code class="code">pp</code> must not refer to an
    <code class="code"><span class="constructor">OpInvalid</span></code> instruction, and the list of instructions <code class="code">l</code> should
    contain a correct number of <code class="code"><span class="constructor">OpInvalid</span></code> after each core instruction
    in order to fulfill a correct line numbering of the generated
-   bytecode.<br>
+   bytecode.</p>
+</div>
 </div>
 
 <pre><span id="VALinsert_code"><span class="keyword">val</span> insert_code</span> : <code class="type">?update_max_stack:bool -><br>       <a href="JCode.html#TYPEjcode">jcode</a> -> int -> <a href="JCode.html#TYPEjopcode">jopcode</a> list -> <a href="JCode.html#TYPEjcode">jcode</a></code></pre><div class="info ">
-<code class="code">insert_code&nbsp;code&nbsp;pp&nbsp;l</code> insert the the instructions contained in
+<div class="info-desc">
+<p><code class="code">insert_code&nbsp;code&nbsp;pp&nbsp;l</code> insert the the instructions contained in
    <code class="code">l</code> at program point <code class="code">pp</code> in the <code class="code">code</code>. For consistency, the
    program point <code class="code">pp</code> must not refer to an <code class="code"><span class="constructor">OpInvalid</span></code> instruction,
    and the list of instructions <code class="code">l</code> should contain a correct number of
    <code class="code"><span class="constructor">OpInvalid</span></code> after each core instruction in order to fulfill a
-   correct line numbering of the generated bytecode.<br>
+   correct line numbering of the generated bytecode.</p>
 </div>
-<br>
-<h1 id="1_Lambdamanipulation">Lambda manipulation.</h1><br>
-
+</div>
+<h2 id="1_Lambdamanipulation">Lambda manipulation.</h2>
 <pre><code><span id="TYPElambda_info"><span class="keyword">type</span> <code class="type"></code>lambda_info</span> = {</code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -816,8 +843,10 @@ Empty list of opcodes<br>
 
 
 <pre><span id="VALbuild_lambda_info"><span class="keyword">val</span> build_lambda_info</span> : <code class="type"><a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> -> <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> -> <a href="JCode.html#TYPElambda_info">lambda_info</a></code></pre><div class="info ">
-<code class="code">build_lambda_info&nbsp;bm&nbsp;ms</code> builds an information caracterizing the
+<div class="info-desc">
+<p><code class="code">build_lambda_info&nbsp;bm&nbsp;ms</code> builds an information caracterizing the
    construction of the lambda expression referenced by the opcode
-   <code class="code"><span class="constructor">OpInvoke</span>&nbsp;(<span class="keywordsign">`</span><span class="constructor">Dynamic</span>&nbsp;bm,&nbsp;ms)</code>.<br>
+   <code class="code"><span class="constructor">OpInvoke</span>&nbsp;(<span class="keywordsign">`</span><span class="constructor">Dynamic</span>&nbsp;bm,&nbsp;ms)</code>.</p>
+</div>
 </div>
 </body></html>

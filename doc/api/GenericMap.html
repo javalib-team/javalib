@@ -45,21 +45,25 @@
 </div>
 <h1>Module <a href="type_GenericMap.html">GenericMap</a></h1>
 
-<pre><span class="keyword">module</span> GenericMap: <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-Provide a way to create GenericMap from a module specifying how to hash.<br>
+<pre><span id="MODULEGenericMap"><span class="keyword">module</span> GenericMap</span>: <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Provide a way to create GenericMap from a module specifying how to hash.</p>
+</div>
 </div>
 <hr width="100%">
 
-<pre><span class="keyword">module type</span> <a href="GenericMap.S.html">S</a> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-This module type must be implemented to obtain an instantiated GenericMap.
+<pre><span id="MODULETYPES"><span class="keyword">module type</span> <a href="GenericMap.S.html">S</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+<p>This module type must be implemented to obtain an instantiated GenericMap.</p>
+
 </div>
 
-<pre><span class="keyword">module type</span> <a href="GenericMap.GenericMapSig.html">GenericMapSig</a> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.GenericMapSig.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
-Common signature of map modules based on Ptrees library.
+<pre><span id="MODULETYPEGenericMapSig"><span class="keyword">module type</span> <a href="GenericMap.GenericMapSig.html">GenericMapSig</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.GenericMapSig.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info">
+<p>Common signature of map modules based on Ptrees library.</p>
+
 </div>
 
-<pre><span class="keyword">module</span> <a href="GenericMap.Make.html">Make</a>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">El</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericMap.S.html">S</a></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="type"><a href="GenericMap.GenericMapSig.html">GenericMapSig</a></code><code class="type">  with type key = El.t</code></div></pre>
-<pre><span class="keyword">module</span> <a href="GenericMap.MaptoSet.html">MaptoSet</a>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">S</span></code><code class="code">&nbsp;:&nbsp;</code><code class="code"><span class="keyword">sig</span></code><div class="sig_block">
+<pre><span id="MODULEMake"><span class="keyword">module</span> <a href="GenericMap.Make.html">Make</a></span>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">El</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericMap.S.html">S</a></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="type"><a href="GenericMap.GenericMapSig.html">GenericMapSig</a></code><code class="type">  with type key = El.t</code></div></pre>
+<pre><span id="MODULEMaptoSet"><span class="keyword">module</span> <a href="GenericMap.MaptoSet.html">MaptoSet</a></span>: <div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">S</span></code><code class="code">&nbsp;:&nbsp;</code><code class="code"><span class="keyword">sig</span></code></pre><div class="sig_block">
 <pre><span id="TYPEt"><span class="keyword">type</span> <code class="type"></code>t</span> </pre>
 
-</div><code class="code"><span class="keyword">end</span></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">GMap</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericMap.GenericMapSig.html">GenericMapSig</a></code><code class="type">  with type key = S.t</code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">GSet</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = S.t</code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.MaptoSet.html">..</a> <code class="code"><span class="keyword">end</span></code></div></div></div></pre></body></html>
+</div><pre><code class="code"><span class="keyword">end</span></code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">GMap</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericMap.GenericMapSig.html">GenericMapSig</a></code><code class="type">  with type key = S.t</code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><div class="sig_block"><code class="code"><span class="keyword">functor</span>&nbsp;(</code><code class="code"><span class="constructor">GSet</span></code><code class="code">&nbsp;:&nbsp;</code><code class="type"><a href="GenericSet.GenericSetSig.html">GenericSet.GenericSetSig</a></code><code class="type">  with type elt = S.t</code><code class="code">)&nbsp;<span class="keywordsign">-&gt;</span>&nbsp;</code><code class="code"><span class="keyword">sig</span></code> <a href="GenericMap.MaptoSet.html">..</a> <code class="code"><span class="keyword">end</span></code></div></div></div></pre></body></html>

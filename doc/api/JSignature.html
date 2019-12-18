@@ -47,15 +47,15 @@
 </div>
 <h1>Module <a href="type_JSignature.html">JSignature</a></h1>
 
-<pre><span class="keyword">module</span> JSignature: <code class="code"><span class="keyword">sig</span></code> <a href="JSignature.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-This module describe the signatures used with generics. It defines
+<pre><span id="MODULEJSignature"><span class="keyword">module</span> JSignature</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JSignature.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>This module describe the signatures used with generics. It defines
     the data types used to represent information extracted from the
-    Signature attribute defined in Java 5 (chapter 4.4.4).<br>
+    Signature attribute defined in Java 5 (chapter 4.4.4).</p>
+</div>
 </div>
 <hr width="100%">
-<br>
-<h1 id="1_Typesusedintypedeclarationsofgenericsignatures">Types used in type declarations of generic signatures</h1><br>
-
+<h2 id="1_Typesusedintypedeclarationsofgenericsignatures">Types used in type declarations of generic signatures</h2>
 <pre><code><span id="TYPEtypeVariable"><span class="keyword">type</span> <code class="type"></code>typeVariable</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -66,7 +66,9 @@ This module describe the signatures used with generics. It defines
 </tr></table>
 
 <div class="info ">
-This is the type used for type variables as P in Collection&lt;P&gt;.<br>
+<div class="info-desc">
+<p>This is the type used for type variables as P in Collection&lt;P&gt;.</p>
+</div>
 </div>
 
 
@@ -77,7 +79,9 @@ This is the type used for type variables as P in Collection&lt;P&gt;.<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTtypeArgument.ArgumentExtends"><span class="constructor">ArgumentExtends</span></span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-e.g. &lt;?+Object&gt;<br>
+<div class="info-desc">
+<p>e.g. &lt;?+Object&gt;</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -87,7 +91,9 @@ e.g. &lt;?+Object&gt;<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTtypeArgument.ArgumentInherits"><span class="constructor">ArgumentInherits</span></span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-e.g. &lt;?-Object&gt;<br>
+<div class="info-desc">
+<p>e.g. &lt;?-Object&gt;</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -97,7 +103,9 @@ e.g. &lt;?-Object&gt;<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTtypeArgument.ArgumentIs"><span class="constructor">ArgumentIs</span></span> <span class="keyword">of</span> <code class="type"><a href="JSignature.html#TYPEfieldTypeSignature">fieldTypeSignature</a></code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-e.g. &lt;Object&gt;<br>
+<div class="info-desc">
+<p>e.g. &lt;Object&gt;</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -107,7 +115,9 @@ e.g. &lt;Object&gt;<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTtypeArgument.ArgumentIsAny"><span class="constructor">ArgumentIsAny</span></span></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-&lt;*&gt;<br>
+<div class="info-desc">
+<p>&lt;*&gt;</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr></table>
@@ -220,13 +230,13 @@ e.g. &lt;Object&gt;<br>
 </tr></table>
 
 <div class="info ">
-<code class="code">typeSignature</code> is used for method parameters and return values of
-    generic methods.<br>
+<div class="info-desc">
+<p><code class="code">typeSignature</code> is used for method parameters and return values of
+    generic methods.</p>
+</div>
 </div>
 
-<br>
-<h1 id="1_Typesofgenericsignatures">Types of generic signatures</h1><br>
-
+<h2 id="1_Typesofgenericsignatures">Types of generic signatures</h2>
 <pre><code><span id="TYPEclassSignature"><span class="keyword">type</span> <code class="type"></code>classSignature</span> = {</code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -277,10 +287,12 @@ e.g. &lt;Object&gt;<br>
 </tr></table>
 
 <div class="info ">
-This type is for references. Generic fields are of this type (it
+<div class="info-desc">
+<p>This type is for references. Generic fields are of this type (it
     cannot be of a basic type as it would not be generic anymore) but
     method arguments or even generic parameters are also of this
-    type.<br>
+    type.</p>
+</div>
 </div>
 
 

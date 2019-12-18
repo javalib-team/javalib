@@ -45,22 +45,21 @@
 </div>
 <h1>Module <a href="type_Ptmap.html">Ptmap</a></h1>
 
-<pre><span class="keyword">module</span> Ptmap: <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-Maps over integers implemented as Patricia trees.
-<p>
+<pre><span id="MODULEPtmap"><span class="keyword">module</span> Ptmap</span>: <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Maps over integers implemented as Patricia trees.</p>
 
-    This implementation follows Chris Okasaki and Andrew Gill's paper
-    <em>Fast Mergeable Integer Maps</em>.<br>
+<p>This implementation follows Chris Okasaki and Andrew Gill's paper
+    <em>Fast Mergeable Integer Maps</em>.</p>
+</div>
 </div>
 <hr width="100%">
-<br>
-The following signature is similar to <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span>&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;key&nbsp;=&nbsp;int</code>.
+<p>The following signature is similar to <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span>&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;key&nbsp;=&nbsp;int</code>.
     The documentation is only given for function that differs from
-    <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span>&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;key&nbsp;=&nbsp;int</code>.
-<p>
+    <code class="code"><span class="constructor">Map</span>.<span class="constructor">S</span>&nbsp;<span class="keyword">with</span>&nbsp;<span class="keyword">type</span>&nbsp;key&nbsp;=&nbsp;int</code>.</p>
 
-    The module <a href="Ptset.html"><code class="code"><span class="constructor">Ptset</span></code></a> is based on the same data-structure.<br>
+<p>The module <a href="Ptset.html"><code class="code"><span class="constructor">Ptset</span></code></a> is based on the same data-structure.</p>
 
-<pre><span class="keyword">module type</span> <a href="Ptmap.S.html">S</a> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
+<pre><span id="MODULETYPES"><span class="keyword">module type</span> <a href="Ptmap.S.html">S</a></span> = <code class="code"><span class="keyword">sig</span></code> <a href="Ptmap.S.html">..</a> <code class="code"><span class="keyword">end</span></code></pre>
 <pre><span class="keyword">include</span> <a href="Ptmap.S.html">Ptmap.S</a></pre>
 </body></html>

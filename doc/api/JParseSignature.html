@@ -47,56 +47,74 @@
 </div>
 <h1>Module <a href="type_JParseSignature.html">JParseSignature</a></h1>
 
-<pre><span class="keyword">module</span> JParseSignature: <code class="code"><span class="keyword">sig</span></code> <a href="JParseSignature.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-This module handles the decoding of descriptors and signatures.<br>
+<pre><span id="MODULEJParseSignature"><span class="keyword">module</span> JParseSignature</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JParseSignature.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>This module handles the decoding of descriptors and signatures.</p>
+</div>
 </div>
 <hr width="100%">
-<br>
-<h1 id="1_Parsingdescriptorsandtheircomponents">Parsing descriptors and their components </h1><br>
-
+<h2 id="1_Parsingdescriptorsandtheircomponents">Parsing descriptors and their components </h2>
 <pre><span id="VALparse_objectType"><span class="keyword">val</span> parse_objectType</span> : <code class="type">string -> <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a></code></pre><div class="info ">
-<b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the an object
-    type.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the an object
+    type.</li>
+</ul>
 </div>
 
 <pre><span id="VALparse_field_descriptor"><span class="keyword">val</span> parse_field_descriptor</span> : <code class="type">string -> <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a></code></pre><div class="info ">
-<b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a field
-    descriptor.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a field
+    descriptor.</li>
+</ul>
 </div>
 
 <pre><span id="VALparse_method_descriptor"><span class="keyword">val</span> parse_method_descriptor</span> : <code class="type">string -> <a href="JBasics.html#TYPEmethod_descriptor">JBasics.method_descriptor</a></code></pre><div class="info ">
-<b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a method
-    descriptor.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a method
+    descriptor.</li>
+</ul>
 </div>
 
 <pre><span id="VALparse_descriptor"><span class="keyword">val</span> parse_descriptor</span> : <code class="type">string -> <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a></code></pre><div class="info ">
-<b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a
-    descriptor.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the string does not correspond the a
+    descriptor.</li>
+</ul>
 </div>
-<br>
-<h1 id="1_Parsinggenericsignatures">Parsing generic signatures</h1><br>
-
+<h2 id="1_Parsinggenericsignatures">Parsing generic signatures</h2>
 <pre><span id="VALparse_ClassSignature"><span class="keyword">val</span> parse_ClassSignature</span> : <code class="type">string -> <a href="JSignature.html#TYPEclassSignature">JSignature.classSignature</a></code></pre><div class="info ">
-<code class="code">parse_ClassSignature&nbsp;s</code> parses a Signature attribute and expects
+<div class="info-desc">
+<p><code class="code">parse_ClassSignature&nbsp;s</code> parses a Signature attribute and expects
     to find a ClassSignature (as describe in paragraph 4.4.4 of the
-    Java Virtual Machine Specification of Java 5).<br>
-<b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
-    to the specifications.<br>
+    Java Virtual Machine Specification of Java 5).</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
+    to the specifications.</li>
+</ul>
 </div>
 
 <pre><span id="VALparse_MethodTypeSignature"><span class="keyword">val</span> parse_MethodTypeSignature</span> : <code class="type">string -> <a href="JSignature.html#TYPEmethodTypeSignature">JSignature.methodTypeSignature</a></code></pre><div class="info ">
-<code class="code">parse_MethodTypeSignature&nbsp;s</code> parses a Signature attribute and
+<div class="info-desc">
+<p><code class="code">parse_MethodTypeSignature&nbsp;s</code> parses a Signature attribute and
     expects to find a Methodtypesignature (as describe in paragraph
-    4.4.4 of the Java Virtual Machine Specification of Java 5).<br>
-<b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
-    to the specifications.<br>
+    4.4.4 of the Java Virtual Machine Specification of Java 5).</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
+    to the specifications.</li>
+</ul>
 </div>
 
 <pre><span id="VALparse_FieldTypeSignature"><span class="keyword">val</span> parse_FieldTypeSignature</span> : <code class="type">string -> <a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a></code></pre><div class="info ">
-<code class="code">parse_FieldTypeSignature&nbsp;s</code> parses a Signature attribute <code class="code">s</code> and
+<div class="info-desc">
+<p><code class="code">parse_FieldTypeSignature&nbsp;s</code> parses a Signature attribute <code class="code">s</code> and
     expects to find a FieldTypeSignature (as describe in paragraph
-    4.4.4 of the Java Virtual Machine Specification of Java 5).<br>
-<b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
-    to the specifications.<br>
+    4.4.4 of the Java Virtual Machine Specification of Java 5).</p>
+</div>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Class_structure_error</code> if the signature does not correspond
+    to the specifications.</li>
+</ul>
 </div>
 </body></html>

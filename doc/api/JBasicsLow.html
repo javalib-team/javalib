@@ -47,14 +47,18 @@
 </div>
 <h1>Module <a href="type_JBasicsLow.html">JBasicsLow</a></h1>
 
-<pre><span class="keyword">module</span> JBasicsLow: <code class="code"><span class="keyword">sig</span></code> <a href="JBasicsLow.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-Low level manipulations on basic types.<br>
+<pre><span id="MODULEJBasicsLow"><span class="keyword">module</span> JBasicsLow</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JBasicsLow.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Low level manipulations on basic types.</p>
+</div>
 </div>
 <hr width="100%">
 
 <pre><span id="TYPEmethod_handle_kind"><span class="keyword">type</span> <code class="type"></code>method_handle_kind</span> = <code class="type">[ `GetField<br>       | `GetStatic<br>       | `InvokeInterface<br>       | `InvokeSpecial<br>       | `InvokeStatic<br>       | `InvokeVirtual<br>       | `NewInvokeSpecial<br>       | `PutField<br>       | `PutStatic ]</code> </pre>
 <div class="info ">
-Method handle type.<br>
+<div class="info-desc">
+<p>Method handle type.</p>
+</div>
 </div>
 
 
@@ -63,15 +67,11 @@ Method handle type.<br>
 
 <pre><span id="TYPEioc_method"><span class="keyword">type</span> <code class="type"></code>ioc_method</span> = <code class="type">[ `Class of <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> * <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a><br>       | `Interface of <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * <a href="JBasics.html#TYPEmethod_signature">JBasics.method_signature</a> ]</code> </pre>
 
-<br>
-<h1 id="1_ConstantPool">Constant Pool.</h1><br>
-<br>
-Converting to constant pool elements:<br>
+<h2 id="1_ConstantPool">Constant Pool.</h2><p>Converting to constant pool elements:</p>
 
 <pre><span id="VALbootstrap_argument_to_const"><span class="keyword">val</span> bootstrap_argument_to_const</span> : <code class="type"><a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a></code></pre>
 <pre><span id="VALmethod_handle_to_const"><span class="keyword">val</span> method_handle_to_const</span> : <code class="type"><a href="JBasics.html#TYPEmethod_handle">JBasics.method_handle</a> -> <a href="JBasicsLow.html#TYPEmethod_handle_kind">method_handle_kind</a> * <a href="JBasics.html#TYPEconstant">JBasics.constant</a></code></pre>
-<pre><span id="VALconstant_attribute_to_const"><span class="keyword">val</span> constant_attribute_to_const</span> : <code class="type"><a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a></code></pre><br>
-Getting a constant from the constant pool:<br>
+<pre><span id="VALconstant_attribute_to_const"><span class="keyword">val</span> constant_attribute_to_const</span> : <code class="type"><a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a></code></pre><p>Getting a constant from the constant pool:</p>
 
 <pre><span id="VALget_constant"><span class="keyword">val</span> get_constant</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a></code></pre>
 <pre><span id="VALget_constant_ldc_value"><span class="keyword">val</span> get_constant_ldc_value</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JBasicsLow.html#TYPEldc_value">ldc_value</a></code></pre>
@@ -84,17 +84,17 @@ Getting a constant from the constant pool:<br>
 <pre><span id="VALget_method_or_interface_method"><span class="keyword">val</span> get_method_or_interface_method</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JBasicsLow.html#TYPEioc_method">ioc_method</a></code></pre>
 <pre><span id="VALget_method_handle"><span class="keyword">val</span> get_method_handle</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JBasics.html#TYPEmethod_handle">JBasics.method_handle</a></code></pre>
 <pre><span id="VALget_bootstrap_argument"><span class="keyword">val</span> get_bootstrap_argument</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a></code></pre>
-<pre><span id="VALget_constant_attribute"><span class="keyword">val</span> get_constant_attribute</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a></code></pre><br>
-Same thing, reading the index in a channel:<br>
+<pre><span id="VALget_constant_attribute"><span class="keyword">val</span> get_constant_attribute</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> int -> <a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a></code></pre><p>Same thing, reading the index in a channel:</p>
 
 <pre><span id="VALget_class_ui16"><span class="keyword">val</span> get_class_ui16</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JLib.IO.html#TYPEinput">JLib.IO.input</a> -> <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a></code></pre>
 <pre><span id="VALget_string_ui16"><span class="keyword">val</span> get_string_ui16</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JLib.IO.html#TYPEinput">JLib.IO.input</a> -> string</code></pre>
 <pre><span id="VALget_method_handle_ui16"><span class="keyword">val</span> get_method_handle_ui16</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JLib.IO.html#TYPEinput">JLib.IO.input</a> -> <a href="JBasics.html#TYPEmethod_handle">JBasics.method_handle</a></code></pre>
-<pre><span id="VALget_bootstrap_argument_ui16"><span class="keyword">val</span> get_bootstrap_argument_ui16</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JLib.IO.html#TYPEinput">JLib.IO.input</a> -> <a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a></code></pre><br>
-Getting an index for a constant:<br>
+<pre><span id="VALget_bootstrap_argument_ui16"><span class="keyword">val</span> get_bootstrap_argument_ui16</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> array -> <a href="JLib.IO.html#TYPEinput">JLib.IO.input</a> -> <a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a></code></pre><p>Getting an index for a constant:</p>
 
 <pre><span id="VALconstant_to_int"><span class="keyword">val</span> constant_to_int</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> -> int</code></pre><div class="info ">
-Return the index of a constant, adding it to the constant pool if necessary.<br>
+<div class="info-desc">
+<p>Return the index of a constant, adding it to the constant pool if necessary.</p>
+</div>
 </div>
 
 <pre><span id="VALldc_value_to_int"><span class="keyword">val</span> ldc_value_to_int</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasicsLow.html#TYPEldc_value">ldc_value</a> -> int</code></pre>
@@ -107,10 +107,11 @@ Return the index of a constant, adding it to the constant pool if necessary.<br>
 <pre><span id="VALmethod_handle_kind_to_int"><span class="keyword">val</span> method_handle_kind_to_int</span> : <code class="type"><a href="JBasicsLow.html#TYPEmethod_handle_kind">method_handle_kind</a> -> int</code></pre>
 <pre><span id="VALname_and_type_to_int"><span class="keyword">val</span> name_and_type_to_int</span> : <code class="type"><a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> string * <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a> -> int</code></pre>
 <pre><span id="VALbootstrap_method_to_int"><span class="keyword">val</span> bootstrap_method_to_int</span> : <code class="type"><a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasics.html#TYPEbootstrap_method">JBasics.bootstrap_method</a> -> int</code></pre><div class="info ">
-Return the index of a bootstrap method in the bootstrap method table, adding it if necessary.<br>
+<div class="info-desc">
+<p>Return the index of a bootstrap method in the bootstrap method table, adding it if necessary.</p>
 </div>
-<br>
-Same thing, but writes the index to a channel.<br>
+</div>
+<p>Same thing, but writes the index to a channel.</p>
 
 <pre><span id="VALwrite_constant"><span class="keyword">val</span> write_constant</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> -> unit</code></pre>
 <pre><span id="VALwrite_object_type"><span class="keyword">val</span> write_object_type</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasics.html#TYPEobject_type">JBasics.object_type</a> -> unit</code></pre>
@@ -118,15 +119,17 @@ Same thing, but writes the index to a channel.<br>
 <pre><span id="VALwrite_string"><span class="keyword">val</span> write_string</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> string -> unit</code></pre>
 <pre><span id="VALwrite_name_and_type"><span class="keyword">val</span> write_name_and_type</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> string * <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a> -> unit</code></pre>
 <pre><span id="VALwrite_bootstrap_argument"><span class="keyword">val</span> write_bootstrap_argument</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JBasics.html#TYPEbootstrap_argument">JBasics.bootstrap_argument</a> -> unit</code></pre>
-<pre><span id="VALwrite_constant_attribute"><span class="keyword">val</span> write_constant_attribute</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a> -> unit</code></pre><br>
-<h1 id="1_Usefullwritingfunctions">Usefull writing functions. </h1><br>
-
+<pre><span id="VALwrite_constant_attribute"><span class="keyword">val</span> write_constant_attribute</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -><br>       <a href="JBasics.html#TYPEconstant">JBasics.constant</a> <a href="JLib.DynArray.html#TYPEt">JLib.DynArray.t</a> -> <a href="JClass.html#TYPEconstant_attribute">JClass.constant_attribute</a> -> unit</code></pre><h2 id="1_Usefullwritingfunctions">Usefull writing functions. </h2>
 <pre><span id="VALwrite_ui8"><span class="keyword">val</span> write_ui8</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> int -> unit</code></pre><div class="info ">
-<b>Raises</b> <code>Overflow</code> if the integer does not belong to <code class="code">0x0;0xFF</code>.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Overflow</code> if the integer does not belong to <code class="code">0x0;0xFF</code>.</li>
+</ul>
 </div>
 
 <pre><span id="VALwrite_i8"><span class="keyword">val</span> write_i8</span> : <code class="type">'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> int -> unit</code></pre><div class="info ">
-<b>Raises</b> <code>Overflow</code> if the integer does not belong to <code class="code">-0x80;0x7F</code>.<br>
+<ul class="info-attributes">
+<li><b>Raises</b> <code>Overflow</code> if the integer does not belong to <code class="code">-0x80;0x7F</code>.</li>
+</ul>
 </div>
 
 <pre><span id="VALwrite_string_with_length"><span class="keyword">val</span> write_string_with_length</span> : <code class="type">('a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> int -> unit) -> 'a <a href="JLib.IO.html#TYPEoutput">JLib.IO.output</a> -> string -> unit</code></pre>

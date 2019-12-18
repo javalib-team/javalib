@@ -47,13 +47,13 @@
 </div>
 <h1>Module <a href="type_JClassLow.html">JClassLow</a></h1>
 
-<pre><span class="keyword">module</span> JClassLow: <code class="code"><span class="keyword">sig</span></code> <a href="JClassLow.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
-Low level representation of a Java class file.<br>
+<pre><span id="MODULEJClassLow"><span class="keyword">module</span> JClassLow</span>: <code class="code"><span class="keyword">sig</span></code> <a href="JClassLow.html">..</a> <code class="code"><span class="keyword">end</span></code></pre><div class="info module top">
+<div class="info-desc">
+<p>Low level representation of a Java class file.</p>
+</div>
 </div>
 <hr width="100%">
-<br>
-<h1 id="1_Lowlevelbytecodeinstructions">Low level bytecode instructions.</h1><br>
-
+<h2 id="1_Lowlevelbytecodeinstructions">Low level bytecode instructions.</h2>
 <pre><code><span id="TYPEopcode"><span class="keyword">type</span> <code class="type"></code>opcode</span> = </code></pre><table class="typetable">
 <tr>
 <td align="left" valign="top" >
@@ -425,7 +425,9 @@ Low level representation of a Java class file.<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTopcode.OpIInc"><span class="constructor">OpIInc</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-index, increment<br>
+<div class="info-desc">
+<p>index, increment</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -778,7 +780,9 @@ index, increment<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTopcode.OpInvokeInterface"><span class="constructor">OpInvokeInterface</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-count<br>
+<div class="info-desc">
+<p>count</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -858,7 +862,9 @@ count<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTopcode.OpAMultiNewArray"><span class="constructor">OpAMultiNewArray</span></span> <span class="keyword">of</span> <code class="type">int * int</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-ClassInfo, dims<br>
+<div class="info-desc">
+<p>ClassInfo, dims</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -906,15 +912,15 @@ ClassInfo, dims<br>
 </tr></table>
 
 <div class="info ">
-Instruction.<br>
+<div class="info-desc">
+<p>Instruction.</p>
+</div>
 </div>
 
 
 <pre><span id="TYPEopcodes"><span class="keyword">type</span> <code class="type"></code>opcodes</span> = <code class="type"><a href="JClassLow.html#TYPEopcode">opcode</a> array</code> </pre>
 
-<br>
-<h1 id="1_Flagsattributesandlowlevelstructureofclassfiles">Flags, attributes and low-level structure of class files.</h1><br>
-
+<h2 id="1_Flagsattributesandlowlevelstructureofclassfiles">Flags, attributes and low-level structure of class files.</h2>
 <pre><span id="TYPEcommon_flag"><span class="keyword">type</span> <code class="type"></code>common_flag</span> = <code class="type">[ `AccFinal | `AccPublic | `AccRFU of int | `AccSynthetic ]</code> </pre>
 
 
@@ -1014,7 +1020,7 @@ Instruction.<br>
 <td align="left" valign="top" >
 <code><span class="keyword">|</span></code></td>
 <td align="left" valign="top" >
-<code><span id="TYPEELTattribute.AttributeCode"><span class="constructor">AttributeCode</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEcode">code</a> Lazy.t</code></code></td>
+<code><span id="TYPEELTattribute.AttributeCode"><span class="constructor">AttributeCode</span></span> <span class="keyword">of</span> <code class="type"><a href="JClassLow.html#TYPEcode">code</a> Stdlib.Lazy.t</code></code></td>
 
 </tr>
 <tr>
@@ -1030,8 +1036,10 @@ Instruction.<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeInnerClasses"><span class="constructor">AttributeInnerClasses</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option * <a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> option * string option *<br>      <a href="JClassLow.html#TYPEinner_flag">inner_flag</a> list)<br>     list</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-inner_class_info, outer_class_info, inner_name,
-	    inner_class_access_flags<br>
+<div class="info-desc">
+<p>inner_class_info, outer_class_info, inner_name,
+	    inner_class_access_flags</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1055,7 +1063,9 @@ inner_class_info, outer_class_info, inner_name,
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeLocalVariableTable"><span class="constructor">AttributeLocalVariableTable</span></span> <span class="keyword">of</span> <code class="type">(int * int * string * <a href="JBasics.html#TYPEvalue_type">JBasics.value_type</a> * int) list</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-start_pc, length, name, type, index<br>
+<div class="info-desc">
+<p>start_pc, length, name, type, index</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1065,8 +1075,10 @@ start_pc, length, name, type, index<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeLocalVariableTypeTable"><span class="constructor">AttributeLocalVariableTypeTable</span></span> <span class="keyword">of</span> <code class="type">(int * int * string * <a href="JSignature.html#TYPEfieldTypeSignature">JSignature.fieldTypeSignature</a> * int) list</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-(start_pc, length, name, type, index), LocalVariableTable for
-          generics, described in the JVM Spec 1.5, §4.8.13<br>
+<div class="info-desc">
+<p>(start_pc, length, name, type, index), LocalVariableTable for
+          generics, described in the JVM Spec 1.5, §4.8.13</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1083,8 +1095,10 @@ start_pc, length, name, type, index<br>
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeSignature"><span class="constructor">AttributeSignature</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-Introduced in Java 5 for generics
-	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).<br>
+<div class="info-desc">
+<p>Introduced in Java 5 for generics
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1094,9 +1108,11 @@ Introduced in Java 5 for generics
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeEnclosingMethod"><span class="constructor">AttributeEnclosingMethod</span></span> <span class="keyword">of</span> <code class="type">(<a href="JBasics.html#TYPEclass_name">JBasics.class_name</a> * (string * <a href="JBasics.html#TYPEdescriptor">JBasics.descriptor</a>) option)</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-Introduced in Java 5 for local classes (classes
+<div class="info-desc">
+<p>Introduced in Java 5 for local classes (classes
 	  defined in a method body)
-	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).<br>
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1106,9 +1122,11 @@ Introduced in Java 5 for local classes (classes
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeSourceDebugExtension"><span class="constructor">AttributeSourceDebugExtension</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-Introduced in Java 5 for debugging purpose (no
+<div class="info-desc">
+<p>Introduced in Java 5 for debugging purpose (no
 	  semantics defined)
-	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).<br>
+	  (<a href="http://java.sun.com/docs/books/jvms/second_edition/ClassFileFormat-Java5.pdf">JVMS</a>).</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
@@ -1118,7 +1136,9 @@ Introduced in Java 5 for debugging purpose (no
 <td align="left" valign="top" >
 <code><span id="TYPEELTattribute.AttributeStackMapTable"><span class="constructor">AttributeStackMapTable</span></span> <span class="keyword">of</span> <code class="type"><a href="JBasics.html#TYPEstackmap_frame">JBasics.stackmap_frame</a> list</code></code></td>
 <td class="typefieldcomment" align="left" valign="top" ><code>(*</code></td><td class="typefieldcomment" align="left" valign="top" ><div class="info ">
-DFr : Addition for 1.6 stackmap.<br>
+<div class="info-desc">
+<p>DFr : Addition for 1.6 stackmap.</p>
+</div>
 </div>
 </td><td class="typefieldcomment" align="left" valign="bottom" ><code>*)</code></td>
 </tr>
