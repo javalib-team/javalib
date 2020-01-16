@@ -798,3 +798,69 @@ let build_lambda_info bm ms =
     captured_arguments = captured_args;
     checkcast_arguments = md_args checkcast_md;
     lambda_handle = mh }
+
+module BCV = struct
+  type typ = JBasics.verification_type
+
+  (* The first element is the stack, the second one is the local var map. *)
+  type t = typ list * typ Ptmap.t
+
+  (* Environment to store the class hierarchy. Only classes should be
+     stored, not interfaces. *)
+  type env = class_name ClassMap.t
+
+  let rec get_rev_superclasses env cn l =
+    if cn_equal cn java_lang_object then
+      java_lang_object :: l
+    else
+      if ClassMap.mem cn env then
+        get_rev_superclasses env (ClassMap.find cn env) (cn :: l)
+      else
+        failwith "Bad Class Hierarchy"
+
+  let get_rev_superclasses env cn = get_rev_superclasses env cn []
+
+  let rec last_common_element l1 l2 e =
+    match l1,l2 with
+    | [], _ | _, [] -> e
+    | hd1::tl1, hd2::tl2 when cn_equal hd1 hd2 -> last_common_element tl1 tl2 hd1
+    | _ -> e
+
+  let lub_cn (e:env) cn1 cn2 =
+    if ClassMap.mem cn1 e && ClassMap.mem cn2 e then
+      let sup1 = get_rev_superclasses e cn1 in
+      let sup2 = get_rev_superclasses e cn2 in
+      last_common_element sup1 sup2 java_lang_object
+    else
+      (* If a class_name is not in env, it is assumed to be an interface. *)
+      if cn_equal cn1 cn2 then cn1 (* is that necessary ? *)
+      else java_lang_object
+
+  let rec lub_object_type (e:env) o1 o2 =
+    match o1,o2 with
+    | TClass cn1, TClass cn2 -> TClass (lub_cn e cn1 cn2)
+    | TArray (TBasic b1), TArray (TBasic b2) ->
+       if b1 = b2 then o1 else TClass java_lang_object
+    | TArray (TObject o1'), TArray (TObject o2') ->
+       TArray (TObject (lub_object_type e o1' o2'))
+    | _ -> TClass java_lang_object
+
+  let lub (e:env) x y =
+    match x with
+    | VTop | VInteger | VFloat | VDouble | VLong
+      | VUninitializedThis | VUninitialized _ ->
+       if y = x then x else VTop
+    | VNull ->
+       (match y with
+        | VTop | VInteger | VFloat | VDouble | VLong
+          | VUninitializedThis | VUninitialized _-> VTop
+        | _ -> y)
+    | VObject o1 ->
+       (match y with
+        | VObject o2 -> VObject (lub_object_type e o1 o2)
+        | _ -> VTop
+       )
+
+  let lub (e:env) (s1, l1) (s2, l2) = (List.map2 lub s1 s2, Ptmap.merge (lub e) l1 l2)
+
+end
