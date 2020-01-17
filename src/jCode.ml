@@ -863,4 +863,249 @@ module BCV = struct
 
   let lub (e:env) (s1, l1) (s2, l2) = (List.map2 lub s1 s2, Ptmap.merge (lub e) l1 l2)
 
+  let conv = function
+    | TObject o -> VObject o
+    | TBasic jbt ->
+       (match jbt with
+        | `Int | `Short | `Char | `Byte | `Bool -> VInteger
+        | `Float -> VFloat
+        | `Long -> VLong
+        | `Double -> VDouble
+       )
+
+  let conv_array_type t =
+    match t with
+    | `Int | `Short | `Char | `Int2Bool | `ByteBool -> VInteger
+    | `Float -> VFloat
+    | `Object -> VObject (TClass java_lang_object)
+    | `Long -> VLong
+    | `Double -> VDouble
+
+  let basic = function
+    | `Int2Bool ->
+       VInteger
+    | `Long ->
+       VLong
+    | `Double ->
+       VDouble
+    | `Float ->
+       VFloat
+
+  let java_lang_string = make_cn "java.lang.String"
+  let java_lang_class = make_cn "java.lang.Class"
+
+  let get l n = try Ptmap.find n l with Not_found -> assert false
+
+  let upd l n t = Ptmap.add n t l
+
+  exception ArrayContent
+
+  let array_content i t = function
+    | VObject (TArray v) ->
+       conv v
+    | VNull ->
+       conv_array_type t
+    | _ ->
+       Printf.printf "\n\nbad array_content at %d\n\n\n" i ;
+       raise ArrayContent
+
+  let next i = function
+    | OpNop -> (
+      function (s, l) -> (s, l) )
+    | OpConst x ->
+       fun (s, l) ->
+       let c =
+         match x with
+         | `ANull ->
+            VNull
+         | `String _ -> VObject (TClass java_lang_string)
+         | `Class _ -> VObject (TClass java_lang_class) (* or java_lang_object ? (generic) *)
+         | `MethodHandle _ | `MethodType _ ->
+            VObject (TClass java_lang_object) (* What to do ? *)
+         | `Byte _ | `Short _ | `Int _ ->
+            VInteger
+         | `Long _ ->
+            VLong
+         | `Float _ ->
+            VFloat
+         | `Double _ ->
+            VDouble
+       in
+       (c :: s, l)
+    | OpLoad (_, n) ->
+       fun (s, l) -> (get l n :: s, l)
+    | OpArrayLoad t ->
+       fun (s, l) -> (array_content i t (top (pop s)) :: pop2 s, l)
+    | OpStore (_, n) ->
+       fun (s, l) -> (pop s, upd l n (top s))
+    | OpArrayStore _ ->
+       fun (s, l) -> (pop3 s, l)
+    | OpPop ->
+       fun (s, l) -> (pop s, l)
+    | OpPop2 ->
+       fun (s, l) ->
+       ((match top s with VLong | VDouble -> pop s | _ -> pop2 s), l)
+    | OpDup ->
+       fun (s, l) -> (top s :: s, l)
+    | OpDupX1 ->
+       fun (s, l) -> (top s :: top (pop s) :: top s :: pop2 s, l)
+    | OpDupX2 ->
+       (fun (s, l) ->
+         match top (pop s) with
+         | VLong | VDouble ->
+            (top s :: top (pop s) :: top s :: pop2 s, l)
+         | _ ->
+            (top s :: top (pop s) :: top (pop2 s) :: top s :: pop3 s, l))
+    | OpDup2 ->
+       (fun (s, l) ->
+         match top s with
+         | VLong | VDouble ->
+            (top s :: s, l)
+         | _ ->
+            (top s :: top (pop s) :: top s :: top (pop s) :: pop2 s, l))
+    | OpDup2X1 ->
+       (fun (s, l) ->
+          match top s with
+          | VLong | VDouble ->
+             (top s :: top (pop s) :: top s :: pop2 s, l)
+          | _ ->
+             (top s
+              :: top (pop s)
+              :: top (pop2 s)
+              :: top s
+              :: top (pop s)
+              :: pop3 s
+             , l))
+    | OpDup2X2 ->
+       (fun (s, l) ->
+         match top s with
+         | VLong | VDouble -> (
+           match top (pop s) with
+           | VLong | VDouble ->
+              (top s :: top (pop s) :: top s :: pop2 s, l)
+           | _ ->
+              (top s :: top (pop s) :: top (pop2 s) :: top s :: pop3 s, l)) 
+         | _ -> (
+           match top (pop2 s) with
+           | VLong | VDouble ->
+              (top s
+               :: top (pop s)
+               :: top (pop2 s)
+               :: top s
+               :: top (pop s)
+               :: pop3 s
+              , l)
+           | _ ->
+              ( top s
+                :: top (pop s)
+                :: top (pop2 s)
+                :: top (pop3 s)
+                :: top s
+                :: top (pop s)
+                :: pop (pop3 s)
+              , l ))
+        )
+    | OpSwap ->
+       fun (s, l) -> (top (pop s) :: top s :: pop2 s, l)
+    | OpAdd k | OpSub k | OpMult k | OpDiv k | OpRem k ->
+       fun (s, l) -> (basic k :: pop2 s, l)
+    | OpNeg k ->
+       fun (s, l) -> (basic k :: pop s, l)
+    | OpIShl | OpIShr | OpIAnd | OpIOr | OpIXor | OpIUShr ->
+       fun (s, l) -> (VInteger :: pop2 s, l)
+    | OpLShr | OpLShl ->
+       fun (s, l) -> (pop s, l)
+    | OpLAnd | OpLOr | OpLXor | OpLUShr ->
+       fun (s, l) -> (VLong :: pop2 s, l)
+    | OpIInc (_, _) ->
+       fun (s, l) -> (s, l)
+    | OpI2L ->
+       fun (s, l) -> (VLong :: pop s, l)
+    | OpI2F ->
+       fun (s, l) -> (VFloat :: pop s, l)
+    | OpI2D ->
+       fun (s, l) -> (VDouble :: pop s, l)
+    | OpL2I ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpL2F ->
+       fun (s, l) -> (VFloat :: pop s, l)
+    | OpL2D ->
+       fun (s, l) -> (VDouble :: pop s, l)
+    | OpF2I ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpF2L ->
+       fun (s, l) -> (VLong :: pop s, l)
+    | OpF2D ->
+       fun (s, l) -> (VDouble :: pop s, l)
+    | OpD2I ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpD2L ->
+       fun (s, l) -> (VLong :: pop s, l)
+    | OpD2F ->
+       fun (s, l) -> (VFloat :: pop s, l)
+    | OpI2B ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpI2C ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpI2S ->
+       fun (s, l) -> (VInteger :: pop s, l)
+    | OpCmp _ ->
+       fun (s, l) -> (VInteger :: pop2 s, l)
+    | OpIf (_, _) ->
+       fun (s, l) -> (pop s, l)
+    | OpIfCmp (_, _) ->
+       fun (s, l) -> (pop2 s, l)
+    | OpGoto _ ->
+       fun (s, l) -> (s, l)
+    | OpJsr _ ->
+       raise Subroutine
+    | OpRet _ ->
+       raise Subroutine
+    | OpTableSwitch _ ->
+       fun (s, l) -> (pop s, l)
+    | OpLookupSwitch _ ->
+       fun (s, l) -> (pop s, l)
+    | OpReturn _ ->
+       fun (s, l) -> (s, l)
+    | OpGetField (_, fs) ->
+        fun (s, l) -> (conv (fs_type fs) :: pop s, l)
+    | OpGetStatic (_, fs) ->
+        fun (s, l) -> (conv (fs_type fs) :: s, l)
+    | OpPutStatic _ ->
+        fun (s, l) -> (pop s, l)
+    | OpPutField _ ->
+        fun (s, l) -> (pop2 s, l)
+    (* | OpInvoke (x, ms) -> (
+     *     fun (s, l) ->
+     *       let s =
+     *         match x with
+     *         | `Dynamic _ | `Static _ ->
+     *             popn (List.length (ms_args ms)) s
+     *         | _ ->
+     *             popn (List.length (ms_args ms)) (pop s)
+     *       in
+     *       match ms_rtype ms with None -> (s, l) | Some t -> (conv t :: s, l) ) *)
+    | OpNew _ ->
+        fun (s, l) -> (VUninitialized i :: s, l)
+    | OpNewArray t ->
+        fun (s, l) -> (VObject (TArray t) :: pop s, l)
+    | OpArrayLength ->
+        fun (s, l) -> (VInteger :: pop s, l)
+    | OpThrow ->
+        fun (s, l) -> (s, l)
+    | OpCheckCast t ->
+        fun (s, l) -> (conv (TObject t) :: pop s, l)
+    | OpInstanceOf _ ->
+        fun (s, l) -> (VInteger :: pop s, l)
+    | OpMonitorEnter ->
+        fun (s, l) -> (pop s, l)
+    | OpMonitorExit ->
+        fun (s, l) -> (pop s, l)
+    (* | OpAMultiNewArray (t, b) ->
+     *     fun (s, l) -> (conv (TObject t) :: popn b s, l) *)
+    | OpBreakpoint ->
+        failwith "breakpoint"
+    | OpInvalid ->
+        failwith "invalid"
+
 end
