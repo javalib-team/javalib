@@ -682,6 +682,14 @@ let normal_next opcodes i =
   | _ ->
       [next opcodes i]
 
+let compute_handlers code i =
+  let handlers = code.c_exc_tbl in
+  let handlers =
+    List.filter (fun e -> e.e_start <= i && i < e.e_end) handlers
+  in
+  let handlers = List.map (fun e -> e.e_handler) handlers in
+  handlers
+
 let succs opcodes i = normal_next opcodes i
 
 let get_stack_size stack =
@@ -862,7 +870,7 @@ module BCV = struct
         | _ -> VTop
        )
 
-  let lub (e:env) (s1, l1) (s2, l2) = (List.map2 lub s1 s2, Ptmap.merge (lub e) l1 l2)
+  let lub (e:env) (s1, l1) (s2, l2) = (List.map2 (lub e) s1 s2, Ptmap.merge (lub e) l1 l2)
 
   let conv = function
     | TObject o -> VObject o
@@ -916,7 +924,8 @@ module BCV = struct
     (List.map (fun v -> if v = v_in then v_out else v) s,
      Ptmap.map (fun v -> if v = v_in then v_out else v) l)
 
-  let next opcodes i = function
+  let next opcodes i =
+    match opcodes.(i) with
     | OpNop -> (
       function (s, l) -> (s, l) )
     | OpConst x ->
@@ -1128,5 +1137,58 @@ module BCV = struct
         failwith "breakpoint"
     | OpInvalid ->
         failwith "invalid"
+
+  let init cn ms is_static =
+    let rec aux i = function
+      | [] ->
+         Ptmap.empty
+      | v :: q ->
+         (match v with
+          | TBasic `Long  | TBasic `Double ->
+             Ptmap.add i (conv v) (aux (i + 2) q)
+          | _ ->
+             Ptmap.add i (conv v) (aux (i + 1) q))
+    in
+    if is_static then ([], aux 0 (ms_args ms))
+    else ([], Ptmap.add 0 (VObject (TClass cn)) (aux 1 (ms_args ms)))
+    
+  let run (e:env) cn ms is_static code =
+    let rec array_fold f b t i =
+      if i >= 0 then f i t.(i) (array_fold f b t (i - 1)) else b
+    in
+    let array_fold f b t = array_fold f b t (Array.length t - 1) in
+    let ws =
+      array_fold
+        (fun i op ws -> if op = OpInvalid then ws else Ptset.add i ws)
+        Ptset.empty code.c_code
+    in
+    let types : t option array = Array.make (Array.length code.c_code) None in
+    let upd sl' ws i =
+      match types.(i) with
+      | None ->
+         types.(i) <- Some sl' ; Ptset.add i ws
+      | Some sl ->
+         let sl' = lub e sl sl' in
+         if sl = sl' then ws else ( types.(i) <- Some sl' ; Ptset.add i ws )
+    in
+    let rec loop ws =
+      if Ptset.is_empty ws then ()
+      else
+        let i = Ptset.min_elt ws in
+        let ws = Ptset.remove i ws in
+        match types.(i) with
+        | Some sl ->
+           let sl' = next code.c_code i sl in
+           let ws = List.fold_left (upd sl') ws (normal_next code.c_code i) in
+           let sl' = ([VObject (TClass java_lang_object)], snd sl') in (* To Check *)
+           let ws = List.fold_left (upd sl') ws (compute_handlers code i) in
+           loop ws
+        | None ->
+           loop ws
+    in
+    assert (Array.length types > 0) ;
+    types.(0) <- Some (init cn ms is_static) ;
+    loop ws ;
+    types
 
 end
