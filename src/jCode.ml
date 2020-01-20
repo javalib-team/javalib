@@ -827,14 +827,15 @@ module BCV = struct
     | _ -> e
 
   let lub_cn (e:env) cn1 cn2 =
-    if ClassMap.mem cn1 e && ClassMap.mem cn2 e then
-      let sup1 = get_rev_superclasses e cn1 in
-      let sup2 = get_rev_superclasses e cn2 in
-      last_common_element sup1 sup2 java_lang_object
+    if cn_equal cn1 cn2 then cn1
     else
-      (* If a class_name is not in env, it is assumed to be an interface. *)
-      if cn_equal cn1 cn2 then cn1 (* is that necessary ? *)
-      else java_lang_object
+      if ClassMap.mem cn1 e && ClassMap.mem cn2 e then
+        let sup1 = get_rev_superclasses e cn1 in
+        let sup2 = get_rev_superclasses e cn2 in
+        last_common_element sup1 sup2 java_lang_object
+      else
+        (* If a class_name is not in env, it is assumed to be an interface. *)
+        java_lang_object
 
   let rec lub_object_type (e:env) o1 o2 =
     match o1,o2 with
@@ -893,6 +894,8 @@ module BCV = struct
 
   let java_lang_string = make_cn "java.lang.String"
   let java_lang_class = make_cn "java.lang.Class"
+  let java_lang_invoke_method_handle = make_cn "java.lang.invoke.MethodHandle"
+  let java_lang_invoke_method_type = make_cn "java.lang.invoke.MethodType"
 
   let get l n = try Ptmap.find n l with Not_found -> assert false
 
@@ -909,7 +912,11 @@ module BCV = struct
        Printf.printf "\n\nbad array_content at %d\n\n\n" i ;
        raise ArrayContent
 
-  let next i = function
+  let replace_stack_locals v_in v_out s l =
+    (List.map (fun v -> if v = v_in then v_out else v) s,
+     Ptmap.map (fun v -> if v = v_in then v_out else v) l)
+
+  let next opcodes i = function
     | OpNop -> (
       function (s, l) -> (s, l) )
     | OpConst x ->
@@ -919,9 +926,9 @@ module BCV = struct
          | `ANull ->
             VNull
          | `String _ -> VObject (TClass java_lang_string)
-         | `Class _ -> VObject (TClass java_lang_class) (* or java_lang_object ? (generic) *)
-         | `MethodHandle _ | `MethodType _ ->
-            VObject (TClass java_lang_object) (* What to do ? *)
+         | `Class _ -> VObject (TClass java_lang_class)
+         | `MethodHandle _ -> VObject (TClass java_lang_invoke_method_handle)
+         | `MethodType _ -> VObject (TClass java_lang_invoke_method_type)
          | `Byte _ | `Short _ | `Int _ ->
             VInteger
          | `Long _ ->
@@ -935,7 +942,7 @@ module BCV = struct
     | OpLoad (_, n) ->
        fun (s, l) -> (get l n :: s, l)
     | OpArrayLoad t ->
-       fun (s, l) -> (array_content i t (top (pop s)) :: pop2 s, l)
+       fun (s, l) -> (array_content i t (top (pop s)) :: pop2 s, l) (* To Check *)
     | OpStore (_, n) ->
        fun (s, l) -> (pop s, upd l n (top s))
     | OpArrayStore _ ->
@@ -1075,16 +1082,30 @@ module BCV = struct
         fun (s, l) -> (pop s, l)
     | OpPutField _ ->
         fun (s, l) -> (pop2 s, l)
-    (* | OpInvoke (x, ms) -> (
-     *     fun (s, l) ->
-     *       let s =
-     *         match x with
-     *         | `Dynamic _ | `Static _ ->
-     *             popn (List.length (ms_args ms)) s
-     *         | _ ->
-     *             popn (List.length (ms_args ms)) (pop s)
-     *       in
-     *       match ms_rtype ms with None -> (s, l) | Some t -> (conv t :: s, l) ) *)
+    | OpInvoke (x, ms) -> (
+        fun (s, l) ->
+          let (s, l) =
+            match x with
+            | `Dynamic _ | `Static _ ->
+               (popn (List.length (ms_args ms)) s, l)
+            | `Special (_, cn) when (ms_name ms = "<init>") ->
+               let s = popn (List.length (ms_args ms)) s in
+               (match top s with
+                | VUninitialized i ->
+                   (match opcodes.(i) with
+                    | OpNew cn ->
+                       replace_stack_locals (VUninitialized i)
+                         (VObject (TClass cn)) (pop s) l
+                    | _ -> assert false)
+                | VUninitializedThis ->
+                   replace_stack_locals VUninitializedThis
+                     (VObject (TClass cn)) (pop s) l
+                | _ -> (pop s, l)
+               )
+            | _ ->
+               (popn (List.length (ms_args ms)) (pop s), l)
+          in
+          match ms_rtype ms with None -> (s, l) | Some t -> (conv t :: s, l) )
     | OpNew _ ->
         fun (s, l) -> (VUninitialized i :: s, l)
     | OpNewArray t ->
@@ -1101,8 +1122,8 @@ module BCV = struct
         fun (s, l) -> (pop s, l)
     | OpMonitorExit ->
         fun (s, l) -> (pop s, l)
-    (* | OpAMultiNewArray (t, b) ->
-     *     fun (s, l) -> (conv (TObject t) :: popn b s, l) *)
+    | OpAMultiNewArray (o, b) ->
+        fun (s, l) -> (VObject o :: popn b s, l)
     | OpBreakpoint ->
         failwith "breakpoint"
     | OpInvalid ->
