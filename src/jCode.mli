@@ -252,6 +252,10 @@ val replace_code : ?update_max_stack:bool ->
 val insert_code : ?update_max_stack:bool ->
                   jcode -> int -> jopcode list -> jcode
 
+val gen_stackmap_info : class_name ClassMap.t ->
+                        class_name -> method_signature -> bool -> jcode ->
+                        stackmap_frame list
+
 (** {1 Lambda manipulation.} *)
   
 type lambda_info = {
