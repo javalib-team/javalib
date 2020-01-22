@@ -1192,3 +1192,55 @@ module BCV = struct
     types
 
 end
+
+let get_jump_targets op i =
+  match op with
+  | OpIf (_, n) | OpIfCmp (_, n) ->
+     [i + n]
+  | OpGoto n ->
+     [i + n]
+  | OpTableSwitch (default, _, _, table) ->
+     List.map (( + ) i) (default :: Array.to_list table)
+  | OpLookupSwitch (default, npairs) ->
+     List.map (( + ) i) (default :: List.map snd npairs)
+  | OpJsr _ | OpRet _ ->
+     raise Subroutine
+  | _ ->
+     []
+
+let get_jump_targets_set opcodes =
+  let s_targets = ref Ptset.empty in
+  let () = Array.iteri (fun i op ->
+               List.iter (fun j ->
+                   s_targets := Ptset.add j !s_targets
+                 ) (get_jump_targets op i)
+             ) opcodes in
+  Ptset.elements !s_targets
+
+let map_offset_deltas l =
+  let _ = assert (List.hd l > 0) in
+  let i_tmp = ref (-1) in
+  let l_off = ref [] in
+  let () = List.iter (fun i ->
+               let offset = i - !i_tmp - 1 in
+               i_tmp := i;
+               l_off := offset :: !l_off
+             ) l in
+  List.rev !l_off
+
+let locals_to_list l =
+  List.map (fun (_,a) -> a)
+    (List.sort (fun (a,_) (b,_) -> compare a b) (Ptmap.elements l))
+
+let gen_stackmap_info e cn ms is_static code =
+  let types = BCV.run e cn ms is_static code in
+  let jump_targets = get_jump_targets_set code.c_code in
+  let offset_deltas = map_offset_deltas jump_targets in
+  let stackmaps = ref [] in
+  let () = List.iter2 (fun tg offs ->
+               match types.(tg) with
+               | None -> ()
+               | Some (s, l) ->
+                  stackmaps := FullFrame (255, offs, locals_to_list l, s) :: !stackmaps
+             ) jump_targets offset_deltas in 
+  List.rev !stackmaps
