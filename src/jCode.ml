@@ -687,7 +687,7 @@ let compute_handlers code i =
   let handlers =
     List.filter (fun e -> e.e_start <= i && i < e.e_end) handlers
   in
-  let handlers = List.map (fun e -> e.e_handler) handlers in
+  let handlers = List.map (fun e -> (e.e_handler, e.e_catch_type)) handlers in
   handlers
 
 let succs opcodes i = normal_next opcodes i
@@ -870,7 +870,12 @@ module BCV = struct
         | _ -> VTop
        )
 
-  let lub (e:env) (s1, l1) (s2, l2) = (List.map2 (lub e) s1 s2, Ptmap.merge (lub e) l1 l2)
+  let lub (e:env) (s1, l1) (s2, l2) =
+    let l = ref Ptmap.empty in
+    let () = Ptmap.iter (fun i v ->
+                 if Ptmap.mem i l2 then l := Ptmap.add i (lub e v (Ptmap.find i l2)) !l
+               ) l1 in
+    (List.map2 (lub e) s1 s2, !l)
 
   let conv = function
     | TObject o -> VObject o
@@ -1180,8 +1185,12 @@ module BCV = struct
         | Some sl ->
            let sl' = next code.c_code i sl in
            let ws = List.fold_left (upd sl') ws (normal_next code.c_code i) in
-           let sl' = ([VObject (TClass java_lang_object)], snd sl') in (* To Check *)
-           let ws = List.fold_left (upd sl') ws (compute_handlers code i) in
+           let ws = List.fold_left (fun ws (i, catch_t) ->
+                        let cn = match catch_t with
+                              | None -> java_lang_object
+                              | Some cn -> cn in
+                        upd ([VObject (TClass cn)], snd sl') ws i
+                      ) ws (compute_handlers code i) in
            loop ws
         | None ->
            loop ws
@@ -1208,39 +1217,48 @@ let get_jump_targets op i =
   | _ ->
      []
 
-let get_jump_targets_set opcodes =
+let get_handlers_targets code =
+  let handlers = code.c_exc_tbl in
+  List.map (fun e -> e.e_handler) handlers
+
+let get_branching_set code =
   let s_targets = ref Ptset.empty in
   let () = Array.iteri (fun i op ->
                List.iter (fun j ->
                    s_targets := Ptset.add j !s_targets
                  ) (get_jump_targets op i)
-             ) opcodes in
+             ) code.c_code in
+  let () = List.iter (fun i ->
+               s_targets := Ptset.add i !s_targets)
+             (get_handlers_targets code) in
   Ptset.elements !s_targets
 
 let map_offset_deltas l =
-  let _ = assert (List.hd l > 0) in
-  let i_tmp = ref (-1) in
-  let l_off = ref [] in
-  let () = List.iter (fun i ->
-               let offset = i - !i_tmp - 1 in
-               i_tmp := i;
-               l_off := offset :: !l_off
-             ) l in
-  List.rev !l_off
+  if l = [] then []
+  else
+    let _ = assert (List.hd l > 0) in
+    let i_tmp = ref (-1) in
+    let l_off = ref [] in
+    let () = List.iter (fun i ->
+                 let offset = i - !i_tmp - 1 in
+                 i_tmp := i;
+                 l_off := offset :: !l_off
+               ) l in
+    List.rev !l_off
 
 let locals_to_list l =
   List.map (fun (_,a) -> a)
     (List.sort (fun (a,_) (b,_) -> compare a b) (Ptmap.elements l))
 
-let gen_stackmap_info e cn ms is_static code =
+let gen_stack_map_info e cn ms is_static code =
   let types = BCV.run e cn ms is_static code in
-  let jump_targets = get_jump_targets_set code.c_code in
-  let offset_deltas = map_offset_deltas jump_targets in
+  let targets = get_branching_set code in
+  let offset_deltas = map_offset_deltas targets in
   let stackmaps = ref [] in
   let () = List.iter2 (fun tg offs ->
                match types.(tg) with
                | None -> ()
                | Some (s, l) ->
                   stackmaps := FullFrame (255, offs, locals_to_list l, s) :: !stackmaps
-             ) jump_targets offset_deltas in 
+             ) targets offset_deltas in 
   List.rev !stackmaps
