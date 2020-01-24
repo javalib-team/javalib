@@ -996,8 +996,25 @@ let map_offset_deltas l =
     List.rev !l_off
 
 let locals_to_list l =
-  List.map (fun (_,a) -> a)
-    (List.sort (fun (a,_) (b,_) -> compare a b) (Ptmap.elements l))
+  let l_rev = List.sort (fun (a,_) (b,_) -> compare b a) (Ptmap.elements l) in
+  let max_l = match l_rev with
+    | [] -> 0
+    | (n,_)::_ -> n+1
+  in
+  let l_arr = Array.make max_l (Some VTop) in
+  let () = List.iter (fun (n,v) -> Array.set l_arr n (Some v)) l_rev in
+  let prev = ref (Some VTop) in
+  let () = Array.iteri (fun i v ->
+               match !prev with
+               | Some VLong | Some VDouble -> prev := v; Array.set l_arr i None
+               | _ -> prev := v
+             ) l_arr in
+  let r = List.filter (fun v -> match v with
+                                | None -> false
+                                | _ -> true) (Array.to_list l_arr) in
+  List.map (fun v -> match v with
+                     | None -> assert false
+                     | Some v -> v) r
 
 let gen_stack_map_info e cn ms is_static code =
   let types = BCV.run e cn ms is_static code in
