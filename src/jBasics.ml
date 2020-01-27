@@ -25,6 +25,11 @@
 
 type class_name = int * string
 
+(* for comparison independent from index *)
+let cn_strong_compare (_,s1) (_,s2) = compare s1 s2
+
+let zero_index_class_name (_,s) = (0,s)
+                             
 (* Numerical types that are not smaller than int. *)
 type other_num = [
 | `Long
@@ -81,6 +86,11 @@ and value_type =
   | TBasic of java_basic_type
   | TObject of object_type
 
+let rec zero_index_value_type = function
+  | TBasic _ as t -> t
+  | TObject (TClass cn) -> TObject (TClass (zero_index_class_name cn))
+  | TObject (TArray vt) -> TObject (TArray (zero_index_value_type vt))
+
 type bootstrap_method_index = int
 
 (* Field descriptor *)
@@ -89,17 +99,52 @@ type field_descriptor = value_type
 (* Method descriptor *)
 type method_descriptor = value_type list * value_type option
 
+let zero_index_method_descriptor (l,o) =
+  (List.map zero_index_value_type l, Option.map zero_index_value_type o)
+                       
 type field_signature_data = string * field_descriptor
 type method_signature_data = string * method_descriptor
 
+let zero_index_field_signature_data (s,fd) =
+  (s, zero_index_value_type fd)
+let zero_index_method_signature_data (s,msd) =
+  (s, zero_index_method_descriptor msd)
+                           
 type method_signature = int * method_signature_data
 type field_signature = int * field_signature_data
-
+(* for comparison independent from index *)
+let ms_strong_compare (_,msd1) (_,msd2) =
+  compare
+    (zero_index_method_signature_data msd1)
+    (zero_index_method_signature_data msd2)
+let fs_strong_compare (_,fsd1) (_,fsd2) =
+  compare
+    (zero_index_field_signature_data fsd1)
+    (zero_index_field_signature_data fsd2)
+  
 type class_field_signature_data = class_name * field_signature
 type class_method_signature_data = class_name * method_signature
+
+let zero_index_class_field_signature_data (cn,(_,fsd)) =
+  (zero_index_class_name cn,
+   (0,zero_index_field_signature_data fsd))
+let zero_index_class_method_signature_data (cn,(_,msd)) =
+  (zero_index_class_name cn,
+   (0,zero_index_method_signature_data msd))
+  
 type class_field_signature = int * class_field_signature_data
 type class_method_signature = int * class_method_signature_data
 
+(* for comparison independent from index *)
+let cms_strong_compare (_,cmsd1) (_,cmsd2) =
+  compare
+    (zero_index_class_method_signature_data cmsd1)
+    (zero_index_class_method_signature_data cmsd2)
+let cfs_strong_compare (_,cfsd1) (_,cfsd2) =
+  compare
+    (zero_index_class_field_signature_data cfsd1)
+    (zero_index_class_field_signature_data cfsd2)
+                            
 
 (* Signatures parsed from CONSTANT_NameAndType_info structures. *)
 type descriptor =
@@ -492,15 +537,35 @@ module ClassFieldSet = GenericSet.Make(struct type t = class_field_signature let
 
 module ClassMethodSet = GenericSet.Make(struct type t = class_method_signature let get_hash = fst end)
 
-module ClassMethodMap = GenericMap.Make (struct type t = class_method_signature let get_hash = fst end)
+module ClassMethodMap = GenericMap.Make (struct
+                            type t = class_method_signature
+                            let get_hash = fst
+                            let compare = cms_strong_compare
+                          end)
 
-module ClassMap = GenericMap.Make (struct type t = class_name let get_hash = fst end)
+module ClassMap = GenericMap.Make (struct
+                      type t = class_name
+                      let get_hash = fst
+                      let compare = cn_strong_compare
+                    end)
 
-module MethodMap = GenericMap.Make (struct type t = method_signature let get_hash = fst end)
+module MethodMap = GenericMap.Make (struct
+                       type t = method_signature
+                       let get_hash = fst
+                       let compare = ms_strong_compare
+                     end)
 
-module FieldMap = GenericMap.Make (struct type t = field_signature let get_hash = fst end)
+module FieldMap = GenericMap.Make (struct
+                      type t = field_signature
+                      let get_hash = fst
+                      let compare = fs_strong_compare
+                    end)
 
-module ClassFieldMap = GenericMap.Make (struct type t = class_field_signature let get_hash = fst end)
+module ClassFieldMap = GenericMap.Make (struct
+                           type t = class_field_signature
+                           let get_hash = fst
+                           let compare = cfs_strong_compare
+                         end)
 
 module ClassMethodMaptoSet =
   GenericMap.MaptoSet(struct type t = class_method_signature end)(ClassMethodMap)(ClassMethodSet)
