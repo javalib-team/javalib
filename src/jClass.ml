@@ -984,9 +984,9 @@ let remove_invokedynamics_in_method ioc ms ~prefix =
 let remove_invokedynamics ioc ~prefix =
   let methods = get_concrete_methods ioc in
   let m_counter = ref 0 in
-  let ioc', cmap = MethodMap.fold (fun ms _ (ioc, cmap) ->
-                       m_counter := !m_counter + 1;
-                       let prefix = prefix ^ "_" ^ (string_of_int !m_counter) ^ "_" in
+  let ioc', cmap = MethodMap.fold_ordered (fun ms _ (ioc, cmap) ->
+                       incr m_counter;
+                       let prefix = Printf.sprintf "%s_%d_" prefix !m_counter in
                        let ioc', cmap' = remove_invokedynamics_in_method ioc ms ~prefix in
                        (ioc', ClassMap.merge (fun c _ -> c) cmap cmap')
                      ) methods (ioc, ClassMap.empty) in

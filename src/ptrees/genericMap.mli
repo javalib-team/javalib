@@ -18,6 +18,7 @@ module type S =
 sig 
   type t
   val get_hash : t -> int
+  val compare : t -> t -> int
 end 
 
 
@@ -37,9 +38,17 @@ sig
   val remove : key -> 'a t -> 'a t
   val mem : key -> 'a t -> bool
   val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val iter_ordered : (key -> 'a -> unit) -> 'a t -> unit
+    (** [iter_ordered f m] iterates function [f] on all bindings (k,d) of [m]
+        using an increasing order given by the comparison function [S.compare] **)
+
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
   val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val fold_ordered : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+    (** [fold_ordered comp f m] folds function [f] on all bindings (k,d) of [m]
+        using an increasing order given by the comparison function [S.compare] **)
+
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t

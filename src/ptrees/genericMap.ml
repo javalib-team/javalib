@@ -15,6 +15,7 @@ module type S =
 sig 
   type t
   val get_hash : t -> int
+  val compare : t -> t -> int
 end 
 
 
@@ -32,9 +33,11 @@ sig
   val remove : key -> 'a t -> 'a t
   val mem : key -> 'a t -> bool
   val iter : (key -> 'a -> unit) -> 'a t -> unit
+  val iter_ordered : (key -> 'a -> unit) -> 'a t -> unit
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
   val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val fold_ordered : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
@@ -61,6 +64,7 @@ end
 module Make ( S : sig 
                 type t 
                 val get_hash : t -> int
+                val compare : t -> t -> int
               end ) =
 struct
   type f = S.t
@@ -80,9 +84,19 @@ struct
   let remove key m = Ptmap.remove (S.get_hash key) m
   let mem key m = Ptmap.mem (S.get_hash key) m
   let iter f m = Ptmap.iter (fun _ (k,d) -> f k d) m
+  let iter_ordered f m =
+    Ptmap.iter_ordered
+      (fun (_,(k1,_)) (_,(k2,_)) -> S.compare k1 k2)
+      (fun _ (k,d) -> f k d)
+      m
   let map f m = Ptmap.map (fun (k,d) -> (k, f d)) m
   let mapi f m = Ptmap.mapi (fun _ (k,d) -> (k, f k d)) m
   let fold f m e = Ptmap.fold (fun _ (k,d) -> f k d) m e
+  let fold_ordered f m e =
+    Ptmap.fold_ordered
+      (fun (_,(k1,_)) (_,(k2,_)) -> S.compare k1 k2)
+      (fun _ (k,d) -> f k d)
+      m e
   let compare f m1 m2 = Ptmap.compare (fun a b -> f (snd a) (snd b)) m1 m2
   let equal f m1 m2 = Ptmap.equal (fun a b -> f (snd a) (snd b)) m1 m2
   let merge f m1 m2 = Ptmap.merge (fun a b -> (fst a), f (snd a) (snd b)) m1 m2
