@@ -61,11 +61,17 @@ module type S = sig
 
   val iter : (int -> 'a -> unit) -> 'a t -> unit
 
+  val iter_ordered :
+    ((int * 'a) -> (int * 'a) -> int) -> (int -> 'a -> unit) -> 'a t -> unit
+    
   val map : ('a -> 'b) -> 'a t -> 'b t
 
   val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
 
   val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val fold_ordered :
+    ((int * 'a) -> (int * 'a) -> int) ->
+    (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
 

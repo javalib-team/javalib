@@ -33,9 +33,14 @@ module type S = sig
   val remove : int -> 'a t -> 'a t
   val mem :  int -> 'a t -> bool
   val iter : (int -> 'a -> unit) -> 'a t -> unit
+  val iter_ordered :
+    ((int * 'a) -> (int * 'a) -> int) -> (int -> 'a -> unit) -> 'a t -> unit
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (int -> 'a -> 'b) -> 'a t -> 'b t
   val fold : (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+  val fold_ordered :
+    ((int * 'a) -> (int * 'a) -> int) ->
+    (int -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
@@ -520,3 +525,14 @@ let elements s =
     | Branch (_,_,l,r) -> elements_aux (elements_aux acc l) r
   in
     elements_aux [] s
+
+let iter_ordered comp f s =
+  let elts = elements s in
+  let sorted_elts = List.sort comp elts in
+      List.iter (fun (k,a) -> f k a) sorted_elts
+
+let fold_ordered comp f s accu =
+  let elts = elements s in
+  let sorted_elts = List.sort comp elts in
+  List.fold_left (fun accu (k,a) -> f k a accu) accu sorted_elts
+        

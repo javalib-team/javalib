@@ -47,6 +47,9 @@ all:javatests java/javac java/unparsed
 
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
+	src/test_collections > log_collections
+	diff log_collections log_collections_regress
+
 
 javatests: javatests/huge javatests/jmods
 	mkdir -p javatests
