@@ -1,3 +1,9 @@
+From 3.2 to 3.2.1
+-----------------
+Minor changes:
+* Adding new ordered iter and fold function in Ptmap and GenericMap
+* Making remove_invokedynamics more predictable during class generations
+
 From 3.1.1 to 3.2
 -----------------
 Major changes:
