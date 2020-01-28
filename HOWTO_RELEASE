@@ -1,0 +1,57 @@
+How to release :
+================
+
+The following operations must be done in the master branch.
+
+- update the javalib version in src/META.source
+
+- update the javalib version in javalib.opam
+
+- update the CHANGELOG file
+
+- commit every change and tag the last commit with the new version number :
+
+  git tag -a vx.y(.z) -m "Version x.y(.z)"
+
+  Later if the continuous integration fails, you may want to update
+  the previous tag with a new commit. You will need to force tagging:
+
+  git tag -af vx.y(.z) -m "Version x.y(.z)"
+
+- push the tagged version on GitHub :
+
+  git push origin vx.y(.z)
+
+  or if required
+
+  git push --force origin vx.y(.z)
+
+- create a pull request automatically with opam-publish
+
+  opam-publish javalib.opam --tag vx.y(.z)
+
+  You should be able to follow your pull request on
+  https://github.com/ocaml/opam-repository/pulls
+
+- if the continuous integration fails, you should correct your code
+  and repeat the previous steps
+
+
+How to update the documentation on GitHub :
+===========================================
+
+- switch to the gh-pages branch
+
+  git checkout gh-pages
+
+- merge with master
+
+  git merge master
+
+- update the version number in intro.ocamldoc
+
+- build the doc
+
+  make doc
+
+- commit the changes and push
