@@ -566,7 +566,6 @@ module BCV = struct
         let sup2 = get_rev_superclasses e cn2 in
         last_common_element sup1 sup2 java_lang_object
       else
-        (* If a class_name is not in env, it is assumed to be an interface. *)
         java_lang_object
 
   let rec lub_object_type (e:env) o1 o2 =
@@ -1028,5 +1027,9 @@ let gen_stack_map_info e cn ms is_static code =
                | None -> ()
                | Some (s, l) ->
                   stackmaps := FullFrame (255, offs, locals_to_list l, s) :: !stackmaps
-             ) targets offset_deltas in 
-  (max_stack, max_locals, List.rev !stackmaps)
+             ) targets offset_deltas in
+  { code with c_max_stack = max_stack;
+              c_max_locals = max_locals;
+              c_stack_map = match !stackmaps with
+                            | [] -> None
+                            | l -> Some l }
