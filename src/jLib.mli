@@ -81,16 +81,8 @@ end
 
 module List : sig
 
-  val length : 'a list -> int
-  val init : int -> (int -> 'a) -> 'a list
-  val iter : ('a -> unit) -> 'a list -> unit
   val drop : int -> 'a list -> 'a list
-  val filter_map : ('a -> 'b option) -> 'a list -> 'b list
   val remove_all : 'a list -> 'a -> 'a list
   val split_nth : int -> 'a list -> 'a list * 'a list
-  val map : ('a -> 'b) -> 'a list -> 'b list
-  val map2 : ('a -> 'b -> 'c) -> 'a list -> 'b list -> 'c list
-  val fold_left : ('a -> 'b -> 'a) -> 'a -> 'b list -> 'a
-  val iteri : (int -> 'a -> unit) -> 'a list -> unit
   
 end

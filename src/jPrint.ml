@@ -40,11 +40,11 @@ let field_descriptor = value_type
 let value_type_list ?(jvm=false) ?names l =
   let prms =
     match names with
-      | None -> JLib.List.map (value_type ~jvm:jvm) l
+      | None -> List.map (value_type ~jvm:jvm) l
       | Some names ->
 	  (* names must have the same length than l *)
 	  try
-	    JLib.List.map2
+	    List.map2
 	      (fun v name ->
 		 (value_type ~jvm:jvm v) ^ " " ^ name) l names
 	  with
@@ -57,7 +57,7 @@ let return_type ?(jvm=false) = JDumpBasics.rettype2shortstring ~jvm:jvm
 let method_descriptor ?(jvm=false) args ret =
   let ret = return_type ~jvm:jvm ret in
     if jvm then
-      "(" ^ (String.concat "" (JLib.List.map (value_type ~jvm:true) args))
+      "(" ^ (String.concat "" (List.map (value_type ~jvm:true) args))
       ^ ")" ^ ret
     else
       ret ^ " " ^ (value_type_list args)
@@ -312,7 +312,7 @@ let jopcode_jvm =
 
   | OpLookupSwitch (default,jumps) ->
      let inst =
-       JLib.List.fold_left
+       List.fold_left
 	 (fun s (int,offset) ->
            s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
 	 "lookupswitch "
@@ -429,7 +429,7 @@ let jopcode ?(jvm=false) op =
 
 let jcode ?(jvm=false) code =
   let cl = Array.to_list (Array.mapi (fun i op -> (i,op)) code.c_code) in
-    JLib.List.filter_map
+    List.filter_map
       (fun (i,op) ->
 	 match op with
 	   | OpInvalid -> None
@@ -504,7 +504,7 @@ let method_synchronized m =
 let acmethod ?(jvm=false) (f:'a -> string list) (m:'a jmethod) =
   let ms = get_method_signature m in
   let header =
-    String.concat " " (JLib.List.filter_map
+    String.concat " " (List.filter_map
 			 (fun x -> x)
 			 [method_access m; method_static m;
 			  method_final m; method_synchronized m;
@@ -535,7 +535,7 @@ let acmethod ?(jvm=false) (f:'a -> string list) (m:'a jmethod) =
 let any_field ?(jvm=false) (f : any_field) : string =
   let fs = get_field_signature f in
   let header =
-    String.concat " " (JLib.List.filter_map
+    String.concat " " (List.filter_map
 			 (fun x -> x)
 			 [field_access f; field_static f;
 			  field_kind f]) in
@@ -559,7 +559,7 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
   let indent_val = 3 in
   let ms = get_method_signature m in
   let header =
-    String.concat " " (JLib.List.filter_map
+    String.concat " " (List.filter_map
 			 (fun x -> x)
 			 [method_access m; method_static m;
 			  method_final m; method_synchronized m;
@@ -609,8 +609,8 @@ let print_method_fmt jvm m (print_code: 'a -> Format.formatter -> unit) fmt =
 
 let print_code (f: 'a -> string list) code fmt =
   let instructions = f code in
-  let len = JLib.List.length instructions in
-    JLib.List.iteri
+  let len = List.length instructions in
+    List.iteri
       (fun i s ->
 	 Format.pp_print_string fmt s;
 	 if (i < len - 1) then Format.pp_force_newline fmt ()) instructions;
@@ -642,7 +642,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
     let get_output = function
 	[] -> extends^""
       | l ->
-	  JLib.List.fold_left
+	  List.fold_left
 	    (fun msg cn -> msg^" "^cn_name cn)
 	    (extends^"implements")
 	    l
@@ -655,7 +655,7 @@ let print_class_fmt ?(jvm=false) indent_val (ioc:'a interface_or_class)
       get_output interf_l
   in
   let header = String.concat " "
-    (JLib.List.filter_map
+    (List.filter_map
        (fun x -> x)
        [interface_or_class_access ioc; interface_or_class_final ioc;
 	interface_or_class_abstract ioc]) in

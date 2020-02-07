@@ -281,7 +281,7 @@ let parse_opcode op ch wide =
 	| 171 ->
 		let def = read_i32 ch in
 		let npairs = read_i32 ch in
-		let tbl = JLib.List.init npairs (fun _ ->
+		let tbl = List.init npairs (fun _ ->
 			let v = read_real_i32 ch in
 			let j = read_i32 ch in
 			v , j
