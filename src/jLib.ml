@@ -31,8 +31,12 @@ end
                  
 module List = struct
 
-  include ExtList.List (* ExtLib *)
-  
+  include CCList (* Containers *)
+
+  let split_nth = take_drop
+
+  let remove_all l x = filter (fun y -> x<>y) l
+       
 end                  
 
                   
