@@ -384,7 +384,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $metaconfig
 echo "# Variables detected at configure-time" >> $metaconfig
-echo "requires = \"unix,str,extlib,containers,camlzip,$packagezip\"" >> $metaconfig
+echo "requires = \"unix,str,extlib,containers,$packagezip\"" >> $metaconfig
 # The rest from template
 echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig
