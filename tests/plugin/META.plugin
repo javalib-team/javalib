@@ -1,0 +1,4 @@
+description = "Example plug-in"
+directory = "."
+requires = "javalib"
+plugin(native) = "plugin.cmxs"

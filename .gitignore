@@ -13,3 +13,5 @@ tests/src/test_parser
 tests/src/unparser
 tests/.errors
 src/ocaml
+/tests/plugin/META.javalib
+/tests/plugin/main
