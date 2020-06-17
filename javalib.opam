@@ -8,7 +8,7 @@ bug-reports: "https://github.com/javalib-team/javalib/issues"
 license: "LGPL-2.1 with OCaml linking exception"
 dev-repo: "git+https://github.com/javalib-team/javalib.git"
 build: [
-  ["./configure.sh"]
+  ["./configure.sh" "-s" {ocaml:native-dynlink}]
   [make]
 ]
 install: [make "install"]
