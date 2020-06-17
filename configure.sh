@@ -152,16 +152,17 @@ Options:
   -l PATH \t Perform a local installation at PATH.
   -d FLAG \t Use the debug flag when compiling (default: yes).
   -v  \t\t Deactivate version check for ocaml packages.
-  -h  \t\t Print this message and exit."
+  -h  \t\t Print this message and exit.
+  -s  \t\t Compile a dynamically loadable plugin (cmxs)."
 }
-#  -s  \t\t Complile a dynamically loadable plugin (cmxs).
+
 
 
 #
 # The option parsing function. Uses getopts, a bash built-in function.
 #
 
-while getopts "d:l:vh" opt
+while getopts "d:l:svh" opt
 do
   case $opt in 
     h   ) print_usage
@@ -185,12 +186,12 @@ do
           # For the rest of this configure, set OCAMLPATH to $LOCALDEST
           # NB: only children of this script are in the scope of 'export'.
           export OCAMLPATH=$LOCALDEST;;
+    s   ) SHARED="javalib.cmxs"
+           msg "inf" "Plugin version of javalib will be generated at compilation (ocamlopt -shared)";;
     *   ) msg "err" "unrecognized option '$OPTARG'. Type '`basename $0` -h' to list available options";;
   esac
 done
 
-#    s   ) SHARED="javalib.cmxs"
-#           msg "inf" "Plugin version of javalib will be generated at compilation (ocamlopt -shared)";;
 
 
 shift $(($OPTIND - 1))
@@ -389,6 +390,9 @@ echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig
 echo "# $metaconfigtemplate" >> $metaconfig
 cat $metaconfigtemplate >> $metaconfig
+if test -n "$SHARED"; then
+    echo "plugin(native) = \"javalib.cmxs\"" >> $metaconfig;
+fi
 echo -n "."
 echo " done."
 
