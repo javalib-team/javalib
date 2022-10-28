@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "javalib"
-version: "3.2"
+version: "3.2.2"
 maintainer: "Nicolas Barré <nicolas.barre@irisa.fr>"
 authors: "Javalib Development team"
 homepage: "https://javalib-team.github.io/javalib/"
@@ -13,7 +13,7 @@ build: [
 ]
 install: [make "install"]
 depends: [
-  "ocaml" {>= "4.04"}
+  "ocaml" {>= "4.08"}
   "conf-which" {build}
   "ocamlfind" {build}
   "camlzip" {>= "1.05"}

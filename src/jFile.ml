@@ -120,7 +120,7 @@ let lookup c : cp_unit -> JClassLow.jclass =
 	    | `dir d ->
 		if is_file (Filename.concat d c)
 		then
-		  let ch = Pervasives.open_in_bin (Filename.concat d c) in
+		  let ch = Stdlib.open_in_bin (Filename.concat d c) in
 		    JLib.IO.input_channel ch
 		else raise Not_found
 	    | `jar jar ->
@@ -156,7 +156,7 @@ let write_class_low output_dir classe =
     (mkdir
        (Filename.concat output_dir (Filename.dirname c))
        0o755);
-    let f = Pervasives.open_out_bin (Filename.concat output_dir c) in
+    let f = Stdlib.open_out_bin (Filename.concat output_dir c) in
     let output = JLib.IO.output_channel f in
       JUnparse.unparse_class_low_level output classe;
       JLib.IO.close_out output
@@ -171,7 +171,7 @@ let dir_sep =
     | _ -> assert false (* Inspirated from filename.ml in the stdlib *)
 
 let extract_class_name_from_file file =
-  let input = JLib.IO.input_channel (Pervasives.open_in_bin file) in
+  let input = JLib.IO.input_channel (Stdlib.open_in_bin file) in
   let c = JParse.parse_class_low_level input in
     JLib.IO.close_in input;
     let cname = c.j_name in
@@ -291,7 +291,7 @@ let fold_string class_path f file =
       try
 	apply_to_dir_or_class
 	  (function c ->
-	     let ch = Pervasives.open_in_bin c in
+	     let ch = Stdlib.open_in_bin c in
 	     let input = JLib.IO.input_channel ch in
 	     let classe = JParse.parse_class_low_level input in
 	       JLib.IO.close_in input;
