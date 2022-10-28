@@ -50,13 +50,11 @@ all:javatests java/javac java/unparsed
 
 	if [ -s .errors ]; then cat .errors >> /dev/stderr; exit 1; fi
 
-javatests: javatests/huge javatests/jmods
+javatests: javatests/out javatests/jmods
 	mkdir -p javatests
 
-javatests/huge:
+javatests/out:
 	mkdir -p javatests/out
-	wget -r -nH --cut-dirs=4 -np --reject="*.html,*.tmp" -e robots=off \
-	https://scm.gforge.inria.fr/anonscm/svn/javalib/tests/javatests/
 
 javatests/jmods:
 	mkdir -p javatests/jmods
@@ -71,4 +69,4 @@ java/unparsed:
 
 clean cleantests:
 	make -C src clean
-	rm -rf javatests java/javac java/unparsed java/*.txt .errors
+	rm -rf javatests/out javatests/jmods java/javac java/unparsed java/*.txt .errors
