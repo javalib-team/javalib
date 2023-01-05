@@ -366,7 +366,7 @@ echo "# $makeconfigtemplate" >> $makeconfig
 cat $makeconfigtemplate >> $makeconfig
 
 # write the package list with camlzip or zip
-echo "INCLUDE := -package unix,str,extlib,containers,"$packagezip >>$makeconfig
+echo "INCLUDE := -package unix,str,extlib,"$packagezip >>$makeconfig
 echo -n "."
 echo " done."
 
@@ -384,7 +384,7 @@ echo -n "  ."
 # Configuration variables
 echo "" >> $metaconfig
 echo "# Variables detected at configure-time" >> $metaconfig
-echo "requires = \"unix,str,extlib,containers,$packagezip\"" >> $metaconfig
+echo "requires = \"unix,str,extlib,$packagezip\"" >> $metaconfig
 # The rest from template
 echo "" >> $metaconfig
 echo "# Variables from template at: " >> $metaconfig
