@@ -1,3 +1,13 @@
+From 3.2 to 3.2.2
+-----------------
+Minor changes:
+* small improvements in the test directory
+* use Stdlib instead of Pervasives
+
+From 3.2.1 to 3.2.2
+-----------------
+???
+
 From 3.1.1 to 3.2
 -----------------
 Major changes:
