@@ -56,7 +56,7 @@ SHARED=
 # The ocamlopt flags (depends on DEBUG)
 OPT_FLAGS=
 # The ocamlc flags (depends on DEBUG)
-FLAGS="-w Aer"
+FLAGS="-w +A-e-r"
 # The flag signalling the absence of ZLIB (used to warn before camlzip compiles)
 ZLIBFLAG=
 # Do version check for packages 
