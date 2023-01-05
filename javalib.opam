@@ -1,11 +1,11 @@
 opam-version: "2.0"
 name: "javalib"
-version: "3.2.1"
-maintainer: "Nicolas Barré <nicolas.barre@irisa.fr>"
+version: "3.2.2"
+maintainer: "David Pichardie <david.pichardie@ens-rennes.fr>"
 authors: "Javalib Development team"
 homepage: "https://javalib-team.github.io/javalib/"
 bug-reports: "https://github.com/javalib-team/javalib/issues"
-license: "LGPL-2.1 with OCaml linking exception"
+license: "LGPL-2.1-only WITH OCaml-LGPL-linking-exception"
 dev-repo: "git+https://github.com/javalib-team/javalib.git"
 build: [
   ["./configure.sh" "-s" {ocaml:native-dynlink}]
@@ -16,7 +16,7 @@ depends: [
   "ocaml" {>= "4.08"}
   "conf-which" {build}
   "ocamlfind" {build}
-  "camlzip" {>= "1.05"}
+  "camlzip" {>= "1.11"}
   "extlib"
   "containers"
 ]

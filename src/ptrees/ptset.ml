@@ -335,7 +335,7 @@ let elements s =
   in
   (* unfortunately there is no easy way to get the elements in ascending
      order with little-endian Patricia trees *)
-  List.sort compare (elements_aux [] s)
+  List.sort Stdlib.compare (elements_aux [] s)
 
 let split x s =
   let coll k (l, b, r) =
@@ -599,7 +599,7 @@ module Big = struct
       | Branch (_,_,l,r) -> elements_aux (elements_aux acc r) l
     in
     (* we still have to sort because of possible negative elements *)
-    List.sort compare (elements_aux [] s)
+    List.sort Stdlib.compare (elements_aux [] s)
 
   let split x s =
     let coll k (l, b, r) =
