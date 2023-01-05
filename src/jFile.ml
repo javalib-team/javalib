@@ -102,7 +102,7 @@ let class_path cp =
 	 )
 	 cp_list)
   in
-    JLib.List.filter_map open_path cp_with_jars
+    List.filter_map open_path cp_with_jars
 
 let close_class_path =
   List.iter

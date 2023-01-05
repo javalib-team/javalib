@@ -4,9 +4,11 @@ Minor changes:
 * small improvements in the test directory
 * use Stdlib instead of Pervasives
 
-From 3.2.1 to 3.2.2
+From 3.2 to 3.2.1
 -----------------
-???
+Minor changes:
+* Adding new ordered iter and fold function in Ptmap and GenericMap
+* Making remove_invokedynamics more predictable during class generations
 
 From 3.1.1 to 3.2
 -----------------

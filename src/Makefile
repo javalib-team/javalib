@@ -47,8 +47,8 @@ FOR_PACK = -for-pack Javalib_pack
 
 all: javalib.cma javalib.cmxa $(SHARED)
 
-install: META javalib.cm[ia] javalib.cmxa javalib_pack.cm[iox] javalib_pack.o 	\
-	$(MODULE_INTERFACES:=.mli)
+install: META javalib.cm[ia] javalib.cmxa $(SHARED) \
+         javalib_pack.cm[iox] javalib_pack.o $(MODULE_INTERFACES:=.mli)
 	$(INSTALL) javalib $^ javalib.a
 remove:
 	$(FINDER) remove javalib
@@ -72,8 +72,8 @@ javalib.cma: javalib_pack.cmo
 javalib.cmxa: javalib_pack.cmx
 	$(OCAMLOPT) $(INCLUDE) -a -o $@ $^
 
-# javalib.cmxs: javalib.cmxa
-# 	$(OCAMLOPT) $(INCLUDE) -linkpkg -shared -o $@ $^
+javalib.cmxs: javalib_pack.cmx
+	$(OCAMLOPT) $(INCLUDE) -shared -o $@ $^
 
 javalib_pack.cmo: $(MODULE_INTERFACES:=.cmi) $(MODULES:=.cmo)
 	$(OCAMLC) $(INCLUDE) -I ptrees -pack  $(MODULES:=.cmo) -o $@
