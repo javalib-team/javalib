@@ -18,7 +18,6 @@ depends: [
   "ocamlfind" {build}
   "camlzip" {>= "1.11"}
   "extlib"
-  "containers"
 ]
 
 synopsis: "Javalib is a library written in OCaml with the aim to provide a high level representation of Java .class files"
