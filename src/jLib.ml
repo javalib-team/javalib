@@ -48,7 +48,7 @@ module List = struct
       | 0, _ -> (List.rev l1, l2)
       | _, [] -> raise (Invalid_index n)
       | _, x :: l2 -> aux (i-1) (x::l1) l2
-    in aux 0 [] l
+    in aux n [] l
     
        
 end                  
