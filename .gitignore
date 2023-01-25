@@ -3,6 +3,7 @@
 *.a
 *.annot
 *~
+_build
 Makefile.config
 *.depend
 src/META

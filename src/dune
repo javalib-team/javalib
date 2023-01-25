@@ -1,0 +1,12 @@
+(ocamllex jManifest)
+
+(include_subdirs unqualified)
+
+(library
+ (name javalib)
+ (modules_without_implementation jClassLow)
+ (flags :standard -w +A-e-r -annot)
+ (libraries extlib zip)
+ (inline_tests)
+ (preprocess (pps ppx_inline_test))
+)
