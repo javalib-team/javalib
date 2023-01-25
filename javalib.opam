@@ -10,7 +10,6 @@ dev-repo: "git+https://github.com/javalib-team/javalib.git"
 build: [
   ["dune" "build" "-p" name]
 ]
-install: [make "install"]
 depends: [
   "ocaml" {>= "4.08"}
   "odoc"
