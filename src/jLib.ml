@@ -48,9 +48,35 @@ module List = struct
       | 0, _ -> (List.rev l1, l2)
       | _, [] -> raise (Invalid_index n)
       | _, x :: l2 -> aux (i-1) (x::l1) l2
-    in aux n [] l
+    in
+    aux n [] l
     
-       
+  let%test "split_nth regular" =
+    let l = [0; 1; 2; 3; 4; 5; 6] in
+    split_nth 3 l = ([0; 1; 2], [3; 4; 5; 6])
+  
+  let%test "split_nth nil snd" =
+    let l = [0; 1; 2; 3; 4; 5; 6] in
+    split_nth 0 l = ([], l)
+  
+  let%test "split_nth nil fst" =
+    let l = [0; 1; 2; 3; 4; 5; 6] in
+    split_nth 7 l = (l, [])
+  
+  let%test "split_nth invalid index too big" =
+    let l = [0; 1; 2; 3; 4; 5; 6] in
+    try (
+      let _ = split_nth 8 l in
+      false
+    ) with Invalid_index n -> n = 8
+  
+  let%test "split_nth invalid index negative" =
+    let l = [0; 1; 2; 3; 4; 5; 6] in
+    try (
+      let _ = split_nth (-8) l in
+      false
+    ) with Invalid_index n -> n = -8
+  
 end                  
 
                   
