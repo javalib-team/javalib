@@ -1,4 +1,3 @@
-open Javalib_pack 
 open JBasics
 
 let add_class basename i map =

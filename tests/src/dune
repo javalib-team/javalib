@@ -1,4 +1,4 @@
-(executable
-  (name test_parser)
+(executables
+  (names test_parser test_collections unparser)
   (libraries javalib)
-  )
+)

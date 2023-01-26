@@ -1,4 +1,3 @@
-open Javalib_pack
 open Javalib
 open JBasics   
 
@@ -47,7 +46,8 @@ let _ =
                       | Some f -> if (Sys.file_exists f && not(Sys.is_directory f))
                                   then f
                                   else failwith (Printf.sprintf "Bad classes file : %s" f)
-                     ) in
+    ) in
+  Printf.printf "looking at %s\n" classes_file ;
   let chan = open_in classes_file in
   let classes = Std.input_list chan in
   let _ = close_in chan in
