@@ -4,9 +4,11 @@
 
 (library
  (name javalib)
+ (public_name javalib)
  (modules_without_implementation jClassLow)
  (flags :standard -w +A-e-r -annot)
  (libraries extlib zip)
  (inline_tests)
+ (wrapped false)
  (preprocess (pps ppx_inline_test))
 )
