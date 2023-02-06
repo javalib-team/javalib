@@ -34,7 +34,7 @@ let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
   | OpAdd _ ->
     let* operand1 = pop_stack () in
     let* operand2 = pop_stack () in
-    let node = Data.BinOp {op= Binop.Add; operand1; operand2} in
+    let node = Data.binop Binop.Add operand1 operand2 in
     let* _ = push_stack node in
     Stack.return g
   | OpStore (_, id) ->
@@ -42,11 +42,11 @@ let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
     let* operand = pop_stack () in
     Stack.return @@ IMap.add id (Node.Data operand) g
   | OpConst (`Int n) ->
-    let node = Data.Const (Int32.to_int n) in
+    let node = Data.const (Int32.to_int n) in
     let* _ = push_stack node in
     Stack.return g
   | OpConst (`Byte n) ->
-    let node = Data.Const n in
+    let node = Data.const n in
     push_stack node >> Stack.return g
   | OpReturn _ ->
     let* operand = pop_stack () in
