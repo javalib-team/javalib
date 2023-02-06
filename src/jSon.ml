@@ -108,10 +108,10 @@ end = struct
   let to_dot buff node =
     Buffer.add_string buff "digraph G {\nnode [shape=record];\ncolor = black;\n";
     begin
-    match node with
-    | Data data -> Data.to_dot buff data
-    | Control control -> Control.to_dot buff control
-    | _ -> assert false
+      match node with
+      | Data data -> Data.to_dot buff data
+      | Control control -> Control.to_dot buff control
+      | _ -> assert false
     end;
     Buffer.add_string buff "}"
 end
@@ -125,12 +125,18 @@ module Translator : sig
   val translate_jopcodes : JCode.jopcodes -> son
 end = struct
   (* JVM Stack *)
-  let stack = ref []
-  let push_stack x = stack := x :: !stack
+  module Stack = Monad.State
+
+  let push_stack x = Stack.modify (fun l -> x :: l)
+
   let pop_stack () =
-    match !stack with
-    | [] -> assert false
-    | x :: s -> stack := s; x
+    let open Monad.State.Infix in
+    let* stack = Stack.get () in begin
+      match stack with
+      | [] -> assert false
+      | x :: s ->
+        Stack.set s >> Stack.return x
+    end
 
   (* We suppose that there is only one region *)
   let current_region = ref @@ Region.Region {jumps = []; branches = []}
@@ -140,7 +146,8 @@ end = struct
   let fresh () = incr count; !count
 
   (* Translate one opcode *)
-  let translate_jopcode (g: Node.t IMap.t) (op: JCode.jopcode) : Node.t IMap.t =
+  let translate_jopcode (g: Node.t IMap.t) (op: JCode.jopcode) : (Data.t list, Node.t IMap.t) Stack.t =
+    let open Monad.State.Infix in
     match op with
     | JCode.OpLoad (_, n) ->
       (* Get the data from the graph *)
@@ -148,44 +155,42 @@ end = struct
         match IMap.find n g with
         | Node.Data d -> d
         | _ -> assert false
-        in
-      push_stack data;
-      g
+      in
+      let* _ = push_stack data in
+      Stack.return g
     | JCode.OpAdd _ ->
-      let operand1 = pop_stack () in
-      let operand2 = pop_stack () in
+      let* operand1 = pop_stack () in
+      let* operand2 = pop_stack () in
       let node = Data.BinOp {op = Binop.Add; operand1; operand2} in
-      push_stack node;
-      g
+      let* _ = push_stack node in
+      Stack.return g
     | JCode.OpStore (_, id) ->
       (* Use the bytecode id *)
-      let operand = pop_stack () in
-      IMap.add id (Node.Data operand) g
+      let* operand = pop_stack () in
+      Stack.return @@ IMap.add id (Node.Data operand) g
 
     | JCode.OpConst (`Int n) ->
       let node = Data.Const (Int32.to_int n) in
-      push_stack node;
-      g
+      let* _ = push_stack node in
+      Stack.return g
     | JCode.OpConst (`Byte n) ->
       let node = Data.Const n in
-      push_stack node;
-      g
+      push_stack node >> Stack.return g
 
     | JCode.OpReturn _ ->
-      let operand = pop_stack () in
+      let* operand = pop_stack () in
       let region = !current_region in
       let node = Control.Return { region; operand } in
       (* Control nodes need to be in the graph *)
       let id = fresh () in
-      IMap.add id (Node.Control node) g
-    | _ -> g
+      Stack.return @@ IMap.add id (Node.Control node) g
+    | _ -> Stack.return g
 
   let translate_jopcodes (ops: JCode.jopcodes) =
     (* Initialize mutable state *)
-    stack := [];
     count := 1000;
     current_region := Region.Region {jumps = []; branches = []};
 
     (* Translate opcodes *)
-    Array.fold_left translate_jopcode IMap.empty ops
+    Stack.exec (Stack.fold_leftM translate_jopcode IMap.empty (Array.to_list @@ ops)) []
 end
