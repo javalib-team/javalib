@@ -21,7 +21,7 @@ end = struct
   let hash = function
     | Const n -> n
     | BinOp {op; operand1; operand2} ->
-      Binop.hash op * Data.hash operand1 * Data.hash operand2
+      Binop.hash op lxor Data.hash operand1 lxor Data.hash operand2
     | Phi phi -> Phi.hash phi
 
   let pp fmt data = Printf.fprintf fmt "node_%d" (Hashtbl.hash data)
@@ -46,7 +46,7 @@ and Region : sig
   val hash : t -> int
 end = struct
   type t = Region of {jumps: JumpSet.t; branches: BranchSet.t}
-  let hash (Region {jumps; branches; _}) = Hashtbl.hash jumps * Hashtbl.hash branches
+  let hash (Region {jumps; branches; _}) = Hashtbl.hash jumps lxor Hashtbl.hash branches
 end
 
 and Phi : sig
@@ -55,7 +55,7 @@ and Phi : sig
 end = struct
   type t = Phi of {region: Region.t; operands: Data.t list}
   let hash (Phi {region; operands}) =
-    Region.hash region * List.fold_left ( * ) 1 (List.map Data.hash operands)
+    Region.hash region lxor List.fold_left ( lxor ) 1 (List.map Data.hash operands)
 end
 
 and Jump : sig
@@ -71,7 +71,7 @@ and Cond : sig
   val hash : t -> int
 end = struct
   type t = Cond of {region: Region.t; operand: Data.t}
-  let hash (Cond {region; operand}) = Region.hash region * Data.hash operand
+  let hash (Cond {region; operand}) = Region.hash region lxor Data.hash operand
 end
 
 and Branch : sig
