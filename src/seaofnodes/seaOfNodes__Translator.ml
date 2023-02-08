@@ -11,7 +11,7 @@ let pop_stack () =
 
 
 (* We suppose that there is only one region *)
-let current_region = ref @@ Region.Region {jumps = JumpSet.empty; branches = BranchSet.empty}
+let current_region = ref @@ Region.Region []
 
 (* fresh name *)
 let count = ref 0
@@ -62,6 +62,6 @@ let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
 let translate_jopcodes (ops : JCode.jopcodes) =
   (* Initialize mutable state *)
   count := 1000 ;
-  current_region := Region.Region {jumps = JumpSet.empty; branches = BranchSet.empty} ;
+  current_region := Region.Region [] ;
   (* Translate opcodes *)
   Stack.exec (Stack.fold_leftM translate_jopcode IMap.empty (Array.to_list @@ ops)) []

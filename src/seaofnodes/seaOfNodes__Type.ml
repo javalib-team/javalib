@@ -33,11 +33,7 @@ end = struct
   let hash _ = 1
 end
 
-
-module rec JumpSet : GenericSet.GenericSetSig = GenericSet.Make(Jump)
-and BranchSet : GenericSet.GenericSetSig = GenericSet.Make(Branch)
-
-and Data : sig
+module rec Data : sig
   (** It is possible to pattern match elements of type t, *)
   (** but you must use the smart constructors to build values *)
   type t = private Const of int | BinOp of {op: Binop.t; operand1: t; operand2: t} | Phi of Phi.t
@@ -60,7 +56,7 @@ end = struct
   let hash = function
     | Const n -> n
     | BinOp {op; operand1; operand2} ->
-      Binop.hash op lxor Data.hash operand1 lxor Data.hash operand2
+      Binop.hash op lxor Data.get_id operand1 lxor Data.get_id operand2
     | Phi phi -> Phi.hash phi
 
   let equal t t' =
@@ -120,11 +116,12 @@ end
 
 
 and Region : sig
-  type t = Region of {jumps: JumpSet.t; branches: BranchSet.t}
-  val hash : t -> int
+  type predecessor = Jump of Jump.t | Branch of Branch.t
+  type t = Region of predecessor list  val hash : t -> int
 end = struct
-  type t = Region of {jumps: JumpSet.t; branches: BranchSet.t}
-  let hash (Region {jumps; branches; _}) = Hashtbl.hash jumps lxor Hashtbl.hash branches
+  type predecessor = Jump of Jump.t | Branch of Branch.t
+  type t = Region of predecessor list  
+  let hash (Region predecessors) = Hashtbl.hash predecessors
 end
 
 and Phi : sig
@@ -158,8 +155,8 @@ and Branch : sig
 end = struct
   type t = IfT of Cond.t | IfF of Cond.t
   let get_hash = function
-    | IfT cond -> Cond.hash cond
-    | IfF cond -> Cond.hash cond
+    | IfT cond -> 2 * Cond.hash cond
+    | IfF cond -> 1 + 2*Cond.hash cond
 end
 
 module Control : sig
