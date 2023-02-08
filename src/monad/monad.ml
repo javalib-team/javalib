@@ -38,7 +38,9 @@ module State = struct
     match l with
     | [] -> return acc
     | x::xs ->
-      bind (f acc x) (fun w -> fold_leftM f w xs)
+      (* the [@tailcall] attribute is required to ensure that the
+         compiler optimization is applied correctly *)
+      bind (f acc x) (fun w -> (fold_leftM [@tailcall]) f w xs)
 
   module Infix = struct
     let (<$>) f x = fmap f x
@@ -48,4 +50,3 @@ module State = struct
     let (let*) x f = bind x f
   end
 end
-
