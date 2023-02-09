@@ -1,6 +1,6 @@
 (* The module [Identified] is here to hide the tags in the SON types
    We use a Weak set to remember previously created values,
-       in which we store elements of type Identified t
+   in which we store elements of type Identified t
    Identified types are just an element with an integer *)
 
 module type IDENTIFIED = sig
@@ -141,13 +141,13 @@ end = struct
 end
 
 and Region : sig
-  type predecessor = Jump of Jump.t | Branch of Branch.t
+  type predecessor = Jump of Region.t | Branch of Branch.t
 
   type t = Region of predecessor list
 
   val hash : t -> int
 end = struct
-  type predecessor = Jump of Jump.t | Branch of Branch.t
+  type predecessor = Jump of Region.t | Branch of Branch.t
 
   type t = Region of predecessor list
 
@@ -163,16 +163,6 @@ end = struct
 
   let hash (Phi {region; operands}) =
     Region.hash region lxor List.fold_left ( lxor ) 1 (List.map Data.hash operands)
-end
-
-and Jump : sig
-  type t = Jump of Region.t
-
-  val get_hash : t -> int
-end = struct
-  type t = Jump of Region.t
-
-  let get_hash (Jump r) = Region.hash r
 end
 
 and Cond : sig
@@ -196,11 +186,11 @@ end = struct
 end
 
 module Control : sig
-  type t = Jump of Jump.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
+  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
 
   val pp_dot : out_channel -> t -> unit
 end = struct
-  type t = Jump of Jump.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
+  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
 
   let pp fmt data = Printf.fprintf fmt "node_%d" (Hashtbl.hash data)
 
