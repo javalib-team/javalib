@@ -1,67 +1,82 @@
 open SeaOfNodes__Type
 
-module Stack = Monad.State
+module TranslatorState : sig
+  type t = {stack: Data.t list; region: Region.t; count: int}
 
-let push_stack x = Stack.modify (fun l -> x :: l)
+  val initial : t
 
-let pop_stack () =
-  let open Monad.State.Infix in
-  let* stack = Stack.get () in
-  match stack with [] -> assert false | x :: s -> Stack.set s >> Stack.return x
+  val push_stack : Data.t -> (t, unit) Monad.State.t
 
+  val pop_stack : unit -> (t, Data.t) Monad.State.t
 
-(* We suppose that there is only one region *)
-let current_region = ref @@ Region.Region []
+  val fresh : unit -> (t, int) Monad.State.t
 
-(* fresh name *)
-let count = ref 0
+  val get_current_region : unit -> (t, Region.t) Monad.State.t
+end = struct
+  open Monad.State.Infix
 
-let fresh () =
-  incr count ;
-  !count
+  type t = {stack: Data.t list; region: Region.t; count: int}
 
+  let initial = {stack= []; region= Region.Region []; count= 1000}
+
+  let push_stack x = Monad.State.modify (fun g -> {g with stack= x :: g.stack})
+
+  let pop_stack () =
+    let* g = Monad.State.get () in
+    match g.stack with
+    | [] ->
+        assert false
+    | x :: s ->
+        Monad.State.set {g with stack= s} >> Monad.State.return x
+
+  let fresh () =
+    let* g = Monad.State.get () in
+    Monad.State.set {g with count= g.count + 1} >> Monad.State.return g.count
+
+  let get_current_region () =
+    let* g = Monad.State.get () in
+    Monad.State.return g.region
+end
 
 (* Translate one opcode *)
 let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
-  (Data.t list, Node.t IMap.t) Stack.t =
+    (TranslatorState.t, Node.t IMap.t) Monad.State.t =
   let open Monad.State.Infix in
   match op with
   | OpLoad (_, n) ->
-    (* Get the data from the graph *)
-    let data = match IMap.find n g with Node.Data d -> d | _ -> assert false in
-    let* _ = push_stack data in
-    Stack.return g
+      (* Get the data from the graph *)
+      let data = match IMap.find n g with Node.Data d -> d | _ -> assert false in
+      let* _ = TranslatorState.push_stack data in
+      Monad.State.return g
   | OpAdd _ ->
-    let* operand1 = pop_stack () in
-    let* operand2 = pop_stack () in
-    let node = Data.binop Binop.Add operand1 operand2 in
-    let* _ = push_stack node in
-    Stack.return g
+      let* operand1 = TranslatorState.pop_stack () in
+      let* operand2 = TranslatorState.pop_stack () in
+      let node = Data.binop Binop.Add operand1 operand2 in
+      let* _ = TranslatorState.push_stack node in
+      Monad.State.return g
   | OpStore (_, id) ->
-    (* Use the bytecode id *)
-    let* operand = pop_stack () in
-    Stack.return @@ IMap.add id (Node.Data operand) g
+      (* Use the bytecode id *)
+      let* operand = TranslatorState.pop_stack () in
+      Monad.State.return @@ IMap.add id (Node.Data operand) g
   | OpConst (`Int n) ->
-    let node = Data.const (Int32.to_int n) in
-    let* _ = push_stack node in
-    Stack.return g
+      let node = Data.const (Int32.to_int n) in
+      let* _ = TranslatorState.push_stack node in
+      Monad.State.return g
   | OpConst (`Byte n) ->
-    let node = Data.const n in
-    push_stack node >> Stack.return g
+      let node = Data.const n in
+      TranslatorState.push_stack node >> Monad.State.return g
   | OpReturn _ ->
-    let* operand = pop_stack () in
-    let region = !current_region in
-    let node = Control.Return {region; operand} in
-    (* Control nodes need to be in the graph *)
-    let id = fresh () in
-    Stack.return @@ IMap.add id (Node.Control node) g
+      let* operand = TranslatorState.pop_stack () in
+      let* region = TranslatorState.get_current_region () in
+      let node = Control.Return {region; operand} in
+      (* Control nodes need to be in the graph *)
+      let* id = TranslatorState.fresh () in
+      Monad.State.return @@ IMap.add id (Node.Control node) g
   | _ ->
-    Stack.return g
-
+      Monad.State.return g
 
 let translate_jopcodes (ops : JCode.jopcodes) =
-  (* Initialize mutable state *)
-  count := 1000 ;
-  current_region := Region.Region [] ;
   (* Translate opcodes *)
-  Stack.exec (Stack.fold_leftM translate_jopcode IMap.empty (Array.to_list @@ ops)) []
+  Monad.State.exec
+    (Monad.State.fold_leftM translate_jopcode IMap.empty (Array.to_list @@ ops))
+    TranslatorState.initial
