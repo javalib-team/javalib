@@ -3,6 +3,8 @@
    in which we store elements of type Identified t
    Identified types are just an element with an integer *)
 
+(* This implementation is inspired by the paper "Semantic reasoning about the sea of nodes" written by Delphine Demange, Yon Fernández de Retana, David Pichardie; see https://hal.inria.fr/hal-01723236/file/sea-of-nodes-hal.pdf for more details *)
+
 module type IDENTIFIED = sig
   type elt
 
