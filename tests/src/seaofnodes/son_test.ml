@@ -48,4 +48,9 @@ let _ =
 
   assert (Interpretor.eval_data data == 42);
 
+  let nodes = List.map snd (SeaOfNodes.Type.IMap.bindings graph) in
+  let data_nodes = map_option (function | SeaOfNodes.Type.Node.Data data -> Some data | _ -> None) nodes in
+  assert (List.for_all Fun.id @@ List.map
+    (fun a -> List.for_all (fun n -> not (a = n && a != n)) data_nodes) data_nodes);
+
   Printf.printf "Test passed successfully.\n"
