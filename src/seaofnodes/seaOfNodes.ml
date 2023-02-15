@@ -5,7 +5,5 @@ module Translator : sig
 end =
   SeaOfNodes__Translator
 
-
 module Interpretor = SeaOfNodes__Interpretor
-
 module BirBuilder = SeaOfNodes__BirBuilder

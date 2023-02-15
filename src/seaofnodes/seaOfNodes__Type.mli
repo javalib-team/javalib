@@ -1,39 +1,3 @@
-module type IDENTIFIED = sig
-  type elt
-
-  type t = int * elt
-
-  val hash : t -> int
-
-  val equal : t -> t -> bool
-
-  val get_value : t -> elt
-
-  val get_id : t -> int
-end
-
-module Identified : functor
-  (M : sig
-     type t
-
-     val hash : t -> int
-
-     val equal : t -> t -> bool
-   end)
-  -> sig
-  type elt = M.t
-
-  type t = int * elt
-
-  val hash : t -> int
-
-  val equal : t -> t -> bool
-
-  val get_value : t -> elt
-
-  val get_id : t -> int
-end
-
 module Binop : sig
   type t = Add
 
@@ -41,7 +5,10 @@ module Binop : sig
 end
 
 module rec Data : sig
-  type t = private Const of int | BinOp of {op: Binop.t; operand1: t; operand2: t} | Phi of Phi.t
+  type t = private
+    | Const of {unique: int; value: int}
+    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | Phi of Phi.t
 
   val hash : t -> int
 

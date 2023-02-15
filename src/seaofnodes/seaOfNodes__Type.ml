@@ -5,40 +5,6 @@
 
 (* This implementation is inspired by the paper "Semantic reasoning about the sea of nodes" written by Delphine Demange, Yon Fernández de Retana, David Pichardie; see https://hal.inria.fr/hal-01723236/file/sea-of-nodes-hal.pdf for more details *)
 
-module type IDENTIFIED = sig
-  type elt
-
-  type t = int * elt
-
-  val hash : t -> int
-
-  val equal : t -> t -> bool
-
-  val get_value : t -> elt
-
-  val get_id : t -> int
-end
-
-module Identified (M : sig
-  type t
-
-  val hash : t -> int
-
-  val equal : t -> t -> bool
-end) : IDENTIFIED with type elt = M.t = struct
-  type t = int * M.t
-
-  type elt = M.t
-
-  let hash (_, x) = M.hash x
-
-  let equal (_, x) (_, y) = M.equal x y
-
-  let get_value (_, x) = x
-
-  let get_id (id, _) = id
-end
-
 module Binop : sig
   type t = Add
 
@@ -52,7 +18,10 @@ end
 module rec Data : sig
   (* It is possible to pattern match elements of type t,
      but you must use the smart constructors to build values *)
-  type t = private Const of int | BinOp of {op: Binop.t; operand1: t; operand2: t} | Phi of Phi.t
+  type t = private
+    | Const of {unique: int; value: int}
+    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | Phi of Phi.t
 
   val hash : t -> int
 
@@ -70,11 +39,14 @@ module rec Data : sig
   (* Unique id of the node *)
   val get_id : t -> int
 end = struct
-  type t = Const of int | BinOp of {op: Binop.t; operand1: t; operand2: t} | Phi of Phi.t
+  type t =
+    | Const of {unique: int; value: int}
+    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | Phi of Phi.t
 
   let hash = function
     | Const n ->
-        n
+        n.value
     | BinOp {op; operand1; operand2} ->
         (*  Boost hash combiner *)
         let hash_nums (ns : int list) =
@@ -89,7 +61,7 @@ end = struct
   let equal t t' =
     match (t, t') with
     | Const n, Const n' ->
-        n = n'
+        n.value = n'.value
     | BinOp {op; operand1; operand2}, BinOp {op= op'; operand1= operand1'; operand2= operand2'} ->
         (* We assume that binops and datas are hashconsed and use the physical equality *)
         op == op' && operand1 == operand1' && operand2 == operand2'
@@ -103,7 +75,7 @@ end = struct
   let rec pp_dot fmt data =
     match data with
     | Const n ->
-        Printf.fprintf fmt "%a [ label = \"Const %d\" ]\n" pp data n
+        Printf.fprintf fmt "%a [ label = \"Const %d\" ]\n" pp data n.value
     | BinOp {op= Binop.Add; operand1= op1; operand2= op2} ->
         Printf.fprintf fmt "%a [ label = \"Add\" ]\n" pp data ;
         Printf.fprintf fmt "%a -> %a\n" pp data pp op1 ;
@@ -113,11 +85,8 @@ end = struct
     | _ ->
         ()
 
-  (* Data.t with tags *)
-  module Id = Identified (Data)
-
   (* Weak set to remember previously created values *)
-  module W = Weak.Make (Id)
+  module W = Weak.Make (Data)
 
   let nodes = W.create 5003
 
@@ -125,21 +94,22 @@ end = struct
 
   (* if d is on the set, we return the previously constructed element,
      otherwise we add it to the set and increment cpt *)
-  let add_or_find d =
-    let n0 = (!cpt, d) in
+  let add_or_find n0 =
     let n = W.merge nodes n0 in
     if n == n0 then incr cpt ;
-    Id.get_value n
+    n
 
-  let const n = add_or_find @@ Const n
+  let const n =
+    let n0 = Const {unique= !cpt; value= n} in
+    add_or_find n0
 
-  let binop op operand1 operand2 = add_or_find @@ BinOp {op; operand1; operand2}
+  let binop op operand1 operand2 =
+    let n0 = BinOp {unique= !cpt; op; operand1; operand2} in
+    add_or_find n0
 
-  let phi phi = add_or_find @@ Phi phi
+  let phi phi = Phi phi
 
-  let get_id data =
-    let n0 = (0, data) in
-    Id.get_id @@ W.find nodes n0
+  let get_id data = match data with Const n -> n.unique | BinOp n -> n.unique | Phi _ -> -1
 end
 
 and Region : sig

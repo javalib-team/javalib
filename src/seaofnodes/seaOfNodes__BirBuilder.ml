@@ -3,7 +3,7 @@ open Bir
 
 let rec data_to_bir (data : Data.t) =
   match data with
-  | Data.Const n ->
+  | Data.Const {value= n} ->
       Const (`Int (Int32.of_int n))
   | Data.BinOp {op= Binop.Add; operand1; operand2} ->
       Binop (Add `Int2Bool, data_to_bir operand1, data_to_bir operand2)
@@ -18,8 +18,4 @@ let control_to_bir (control : Control.t) =
       failwith "todo"
 
 let node_to_bir (node : Node.t) =
-  match node with
-  | Control control ->
-      control_to_bir control
-  | _ ->
-      failwith "todo"
+  match node with Control control -> control_to_bir control | _ -> failwith "todo"
