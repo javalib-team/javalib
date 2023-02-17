@@ -6,7 +6,7 @@
  (name javalib)
  (public_name javalib)
  (modules_without_implementation jClassLow)
- (flags :standard -w +A-e-r -annot)
+ (flags :standard -w +A-e-r-40-42 -annot)
  (libraries extlib zip)
  (inline_tests)
  (wrapped false)

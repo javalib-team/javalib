@@ -1,0 +1,13 @@
+(test
+ (name son_test)
+ (libraries javalib)
+ (deps (source_tree java_files))
+ (modules son_test)
+ (preprocess (pps ppx_expect)))
+
+(test
+ (name bir_test)
+ (libraries javalib)
+ (deps (source_tree java_files))
+ (modules bir_test)
+ (preprocess (pps ppx_expect)))
