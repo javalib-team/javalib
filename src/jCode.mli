@@ -252,6 +252,10 @@ val replace_code : ?update_max_stack:bool ->
 val insert_code : ?update_max_stack:bool ->
                   jcode -> int -> jopcode list -> jcode
 
+(** [succs jopcodes i] Computes successors of instruction i.
+    They can be several successors in case of conditionnal instruction.*)
+val succs : jopcodes -> int -> int list
+
 (** {1 Lambda manipulation.} *)
   
 type lambda_info = {

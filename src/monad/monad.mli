@@ -9,7 +9,7 @@ module State :
     val set : 'a -> ('a, unit) t
     val modify : ('a -> 'a) -> ('a, unit) t
     val run : ('a, 'b) t -> 'a -> 'a * 'b
-    val exec : ('a, 'b) t -> 'a -> 'b
+    val exec : ('a, 'b) t -> 'a -> 'a
     val fold_leftM : ('a -> 'b -> ('c, 'a) t) -> 'a -> 'b list -> ('c, 'a) t
     module Infix :
       sig

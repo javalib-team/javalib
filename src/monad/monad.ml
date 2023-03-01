@@ -32,7 +32,7 @@ module State = struct
   let run (State g) s =
     g s
 
-  let exec m s = snd (run m s)
+  let exec m s = fst (run m s)
 
   let rec fold_leftM f acc l =
     match l with
