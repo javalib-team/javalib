@@ -1,9 +1,28 @@
-(* The module [Identified] is here to hide the tags in the SON types
-   We use a Weak set to remember previously created values,
-   in which we store elements of type Identified t
-   Identified types are just an element with an integer *)
+(*
+ * This file is part of Javalib
+ * Copyright (c)2023 Martin Andrieux (ENS Rennes)
+ * Copyright (c)2023 Alban Dutilleul (ENS Rennes)
+ * Copyright (c)2023 David Pichardie (Facebook France)
+ *
+ * This software is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1, with the special exception on linking described in file
+ * LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ *)
 
-(* This implementation is inspired by the paper "Semantic reasoning about the sea of nodes" written by Delphine Demange, Yon Fernández de Retana, David Pichardie; see https://hal.inria.fr/hal-01723236/file/sea-of-nodes-hal.pdf for more details *)
+(* This implementation is inspired by the paper
+   "Semantic reasoning about the sea of nodes" written by Delphine Demange,
+   Yon Fernández de Retana, David Pichardie; see
+   https://hal.inria.fr/hal-01723236/file/sea-of-nodes-hal.pdf for more details *)
 
 module Binop : sig
   type t = Add
