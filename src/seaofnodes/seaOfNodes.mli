@@ -1,7 +1,7 @@
 module Type = SeaOfNodes__Type
 
 module Translator : sig
-  val translate_jopcodes : JCode.jopcodes -> Type.Node.t Type.IMap.t
+  val translate_jopcodes : JCode.jopcodes -> Type.Son.t
 end
 
 module Interpretor : sig

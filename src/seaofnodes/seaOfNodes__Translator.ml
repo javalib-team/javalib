@@ -43,13 +43,13 @@ end = struct
 end
 
 (* Translate one opcode *)
-let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
-    (TranslatorState.t, Node.t IMap.t) Monad.State.t =
+let translate_jopcode (g : Son.t) (op : JCode.jopcode) :
+    (TranslatorState.t, Son.t) Monad.State.t =
   let open Monad.State.Infix in
   match op with
   | OpLoad (_, n) ->
       (* Get the data from the graph *)
-      let data = match IMap.find n g with Node.Data d -> d | _ -> assert false in
+      let data = match Son.find n g with Node.Data d -> d | _ -> assert false in
       let* _ = TranslatorState.push_stack data in
       Monad.State.return g
   | OpAdd _ ->
@@ -61,7 +61,7 @@ let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
   | OpStore (_, id) ->
       (* Use the bytecode id *)
       let* operand = TranslatorState.pop_stack () in
-      Monad.State.return @@ IMap.add id (Node.Data operand) g
+      Monad.State.return @@ Son.add id (Node.Data operand) g
   | OpConst (`Int n) ->
       let node = Data.const (Int32.to_int n) in
       let* _ = TranslatorState.push_stack node in
@@ -75,12 +75,12 @@ let translate_jopcode (g : Node.t IMap.t) (op : JCode.jopcode) :
       let node = Control.Return {region; operand} in
       (* Control nodes need to be in the graph *)
       let* id = TranslatorState.fresh () in
-      Monad.State.return @@ IMap.add id (Node.Control node) g
+      Monad.State.return @@ Son.add id (Node.Control node) g
   | _ ->
       Monad.State.return g
 
 let translate_jopcodes (ops : JCode.jopcodes) =
   (* Translate opcodes *)
   Monad.State.exec
-    (Monad.State.fold_leftM translate_jopcode IMap.empty (Array.to_list @@ ops))
+    (Monad.State.fold_leftM translate_jopcode Son.empty (Array.to_list @@ ops))
     TranslatorState.initial

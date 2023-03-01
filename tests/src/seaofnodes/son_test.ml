@@ -42,11 +42,11 @@ let _ =
                Some operand
            | _ ->
                None )
-    @@ SeaOfNodes.Type.IMap.bindings graph
+    @@ SeaOfNodes.Type.Son.bindings graph
   in
   assert (Interpretor.eval_data data == 42) ;
   (* check that hash-consing works *)
-  let nodes = List.map snd (SeaOfNodes.Type.IMap.bindings graph) in
+  let nodes = List.map snd (SeaOfNodes.Type.Son.bindings graph) in
   let data_nodes =
     map_option (function SeaOfNodes.Type.Node.Data data -> Some data | _ -> None) nodes
   in

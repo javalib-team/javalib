@@ -197,6 +197,8 @@ end
 
 type id = int
 
-module IMap = Map.Make (Int)
-
-type son = Node.t IMap.t
+module Son = struct
+  module IMap = Map.Make (Int)
+  include IMap
+  type t = Node.t IMap.t
+end

@@ -44,7 +44,7 @@ let _ =
         match n with
         | Type.Node.Control (Type.Control.Return _) as ret -> Some ret
         | _ -> None)
-    @@ SeaOfNodes.Type.IMap.bindings graph in
+    @@ SeaOfNodes.Type.Son.bindings graph in
 
   let bir = BirBuilder.node_to_bir ret in
   assert (Bir.eval_instr bir = Some 42);

@@ -5,18 +5,18 @@ module TranslatorState : sig
 
   val initial : t
 
-  val push_stack : SeaOfNodes__Type.Data.t -> (t, unit) Monad.State.t
+  val push_stack : SeaOfNodes__Type.Data.t -> unit monad
 
-  val pop_stack : unit -> (t, SeaOfNodes__Type.Data.t) Monad.State.t
+  val pop_stack : unit -> SeaOfNodes__Type.Data.t monad
 
-  val fresh : unit -> (t, int) Monad.State.t
+  val fresh : unit -> int monad
 
-  val get_current_region : unit -> (t, SeaOfNodes__Type.Region.t) Monad.State.t
+  val get_current_region : unit -> SeaOfNodes__Type.Region.t monad
 end
 
 val translate_jopcode :
-     SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t
+     SeaOfNodes__Type.Son.t
   -> JCode.jopcode
-  -> (TranslatorState.t, SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t) Monad.State.t
+  -> (TranslatorState.t, SeaOfNodes__Type.Son.t) Monad.State.t
 
-val translate_jopcodes : JCode.jopcodes -> SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t
+val translate_jopcodes : JCode.jopcodes -> SeaOfNodes__Type.Son.t
