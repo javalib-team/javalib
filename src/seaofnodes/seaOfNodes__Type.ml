@@ -51,7 +51,8 @@ end = struct
         (*  Boost hash combiner *)
         let hash_nums (ns : int list) =
           List.fold_left
-            (fun hash n -> hash lxor (n + 0x9e3779b9 + (hash lsl 6) + (hash asr 2)))
+            (fun hash n ->
+              hash lxor (n + 0x9e3779b9 + (hash lsl 6) + (hash asr 2)) )
             0 ns
         in
         hash_nums [Binop.hash op; Data.get_id operand1; Data.get_id operand2]
@@ -62,7 +63,8 @@ end = struct
     match (t, t') with
     | Const n, Const n' ->
         n.value = n'.value
-    | BinOp {op; operand1; operand2}, BinOp {op= op'; operand1= operand1'; operand2= operand2'} ->
+    | ( BinOp {op; operand1; operand2}
+      , BinOp {op= op'; operand1= operand1'; operand2= operand2'} ) ->
         (* We assume that binops and datas are hashconsed and use the physical equality *)
         op == op' && operand1 == operand1' && operand2 == operand2'
     | Phi phi, Phi phi' ->
@@ -109,7 +111,8 @@ end = struct
 
   let phi phi = Phi phi
 
-  let get_id data = match data with Const n -> n.unique | BinOp n -> n.unique | Phi _ -> -1
+  let get_id data =
+    match data with Const n -> n.unique | BinOp n -> n.unique | Phi _ -> -1
 end
 
 and Region : sig
@@ -134,7 +137,8 @@ end = struct
   type t = Phi of {region: Region.t; operands: Data.t list}
 
   let hash (Phi {region; operands}) =
-    Region.hash region lxor List.fold_left ( lxor ) 1 (List.map Data.hash operands)
+    Region.hash region
+    lxor List.fold_left ( lxor ) 1 (List.map Data.hash operands)
 end
 
 and Cond : sig
@@ -154,15 +158,25 @@ and Branch : sig
 end = struct
   type t = IfT of Cond.t | IfF of Cond.t
 
-  let get_hash = function IfT cond -> 2 * Cond.hash cond | IfF cond -> 1 + (2 * Cond.hash cond)
+  let get_hash = function
+    | IfT cond ->
+        2 * Cond.hash cond
+    | IfF cond ->
+        1 + (2 * Cond.hash cond)
 end
 
 module Control : sig
-  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
+  type t =
+    | Jump of Region.t
+    | Cond of Cond.t
+    | Return of {region: Region.t; operand: Data.t}
 
   val pp_dot : out_channel -> t -> unit
 end = struct
-  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
+  type t =
+    | Jump of Region.t
+    | Cond of Cond.t
+    | Return of {region: Region.t; operand: Data.t}
 
   let pp fmt data = Printf.fprintf fmt "node_%d" (Hashtbl.hash data)
 
@@ -177,11 +191,19 @@ end = struct
 end
 
 module Node : sig
-  type t = Data of Data.t | Region of Region.t | Control of Control.t | Branch of Branch.t
+  type t =
+    | Data of Data.t
+    | Region of Region.t
+    | Control of Control.t
+    | Branch of Branch.t
 
   val pp_dot : out_channel -> t -> unit
 end = struct
-  type t = Data of Data.t | Region of Region.t | Control of Control.t | Branch of Branch.t
+  type t =
+    | Data of Data.t
+    | Region of Region.t
+    | Control of Control.t
+    | Branch of Branch.t
 
   let pp_dot fmt node =
     Printf.fprintf fmt "digraph G {\nnode [shape=record];\ncolor = black;\n" ;
