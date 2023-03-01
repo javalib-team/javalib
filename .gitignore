@@ -16,3 +16,4 @@ tests/.errors
 src/ocaml
 /tests/plugin/META.javalib
 /tests/plugin/main
+/.ocamlformat
