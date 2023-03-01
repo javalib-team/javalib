@@ -3,19 +3,23 @@ open SeaOfNodes__Type
 module TranslatorState : sig
   type t = {stack: Data.t list; region: Region.t; count: int}
 
+  type 'a monad = (t, 'a) Monad.State.t
+
   val initial : t
 
-  val push_stack : Data.t -> (t, unit) Monad.State.t
+  val push_stack : Data.t -> unit monad
 
-  val pop_stack : unit -> (t, Data.t) Monad.State.t
+  val pop_stack : unit -> Data.t monad
 
-  val fresh : unit -> (t, int) Monad.State.t
+  val fresh : unit -> int monad
 
-  val get_current_region : unit -> (t, Region.t) Monad.State.t
+  val get_current_region : unit -> Region.t monad
 end = struct
   open Monad.State.Infix
 
   type t = {stack: Data.t list; region: Region.t; count: int}
+
+  type 'a monad = (t, 'a) Monad.State.t
 
   let initial = {stack= []; region= Region.Region []; count= 1000}
 

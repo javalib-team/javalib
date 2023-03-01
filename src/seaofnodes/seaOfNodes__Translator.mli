@@ -1,6 +1,8 @@
 module TranslatorState : sig
   type t = {stack: SeaOfNodes__Type.Data.t list; region: SeaOfNodes__Type.Region.t; count: int}
 
+  type 'a monad = (t, 'a) Monad.State.t
+
   val initial : t
 
   val push_stack : SeaOfNodes__Type.Data.t -> (t, unit) Monad.State.t
