@@ -21,42 +21,14 @@
 
 open SeaOfNodes__Type
 
-module TranslatorState : sig
-  type t =
-    { stack: Data.t list
-    ; region: Region.t
-    ; count: int
-    ; jopcodes: JCode.jopcodes
-    ; pc: int
-    ; son: Son.t }
-
-  type 'a monad = (t, 'a) Monad.State.t
-
-  val initial : JCode.jopcodes -> t
-
-  val push_stack : Data.t -> unit monad
-
-  val pop_stack : unit -> Data.t monad
-
-  val fresh : unit -> int monad
-
-  val get_son : unit -> Son.t monad
-
-  val set_son : Son.t -> unit monad
-
-  val next_instructions : unit -> int list monad
-
-  val get_current_instruction : unit -> JCode.jopcode monad
-
-  val jump : int -> unit monad
-
-  val get_current_region : unit -> Region.t monad
-end = struct
+module TranslatorState = struct
   open Monad.State.Infix
 
+  module IMap = Map.Make(Int)
+
   type t =
     { stack: Data.t list
-    ; region: Region.t
+    ; reg_map : Region.t IMap.t
     ; count: int
     ; jopcodes: JCode.jopcodes
     ; pc: int
@@ -66,11 +38,13 @@ end = struct
 
   let initial jopcodes =
     { stack= []
-    ; region= Region.Region []
+    ; reg_map= IMap.singleton 0 (Region.Region [])
     ; count= 1000
     ; jopcodes
     ; pc= 0
     ; son= Son.empty }
+
+  let return = Monad.State.return
 
   let push_stack x = Monad.State.modify (fun g -> {g with stack= x :: g.stack})
 
@@ -85,6 +59,10 @@ end = struct
   let fresh () =
     let* g = Monad.State.get () in
     Monad.State.set {g with count= g.count + 1} >> Monad.State.return g.count
+
+  let get_pc () =
+    let* g = Monad.State.get () in
+    Monad.State.return @@ g.pc
 
   let get_son () =
     let* g = Monad.State.get () in
@@ -103,9 +81,17 @@ end = struct
 
   let jump pc = Monad.State.modify (fun g -> {g with pc})
 
+  let get_region_at pc =
+    let* g = Monad.State.get () in
+    Monad.State.return @@ snd @@ IMap.find_last (fun k -> k <= pc) g.reg_map
+
   let get_current_region () =
     let* g = Monad.State.get () in
-    Monad.State.return g.region
+    get_region_at g.pc
+
+
+  let add_region id region =
+    Monad.State.modify (fun g -> {g with reg_map = IMap.add id region g.reg_map})
 end
 
 (** Translate one opcode *)
@@ -137,6 +123,7 @@ let translate_jopcode (op : JCode.jopcode) : unit TranslatorState.monad =
   | OpConst (`Byte n) ->
       let node = Data.const n in
       push_stack node
+
   | OpReturn _ ->
       let* operand = pop_stack () in
       let* region = get_current_region () in
@@ -146,13 +133,40 @@ let translate_jopcode (op : JCode.jopcode) : unit TranslatorState.monad =
       let* g = get_son () in
       let new_son = Son.add id (Node.Control node) g in
       set_son new_son
+  | OpIf (`Eq, offset) ->
+    let* cr = get_current_region () in
+    let* operand = pop_stack () in
+    let r1 = Region.Region [Branch (Branch.IfT (Cond.Cond {region=cr; operand}))] in
+    let r2 = Region.Region [Branch (Branch.IfF (Cond.Cond {region=cr; operand}))] in
+    let* pc = get_pc () in
+    let* _ = add_region (pc + offset) r1 in
+    let* _ = add_region (pc + 1) r2 in
+    return ()
+  | OpGoto offset ->
+    let* cr = get_current_region () in
+    let r1 = Region.Region [Jump cr] in
+    let* pc = get_pc () in
+    let* _ = add_region (pc + offset) r1 in
+    return ()
+
   | _ ->
-      Monad.State.return ()
+    return ()
 
 let rec translate_state () =
   let open Monad.State.Infix in
   let open TranslatorState in
   let* jopcode = get_current_instruction () in
+
+  (* If necessary, add a jump node *)
+  let* pc = get_pc () in
+  let* cr = get_region_at pc in
+  let* cr' = get_region_at (pc + 1) in
+  let* _ = if cr != cr' then begin
+    let Region.Region predecessors = cr' in
+    let new_cr' = Region.Region ( Jump cr :: predecessors ) in
+    add_region (pc + 1) new_cr'
+  end else return () in
+
   let* _ = translate_jopcode jopcode in
   let* succs = next_instructions () in
   match succs with

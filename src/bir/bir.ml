@@ -27,7 +27,10 @@ type binop = Add of JBasics.jvm_basic_type
 
 type expr = Const of const | Binop of binop * expr * expr
 
-type instr = Return of expr option
+type instr =
+  | Return of expr option
+  | Ifd of ([`Eq] * expr * expr) * int
+  | Goto of int
 
 let rec eval_expr (bir : expr) =
   match bir with
@@ -36,5 +39,15 @@ let rec eval_expr (bir : expr) =
   | Binop (Add _, op1, op2) ->
       eval_expr op1 + eval_expr op2
 
-let eval_instr (bir : instr) =
-  match bir with Return None -> None | Return (Some expr) -> Some (eval_expr expr)
+let rec eval_instr (pc : int) (bir : instr array) =
+  match bir.(pc) with
+  | Return None ->
+      None
+  | Return (Some expr) ->
+      Some (eval_expr expr)
+  | Ifd ((`Eq, left, right), pc') ->
+      let l = eval_expr left in
+      let r = eval_expr right in
+      eval_instr (if l = r then pc' else pc + 1) bir
+  | Goto pc' ->
+      eval_instr pc' bir

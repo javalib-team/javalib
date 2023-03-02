@@ -34,9 +34,13 @@ let rec data_to_bir (data : Data.t) =
 let control_to_bir (control : Control.t) =
   match control with
   | Return {operand} ->
-      Return (Some (data_to_bir operand))
+      [| Return (Some (data_to_bir operand)) |]
   | _ ->
       failwith "todo"
 
 let node_to_bir (node : Node.t) =
-  match node with Control control -> control_to_bir control | _ -> failwith "todo"
+  match node with
+  | Control control ->
+      control_to_bir control
+  | _ ->
+      failwith "todo"

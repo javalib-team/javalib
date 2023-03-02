@@ -19,4 +19,4 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-val node_to_bir : SeaOfNodes__Type.Node.t -> Bir.instr
+val node_to_bir : SeaOfNodes__Type.Node.t -> Bir.instr array

@@ -27,6 +27,9 @@ type binop = Add of JBasics.jvm_basic_type
 
 type expr = Const of const | Binop of binop * expr * expr
 
-type instr = Return of expr option
+type instr =
+  | Return of expr option
+  | Ifd of ([`Eq] * expr * expr) * int
+  | Goto of int
 
-val eval_instr : instr -> int option
+val eval_instr : int -> instr array -> int option
