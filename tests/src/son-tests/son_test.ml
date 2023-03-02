@@ -25,4 +25,4 @@ let _ =
   in
   assert (
     List.for_all (fun a -> List.for_all (fun n -> not (a = n && a != n)) data_nodes) data_nodes ) ;
-  Printf.printf "Test passed successfully.\n"
+  Printf.printf "+ [SON] Test passed successfully.\n"
