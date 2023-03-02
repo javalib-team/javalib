@@ -14,5 +14,5 @@ let _ =
     @@ SeaOfNodes.Type.Son.bindings graph
   in
   let bir = BirBuilder.node_to_bir ret in
-  assert (Bir.eval_instr bir = Some 42) ;
+  assert (Bir.eval_instr 0 bir = Some 42) ;
   Printf.printf "+ [BIR] Test passed successfully.\n"
