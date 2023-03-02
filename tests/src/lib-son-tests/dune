@@ -1,0 +1,5 @@
+(library
+ (name javalib_son_test)
+ (libraries javalib)
+ (wrapped false)
+)
