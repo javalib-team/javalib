@@ -6,6 +6,7 @@ module State :
     val bind : ('a, 'b) t -> ('b -> ('a, 'c) t) -> ('a, 'c) t
     val seq : ('a, 'b) t -> ('a, 'c) t -> ('a, 'c) t
     val get : unit -> ('a, 'a) t
+    val gets : ('a -> 'b) -> ('a, 'b) t
     val set : 'a -> ('a, unit) t
     val modify : ('a -> 'a) -> ('a, unit) t
     val run : ('a, 'b) t -> 'a -> 'a * 'b

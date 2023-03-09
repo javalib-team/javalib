@@ -141,39 +141,42 @@ let translate_jopcode (op : JCode.jopcode) : unit TranslatorState.monad =
     let* pc = get_pc () in
     let* _ = add_region (pc + offset) r1 in
     let* _ = add_region (pc + 1) r2 in
-    return ()
+    let* _ = future_visit (pc + offset) in
+    return Next
   | OpGoto offset ->
     let* cr = get_current_region () in
     let r1 = Region.Region [Jump cr] in
     let* pc = get_pc () in
     let* _ = add_region (pc + offset) r1 in
-    return ()
+    return Jump
 
-  | _ ->
-    return ()
+  | _ -> return Next
 
 let rec translate_state () =
   let open Monad.State.Infix in
   let open TranslatorState in
   let* jopcode = get_current_instruction () in
 
-  (* If necessary, add a jump node *)
-  let* pc = get_pc () in
-  let* cr = get_region_at pc in
-  let* cr' = get_region_at (pc + 1) in
-  let* _ = if cr != cr' then begin
-    let Region.Region predecessors = cr' in
-    let new_cr' = Region.Region ( Jump cr :: predecessors ) in
-    add_region (pc + 1) new_cr'
-  end else return () in
-
-  let* _ = translate_jopcode jopcode in
-  let* succs = next_instructions () in
-  match succs with
-  | [] -> Monad.State.return ()
-  | pc::_ ->
-    let* _ = jump pc in
+  let* succ = translate_jopcode jopcode in
+  match succ with
+  | Next ->
+    (* If necessary, add a jump node *)
+    let* pc = get_pc () in
+    let* cr = get_region_at pc in
+    let* cr' = get_region_at (pc + 1) in
+    let* _ =
+      if cr != cr' then begin
+        let Region.Region predecessors = cr' in
+        let new_cr' = Region.Region ( Jump cr :: predecessors ) in
+        add_region (pc + 1) new_cr'
+      end else return () in
+    let* _ = goto (pc + 1) in
     translate_state ()
+  | Jump ->
+    let* pc = get_next_jump () in
+    let* _ = goto pc in
+    translate_state ()
+  | End -> Monad.State.return ()
 
 (** Translate opcodes *)
 let translate_jopcodes (ops : JCode.jopcodes) =

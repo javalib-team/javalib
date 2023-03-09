@@ -18,9 +18,11 @@ module State = struct
 
   let seq x y = bind x (fun _ -> y)
 
-  let get () = State (fun s ->
-      (s, s)
+  let gets f = State (fun s ->
+      (s, f s)
     )
+
+  let get () = gets Fun.id
 
   let set s = State (fun _ ->
       (s, ())
