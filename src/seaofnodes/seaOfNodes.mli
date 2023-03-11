@@ -30,3 +30,6 @@ module Interpretor : sig
 end
 
 module BirBuilder = SeaOfNodes__BirBuilder
+
+
+module Cfg = SeaOfNodes__Cfg

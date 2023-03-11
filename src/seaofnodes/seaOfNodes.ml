@@ -28,3 +28,4 @@ end =
 
 module Interpretor = SeaOfNodes__Interpretor
 module BirBuilder = SeaOfNodes__BirBuilder
+module Cfg = SeaOfNodes__Cfg
