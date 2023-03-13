@@ -19,6 +19,12 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
+(*
+write a small BIR SSA interpreter by adding the necessary information
+examples : return 1 + (ternary operator)
+           no phi_nodes but conditional jumps 
+   *)
+
 open SeaOfNodes__Type
 
 (* Describe the nature of the next instruction: directly following the current instruction or jump or end (after a return) *)
@@ -42,7 +48,7 @@ module TranslatorState = struct
 
   let initial jopcodes =
     { stack= []
-    ; reg_map= IMap.singleton 0 (Region.Region [])
+    ; reg_map= IMap.singleton 0 (Region.Region []) (* to:do fix this *)
     ; count= 1000
     ; jopcodes
     ; pc= 0
@@ -63,7 +69,8 @@ module TranslatorState = struct
 
   let fresh () =
     let* g = Monad.State.get () in
-    Monad.State.set {g with count= g.count + 1} >> Monad.State.return g.count
+    let* () = Monad.State.set {g with count= g.count + 1} in
+    Monad.State.return g.count
 
   let get_pc () =
     let* g = Monad.State.get () in
@@ -73,7 +80,7 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     Monad.State.return @@ g.son
 
-  let set_son son = Monad.State.modify (fun g -> {g with son})
+  let insert_son_node id node = Monad.State.modify (fun g -> {g with son= Son.add id node g.son})
 
   let get_current_instruction () =
     let* g = Monad.State.get () in
@@ -98,15 +105,23 @@ module TranslatorState = struct
         return None
     | Some pc ->
         let to_visit = ISet.remove pc g.to_visit in
-        let* _ = Monad.State.set {g with to_visit} in
+        let* () = Monad.State.set {g with to_visit} in
         return @@ Some pc
 
-  let future_visit pc =
+  let add_to_workset pc =
     let* g = Monad.State.get () in
     Monad.State.set {g with to_visit= ISet.add pc g.to_visit}
 
-  let add_region id region =
+  let register_region id region =
     Monad.State.modify (fun g -> {g with reg_map= IMap.add id region g.reg_map})
+
+  let lookup_data n =
+    let* g = get_son () in
+    match Son.find n g with Node.Data d -> return d | _ -> assert false
+
+  let add_precessor predecessors cr pc =
+    let new_cr' = Region.Region (Jump cr :: predecessors) in
+    register_region (pc + 1) new_cr'
 end
 
 (** Translate one opcode *)
@@ -116,30 +131,27 @@ let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
   match op with
   | OpLoad (_, n) ->
       (* Get the data from the graph *)
-      let* g = get_son () in
-      let data = match Son.find n g with Node.Data d -> d | _ -> assert false in
-      let* _ = push_stack data in
+      let* data = lookup_data n in
+      let* () = push_stack data in
       return Next
   | OpAdd _ ->
       let* operand1 = pop_stack () in
       let* operand2 = pop_stack () in
       let node = Data.binop Binop.Add operand1 operand2 in
-      let* _ = push_stack node in
+      let* () = push_stack node in
       return Next
   | OpStore (_, id) ->
       (* Use the bytecode id *)
       let* operand = pop_stack () in
-      let* g = get_son () in
-      let new_son = Son.add id (Node.Data operand) g in
-      let* _ = set_son new_son in
+      let* () = insert_son_node id (Node.Data operand) in
       return Next
   | OpConst (`Int n) ->
       let node = Data.const (Int32.to_int n) in
-      let* _ = push_stack node in
+      let* () = push_stack node in
       return Next
   | OpConst (`Byte n) ->
       let node = Data.const n in
-      let* _ = push_stack node in
+      let* () = push_stack node in
       return Next
   | OpReturn _ ->
       let* operand = pop_stack () in
@@ -147,9 +159,7 @@ let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
       let node = Control.Return {region; operand} in
       (* Control nodes need to be in the graph *)
       let* id = fresh () in
-      let* g = get_son () in
-      let new_son = Son.add id (Node.Control node) g in
-      let* _ = set_son new_son in
+      let* () = insert_son_node id (Node.Control node) in
       return End
   | OpIf (`Eq, offset) ->
       let* cr = get_current_region () in
@@ -157,16 +167,16 @@ let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
       let r1 = Region.Region [Branch (Branch.IfT (Cond.Cond {region= cr; operand}))] in
       let r2 = Region.Region [Branch (Branch.IfF (Cond.Cond {region= cr; operand}))] in
       let* pc = get_pc () in
-      let* _ = add_region (pc + offset) r1 in
-      let* _ = add_region (pc + 1) r2 in
-      let* _ = future_visit (pc + offset) in
+      let* () = register_region (pc + offset) r1 in
+      let* () = register_region (pc + 1) r2 in
+      let* () = add_to_workset (pc + offset) in
       return Next
   | OpGoto offset ->
       let* cr = get_current_region () in
       let r1 = Region.Region [Jump cr] in
       let* pc = get_pc () in
-      let* _ = add_region (pc + offset) r1 in
-      let* _ = future_visit (pc + offset) in
+      let* () = register_region (pc + offset) r1 in
+      let* () = add_to_workset (pc + offset) in
       return Jump
   | _ ->
       return Next
@@ -182,18 +192,18 @@ let rec translate_state () =
       let* pc = get_pc () in
       let* cr = get_region_at pc in
       let* cr' = get_region_at (pc + 1) in
-      let* _ =
+      let* () =
         if cr != cr' then
           let (Region.Region predecessors) = cr' in
-          let new_cr' = Region.Region (Jump cr :: predecessors) in
-          add_region (pc + 1) new_cr'
+          (* add_precessor *)
+          add_precessor predecessors cr pc
         else return ()
       in
-      let* _ = goto (pc + 1) in
+      let* () = goto (pc + 1) in
       translate_state ()
   | Jump ->
       let* pc = get_next_jump () in
-      let* _ = goto (Option.get pc) in
+      let* () = goto (Option.get pc) in
       translate_state ()
   | End -> (
       let* next_jump = get_next_jump () in
@@ -201,7 +211,7 @@ let rec translate_state () =
       | None ->
           Monad.State.return ()
       | Some pc ->
-          let* _ = goto pc in
+          let* () = goto pc in
           translate_state () )
 
 (** Translate opcodes *)
