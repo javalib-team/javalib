@@ -21,11 +21,12 @@
 
 open SeaOfNodes__Type
 
-let rec eval_data data =
+let rec eval_data son key =
+  let data = Son.get key son in
   match data with
   | Data.Const {value} ->
       value
   | BinOp {op= Add; operand1; operand2} ->
-      eval_data operand1 + eval_data operand2
+      eval_data son operand1 + eval_data son operand2
   | Phi _ ->
       failwith "Not Implemented"

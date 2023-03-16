@@ -36,9 +36,8 @@ module TranslatorState = struct
   module ISet = Set.Make (Int)
 
   type t =
-    { stack: Data.t list
-    ; reg_map: Region.t IMap.t
-    ; count: int
+    { stack: Data.t Son.key list
+    ; reg_map: Region.t Son.key IMap.t
     ; jopcodes: JCode.jopcodes
     ; pc: int
     ; to_visit: ISet.t
@@ -47,13 +46,13 @@ module TranslatorState = struct
   type 'a monad = (t, 'a) Monad.State.t
 
   let initial jopcodes =
+    let (map, key) = Son.alloc_region Son.empty (Region.Region []) in
     { stack= []
-    ; reg_map= IMap.singleton 0 (Region.Region []) (* to:do fix this *)
-    ; count= 1000
+    ; reg_map= IMap.singleton 0 key
     ; jopcodes
     ; pc= 0
     ; to_visit= ISet.empty
-    ; son= Son.empty }
+    ; son= map }
 
   let return = Monad.State.return
 
@@ -67,20 +66,33 @@ module TranslatorState = struct
     | x :: s ->
         Monad.State.set {g with stack= s} >> Monad.State.return x
 
-  let fresh () =
-    let* g = Monad.State.get () in
-    let* () = Monad.State.set {g with count= g.count + 1} in
-    Monad.State.return g.count
-
   let get_pc () =
     let* g = Monad.State.get () in
     Monad.State.return @@ g.pc
 
-  let get_son () =
+  let insert_data data =
     let* g = Monad.State.get () in
-    Monad.State.return @@ g.son
+    let son, key = Son.alloc_data g.son data in
+    let* () = Monad.State.set {g with son} in
+    return key
 
-  let insert_son_node id node = Monad.State.modify (fun g -> {g with son= Son.add id node g.son})
+  let insert_region region =
+    let* g = Monad.State.get () in
+    let son, key = Son.alloc_region g.son region in
+    let* () = Monad.State.set {g with son} in
+    return key
+
+  let insert_control control =
+    let* g = Monad.State.get () in
+    let son, key = Son.alloc_control g.son control in
+    let* () = Monad.State.set {g with son} in
+    return key
+
+  let insert_branch branch =
+    let* g = Monad.State.get () in
+    let son, key = Son.alloc_branch g.son branch in
+    let* () = Monad.State.set {g with son} in
+    return key
 
   let get_current_instruction () =
     let* g = Monad.State.get () in
@@ -112,16 +124,20 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     Monad.State.set {g with to_visit= ISet.add pc g.to_visit}
 
-  let register_region id region =
-    Monad.State.modify (fun g -> {g with reg_map= IMap.add id region g.reg_map})
+  let register_region id key =
+    Monad.State.modify (fun g -> {g with reg_map= IMap.add id key g.reg_map})
 
-  let lookup_data n =
-    let* g = get_son () in
-    match Son.find n g with Node.Data d -> return d | _ -> assert false
+  let get_node node =
+    let* g = Monad.State.get () in
+    return @@ Son.get node g.son
 
-  let add_precessor predecessors cr pc =
+  let set_node key node =
+    Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
+
+  let add_predecessor predecessors cr pc =
     let new_cr' = Region.Region (Jump cr :: predecessors) in
-    register_region (pc + 1) new_cr'
+    let* key = insert_region new_cr' in
+    register_region (pc + 1) key
 end
 
 (** Translate one opcode *)
@@ -131,51 +147,63 @@ let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
   match op with
   | OpLoad (_, n) ->
       (* Get the data from the graph *)
-      let* data = lookup_data n in
-      let* () = push_stack data in
+      let key = Son.unsafe_make_key n in
+      let* () = push_stack key in
       return Next
   | OpAdd _ ->
       let* operand1 = pop_stack () in
       let* operand2 = pop_stack () in
       let node = Data.binop Binop.Add operand1 operand2 in
-      let* () = push_stack node in
+      let* key = insert_data node in
+      let* () = push_stack key in
       return Next
   | OpStore (_, id) ->
       (* Use the bytecode id *)
-      let* operand = pop_stack () in
-      let* () = insert_son_node id (Node.Data operand) in
+      let* operand_key = pop_stack () in
+      let* operand = get_node operand_key in
+      let* () = set_node (Son.unsafe_make_key id) operand in
       return Next
   | OpConst (`Int n) ->
-      let node = Data.const (Int32.to_int n) in
-      let* () = push_stack node in
+      let data = Data.const (Int32.to_int n) in
+      let* key = insert_data data in
+      let* () = push_stack key in
       return Next
   | OpConst (`Byte n) ->
-      let node = Data.const n in
-      let* () = push_stack node in
+      let data = Data.const n in
+      let* key = insert_data data in
+      let* () = push_stack key in
       return Next
   | OpReturn _ ->
       let* operand = pop_stack () in
       let* region = get_current_region () in
       let node = Control.Return {region; operand} in
-      (* Control nodes need to be in the graph *)
-      let* id = fresh () in
-      let* () = insert_son_node id (Node.Control node) in
+      let _ = insert_control node in
       return End
   | OpIf (`Eq, offset) ->
       let* cr = get_current_region () in
       let* operand = pop_stack () in
-      let r1 = Region.Region [Branch (Branch.IfT (Cond.Cond {region= cr; operand}))] in
-      let r2 = Region.Region [Branch (Branch.IfF (Cond.Cond {region= cr; operand}))] in
+
+      let branchT = Branch.IfT (Cond.Cond {region= cr; operand}) in
+      let* keyT = insert_branch branchT in
+      let r1 = Region.Region [Branch keyT] in
+      let* key_r1 = insert_region r1 in
+
+      let branchF = Branch.IfF (Cond.Cond {region= cr; operand}) in
+      let* keyF = insert_branch branchF in
+      let r2 = Region.Region [Branch keyF] in
+      let* key_r2 = insert_region r2 in
+
       let* pc = get_pc () in
-      let* () = register_region (pc + offset) r1 in
-      let* () = register_region (pc + 1) r2 in
+      let* () = register_region (pc + offset) key_r1 in
+      let* () = register_region (pc + 1) key_r2 in
       let* () = add_to_workset (pc + offset) in
       return Next
   | OpGoto offset ->
       let* cr = get_current_region () in
       let r1 = Region.Region [Jump cr] in
+      let* key_r1 = insert_region r1 in
       let* pc = get_pc () in
-      let* () = register_region (pc + offset) r1 in
+      let* () = register_region (pc + offset) key_r1 in
       let* () = add_to_workset (pc + offset) in
       return Jump
   | _ ->
@@ -194,9 +222,9 @@ let rec translate_state () =
       let* cr' = get_region_at (pc + 1) in
       let* () =
         if cr != cr' then
-          let (Region.Region predecessors) = cr' in
+          let* (Region.Region predecessors) = get_node cr' in
           (* add_precessor *)
-          add_precessor predecessors cr pc
+          add_predecessor predecessors cr pc
         else return ()
       in
       let* () = goto (pc + 1) in

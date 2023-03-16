@@ -28,18 +28,16 @@ end
 module rec Data : sig
   type t = private
     | Const of {unique: int; value: int}
-    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | BinOp of {unique: int; op: Binop.t; operand1: t Son.key; operand2: t Son.key}
     | Phi of Phi.t
 
   val hash : t -> int
 
   val equal : t -> t -> bool
 
-  val pp_dot : out_channel -> t -> unit
-
   val const : int -> t
 
-  val binop : Binop.t -> t -> t -> t
+  val binop : Binop.t -> t Son.key -> t Son.key -> t
 
   val phi : Phi.t -> t
 
@@ -47,7 +45,7 @@ module rec Data : sig
 end
 
 and Region : sig
-  type predecessor = Jump of Region.t | Branch of Branch.t
+  type predecessor = Jump of Region.t Son.key | Branch of Branch.t Son.key
 
   type t = Region of predecessor list
 
@@ -55,41 +53,44 @@ and Region : sig
 end
 
 and Phi : sig
-  type t = Phi of {region: Region.t; operands: Data.t list}
-
-  val hash : t -> int
+  type t = Phi of {region: Region.t Son.key; operands: Data.t Son.key list}
 end
 
 and Cond : sig
-  type t = Cond of {region: Region.t; operand: Data.t}
-
-  val hash : t -> int
+  type t = Cond of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
 and Branch : sig
   type t = IfT of Cond.t | IfF of Cond.t
-
-  val get_hash : t -> int
 end
 
-module Control : sig
-  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
-
-  val pp_dot : out_channel -> t -> unit
+and Control : sig
+  type t =
+    | Jump of Region.t Son.key
+    | Cond of Cond.t Son.key
+    | Return of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
-module Node : sig
-  type t = Data of Data.t | Region of Region.t | Control of Control.t | Branch of Branch.t
-
-  val pp_dot : out_channel -> t -> unit
-end
-
-type id = int
-
-module Son : sig
+and Son : sig
   type t
-  val find : id -> t -> Node.t
-  val add : id -> Node.t -> t -> t
+
+  type 'a key
+
+  val alloc_data : t -> Data.t -> t * Data.t key
+
+  val alloc_region : t -> Region.t -> t * Region.t key
+
+  val alloc_control : t -> Control.t -> t * Control.t key
+
+  val alloc_branch : t -> Branch.t -> t * Branch.t key
+
+  val get : 'a key -> t -> 'a
+
+  val set : 'a key -> 'a -> t -> t
+
   val empty : t
-  val bindings : t -> (id * Node.t) list
+
+  val bindings : t -> (int * Data.t) list
+
+  val unsafe_make_key : int -> Data.t key
 end

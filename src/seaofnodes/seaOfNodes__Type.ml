@@ -39,19 +39,18 @@ module rec Data : sig
      but you must use the smart constructors to build values *)
   type t = private
     | Const of {unique: int; value: int}
-    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | BinOp of
+        {unique: int; op: Binop.t; operand1: t Son.key; operand2: t Son.key}
     | Phi of Phi.t
 
   val hash : t -> int
 
   val equal : t -> t -> bool
 
-  val pp_dot : out_channel -> t -> unit
-
   (* Constructors *)
   val const : int -> t
 
-  val binop : Binop.t -> t -> t -> t
+  val binop : Binop.t -> t Son.key -> t Son.key -> t
 
   val phi : Phi.t -> t
 
@@ -60,7 +59,8 @@ module rec Data : sig
 end = struct
   type t =
     | Const of {unique: int; value: int}
-    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | BinOp of
+        {unique: int; op: Binop.t; operand1: t Son.key; operand2: t Son.key}
     | Phi of Phi.t
 
   let hash = function
@@ -74,9 +74,9 @@ end = struct
               hash lxor (n + 0x9e3779b9 + (hash lsl 6) + (hash asr 2)) )
             0 ns
         in
-        hash_nums [Binop.hash op; Data.get_id operand1; Data.get_id operand2]
-    | Phi phi ->
-        Phi.hash phi
+        hash_nums [Binop.hash op; Son.get_id operand1; Son.get_id operand2]
+    | Phi _ ->
+        0
 
   let equal t t' =
     match (t, t') with
@@ -90,21 +90,6 @@ end = struct
         phi == phi'
     | _ ->
         false
-
-  let pp fmt data = Printf.fprintf fmt "node_%d" (Hashtbl.hash data)
-
-  let rec pp_dot fmt data =
-    match data with
-    | Const n ->
-        Printf.fprintf fmt "%a [ label = \"Const %d\" ]\n" pp data n.value
-    | BinOp {op= Binop.Add; operand1= op1; operand2= op2} ->
-        Printf.fprintf fmt "%a [ label = \"Add\" ]\n" pp data ;
-        Printf.fprintf fmt "%a -> %a\n" pp data pp op1 ;
-        Printf.fprintf fmt "%a -> %a\n" pp data pp op2 ;
-        pp_dot fmt op1 ;
-        pp_dot fmt op2
-    | _ ->
-        ()
 
   (* Weak set to remember previously created values *)
   module W = Weak.Make (Data)
@@ -135,13 +120,13 @@ end = struct
 end
 
 and Region : sig
-  type predecessor = Jump of Region.t | Branch of Branch.t
+  type predecessor = Jump of Region.t Son.key | Branch of Branch.t Son.key
 
   type t = Region of predecessor list
 
   val hash : t -> int
 end = struct
-  type predecessor = Jump of Region.t | Branch of Branch.t
+  type predecessor = Jump of Region.t Son.key | Branch of Branch.t Son.key
 
   type t = Region of predecessor list
 
@@ -149,97 +134,138 @@ end = struct
 end
 
 and Phi : sig
-  type t = Phi of {region: Region.t; operands: Data.t list}
-
-  val hash : t -> int
+  type t = Phi of {region: Region.t Son.key; operands: Data.t Son.key list}
 end = struct
-  type t = Phi of {region: Region.t; operands: Data.t list}
-
-  let hash (Phi {region; operands}) =
-    Region.hash region
-    lxor List.fold_left ( lxor ) 1 (List.map Data.hash operands)
+  type t = Phi of {region: Region.t Son.key; operands: Data.t Son.key list}
 end
 
 and Cond : sig
-  type t = Cond of {region: Region.t; operand: Data.t}
-
-  val hash : t -> int
+  type t = Cond of {region: Region.t Son.key; operand: Data.t Son.key}
 end = struct
-  type t = Cond of {region: Region.t; operand: Data.t}
-
-  let hash (Cond {region; operand}) = Region.hash region lxor Data.hash operand
+  type t = Cond of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
 and Branch : sig
   type t = IfT of Cond.t | IfF of Cond.t
-
-  val get_hash : t -> int
 end = struct
   type t = IfT of Cond.t | IfF of Cond.t
-
-  let get_hash = function
-    | IfT cond ->
-        2 * Cond.hash cond
-    | IfF cond ->
-        1 + (2 * Cond.hash cond)
 end
 
-module Control : sig
+and Control : sig
   type t =
-    | Jump of Region.t
-    | Cond of Cond.t
-    | Return of {region: Region.t; operand: Data.t}
-
-  val pp_dot : out_channel -> t -> unit
+    | Jump of Region.t Son.key
+    | Cond of Cond.t Son.key
+    | Return of {region: Region.t Son.key; operand: Data.t Son.key}
 end = struct
   type t =
-    | Jump of Region.t
-    | Cond of Cond.t
-    | Return of {region: Region.t; operand: Data.t}
-
-  let pp fmt data = Printf.fprintf fmt "node_%d" (Hashtbl.hash data)
-
-  let pp_dot fmt control =
-    match control with
-    | Return {region= _; operand} ->
-        Printf.fprintf fmt "%a [ label = \"Return\" ]\n" pp control ;
-        Printf.fprintf fmt "%a -> %a\n" pp control pp operand ;
-        Data.pp_dot fmt operand
-    | _ ->
-        ()
+    | Jump of Region.t Son.key
+    | Cond of Cond.t Son.key
+    | Return of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
-module Node : sig
-  type t =
-    | Data of Data.t
-    | Region of Region.t
-    | Control of Control.t
-    | Branch of Branch.t
+and Son : sig
+  type t
 
-  val pp_dot : out_channel -> t -> unit
+  type 'a key
+
+  val get_id : 'a key -> int
+
+  val alloc_data : t -> Data.t -> t * Data.t key
+
+  val alloc_region : t -> Region.t -> t * Region.t key
+
+  val alloc_control : t -> Control.t -> t * Control.t key
+
+  val alloc_branch : t -> Branch.t -> t * Branch.t key
+
+  val get : 'a key -> t -> 'a
+
+  val set : 'a key -> 'a -> t -> t
+
+  val empty : t
+
+  val bindings : t -> (int * Data.t) list
+
+  val unsafe_make_key : int -> Data.t key
 end = struct
-  type t =
-    | Data of Data.t
-    | Region of Region.t
-    | Control of Control.t
-    | Branch of Branch.t
-
-  let pp_dot fmt node =
-    Printf.fprintf fmt "digraph G {\nnode [shape=record];\ncolor = black;\n" ;
-    ( match node with
-    | Data data ->
-        Data.pp_dot fmt data
-    | Control control ->
-        Control.pp_dot fmt control
-    | _ ->
-        assert false ) ;
-    Printf.fprintf fmt "}"
-end
-
-type id = int
-
-module Son = struct
   module IMap = Map.Make (Int)
   include IMap
-  type t = Node.t IMap.t
+
+  (* TODO: Move to its own module *)
+  type 'a map = {map: 'a IMap.t; next: int}
+
+  let empty_map = {map= IMap.empty; next= 0}
+
+  let find key map = IMap.find key map.map
+
+  let add key value map = {map with map = IMap.add key value map.map}
+
+  let alloc map x =
+    ({map= IMap.add map.next x map.map; next= map.next + 1}, map.next)
+
+  type t =
+    { data_map: Data.t map
+    ; region_map: Region.t map
+    ; control_map: Control.t map
+    ; branch_map: Branch.t map }
+
+  type 'a key =
+    | DataKey : int -> Data.t key
+    | RegionKey : int -> Region.t key
+    | ControlKey : int -> Control.t key
+    | BranchKey : int -> Branch.t key
+
+  (* This is not unsafe, because we cannot reconstruct a key from its value *)
+  let get_id (type a) (key : a key) =
+    match key with DataKey n | RegionKey n | ControlKey n | BranchKey n -> n
+
+  (* This is unsafe, see comment abovre *)
+  let unsafe_make_key n = DataKey n
+
+  let empty =
+    { data_map= empty_map
+    ; region_map= empty_map
+    ; control_map= empty_map
+    ; branch_map= empty_map }
+
+  let alloc_data m data =
+    let data_map, key = alloc m.data_map data in
+    ({m with data_map}, DataKey key)
+
+  let alloc_region m region =
+    let region_map, key = alloc m.region_map region in
+    ({m with region_map}, RegionKey key)
+
+  let alloc_control m control =
+    let control_map, key = alloc m.control_map control in
+    ({m with control_map}, ControlKey key)
+
+  let alloc_branch m branch =
+    let branch_map, key = alloc m.branch_map branch in
+    ({m with branch_map}, BranchKey key)
+
+  let get (type a) (key : a key) (map : t) : a =
+    match key with
+    | DataKey k ->
+        find k map.data_map
+    | RegionKey k ->
+        find k map.region_map
+    | ControlKey k ->
+        find k map.control_map
+    | BranchKey k ->
+        find k map.branch_map
+
+  let set (type a) (key : a key) (value : a) (map : t) : t =
+    match key with
+    | DataKey k ->
+        {map with data_map = add k value map.data_map}
+    | RegionKey k ->
+        {map with region_map = add k value map.region_map}
+    | ControlKey k ->
+        {map with control_map = add k value map.control_map}
+    | BranchKey k ->
+        {map with branch_map = add k value map.branch_map}
+
+  (* Compatibility *)
+  let bindings m = IMap.bindings m.data_map.map
 end
