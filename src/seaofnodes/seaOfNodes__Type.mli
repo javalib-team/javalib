@@ -88,6 +88,8 @@ and Son : sig
 
   val set : 'a key -> 'a -> t -> t
 
+  val add_predecessor: t -> Region.t key -> Region.predecessor -> t
+
   val empty : t
 
   val bindings : t -> (int * Data.t) list

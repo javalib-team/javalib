@@ -82,6 +82,7 @@ module Cfg = struct
         then IMap.update pc (add_predecessor @@ Jump (pc - 1)) cfg
         else cfg )
       trivial_edges trivial_edges
+
 end
 
 module Monoid = struct

@@ -182,6 +182,8 @@ and Son : sig
 
   val set : 'a key -> 'a -> t -> t
 
+  val add_predecessor: t -> Region.t key -> Region.predecessor -> t
+
   val empty : t
 
   val bindings : t -> (int * Data.t) list
@@ -266,6 +268,11 @@ end = struct
     | BranchKey k ->
         {map with branch_map = add k value map.branch_map}
 
+  let add_predecessor t rk p = 
+    let Region.Region ps = get rk t in
+    let r = Region.Region (p :: ps) in
+    set rk r t
+         
   (* Compatibility *)
   let bindings m = IMap.bindings m.data_map.map
 end

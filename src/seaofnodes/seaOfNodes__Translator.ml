@@ -26,6 +26,7 @@ examples : return 1 + (ternary operator)
    *)
 
 open SeaOfNodes__Type
+open SeaOfNodes__Cfg
 
 (* Describe the nature of the next instruction: directly following the current instruction or jump or end (after a return) *)
 type successor = Next | Jump | End
@@ -46,13 +47,28 @@ module TranslatorState = struct
   type 'a monad = (t, 'a) Monad.State.t
 
   let initial jopcodes =
-    let (map, key) = Son.alloc_region Son.empty (Region.Region []) in
-    { stack= []
-    ; reg_map= IMap.singleton 0 key
-    ; jopcodes
-    ; pc= 0
-    ; to_visit= ISet.empty
-    ; son= map }
+    let cfg = build_cfg jopcodes in
+    let add_node k _ (reg_map, son) =
+      let son', key = Son.alloc_region son (Region.Region []) in
+      (IMap.add k key reg_map, son')
+    in
+    let reg_map, son = Cfg.fold add_node cfg (IMap.empty, Son.empty) in
+    let _ =
+      Cfg.fold
+        (fun k preds son ->
+          let rk = IMap.find k reg_map in
+          List.fold_left
+            (fun son pred ->
+              match pred with
+              | Cfg.Jump i ->
+                  let ri = IMap.find i reg_map in
+                  Son.add_predecessor son rk (Region.Jump ri)
+              | _ ->
+                  son )
+            son preds )
+        cfg son
+    in
+    {stack= []; reg_map; jopcodes; pc= 0; to_visit= ISet.empty; son}
 
   let return = Monad.State.return
 
@@ -131,8 +147,7 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     return @@ Son.get node g.son
 
-  let set_node key node =
-    Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
+  let set_node key node = Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
 
   let add_predecessor predecessors cr pc =
     let new_cr' = Region.Region (Jump cr :: predecessors) in
@@ -182,17 +197,14 @@ let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
   | OpIf (`Eq, offset) ->
       let* cr = get_current_region () in
       let* operand = pop_stack () in
-
       let branchT = Branch.IfT (Cond.Cond {region= cr; operand}) in
       let* keyT = insert_branch branchT in
       let r1 = Region.Region [Branch keyT] in
       let* key_r1 = insert_region r1 in
-
       let branchF = Branch.IfF (Cond.Cond {region= cr; operand}) in
       let* keyF = insert_branch branchF in
       let r2 = Region.Region [Branch keyF] in
       let* key_r2 = insert_region r2 in
-
       let* pc = get_pc () in
       let* () = register_region (pc + offset) key_r1 in
       let* () = register_region (pc + 1) key_r2 in
