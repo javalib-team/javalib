@@ -88,11 +88,15 @@ and Son : sig
 
   val set : 'a key -> 'a -> t -> t
 
+  val modify : 'a key -> ('a -> 'a) -> t -> t
+
   val add_predecessor: t -> Region.t key -> Region.predecessor -> t
 
   val empty : t
 
-  val bindings : t -> (int * Data.t) list
+  val data_nodes : t -> (Data.t Son.key * Data.t) list
+
+  val control_nodes : t -> (Control.t Son.key * Control.t) list
 
   val unsafe_make_key : int -> Data.t key
 end

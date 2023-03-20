@@ -182,11 +182,15 @@ and Son : sig
 
   val set : 'a key -> 'a -> t -> t
 
-  val add_predecessor: t -> Region.t key -> Region.predecessor -> t
+  val modify : 'a key -> ('a -> 'a) -> t -> t
+
+  val add_predecessor : t -> Region.t key -> Region.predecessor -> t
 
   val empty : t
 
-  val bindings : t -> (int * Data.t) list
+  val data_nodes : t -> (Data.t Son.key * Data.t) list
+
+  val control_nodes : t -> (Control.t Son.key * Control.t) list
 
   val unsafe_make_key : int -> Data.t key
 end = struct
@@ -196,11 +200,13 @@ end = struct
   (* TODO: Move to its own module *)
   type 'a map = {map: 'a IMap.t; next: int}
 
-  let empty_map = {map= IMap.empty; next= 0}
+  let empty_map_at n = {map= IMap.empty; next= n}
+
+  let empty_map = empty_map_at 0
 
   let find key map = IMap.find key map.map
 
-  let add key value map = {map with map = IMap.add key value map.map}
+  let add key value map = {map with map= IMap.add key value map.map}
 
   let alloc map x =
     ({map= IMap.add map.next x map.map; next= map.next + 1}, map.next)
@@ -225,7 +231,7 @@ end = struct
   let unsafe_make_key n = DataKey n
 
   let empty =
-    { data_map= empty_map
+    { data_map= empty_map_at 1000
     ; region_map= empty_map
     ; control_map= empty_map
     ; branch_map= empty_map }
@@ -260,19 +266,28 @@ end = struct
   let set (type a) (key : a key) (value : a) (map : t) : t =
     match key with
     | DataKey k ->
-        {map with data_map = add k value map.data_map}
+        {map with data_map= add k value map.data_map}
     | RegionKey k ->
-        {map with region_map = add k value map.region_map}
+        {map with region_map= add k value map.region_map}
     | ControlKey k ->
-        {map with control_map = add k value map.control_map}
+        {map with control_map= add k value map.control_map}
     | BranchKey k ->
-        {map with branch_map = add k value map.branch_map}
+        {map with branch_map= add k value map.branch_map}
 
-  let add_predecessor t rk p = 
-    let Region.Region ps = get rk t in
+  let modify (type a) (key : a key) (f : a -> a) (map : t) : t =
+    let v = get key map in
+    set key (f v) map
+
+  let add_predecessor t rk p =
+    let (Region.Region ps) = get rk t in
     let r = Region.Region (p :: ps) in
     set rk r t
-         
-  (* Compatibility *)
-  let bindings m = IMap.bindings m.data_map.map
+
+  let data_nodes m =
+    List.map (fun (i, data) -> (DataKey i, data))
+    @@ IMap.bindings m.data_map.map
+
+  let control_nodes m =
+    List.map (fun (i, control) -> (ControlKey i, control))
+    @@ IMap.bindings m.control_map.map
 end

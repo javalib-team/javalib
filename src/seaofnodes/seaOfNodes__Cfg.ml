@@ -34,7 +34,13 @@ module Cfg = struct
   module IMap = Map.Make (Int)
   include IMap
 
-  type predecessor = Jump of int | IfT of int | IfF of int
+  type predecessor =
+    | Jump of int
+    | IfT of int
+    | IfF of int
+    | Implicit of int
+        (** [Implicit pc] means that [pc] and [pc + 1] denote two different
+            regions, and [pc] is not a control-flow instruction. *)
 
   type t = predecessor list IMap.t
 
@@ -68,21 +74,30 @@ module Cfg = struct
         false
 
   (* We assume that pc > 0 *)
-  let rec previous_instruction pc jopcodes =
+  let rec previous_pc pc jopcodes =
     match jopcodes.(pc - 1) with
     | JCode.OpInvalid ->
-        previous_instruction (pc - 1) jopcodes
+        previous_pc (pc - 1) jopcodes
     | _ ->
         pc - 1
 
-  let add_non_trivial_edges trivial_edges jopcodes =
+  let rec next_pc pc jopcodes =
+    match jopcodes.(pc + 1) with
+    | JCode.OpInvalid ->
+        next_pc (pc + 1) jopcodes
+    | _ ->
+        pc + 1
+
+  let add_implicit_edges explicit_edges jopcodes =
     IMap.fold
       (fun pc _ cfg ->
-        if pc > 0 && (not @@ is_jump jopcodes.(previous_instruction pc jopcodes))
-        then IMap.update pc (add_predecessor @@ Jump (pc - 1)) cfg
-        else cfg )
-      trivial_edges trivial_edges
-
+        if pc = 0 then cfg
+        else
+          let prev_pc = previous_pc pc jopcodes in
+          if is_jump jopcodes.(prev_pc) then cfg
+          else IMap.update pc (add_predecessor @@ Implicit (prev_pc)) cfg
+        )
+      explicit_edges explicit_edges
 end
 
 module Monoid = struct
@@ -106,7 +121,7 @@ let collect_edges pc jopcodes =
       tell_edge @@ Goto (pc, pc + offset)
   | OpIf (_, offset) ->
       let* () = tell_edge @@ IfT (pc, pc + offset) in
-      let* () = tell_edge @@ IfF (pc, pc + 1) in
+      let* () = tell_edge @@ IfF (pc, Cfg.next_pc pc jopcodes) in
       Writer.return ()
   | _ ->
       Writer.return ()
@@ -121,5 +136,5 @@ let build_cfg jopcodes =
          (List.init (Array.length jopcodes) Fun.id)
   in
   (* edges visible in the bytecode, such as gotos and ifs *)
-  let trivial_edges = Monoid.fold Cfg.add_edge edges Cfg.empty in
-  Cfg.add_non_trivial_edges trivial_edges jopcodes
+  let explicit_edges = Monoid.fold Cfg.add_edge edges Cfg.empty in
+  Cfg.add_implicit_edges explicit_edges jopcodes

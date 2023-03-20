@@ -28,39 +28,35 @@ examples : return 1 + (ternary operator)
 open SeaOfNodes__Type
 open SeaOfNodes__Cfg
 
-(* Describe the nature of the next instruction: directly following the current instruction or jump or end (after a return) *)
-type successor = Next | Jump | End
-
 module TranslatorState = struct
   open Monad.State.Infix
   module IMap = Map.Make (Int)
-  module ISet = Set.Make (Int)
 
   type t =
     { stack: Data.t Son.key list
     ; reg_map: Region.t Son.key IMap.t
     ; jopcodes: JCode.jopcodes
     ; pc: int
-    ; to_visit: ISet.t
     ; son: Son.t }
-
-  type 'a monad = (t, 'a) Monad.State.t
 
   let initial jopcodes =
     let cfg = build_cfg jopcodes in
+    (* Alloc all the regions *)
     let add_node k _ (reg_map, son) =
       let son', key = Son.alloc_region son (Region.Region []) in
       (IMap.add k key reg_map, son')
     in
     let reg_map, son = Cfg.fold add_node cfg (IMap.empty, Son.empty) in
-    let _ =
+    (* Add implicit predecessors to regions *)
+    (* By doing this now, we avoid cumbersome management of implicit regions in the main translation loop *)
+    let son =
       Cfg.fold
         (fun k preds son ->
           let rk = IMap.find k reg_map in
           List.fold_left
             (fun son pred ->
               match pred with
-              | Cfg.Jump i ->
+              | Cfg.Implicit i ->
                   let ri = IMap.find i reg_map in
                   Son.add_predecessor son rk (Region.Jump ri)
               | _ ->
@@ -68,7 +64,7 @@ module TranslatorState = struct
             son preds )
         cfg son
     in
-    {stack= []; reg_map; jopcodes; pc= 0; to_visit= ISet.empty; son}
+    {stack= []; reg_map; jopcodes; pc= 0; son}
 
   let return = Monad.State.return
 
@@ -92,12 +88,6 @@ module TranslatorState = struct
     let* () = Monad.State.set {g with son} in
     return key
 
-  let insert_region region =
-    let* g = Monad.State.get () in
-    let son, key = Son.alloc_region g.son region in
-    let* () = Monad.State.set {g with son} in
-    return key
-
   let insert_control control =
     let* g = Monad.State.get () in
     let son, key = Son.alloc_control g.son control in
@@ -110,11 +100,21 @@ module TranslatorState = struct
     let* () = Monad.State.set {g with son} in
     return key
 
+  let add_predecessor region predecessor =
+    let* g = Monad.State.get () in
+    let f (Region.Region l) = Region.Region (predecessor :: l) in
+    let* () = Monad.State.set {g with son= Son.modify region f g.son} in
+    return ()
+
   let get_current_instruction () =
     let* g = Monad.State.get () in
-    Monad.State.return g.jopcodes.(g.pc)
+    return g.jopcodes.(g.pc)
 
-  let goto pc = Monad.State.modify (fun g -> {g with pc})
+  let get_code_size () =
+    let* g = Monad.State.get () in
+    return @@ Array.length g.jopcodes
+
+  let incr_pc () = Monad.State.modify (fun g -> {g with pc= g.pc + 1})
 
   let get_region_at pc =
     let* g = Monad.State.get () in
@@ -124,135 +124,77 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     get_region_at g.pc
 
-  let get_next_jump () =
-    let* g = Monad.State.get () in
-    (* Find and remove lowest pc in the set *)
-    let pc = ISet.find_first_opt (Fun.const true) g.to_visit in
-    match pc with
-    | None ->
-        return None
-    | Some pc ->
-        let to_visit = ISet.remove pc g.to_visit in
-        let* () = Monad.State.set {g with to_visit} in
-        return @@ Some pc
-
-  let add_to_workset pc =
-    let* g = Monad.State.get () in
-    Monad.State.set {g with to_visit= ISet.add pc g.to_visit}
-
-  let register_region id key =
-    Monad.State.modify (fun g -> {g with reg_map= IMap.add id key g.reg_map})
-
   let get_node node =
     let* g = Monad.State.get () in
     return @@ Son.get node g.son
 
-  let set_node key node = Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
-
-  let add_predecessor predecessors cr pc =
-    let new_cr' = Region.Region (Jump cr :: predecessors) in
-    let* key = insert_region new_cr' in
-    register_region (pc + 1) key
+  let set_node key node =
+    Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
 end
 
 (** Translate one opcode *)
-let translate_jopcode (op : JCode.jopcode) : successor TranslatorState.monad =
+let translate_jopcode (op : JCode.jopcode) =
   let open Monad.State.Infix in
   let open TranslatorState in
   match op with
   | OpLoad (_, n) ->
       (* Get the data from the graph *)
       let key = Son.unsafe_make_key n in
-      let* () = push_stack key in
-      return Next
+      push_stack key
   | OpAdd _ ->
       let* operand1 = pop_stack () in
       let* operand2 = pop_stack () in
       let node = Data.binop Binop.Add operand1 operand2 in
       let* key = insert_data node in
-      let* () = push_stack key in
-      return Next
+      push_stack key
   | OpStore (_, id) ->
       (* Use the bytecode id *)
       let* operand_key = pop_stack () in
       let* operand = get_node operand_key in
-      let* () = set_node (Son.unsafe_make_key id) operand in
-      return Next
+      set_node (Son.unsafe_make_key id) operand
   | OpConst (`Int n) ->
       let data = Data.const (Int32.to_int n) in
       let* key = insert_data data in
-      let* () = push_stack key in
-      return Next
+      push_stack key
   | OpConst (`Byte n) ->
       let data = Data.const n in
       let* key = insert_data data in
-      let* () = push_stack key in
-      return Next
+      push_stack key
   | OpReturn _ ->
       let* operand = pop_stack () in
       let* region = get_current_region () in
       let node = Control.Return {region; operand} in
-      let _ = insert_control node in
-      return End
+      let* _ = insert_control node in
+      return ()
   | OpIf (`Eq, offset) ->
       let* cr = get_current_region () in
       let* operand = pop_stack () in
+      let* pc = get_pc () in
+      let* reg_true = get_region_at (pc + offset) in
       let branchT = Branch.IfT (Cond.Cond {region= cr; operand}) in
       let* keyT = insert_branch branchT in
-      let r1 = Region.Region [Branch keyT] in
-      let* key_r1 = insert_region r1 in
+      let* () = add_predecessor reg_true (Region.Branch keyT) in
+      let* reg_false = get_region_at (pc + offset) in
       let branchF = Branch.IfF (Cond.Cond {region= cr; operand}) in
       let* keyF = insert_branch branchF in
-      let r2 = Region.Region [Branch keyF] in
-      let* key_r2 = insert_region r2 in
-      let* pc = get_pc () in
-      let* () = register_region (pc + offset) key_r1 in
-      let* () = register_region (pc + 1) key_r2 in
-      let* () = add_to_workset (pc + offset) in
-      return Next
+      add_predecessor reg_false (Region.Branch keyF)
   | OpGoto offset ->
       let* cr = get_current_region () in
-      let r1 = Region.Region [Jump cr] in
-      let* key_r1 = insert_region r1 in
       let* pc = get_pc () in
-      let* () = register_region (pc + offset) key_r1 in
-      let* () = add_to_workset (pc + offset) in
-      return Jump
+      let* target = get_region_at (pc + offset) in
+      add_predecessor target (Region.Jump cr)
   | _ ->
-      return Next
+      return ()
 
 let rec translate_state () =
   let open Monad.State.Infix in
   let open TranslatorState in
   let* jopcode = get_current_instruction () in
-  let* succ = translate_jopcode jopcode in
-  match succ with
-  | Next ->
-      (* If necessary, add a jump node *)
-      let* pc = get_pc () in
-      let* cr = get_region_at pc in
-      let* cr' = get_region_at (pc + 1) in
-      let* () =
-        if cr != cr' then
-          let* (Region.Region predecessors) = get_node cr' in
-          (* add_precessor *)
-          add_predecessor predecessors cr pc
-        else return ()
-      in
-      let* () = goto (pc + 1) in
-      translate_state ()
-  | Jump ->
-      let* pc = get_next_jump () in
-      let* () = goto (Option.get pc) in
-      translate_state ()
-  | End -> (
-      let* next_jump = get_next_jump () in
-      match next_jump with
-      | None ->
-          Monad.State.return ()
-      | Some pc ->
-          let* () = goto pc in
-          translate_state () )
+  let* () = translate_jopcode jopcode in
+  let* () = incr_pc () in
+  let* pc = get_pc () in
+  let* code_size = get_code_size () in
+  if pc >= code_size then return () else translate_state ()
 
 (** Translate opcodes *)
 let translate_jopcodes (ops : JCode.jopcodes) =

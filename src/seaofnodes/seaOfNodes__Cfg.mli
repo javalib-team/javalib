@@ -1,6 +1,12 @@
 module Cfg : sig
   type t
-  type predecessor = Jump of int | IfT of int | IfF of int
+  type predecessor =
+    | Jump of int
+    | IfT of int
+    | IfF of int
+    | Implicit of int
+        (** [Implicit pc] means that [pc] and [pc + 1] denote two different
+            regions, and [pc] is not a control-flow instruction. *)
 
   val find : int -> t -> predecessor list
   val empty : t

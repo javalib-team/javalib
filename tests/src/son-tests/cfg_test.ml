@@ -8,17 +8,17 @@ let _ =
   in
   let jclass = Javalib.get_class cp class_name in
   let jopcodes = get_jopcodes jclass in
-
-  Array.iteri (fun pc op -> Printf.printf "%i: %s\n" pc @@ JPrint.jopcode op) jopcodes;
-
+  Array.iteri
+    (fun pc op -> Printf.printf "%i: %s\n" pc @@ JPrint.jopcode op)
+    jopcodes ;
   let cfg = Cfg.build_cfg jopcodes in
-
   Cfg.Cfg.iter
     (fun pc preds ->
       Printf.printf "%d <- {" pc ;
       List.iter (Printf.printf "%d, ")
-        (List.map (function Cfg.Cfg.Jump n | IfT n | IfF n -> n) preds) ;
+        (List.map
+           (function Cfg.Cfg.Jump n | IfT n | IfF n | Implicit n -> n)
+           preds ) ;
       Printf.printf "}\n" )
-    cfg;
-
+    cfg ;
   Printf.printf "+ [CFG] Test passed successfully.\n"
