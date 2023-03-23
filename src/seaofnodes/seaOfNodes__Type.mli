@@ -90,6 +90,8 @@ and Son : sig
 
   val modify : 'a key -> ('a -> 'a) -> t -> t
 
+  val get_id : 'a key -> int
+
   val add_predecessor: t -> Region.t key -> Region.predecessor -> t
 
   val empty : t

@@ -42,6 +42,9 @@ module Cfg = struct
         (** [Implicit pc] means that [pc] and [pc + 1] denote two different
             regions, and [pc] is not a control-flow instruction. *)
 
+  let get_source = function
+    | Jump n | IfT n | IfF n | Implicit n -> n
+
   type t = predecessor list IMap.t
 
   let add_predecessor pred = function
