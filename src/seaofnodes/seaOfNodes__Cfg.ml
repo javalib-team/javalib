@@ -127,7 +127,7 @@ module Cfg = struct
     IMap.find 2 cfg = [Implicit 1; IfF 0]
 end
 
-module Monoid = struct
+module EdgeSet = struct
   include Set.Make (Edge)
 
   let empty = singleton EntryPoint
@@ -135,9 +135,9 @@ module Monoid = struct
   let append = union
 end
 
-module Writer = Monad.Writer (Monoid)
+module Writer = Monad.Writer (EdgeSet)
 
-let tell_edge edge = Writer.tell @@ Monoid.singleton edge
+let tell_edge edge = Writer.tell @@ EdgeSet.singleton edge
 
 let collect_edges pc jopcodes =
   let open Writer.Infix in
@@ -163,7 +163,7 @@ let build_cfg jopcodes =
          (List.init (Array.length jopcodes) Fun.id)
   in
   (* edges visible in the bytecode, such as gotos and ifs *)
-  let explicit_edges = Monoid.fold Cfg.add_edge edges Cfg.empty in
+  let explicit_edges = EdgeSet.fold Cfg.add_edge edges Cfg.empty in
   Cfg.add_implicit_edges explicit_edges jopcodes
 
 let%test "build_cfg" =
