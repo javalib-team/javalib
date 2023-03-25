@@ -39,6 +39,9 @@ module State = struct
            compiler optimization is applied correctly *)
         bind (f acc x) (fun w -> (fold_leftM [@tailcall]) f w xs)
 
+  let array_iterM f t =
+    Array.fold_left (fun action e -> seq action (f e)) (return ()) t
+
   module Infix = struct
     let ( <$> ) f x = fmap f x
 
@@ -86,6 +89,9 @@ struct
         (* the [@tailcall] attribute is required to ensure that the
            compiler optimization is applied correctly *)
         bind (f acc x) (fun w -> (fold_leftM [@tailcall]) f w xs)
+
+  let array_iterM f t =
+    Array.fold_left (fun action e -> seq action (f e)) (return ()) t
 
   module Infix = struct
     let ( <$> ) f x = fmap f x

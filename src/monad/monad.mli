@@ -23,6 +23,8 @@ module State : sig
 
   val fold_leftM : ('a -> 'b -> ('c, 'a) t) -> 'a -> 'b list -> ('c, 'a) t
 
+  val array_iterM : ('a -> ('s, unit) t) -> 'a array -> ('s, unit) t
+
   module Infix : sig
     val ( <$> ) : ('a -> 'b) -> ('c, 'a) t -> ('c, 'b) t
 
@@ -62,6 +64,8 @@ module Writer : functor
   val exec : 'a t -> M.t
 
   val fold_leftM : ('a -> 'b -> 'a t) -> 'a -> 'b list -> 'a t
+
+  val array_iterM : ('a -> unit t) -> 'a array -> unit t
 
   module Infix : sig
     val ( <$> ) : ('a -> 'b) -> 'a t -> 'b t
