@@ -27,7 +27,7 @@ module Edge = struct
     | IfF of int * int
     | Goto of int * int
 
-  let compare x y = if x < y then -1 else if x > y then 1 else 0
+  let compare = Stdlib.compare
 end
 
 module Cfg = struct
@@ -42,8 +42,7 @@ module Cfg = struct
         (** [Implicit pc] means that [pc] and [pc + 1] denote two different
             regions, and [pc] is not a control-flow instruction. *)
 
-  let get_source = function
-    | Jump n | IfT n | IfF n | Implicit n -> n
+  let get_source = function Jump n | IfT n | IfF n | Implicit n -> n
 
   type t = predecessor list IMap.t
 
@@ -66,6 +65,13 @@ module Cfg = struct
     | Goto (source, target) ->
         IMap.update target (add_predecessor @@ Jump source) cfg
 
+  let%test "add_edge" =
+    let cfg = add_edge EntryPoint IMap.empty in
+    let cfg = add_edge (Goto (1, 2)) cfg in
+    let cfg = add_edge (IfT (3, 4)) cfg in
+    let cfg = add_edge (IfF (3, 0)) cfg in
+    IMap.bindings cfg = [(0, [IfF 3]); (2, [Jump 1]); (4, [IfT 3])]
+
   let is_jump = function
     | JCode.OpGoto _ ->
         true
@@ -76,13 +82,23 @@ module Cfg = struct
     | _ ->
         false
 
+  let%test "is_jump" =
+    is_jump (OpGoto 0) && is_jump (OpReturn `Void)
+    && is_jump (OpIf (`Eq, 0))
+    && not (is_jump OpDup)
+
   (* We assume that pc > 0 *)
   let rec previous_pc pc jopcodes =
+    assert (pc > 0) ;
     match jopcodes.(pc - 1) with
     | JCode.OpInvalid ->
         previous_pc (pc - 1) jopcodes
     | _ ->
         pc - 1
+
+  let%test "previous_pc" =
+    previous_pc 2 [|JCode.OpDup; OpInvalid; OpDup|] = 0
+    && previous_pc 1 [|JCode.OpDup; OpDup|] = 0
 
   let rec next_pc pc jopcodes =
     match jopcodes.(pc + 1) with
@@ -91,6 +107,10 @@ module Cfg = struct
     | _ ->
         pc + 1
 
+  let%test "next_pc" =
+    next_pc 0 [|JCode.OpDup; OpInvalid; OpDup|] = 2
+    && next_pc 0 [|JCode.OpDup; OpDup|] = 1
+
   let add_implicit_edges explicit_edges jopcodes =
     IMap.fold
       (fun pc _ cfg ->
@@ -98,9 +118,13 @@ module Cfg = struct
         else
           let prev_pc = previous_pc pc jopcodes in
           if is_jump jopcodes.(prev_pc) then cfg
-          else IMap.update pc (add_predecessor @@ Implicit (prev_pc)) cfg
-        )
+          else IMap.update pc (add_predecessor @@ Implicit prev_pc) cfg )
       explicit_edges explicit_edges
+
+  let%test "add_implicit_edges" =
+    let jopcodes = [|JCode.OpIf (`Eq, 2); OpDup; OpDup|] in
+    let cfg = add_implicit_edges (IMap.singleton 2 [IfF 0]) jopcodes in
+    IMap.find 2 cfg = [Implicit 1; IfF 0]
 end
 
 module Monoid = struct
@@ -141,3 +165,21 @@ let build_cfg jopcodes =
   (* edges visible in the bytecode, such as gotos and ifs *)
   let explicit_edges = Monoid.fold Cfg.add_edge edges Cfg.empty in
   Cfg.add_implicit_edges explicit_edges jopcodes
+
+let%test "build_cfg" =
+  let jopcodes =
+    [| JCode.OpConst (`Byte 0) ; (* 0 *)
+       OpIf (`Eq, 4) ;           (* 1 *)
+       OpInvalid ;               (* 2 *)
+       OpGoto 3 ;                (* 3 *)
+       OpInvalid ;               (* 4 *)
+       OpDup ;                   (* 5 *)
+       OpGoto (-6)               (* 6 *)
+    |]
+  in
+  Cfg.bindings (build_cfg jopcodes) =
+  [ (0, [Jump 6]) ;
+    (3, [IfF 1]) ;
+    (5, [IfT 1]) ;
+    (6, [Implicit 5; Jump 3])
+  ]
