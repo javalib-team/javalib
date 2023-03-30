@@ -15,7 +15,6 @@ module Cfg : sig
   val iter : (int -> predecessor list -> unit) -> t -> unit
   val fold : (int -> predecessor list -> 'a -> 'a) -> t -> 'a -> 'a
 
-  val previous_pc : int -> JCode.jopcodes -> int
   val next_pc : int -> JCode.jopcodes -> int
 end
 
