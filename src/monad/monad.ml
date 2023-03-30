@@ -40,7 +40,7 @@ module State = struct
         bind (f acc x) (fun w -> (fold_leftM [@tailcall]) f w xs)
 
   let array_iterM f t =
-    Array.fold_left (fun action e -> seq action (f e)) (return ()) t
+    fst @@ Array.fold_left (fun (action, i) e -> (seq action (f i e), i+1)) (return (), 0) t
 
   module Infix = struct
     let ( <$> ) f x = fmap f x
@@ -91,7 +91,7 @@ struct
         bind (f acc x) (fun w -> (fold_leftM [@tailcall]) f w xs)
 
   let array_iterM f t =
-    Array.fold_left (fun action e -> seq action (f e)) (return ()) t
+    fst @@ Array.fold_left (fun (action, i) e -> (seq action (f i e), i+1)) (return (), 0) t
 
   module Infix = struct
     let ( <$> ) f x = fmap f x

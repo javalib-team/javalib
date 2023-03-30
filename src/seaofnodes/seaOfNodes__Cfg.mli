@@ -11,6 +11,7 @@ module Cfg : sig
   val get_source : predecessor -> int
 
   val find : int -> t -> predecessor list
+  val mem : int -> t -> bool
   val empty : t
   val iter : (int -> predecessor list -> unit) -> t -> unit
   val fold : (int -> predecessor list -> 'a -> 'a) -> t -> 'a -> 'a

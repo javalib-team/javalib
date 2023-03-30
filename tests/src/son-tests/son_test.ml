@@ -25,4 +25,3 @@ let _ =
     List.for_all (fun a -> List.for_all (fun n -> not (a = n && a != n)) data_nodes) data_nodes ) ;
   Javalib.close_class_path cp;
   Printf.printf "+ [SON] Test passed successfully.\n"
-
