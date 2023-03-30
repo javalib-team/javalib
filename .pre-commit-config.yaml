@@ -1,0 +1,5 @@
+repos:
+- repo: https://github.com/arenadotio/pre-commit-ocamlformat
+  rev: master # or pick a commit sha I guess
+  hooks:
+    - id: ocamlformat

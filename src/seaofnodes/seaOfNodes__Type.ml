@@ -227,7 +227,7 @@ end = struct
   let get_id (type a) (key : a key) =
     match key with DataKey n | RegionKey n | ControlKey n | BranchKey n -> n
 
-  (* This is unsafe, see comment abovre *)
+  (* This is unsafe, see comment above *)
   let unsafe_make_key n = DataKey n
 
   let empty =
