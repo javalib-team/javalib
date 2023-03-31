@@ -18,8 +18,8 @@ let _ =
   for i=0 to 20 do
     map := add_class "Test" i !map
   done;
-  ClassMap.iter iter_body !map;
-  print_newline ();
+  (* ClassMap.iter iter_body !map;
+   * print_newline (); *)
   ClassMap.iter_ordered iter_body !map; 
   print_newline ();
   for i=0 to 20 do
@@ -29,8 +29,8 @@ let _ =
   for i=0 to 20 do
     map := add_class "TestAgain" i !map
   done;
-  ClassMap.iter iter_body !map;
-  print_newline ();
+  (* ClassMap.iter iter_body !map;
+   * print_newline (); *)
   ClassMap.iter_ordered iter_body !map; 
   print_newline ();
       
