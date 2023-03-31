@@ -36,8 +36,7 @@ module TranslatorState = struct
   type stack = Data.t Son.key list
 
   type region_info =
-    { predecessors: Cfg.predecessor list
-    ; last_stack:
+    { last_stack:
         stack option (* Last stack of a region, None means not computed yet *)
     ; region: Region.t Son.key
     ; entry_point: int
@@ -137,39 +136,10 @@ module TranslatorState = struct
 
   let push_stack x = Monad.State.modify (fun g -> {g with stack= x :: g.stack})
 
-  let pop_from_region pc =
-    let* region_info = get_region_info_at pc in
-    match region_info.last_stack with
-    | None ->
-        assert false (* Empty lists for backjumps *)
-    | Some [] ->
-        assert false (* All the lists have the same size *)
-    | Some (d :: ds) ->
-        let region_info = {region_info with last_stack= Some ds} in
-        let* () =
-          Monad.State.modify
-          @@ fun g ->
-          { g with
-            reg_map= IMap.add region_info.entry_point region_info g.reg_map }
-        in
-        return d
-
   let pop_stack () =
     let* g = Monad.State.get () in
     match g.stack with
-    | [] ->
-        (* Stack is empty, need to lookup previous stacks *)
-        let* region_info = get_region_info_at g.pc in
-        let predecessors = region_info.predecessors in
-        let* all_datas =
-          Monad.State.fold_leftM
-            (fun acc pred ->
-              let* data = pop_from_region (Cfg.get_source pred) in
-              return (data :: acc) )
-            [] predecessors
-        in
-        let* {region} = get_current_region_info () in
-        insert_data (Data.phi (Phi.Phi {region; operands= all_datas}))
+    | [] -> failwith "empty stack"
     | x :: s ->
         Monad.State.set {g with stack= s} >> Monad.State.return x
 
@@ -327,7 +297,7 @@ let manage_branching_point () =
     let* predecessors = compute_predecessors pc in
     let* region = insert_region @@ Region.Region predecessors in
     let region_info =
-      {predecessors= []; last_stack= None; region; entry_point= pc; cond= None}
+      {last_stack= None; region; entry_point= pc; cond= None}
     in
     let* () = add_region region_info in
 
