@@ -27,6 +27,7 @@ examples : return 1 + (ternary operator)
 
 open SeaOfNodes__Type
 open SeaOfNodes__Cfg
+open SeaOfNodes__Utils
 
 module TranslatorState = struct
   open Monad.State.Infix
@@ -180,15 +181,6 @@ module TranslatorState = struct
       {g with reg_map= IMap.add reg_info.entry_point reg_info g.reg_map}
 
   let rec merge_stacks stacks =
-    let rec transpose list =
-      match list with
-      | [] ->
-          []
-      | [] :: xss ->
-          transpose xss
-      | (x :: xs) :: xss ->
-          List.((x :: map hd xss) :: transpose (xs :: map tl xss))
-    in
     let worker stacks =
       match stacks with
       | [] ->
@@ -210,20 +202,6 @@ module TranslatorState = struct
   let set_node key node =
     Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
 
-  let insert_at index value l =
-    let revl = ref @@ List.rev l in
-    let res = ref [] in
-    for _ = 1 to index do
-      res := List.hd !revl :: !res ;
-      revl := List.tl !revl
-    done ;
-    res := value :: !res ;
-    while !revl <> [] do
-      res := List.hd !revl :: !res ;
-      revl := List.tl !revl
-    done ;
-    !res
-
   (*  *type branch_resolver = {current_reg_pc: int; index: int; pred: Cfg.predecessor} *)
   let resolve_branch br =
     let* region = get_region_info_at br.current_reg_pc in
@@ -232,7 +210,7 @@ module TranslatorState = struct
     | Jump src ->
         let* src_region = get_region_info_at src in
         let (Region.Region ps) = Son.get region.region g.son in
-        let ps = insert_at br.index (Region.Jump src_region.region) ps in
+        let ps = insert_at_reverse br.index (Region.Jump src_region.region) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfT src ->
@@ -240,7 +218,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfT cond) in
-        let ps = insert_at br.index (Region.Branch branch) ps in
+        let ps = insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfF src ->
@@ -248,7 +226,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfF cond) in
-        let ps = insert_at br.index (Region.Branch branch) ps in
+        let ps = insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | _ ->
