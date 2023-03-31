@@ -21,6 +21,8 @@
 
 (* Utils on lists *)
 
-val insert_at_reverse : int -> 'a -> 'a list -> 'a list
+module ListHelpers : sig
+    val insert_at_reverse : int -> 'a -> 'a list -> 'a list
 
-val transpose : 'a list list -> 'a list list
+    val transpose : 'a list list -> 'a list list
+end

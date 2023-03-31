@@ -193,7 +193,7 @@ module TranslatorState = struct
           let* () = push_stack k in
           merge_stacks ss
     in
-    worker (transpose stacks)
+    worker (ListHelpers.transpose stacks)
 
   let get_node node =
     let* g = Monad.State.get () in
@@ -210,7 +210,7 @@ module TranslatorState = struct
     | Jump src ->
         let* src_region = get_region_info_at src in
         let (Region.Region ps) = Son.get region.region g.son in
-        let ps = insert_at_reverse br.index (Region.Jump src_region.region) ps in
+        let ps = ListHelpers.insert_at_reverse br.index (Region.Jump src_region.region) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfT src ->
@@ -218,7 +218,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfT cond) in
-        let ps = insert_at_reverse br.index (Region.Branch branch) ps in
+        let ps = ListHelpers.insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfF src ->
@@ -226,7 +226,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfF cond) in
-        let ps = insert_at_reverse br.index (Region.Branch branch) ps in
+        let ps = ListHelpers.insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | _ ->
