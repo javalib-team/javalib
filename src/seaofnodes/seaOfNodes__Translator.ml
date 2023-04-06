@@ -36,8 +36,7 @@ module TranslatorState = struct
   type stack = Data.t Son.key list
 
   type region_info =
-    { last_stack:
-        stack option (* Last stack of a region, None means not computed yet *)
+    { last_stack: stack option (* Last stack of a region, None means not computed yet *)
     ; region: Region.t Son.key
     ; entry_point: int
     ; cond: Cond.t option }
@@ -55,13 +54,7 @@ module TranslatorState = struct
 
   let initial jopcodes =
     let cfg = build_cfg jopcodes in
-    { stack= []
-    ; reg_map= IMap.empty
-    ; pc= 0
-    ; son= Son.empty
-    ; work_list= []
-    ; jopcodes
-    ; cfg }
+    {stack= []; reg_map= IMap.empty; pc= 0; son= Son.empty; work_list= []; jopcodes; cfg}
 
   let return = Monad.State.return
 
@@ -95,15 +88,13 @@ module TranslatorState = struct
 
   let add_region region_info =
     Monad.State.modify
-    @@ fun g ->
-    {g with reg_map= IMap.add region_info.entry_point region_info g.reg_map}
+    @@ fun g -> {g with reg_map= IMap.add region_info.entry_point region_info g.reg_map}
 
   let get_predecessors pc =
     let* g = Monad.State.get () in
     return @@ Cfg.find pc g.cfg
 
-  let add_to_work_list br =
-    Monad.State.modify @@ fun g -> {g with work_list= br :: g.work_list}
+  let add_to_work_list br = Monad.State.modify @@ fun g -> {g with work_list= br :: g.work_list}
 
   let is_branching_point pc =
     let* g = Monad.State.get () in
@@ -113,8 +104,7 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     return g.jopcodes.(g.pc)
 
-  let set_pc pc =
-    Monad.State.modify (fun g -> {g with pc})
+  let set_pc pc = Monad.State.modify (fun g -> {g with pc})
 
   let get_region_info_at pc =
     let* g = Monad.State.get () in
@@ -129,17 +119,15 @@ module TranslatorState = struct
     let* reg_info = get_current_region_info () in
     Monad.State.modify
     @@ fun g ->
-    { g with
-      reg_map=
-        IMap.add reg_info.entry_point {reg_info with cond= Some cond} g.reg_map
-    }
+    {g with reg_map= IMap.add reg_info.entry_point {reg_info with cond= Some cond} g.reg_map}
 
   let push_stack x = Monad.State.modify (fun g -> {g with stack= x :: g.stack})
 
   let pop_stack () =
     let* g = Monad.State.get () in
     match g.stack with
-    | [] -> failwith "empty stack"
+    | [] ->
+        failwith "empty stack"
     | x :: s ->
         Monad.State.set {g with stack= s} >> Monad.State.return x
 
@@ -147,8 +135,7 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     let* reg_info = get_region_info_at pc in
     let reg_info = {reg_info with last_stack= Some g.stack} in
-    Monad.State.set
-      {g with reg_map= IMap.add reg_info.entry_point reg_info g.reg_map}
+    Monad.State.set {g with reg_map= IMap.add reg_info.entry_point reg_info g.reg_map}
 
   let rec merge_stacks stacks =
     let worker stacks =
@@ -157,9 +144,7 @@ module TranslatorState = struct
           return ()
       | s :: ss ->
           let* r = get_current_region_info () in
-          let* k =
-            insert_data @@ Data.phi @@ Phi.Phi {region= r.region; operands= s}
-          in
+          let* k = insert_data @@ Data.phi @@ Phi.Phi {region= r.region; operands= s} in
           let* () = push_stack k in
           merge_stacks ss
     in
@@ -169,8 +154,7 @@ module TranslatorState = struct
     let* g = Monad.State.get () in
     return @@ Son.get node g.son
 
-  let set_node key node =
-    Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
+  let set_node key node = Monad.State.modify @@ fun g -> {g with son= Son.set key node g.son}
 
   (*  *type branch_resolver = {current_reg_pc: int; index: int; pred: Cfg.predecessor} *)
   let resolve_branch br =
@@ -296,15 +280,16 @@ let manage_branching_point () =
   if is_branch then
     let* predecessors = compute_predecessors pc in
     let* region = insert_region @@ Region.Region predecessors in
-    let region_info =
-      {last_stack= None; region; entry_point= pc; cond= None}
-    in
+    let region_info = {last_stack= None; region; entry_point= pc; cond= None} in
     let* () = add_region region_info in
-
     let* predecessors = get_predecessors pc in
-    let* stacks = Monad.State.fold_leftM (fun l p ->
-        let* {last_stack} = get_region_info_at (Cfg.get_source p) in
-        return (Option.get last_stack :: l)) [] predecessors in
+    let* stacks =
+      Monad.State.fold_leftM
+        (fun l p ->
+          let* {last_stack} = get_region_info_at (Cfg.get_source p) in
+          return (Option.get last_stack :: l) )
+        [] predecessors
+    in
     merge_stacks stacks
   else return ()
 
@@ -328,3 +313,34 @@ let translate_jopcodes (ops : JCode.jopcodes) =
       (TranslatorState.initial ops)
   in
   g.son
+
+(* checks if a simple assignment in a if can be translated, see code below
+   int a = 0;
+   int c = 0;
+   if (a == 0) {
+    c = 1;
+   } else {
+    c = 2;
+   }
+   return c;
+*)
+let%test_unit "translate_if" =
+  let jopcodes =
+    [| JCode.OpConst (`Int 0l)
+     ; OpStore (`Int2Bool, 1)
+     ; OpConst (`Int 0l)
+     ; OpStore (`Int2Bool, 2)
+     ; OpLoad (`Int2Bool, 1)
+     ; OpIf (`Ne, 3)
+     ; OpConst (`Int 1l)
+     ; OpStore (`Int2Bool, 2)
+     ; OpGoto 5
+     ; OpInvalid
+     ; OpInvalid
+     ; OpConst (`Int 2l)
+     ; OpStore (`Int2Bool, 2)
+     ; OpLoad (`Int2Bool, 2)
+     ; OpReturn `Int2Bool |]
+  in
+  let _ = translate_jopcodes jopcodes in
+  ()
