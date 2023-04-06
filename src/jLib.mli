@@ -87,3 +87,5 @@ module List : sig
   val insert_at_reverse : int -> 'a -> 'a list -> 'a list
   val transpose : 'a list list -> 'a list list
 end
+
+module IMap : Map.S with type key = int

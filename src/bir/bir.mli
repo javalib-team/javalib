@@ -40,4 +40,7 @@ type terminator =
 type phi = { result : var; operands : expr list }
 type block =
   {pred: int list; phis: phi array; code: instr array; terminator: terminator}
-type program = block array
+
+
+type program = block JLib.IMap.t
+val eval_program : program -> int

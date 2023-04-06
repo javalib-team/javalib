@@ -31,41 +31,61 @@ type expr = Const of const | Binop of binop * expr * expr | Var of var
 
 type instr = Assign of var * expr
 
-type terminator =
-  | Return of expr option
-  | If of expr * int * int
-  | Goto of int
+type terminator = Return of expr option | If of expr * int * int | Goto of int
 
 type phi = {result: var; operands: expr list}
 
-type block =
-  {pred: int list; phis: phi array; code: instr array; terminator: terminator}
+type block = {pred: int list; phis: phi array; code: instr array; terminator: terminator}
 
-type program = block array
+module IMap = JLib.IMap
 
-(* let zero = Const (`Int (Int32.of_int 0)) *)
+type program = block IMap.t
 
-(* let one = Const (`Int (Int32.of_int 1)) *)
+let index_of l a =
+  let rec aux i = function
+    | [] ->
+        raise Not_found
+    | x :: l ->
+        if x = a then i else aux (i + 1) l
+  in
+  aux 0 l
 
-(* let two = Const (`Int (Int32.of_int 2)) *)
+let rec eval_block index index_pred program heap =
+  let block = IMap.find index program in
+  let heap =
+    Array.fold_left
+      (fun heap phi ->
+        let pred = index_of block.pred index_pred in
+        let value = eval_expr (List.nth phi.operands pred) heap in
+        IMap.add phi.result value heap )
+      heap block.phis
+  in
+  let heap = Array.fold_left (fun heap instr -> eval_instr instr heap) heap block.code in
+  eval_terminator block.terminator heap program index
 
-(* let _if_program = *)
-(*   [| { pred= [] *)
-(*      ; phis= [||] *)
-(*      ; code= [|(\* x = 0 *\) *)
-(*                Assign (0, zero)|] (\* if (x == 0) *\) *)
-(*      ; terminator= If ((`Eq, zero, Var 0), 1, 2) } *)
-(*    ; { pred= [0] *)
-(*      ; phis= [||] *)
-(*      ; code= [|(\* x = 1 *\) *)
-(*                Assign (1, one)|] *)
-(*      ; terminator= Goto 3 } *)
-(*    ; { pred= [0] *)
-(*      ; phis= [||] *)
-(*      ; code= [|(\* x = 2 *\) *)
-(*                Assign (2, two)|] *)
-(*      ; terminator= Goto 3 } *)
-(*    ; { pred= [1; 2] *)
-(*      ; phis= [|{result= 3; operands= [1; 2]}|] *)
-(*      ; code= [||] *)
-(*      ; terminator= Return (Some (Var 3)) } |] *)
+and eval_terminator t h program index_pred =
+  match t with
+  | Goto index ->
+      eval_block index index_pred program h
+  | If (e, index1, index2) ->
+      let value = eval_expr e h in
+      if value = 0 then eval_block index1 index_pred program h
+      else eval_block index2 index_pred program h
+  | Return (Some e) ->
+      let value = eval_expr e h in
+      value
+  | Return None ->
+      -1
+
+and eval_expr expression heap =
+  match expression with
+  | Const (`Int i) ->
+      Int32.to_int i
+  | Binop (Add _, e1, e2) ->
+      eval_expr e1 heap + eval_expr e2 heap
+  | Var v ->
+      IMap.find v heap
+
+and eval_instr instr h = match instr with Assign (v, e) -> IMap.add v (eval_expr e h) h
+
+let eval_program program = eval_block 0 0 program IMap.empty

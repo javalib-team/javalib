@@ -237,7 +237,7 @@ let translate_jopcode (op : JCode.jopcode) =
       save_stack_to pc
   | _ ->
       let* pc = get_pc () in
-      Printf.fprintf stderr "[son_translator] Not implemented opcode at %d\n" pc;
+      Printf.fprintf stderr "[warning: son_translator] Not implemented opcode at %d\n" pc;
       return ()
 
 let compute_one_predecessor (l, index) pred =

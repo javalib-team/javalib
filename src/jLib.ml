@@ -93,3 +93,5 @@ module List = struct
 
   let%test "transpose_2" = transpose [[1; 2]; [3; 4]] = [[1; 3]; [2; 4]]
 end
+
+module IMap = Map.Make (Int)

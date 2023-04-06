@@ -22,10 +22,11 @@
 open SeaOfNodes__Type
 open Bir
 
+module IMap = JLib.IMap
+
 module BuilderState = struct
   open Monad.State
   open Monad.State.Infix
-  module IMap = Map.Make (Int)
 
   type wip_terminator =
     | Done of terminator
@@ -57,6 +58,12 @@ module BuilderState = struct
         IMap.add (Son.get_id r)
           (f (IMap.find (Son.get_id r) g.reg_map))
           g.reg_map }
+
+  let unwip_block = function
+    | {pred; phis; code; wip_terminator= Done t} ->
+        {pred; phis= Array.of_list phis; code; terminator= t}
+    | _ ->
+        failwith "Not Possible"
 
   let get_region_from_predecessor son pred =
     match pred with
@@ -191,4 +198,8 @@ let translate_state () =
 
 let translate_son son =
   let initial = initial_state son in
-  Monad.State.run (translate_state ()) initial
+  let {reg_map} = Monad.State.exec (translate_state ()) initial in 
+  IMap.map unwip_block reg_map
+  
+  
+  
