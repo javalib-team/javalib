@@ -84,5 +84,6 @@ module List : sig
   val drop : int -> 'a list -> 'a list
   val remove_all : 'a list -> 'a -> 'a list
   val split_nth : int -> 'a list -> 'a list * 'a list
-  
+  val insert_at_reverse : int -> 'a -> 'a list -> 'a list
+  val transpose : 'a list list -> 'a list list
 end

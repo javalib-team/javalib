@@ -27,7 +27,6 @@ examples : return 1 + (ternary operator)
 
 open SeaOfNodes__Type
 open SeaOfNodes__Cfg
-open SeaOfNodes__Utils
 
 module TranslatorState = struct
   open Monad.State.Infix
@@ -164,7 +163,7 @@ module TranslatorState = struct
     | Jump src ->
         let* src_region = get_region_info_at src in
         let (Region.Region ps) = Son.get region.region g.son in
-        let ps = ListHelpers.insert_at_reverse br.index (Region.Jump src_region.region) ps in
+        let ps = JLib.List.insert_at_reverse br.index (Region.Jump src_region.region) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfT src ->
@@ -172,7 +171,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfT cond) in
-        let ps = ListHelpers.insert_at_reverse br.index (Region.Branch branch) ps in
+        let ps = JLib.List.insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | IfF src ->
@@ -180,7 +179,7 @@ module TranslatorState = struct
         let (Region.Region ps) = Son.get region.region g.son in
         let cond = Option.get src_region.cond in
         let* branch = insert_branch (Branch.IfF cond) in
-        let ps = ListHelpers.insert_at_reverse br.index (Region.Branch branch) ps in
+        let ps = JLib.List.insert_at_reverse br.index (Region.Branch branch) ps in
         let son = Son.set region.region (Region.Region ps) g.son in
         Monad.State.modify @@ fun g -> {g with son}
     | _ ->
@@ -237,6 +236,8 @@ let translate_jopcode (op : JCode.jopcode) =
       let* pc = get_pc () in
       save_stack_to pc
   | _ ->
+      let* pc = get_pc () in
+      Printf.fprintf stderr "[son_translator] Not implemented opcode at %d\n" pc;
       return ()
 
 let compute_one_predecessor (l, index) pred =
@@ -324,6 +325,7 @@ let translate_jopcodes (ops : JCode.jopcodes) =
    }
    return c;
 *)
+
 let%test_unit "translate_if" =
   let jopcodes =
     [| JCode.OpConst (`Int 0l)
@@ -331,7 +333,7 @@ let%test_unit "translate_if" =
      ; OpConst (`Int 0l)
      ; OpStore (`Int2Bool, 2)
      ; OpLoad (`Int2Bool, 1)
-     ; OpIf (`Ne, 3)
+     ; OpIf (`Eq, 3)
      ; OpConst (`Int 1l)
      ; OpStore (`Int2Bool, 2)
      ; OpGoto 5
