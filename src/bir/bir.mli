@@ -21,15 +21,23 @@
 
 (* Bir type from https://github.com/javalib-team/sawja/blob/master/src/bir.ml *)
 
-type const = [`Int of int32]
-
+type const = [ `Int of int32 ]
 type binop = Add of JBasics.jvm_basic_type
+type var = int
 
-type expr = Const of const | Binop of binop * expr * expr
+type expr =
+  | Const of const
+  | Binop of binop * expr * expr
+  | Var of var
 
-type instr =
+type instr = Assign of var * expr
+
+type terminator =
   | Return of expr option
-  | Ifd of ([`Eq] * expr * expr) * int
+  | If of expr * int * int
   | Goto of int
 
-val eval_instr : int -> instr array -> int option
+type phi = { result : var; operands : expr list }
+type block =
+  {pred: int list; phis: phi array; code: instr array; terminator: terminator}
+type program = block array

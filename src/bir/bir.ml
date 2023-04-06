@@ -25,29 +25,47 @@ type const = [`Int of int32]
 
 type binop = Add of JBasics.jvm_basic_type
 
-type expr = Const of const | Binop of binop * expr * expr
+type var = int
 
-type instr =
+type expr = Const of const | Binop of binop * expr * expr | Var of var
+
+type instr = Assign of var * expr
+
+type terminator =
   | Return of expr option
-  | Ifd of ([`Eq] * expr * expr) * int
+  | If of expr * int * int
   | Goto of int
 
-let rec eval_expr (bir : expr) =
-  match bir with
-  | Const (`Int n) ->
-      Int32.to_int n
-  | Binop (Add _, op1, op2) ->
-      eval_expr op1 + eval_expr op2
+type phi = {result: var; operands: expr list}
 
-let rec eval_instr (pc : int) (bir : instr array) =
-  match bir.(pc) with
-  | Return None ->
-      None
-  | Return (Some expr) ->
-      Some (eval_expr expr)
-  | Ifd ((`Eq, left, right), pc') ->
-      let l = eval_expr left in
-      let r = eval_expr right in
-      eval_instr (if l = r then pc' else pc + 1) bir
-  | Goto pc' ->
-      eval_instr pc' bir
+type block =
+  {pred: int list; phis: phi array; code: instr array; terminator: terminator}
+
+type program = block array
+
+(* let zero = Const (`Int (Int32.of_int 0)) *)
+
+(* let one = Const (`Int (Int32.of_int 1)) *)
+
+(* let two = Const (`Int (Int32.of_int 2)) *)
+
+(* let _if_program = *)
+(*   [| { pred= [] *)
+(*      ; phis= [||] *)
+(*      ; code= [|(\* x = 0 *\) *)
+(*                Assign (0, zero)|] (\* if (x == 0) *\) *)
+(*      ; terminator= If ((`Eq, zero, Var 0), 1, 2) } *)
+(*    ; { pred= [0] *)
+(*      ; phis= [||] *)
+(*      ; code= [|(\* x = 1 *\) *)
+(*                Assign (1, one)|] *)
+(*      ; terminator= Goto 3 } *)
+(*    ; { pred= [0] *)
+(*      ; phis= [||] *)
+(*      ; code= [|(\* x = 2 *\) *)
+(*                Assign (2, two)|] *)
+(*      ; terminator= Goto 3 } *)
+(*    ; { pred= [1; 2] *)
+(*      ; phis= [|{result= 3; operands= [1; 2]}|] *)
+(*      ; code= [||] *)
+(*      ; terminator= Return (Some (Var 3)) } |] *)
