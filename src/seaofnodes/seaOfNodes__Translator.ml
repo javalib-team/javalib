@@ -147,7 +147,7 @@ module TranslatorState = struct
           let* () = push_stack k in
           merge_stacks ss
     in
-    worker @@ List.rev (ListHelpers.transpose stacks)
+    worker @@ List.rev (JLib.List.transpose stacks)
 
   let get_node node =
     let* g = Monad.State.get () in
