@@ -21,24 +21,16 @@
 
 open SeaOfNodes__Type
 open Bir
-
 module IMap = JLib.IMap
 
 module BuilderState = struct
   open Monad.State
   open Monad.State.Infix
 
-  type wip_terminator =
-    | Done of terminator
-    | Empty
-    | WaitIfT of int
-    | WaitIfF of int
+  type wip_terminator = Done of terminator | Empty | WaitIfT of int | WaitIfF of int
 
   type wip_block =
-    { pred: int list
-    ; phis: phi list
-    ; code: instr array
-    ; wip_terminator: wip_terminator }
+    {pred: int list; phis: phi list; code: instr array; wip_terminator: wip_terminator}
 
   type t = {son: Son.t; reg_map: wip_block IMap.t}
 
@@ -49,15 +41,6 @@ module BuilderState = struct
   let get_from_son key =
     let* g = get () in
     return @@ Son.get key g.son
-
-  let modify_wip_block r f =
-    modify
-    @@ fun g ->
-    { g with
-      reg_map=
-        IMap.add (Son.get_id r)
-          (f (IMap.find (Son.get_id r) g.reg_map))
-          g.reg_map }
 
   let unwip_block = function
     | {pred; phis; code; wip_terminator= Done t} ->
@@ -77,10 +60,7 @@ module BuilderState = struct
     let (Region.Region preds) = Son.get rkey g.son in
     let reg_map =
       IMap.add (Son.get_id rkey)
-        { pred=
-            List.map
-              (fun k -> Son.get_id (get_region_from_predecessor g.son k))
-              preds
+        { pred= List.map (fun k -> Son.get_id (get_region_from_predecessor g.son k)) preds
         ; phis= []
         ; code= [||]
         ; wip_terminator= Empty }
@@ -96,6 +76,10 @@ module BuilderState = struct
         alloc_region rkey >> lookup_region rkey
     | Some bir_region ->
         return bir_region
+
+  and modify_wip_block r f =
+    let* region = lookup_region r in
+    modify @@ fun g -> {g with reg_map= IMap.add (Son.get_id r) (f region) g.reg_map}
 
   type partial_term =
     | Pt_Jump of int
@@ -173,33 +157,25 @@ and translate_data dkey cr =
         fold_leftM
           (fun l (o, p) -> translate_data o p >>= fun x -> return (x :: l))
           []
-          (List.combine operands
-             (List.map (get_region_from_predecessor son) preds) )
+          (List.combine operands (List.map (get_region_from_predecessor son) preds))
       in
-      let* () = modify_wip_block cr @@ fun b -> {b with phis= {result= Son.get_id dkey; operands} :: b.phis} in
+      let* () =
+        modify_wip_block cr @@ fun b -> {b with phis= {result= Son.get_id dkey; operands} :: b.phis}
+      in
       return (Var (Son.get_id dkey))
 
 let translate_state () =
   let* son = get_son () in
-  let rk, ret =
-    List.hd @@ List.filter (fun (_, c) -> is_return c) (Son.control_nodes son)
-  in
+  let _, ret = List.hd @@ List.filter (fun (_, c) -> is_return c) (Son.control_nodes son) in
   let region, operand =
-    match ret with
-    | Control.Return {region; operand} ->
-        (region, operand)
-    | _ ->
-        failwith "todo"
+    match ret with Control.Return {region; operand} -> (region, operand) | _ -> failwith "todo"
   in
   let* () = translate_region region in
   let* expr = translate_data operand region in
-  let* () = add_terminator rk (Pt_Ret expr) in
+  let* () = add_terminator region (Pt_Ret expr) in
   return ()
 
 let translate_son son =
   let initial = initial_state son in
-  let {reg_map} = Monad.State.exec (translate_state ()) initial in 
+  let {reg_map} = Monad.State.exec (translate_state ()) initial in
   IMap.map unwip_block reg_map
-  
-  
-  
