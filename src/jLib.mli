@@ -86,6 +86,7 @@ module List : sig
   val split_nth : int -> 'a list -> 'a list * 'a list
   val insert_at_reverse : int -> 'a -> 'a list -> 'a list
   val transpose : 'a list list -> 'a list list
+  val index_of : 'a list -> 'a -> int
 end
 
 module IMap : Map.S with type key = int

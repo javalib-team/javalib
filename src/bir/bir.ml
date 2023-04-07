@@ -41,21 +41,12 @@ module IMap = JLib.IMap
 
 type program = block IMap.t
 
-let index_of l a =
-  let rec aux i = function
-    | [] ->
-        raise Not_found
-    | x :: l ->
-        if x = a then i else aux (i + 1) l
-  in
-  aux 0 l
-
 let rec eval_block index index_pred program heap =
   let block = IMap.find index program in
   let heap =
     Array.fold_left
       (fun heap phi ->
-        let pred = index_of block.pred index_pred in
+        let pred = JLib.List.index_of block.pred index_pred in
         let value = eval_expr (List.nth phi.operands pred) heap in
         IMap.add phi.result value heap )
       heap block.phis

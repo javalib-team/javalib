@@ -92,6 +92,23 @@ module List = struct
     transpose [[1; 2; 3]; [4; 5; 6]; [7; 8; 9]] = [[1; 4; 7]; [2; 5; 8]; [3; 6; 9]]
 
   let%test "transpose_2" = transpose [[1; 2]; [3; 4]] = [[1; 3]; [2; 4]]
+
+  let rec index_of l e =
+    match l with [] -> raise Not_found | h :: t -> if e = h then 0 else 1 + index_of t e
+
+  let%test "index_of_simple" = index_of [1; 2; 3; 4; 5] 3 = 2
+
+  let%test "index_of_not_found" =
+    try
+      let _ = index_of [1; 2; 4; 5] 3 in
+      false
+    with Not_found -> true
+
+  let%test "index_of_empty" =
+    try
+      let _ = index_of [] 3 in
+      false
+    with Not_found -> true
 end
 
 module IMap = Map.Make (Int)
