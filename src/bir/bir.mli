@@ -43,4 +43,4 @@ type block =
 
 
 type program = block JLib.IMap.t
-val eval_program : program -> int
+val eval_program : program -> int option

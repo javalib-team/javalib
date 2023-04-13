@@ -122,6 +122,8 @@ module TranslatorState = struct
 
   let push_stack x = Monad.State.modify (fun g -> {g with stack= x :: g.stack})
 
+  let flush_stack () = Monad.State.modify (fun g -> {g with stack= []})
+
   let pop_stack () =
     let* g = Monad.State.get () in
     match g.stack with
@@ -137,6 +139,9 @@ module TranslatorState = struct
     Monad.State.set {g with reg_map= IMap.add reg_info.entry_point reg_info g.reg_map}
 
   let rec merge_stacks stacks =
+    (* check that all stacks have the same size *)
+    assert (List.for_all (fun s -> List.length s = List.length (List.hd stacks)) stacks) ;
+
     let worker stacks =
       match stacks with
       | [] ->
@@ -225,7 +230,7 @@ let translate_jopcode (op : JCode.jopcode) =
       let node = Control.Return {region; operand} in
       let* _ = insert_control node in
       return ()
-  | OpIf (`Eq, _offset) ->
+  | OpIf (_, _offset) ->
       let* operand = pop_stack () in
       let* pc = get_pc () in
       let* () = save_stack_to pc in
@@ -280,6 +285,7 @@ let manage_branching_point () =
   let* is_branch = is_branching_point pc in
   if is_branch then
     let* predecessors = compute_predecessors pc in
+    let* () = flush_stack () in
     let* region = insert_region @@ Region.Region predecessors in
     let region_info = {last_stack= None; region; entry_point= pc; cond= None} in
     let* () = add_region region_info in
