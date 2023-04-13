@@ -190,7 +190,11 @@ and Son : sig
 
   val data_nodes : t -> (Data.t Son.key * Data.t) list
 
+  val region_nodes : t -> (Region.t Son.key * Region.t) list
+
   val control_nodes : t -> (Control.t Son.key * Control.t) list
+
+  val branch_nodes : t -> (Branch.t Son.key * Branch.t) list
 
   val unsafe_make_key : int -> Data.t key
 end = struct
@@ -287,7 +291,15 @@ end = struct
     List.map (fun (i, data) -> (DataKey i, data))
     @@ IMap.bindings m.data_map.map
 
+  let region_nodes m =
+    List.map (fun (i, region) -> (RegionKey i, region))
+    @@ IMap.bindings m.region_map.map
+
   let control_nodes m =
     List.map (fun (i, control) -> (ControlKey i, control))
     @@ IMap.bindings m.control_map.map
+
+  let branch_nodes m =
+    List.map (fun (i, branch) -> (BranchKey i, branch))
+    @@ IMap.bindings m.branch_map.map
 end

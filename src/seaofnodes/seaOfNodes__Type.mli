@@ -98,7 +98,11 @@ and Son : sig
 
   val data_nodes : t -> (Data.t Son.key * Data.t) list
 
+  val region_nodes : t -> (Region.t Son.key * Region.t) list
+
   val control_nodes : t -> (Control.t Son.key * Control.t) list
+
+  val branch_nodes : t -> (Branch.t Son.key * Branch.t) list
 
   val unsafe_make_key : int -> Data.t key
 end

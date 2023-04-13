@@ -7,6 +7,9 @@ let _ =
   let jclass = Javalib.get_class cp class_name in
   let jopcodes = get_jopcodes jclass in
   let son = Translator.translate_jopcodes jopcodes in
+
+  Printf.printf "%a\n" PP.son son;
+
   let data_key =
     List.hd
     @@ map_option (fun (_, control) ->
