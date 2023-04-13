@@ -11,8 +11,6 @@ let rec elements ty fmt l =
 
 let list ty fmt l = Printf.fprintf fmt "[%a]" (elements ty) l
 
-let int fmt n = Printf.fprintf fmt "%d" n
-
 let prefixed s pp fmt = Printf.fprintf fmt "%s%a" s pp
 
 let key fmt key = Printf.fprintf fmt "%d" (Son.get_id key)
@@ -34,6 +32,7 @@ and phi fmt (Phi.Phi {region; operands}) =
   Printf.fprintf fmt "Phi {region : R%a; operands : %a}" (prefixed "D" key) region
     (list (prefixed "D" key))
     operands
+
 
 and predecessor fmt pred =
   match pred with
