@@ -1,6 +1,7 @@
 public class Test3 {
 	public static int Test3(String[] args) {
-		Boolean c = true && false;
-		return c ? 0 : 1;
+		boolean c = true && false;
+		boolean d = true && false;
+		return c ? (d ? 1 : 2) : (d ? 3 : 4);
 	}
 }

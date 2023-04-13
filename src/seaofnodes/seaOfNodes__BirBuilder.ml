@@ -68,17 +68,20 @@ module BuilderState = struct
     in
     modify (fun g -> {g with reg_map})
 
-  and lookup_region rkey =
+  and find_region rkey =
     let* g = get () in
     let mr = IMap.find_opt (Son.get_id rkey) g.reg_map in
-    match mr with
-    | None ->
-        alloc_region rkey >> lookup_region rkey
-    | Some bir_region ->
-        return bir_region
+    match mr with None -> return None | Some r -> return @@ Some r
+
+  and exists_region rkey = Option.is_some <$> find_region rkey
+
+  and create_region_if_needed rkey =
+    let* b = exists_region rkey in
+    if b then Option.get <$> find_region rkey >>= return
+    else alloc_region rkey >> (Option.get <$> find_region rkey) >>= return
 
   and modify_wip_block r f =
-    let* region = lookup_region r in
+    let* region = create_region_if_needed r in
     modify @@ fun g -> {g with reg_map= IMap.add (Son.get_id r) (f region) g.reg_map}
 
   type partial_term =
@@ -102,7 +105,7 @@ module BuilderState = struct
       | WaitIfF j ->
           {b with wip_terminator= Done (If (c, j, i))}
       | _ ->
-          failwith "Not Possible" )
+          failwith "Not Possible 1" )
     | Pt_IfT (c, j) -> (
       match b.wip_terminator with
       | Empty ->
@@ -110,7 +113,7 @@ module BuilderState = struct
       | WaitIfT i ->
           {b with wip_terminator= Done (If (c, j, i))}
       | _ ->
-          failwith "Not Possible" )
+          failwith "Not Possible 2" )
 end
 
 open BuilderState
@@ -121,25 +124,30 @@ let is_return c = match c with Control.Return _ -> true | _ -> false
 
 let rec translate_region rkey =
   let* (Region.Region preds) = get_from_son rkey in
-  let* _bir_region = lookup_region rkey in
-  let _ =
-    List.map
-      (fun pred ->
-        match pred with
-        | Region.Jump r ->
-            add_terminator r (Pt_Jump (Son.get_id rkey))
-        | Region.Branch brk -> (
-            let* br = get_from_son brk in
-            match br with
-            | Branch.IfF (Cond.Cond c) ->
-                let* cond = translate_data c.operand c.region in
-                add_terminator c.region (Pt_IfF (cond, Son.get_id rkey))
-            | Branch.IfT (Cond.Cond c) ->
-                let* cond = translate_data c.operand c.region in
-                add_terminator c.region (Pt_IfT (cond, Son.get_id rkey)) ) )
-      preds
-  in
-  return ()
+  let* son = get_son () in
+  let* exists = exists_region rkey in
+  if exists then return ()
+  else
+    let* _ =
+      Monad.State.fold_leftM
+        (fun _ pred ->
+          let region_pred = get_region_from_predecessor son pred in
+          let* () = translate_region region_pred in
+          match pred with
+          | Region.Jump r ->
+              add_terminator r (Pt_Jump (Son.get_id rkey))
+          | Region.Branch brk -> (
+              let* br = get_from_son brk in
+              match br with
+              | Branch.IfF (Cond.Cond c) ->
+                  let* cond = translate_data c.operand c.region in
+                  add_terminator c.region (Pt_IfF (cond, Son.get_id rkey))
+              | Branch.IfT (Cond.Cond c) ->
+                  let* cond = translate_data c.operand c.region in
+                  add_terminator c.region (Pt_IfT (cond, Son.get_id rkey)) ) )
+        () preds
+    in
+    return ()
 
 and translate_data dkey cr =
   let* d = get_from_son dkey in
@@ -170,10 +178,13 @@ let translate_state () =
   let region, operand =
     match ret with Control.Return {region; operand} -> (region, operand) | _ -> failwith "todo"
   in
-  let* () = translate_region region in
-  let* expr = translate_data operand region in
-  let* () = add_terminator region (Pt_Ret expr) in
-  return ()
+  let* b = exists_region region in
+  if not b then
+    let* () = translate_region region in
+    let* expr = translate_data operand region in
+    let* () = add_terminator region (Pt_Ret expr) in
+    return ()
+  else return ()
 
 let translate_son son =
   let initial = initial_state son in

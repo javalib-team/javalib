@@ -42,6 +42,7 @@ module IMap = JLib.IMap
 type program = block IMap.t
 
 let rec eval_block index index_pred program heap =
+  (* Print all regions in program *)
   let block = IMap.find index program in
   let heap =
     Array.fold_left
@@ -60,13 +61,12 @@ and eval_terminator t h program index_pred =
       eval_block index index_pred program h
   | If (e, index1, index2) ->
       let value = eval_expr e h in
-      if value = 0 then eval_block index1 index_pred program h
-      else eval_block index2 index_pred program h
+      if value = 0 then eval_block index2 index_pred program h
+      else eval_block index1 index_pred program h
   | Return (Some e) ->
-      let value = eval_expr e h in
-      value
+      Some (eval_expr e h)
   | Return None ->
-      -1
+      None
 
 and eval_expr expression heap =
   match expression with
