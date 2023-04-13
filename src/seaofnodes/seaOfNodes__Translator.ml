@@ -294,7 +294,7 @@ let manage_branching_point () =
       Monad.State.fold_leftM
         (fun l p ->
           let* {last_stack} = get_region_info_at (Cfg.get_source p) in
-          return (Option.get last_stack :: l) )
+          return (Option.default [] last_stack :: l) )
         [] predecessors
     in
     merge_stacks stacks

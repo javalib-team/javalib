@@ -30,7 +30,7 @@ module BuilderState = struct
   type wip_terminator = Done of terminator | Empty | WaitIfT of int | WaitIfF of int
 
   type wip_block =
-    {pred: int list; phis: phi list; code: instr array; wip_terminator: wip_terminator}
+    {pred: int list; phis: phi list; code: instr array; wip_terminator: wip_terminator; translated: bool}
 
   type t = {son: Son.t; reg_map: wip_block IMap.t}
 
@@ -63,26 +63,30 @@ module BuilderState = struct
         { pred= List.map (fun k -> Son.get_id (get_region_from_predecessor g.son k)) preds
         ; phis= []
         ; code= [||]
-        ; wip_terminator= Empty }
+        ; wip_terminator= Empty 
+        ; translated= false }
         g.reg_map
     in
     modify (fun g -> {g with reg_map})
 
   and find_region rkey =
     let* g = get () in
-    let mr = IMap.find_opt (Son.get_id rkey) g.reg_map in
-    match mr with None -> return None | Some r -> return @@ Some r
+    return @@ IMap.find_opt (Son.get_id rkey) g.reg_map
 
-  and exists_region rkey = Option.is_some <$> find_region rkey
+  and exists_region rkey =
+    let* o = find_region rkey in
+    match o with None -> alloc_region rkey >> return false | Some _ -> return true
 
   and create_region_if_needed rkey =
-    let* b = exists_region rkey in
-    if b then Option.get <$> find_region rkey >>= return
-    else alloc_region rkey >> (Option.get <$> find_region rkey) >>= return
+    let* _ = exists_region rkey in
+    Option.get <$> find_region rkey
 
   and modify_wip_block r f =
     let* region = create_region_if_needed r in
     modify @@ fun g -> {g with reg_map= IMap.add (Son.get_id r) (f region) g.reg_map}
+
+  let set_translated r =
+    modify_wip_block r @@ fun b -> {b with translated= true}
 
   type partial_term =
     | Pt_Jump of int
@@ -125,9 +129,11 @@ let is_return c = match c with Control.Return _ -> true | _ -> false
 let rec translate_region rkey =
   let* (Region.Region preds) = get_from_son rkey in
   let* son = get_son () in
-  let* exists = exists_region rkey in
-  if exists then return ()
+  
+  let* r = create_region_if_needed rkey in
+  if r.translated then return ()
   else
+    let* () = set_translated rkey in
     let* _ =
       Monad.State.fold_leftM
         (fun _ pred ->
@@ -178,13 +184,10 @@ let translate_state () =
   let region, operand =
     match ret with Control.Return {region; operand} -> (region, operand) | _ -> failwith "todo"
   in
-  let* b = exists_region region in
-  if not b then
-    let* () = translate_region region in
-    let* expr = translate_data operand region in
-    let* () = add_terminator region (Pt_Ret expr) in
-    return ()
-  else return ()
+  let* () = translate_region region in
+  let* expr = translate_data operand region in
+  let* () = add_terminator region (Pt_Ret expr) in
+  return ()
 
 let translate_son son =
   let initial = initial_state son in
