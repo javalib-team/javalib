@@ -13,6 +13,8 @@ let list ty fmt l = Printf.fprintf fmt "[%a]" (elements ty) l
 
 let prefixed s pp fmt = Printf.fprintf fmt "%s%a" s pp
 
+let (++) = prefixed
+
 let key fmt key = Printf.fprintf fmt "%d" (Son.get_id key)
 
 let rec binop fmt binop =
@@ -24,28 +26,28 @@ and data fmt data =
       Printf.fprintf fmt "Const %d" value
   | BinOp {op; operand1; operand2} ->
       Printf.fprintf fmt "BinOp {op: %a; operand1: %a; operand2: %a}" binop op
-        (prefixed "D" key) operand1 (prefixed "D" key) operand2
+        ("D" ++ key) operand1 ("D" ++ key) operand2
   | Phi phi_ ->
       Printf.fprintf fmt "%a" phi phi_
 
 and phi fmt (Phi.Phi {region; operands}) =
-  Printf.fprintf fmt "Phi {region : R%a; operands : %a}" (prefixed "D" key) region
-    (list (prefixed "D" key))
+  Printf.fprintf fmt "Phi {region : R%a; operands : %a}" ("D" ++ key) region
+    (list ("D" ++ key))
     operands
 
 
 and predecessor fmt pred =
   match pred with
   | Region.Jump r ->
-      (prefixed "R" key) fmt r
+      ("R" ++ key) fmt r
   | Branch b ->
-      (prefixed "B" key) fmt b
+      ("B" ++ key) fmt b
 
 and region fmt (Region.Region pred) = list predecessor fmt pred
 
 and cond fmt (Cond.Cond {region; operand}) =
-  Printf.fprintf fmt "Cond {region: %a; operand: %a}" (prefixed "R" key) region
-    (prefixed "D" key) operand
+  Printf.fprintf fmt "Cond {region: %a; operand: %a}" ("R" ++ key) region
+    ("D" ++ key) operand
 
 and branch fmt br =
   match br with
@@ -57,12 +59,12 @@ and branch fmt br =
 and control fmt control =
   match control with
   | Control.Jump r ->
-      Printf.fprintf fmt "Jump %a" (prefixed "R" key) r
+      Printf.fprintf fmt "Jump %a" ("R" ++ key) r
   | Cond c ->
-      Printf.fprintf fmt "Cond %a" (prefixed "C" key) c
+      Printf.fprintf fmt "Cond %a" ("C" ++ key) c
   | Return {region; operand} ->
-      Printf.fprintf fmt "Return {region: %a; operand: %a}" (prefixed "R" key)
-        region (prefixed "D" key) operand
+      Printf.fprintf fmt "Return {region: %a; operand: %a}" ("R" ++ key)
+        region ("D" ++ key) operand
 
 and son fmt son =
   let datas = Son.data_nodes son in
@@ -72,18 +74,18 @@ and son fmt son =
   Printf.fprintf fmt "SEA OF NODE{\n" ;
   Printf.fprintf fmt "\tDATAS {\n" ;
   List.iter
-    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" (prefixed "D" key) k data d)
+    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" ("D" ++ key) k data d)
     datas ;
   Printf.fprintf fmt "\t}\n\tREGIONS {\n" ;
   List.iter
-    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" (prefixed "R" key) k region d)
+    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" ("R" ++ key) k region d)
     regions ;
   Printf.fprintf fmt "\t}\n\tCONTROLS {\n" ;
   List.iter
-    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" (prefixed "C" key) k control d)
+    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" ("C" ++ key) k control d)
     controls ;
   Printf.fprintf fmt "\t}\n\tBRANCHES {\n" ;
   List.iter
-    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" (prefixed "B" key) k branch d)
+    (fun (k, d) -> Printf.fprintf fmt "\t\t%a -> %a\n" ("B" ++ key) k branch d)
     branches ;
   Printf.fprintf fmt "\t}\n}"
