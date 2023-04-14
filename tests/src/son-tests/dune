@@ -1,0 +1,27 @@
+(test
+ (name son_test)
+ (libraries javalib javalib_son_test)
+ (deps (source_tree java_files))
+ (modules son_test)
+ (preprocess (pps ppx_expect)))
+
+(test
+ (name ternary_test)
+ (libraries javalib javalib_son_test)
+ (deps (source_tree java_files))
+ (modules ternary_test)
+ (preprocess (pps ppx_expect)))
+
+(test
+ (name bir_test)
+ (libraries javalib javalib_son_test)
+ (deps (source_tree java_files))
+ (modules bir_test)
+ (preprocess (pps ppx_expect)))
+
+(test
+ (name cfg_test)
+ (libraries javalib javalib_son_test)
+ (deps (source_tree java_files))
+ (modules cfg_test)
+ (preprocess (pps ppx_expect)))

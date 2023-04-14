@@ -1,1 +1,2 @@
-val node_to_bir : SeaOfNodes__Type.Node.t -> Bir.instr
+module IMap = JLib.IMap
+val translate_son : SeaOfNodes__Type.Son.t -> Bir.block IMap.t

@@ -84,5 +84,13 @@ module List : sig
   val drop : int -> 'a list -> 'a list
   val remove_all : 'a list -> 'a -> 'a list
   val split_nth : int -> 'a list -> 'a list * 'a list
-  
+
+  (* insert_at n x l inserts x at position n from the end of l *)
+  val insert_at_reverse : int -> 'a -> 'a list -> 'a list
+  (* transpose a list of lists, given that all the lists have the same length *)
+  val transpose : 'a list list -> 'a list list
+  (* get the first index of an element in a list *)
+  val index_of : 'a list -> 'a -> int
 end
+
+module IMap : Map.S with type key = int

@@ -19,15 +19,28 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-module Type = SeaOfNodes__Type
+(* Bir type from https://github.com/javalib-team/sawja/blob/master/src/bir.ml *)
 
-module Translator = SeaOfNodes__Translator
+type const = [ `Int of int32 ]
+type binop = Add of JBasics.jvm_basic_type
+type var = int
 
-module Interpretor = SeaOfNodes__Interpretor
+type expr =
+  | Const of const
+  | Binop of binop * expr * expr
+  | Var of var
 
-module BirBuilder = SeaOfNodes__BirBuilder
+type instr = Assign of var * expr
+
+type terminator =
+  | Return of expr option
+  | If of expr * int * int
+  | Goto of int
+
+type phi = { result : var; operands : expr list }
+type block =
+  {pred: int list; phis: phi array; code: instr array; terminator: terminator}
 
 
-module Cfg = SeaOfNodes__Cfg
-
-module PP = SeaOfNodes__PP
+type program = block JLib.IMap.t
+val eval_program : program -> int option

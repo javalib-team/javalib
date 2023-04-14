@@ -1,3 +1,24 @@
+(*
+ * This file is part of Javalib
+ * Copyright (c)2023 Martin Andrieux (ENS Rennes)
+ * Copyright (c)2023 Alban Dutilleul (ENS Rennes)
+ * Copyright (c)2023 David Pichardie (Facebook France)
+ *
+ * This software is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1, with the special exception on linking described in file
+ * LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ *)
+
 module Binop : sig
   type t = Add
 
@@ -7,18 +28,16 @@ end
 module rec Data : sig
   type t = private
     | Const of {unique: int; value: int}
-    | BinOp of {unique: int; op: Binop.t; operand1: t; operand2: t}
+    | BinOp of {unique: int; op: Binop.t; operand1: t Son.key; operand2: t Son.key}
     | Phi of Phi.t
 
   val hash : t -> int
 
   val equal : t -> t -> bool
 
-  val pp_dot : out_channel -> t -> unit
-
   val const : int -> t
 
-  val binop : Binop.t -> t -> t -> t
+  val binop : Binop.t -> t Son.key -> t Son.key -> t
 
   val phi : Phi.t -> t
 
@@ -26,7 +45,7 @@ module rec Data : sig
 end
 
 and Region : sig
-  type predecessor = Jump of Region.t | Branch of Branch.t
+  type predecessor = Jump of Region.t Son.key | Branch of Branch.t Son.key
 
   type t = Region of predecessor list
 
@@ -34,121 +53,56 @@ and Region : sig
 end
 
 and Phi : sig
-  type t = Phi of {region: Region.t; operands: Data.t list}
-
-  val hash : t -> int
+  type t = Phi of {region: Region.t Son.key; operands: Data.t Son.key list}
 end
 
 and Cond : sig
-  type t = Cond of {region: Region.t; operand: Data.t}
-
-  val hash : t -> int
+  type t = Cond of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
 and Branch : sig
   type t = IfT of Cond.t | IfF of Cond.t
-
-  val get_hash : t -> int
 end
 
-module Control : sig
-  type t = Jump of Region.t | Cond of Cond.t | Return of {region: Region.t; operand: Data.t}
-
-  val pp_dot : out_channel -> t -> unit
+and Control : sig
+  type t =
+    | Jump of Region.t Son.key
+    | Cond of Cond.t Son.key
+    | Return of {region: Region.t Son.key; operand: Data.t Son.key}
 end
 
-module Node : sig
-  type t = Data of Data.t | Region of Region.t | Control of Control.t | Branch of Branch.t
+and Son : sig
+  type t
 
-  val pp_dot : out_channel -> t -> unit
+  type 'a key
+
+  val alloc_data : t -> Data.t -> t * Data.t key
+
+  val alloc_region : t -> Region.t -> t * Region.t key
+
+  val alloc_control : t -> Control.t -> t * Control.t key
+
+  val alloc_branch : t -> Branch.t -> t * Branch.t key
+
+  val get : 'a key -> t -> 'a
+
+  val set : 'a key -> 'a -> t -> t
+
+  val modify : 'a key -> ('a -> 'a) -> t -> t
+
+  val get_id : 'a key -> int
+
+  val add_predecessor: t -> Region.t key -> Region.predecessor -> t
+
+  val empty : t
+
+  val data_nodes : t -> (Data.t Son.key * Data.t) list
+
+  val region_nodes : t -> (Region.t Son.key * Region.t) list
+
+  val control_nodes : t -> (Control.t Son.key * Control.t) list
+
+  val branch_nodes : t -> (Branch.t Son.key * Branch.t) list
+
+  val unsafe_make_key : int -> Data.t key
 end
-
-type id = int
-
-module IMap : sig
-  type key = Int.t
-
-  type 'a t = 'a Stdlib__Map.Make(Int).t
-
-  val empty : 'a t
-
-  val is_empty : 'a t -> bool
-
-  val mem : key -> 'a t -> bool
-
-  val add : key -> 'a -> 'a t -> 'a t
-
-  val update : key -> ('a option -> 'a option) -> 'a t -> 'a t
-
-  val singleton : key -> 'a -> 'a t
-
-  val remove : key -> 'a t -> 'a t
-
-  val merge : (key -> 'a option -> 'b option -> 'c option) -> 'a t -> 'b t -> 'c t
-
-  val union : (key -> 'a -> 'a -> 'a option) -> 'a t -> 'a t -> 'a t
-
-  val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
-
-  val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
-
-  val iter : (key -> 'a -> unit) -> 'a t -> unit
-
-  val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-
-  val for_all : (key -> 'a -> bool) -> 'a t -> bool
-
-  val exists : (key -> 'a -> bool) -> 'a t -> bool
-
-  val filter : (key -> 'a -> bool) -> 'a t -> 'a t
-
-  val filter_map : (key -> 'a -> 'b option) -> 'a t -> 'b t
-
-  val partition : (key -> 'a -> bool) -> 'a t -> 'a t * 'a t
-
-  val cardinal : 'a t -> int
-
-  val bindings : 'a t -> (key * 'a) list
-
-  val min_binding : 'a t -> key * 'a
-
-  val min_binding_opt : 'a t -> (key * 'a) option
-
-  val max_binding : 'a t -> key * 'a
-
-  val max_binding_opt : 'a t -> (key * 'a) option
-
-  val choose : 'a t -> key * 'a
-
-  val choose_opt : 'a t -> (key * 'a) option
-
-  val split : key -> 'a t -> 'a t * 'a option * 'a t
-
-  val find : key -> 'a t -> 'a
-
-  val find_opt : key -> 'a t -> 'a option
-
-  val find_first : (key -> bool) -> 'a t -> key * 'a
-
-  val find_first_opt : (key -> bool) -> 'a t -> (key * 'a) option
-
-  val find_last : (key -> bool) -> 'a t -> key * 'a
-
-  val find_last_opt : (key -> bool) -> 'a t -> (key * 'a) option
-
-  val map : ('a -> 'b) -> 'a t -> 'b t
-
-  val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
-
-  val to_seq : 'a t -> (key * 'a) Seq.t
-
-  val to_rev_seq : 'a t -> (key * 'a) Seq.t
-
-  val to_seq_from : key -> 'a t -> (key * 'a) Seq.t
-
-  val add_seq : (key * 'a) Seq.t -> 'a t -> 'a t
-
-  val of_seq : (key * 'a) Seq.t -> 'a t
-end
-
-type son = Node.t IMap.t

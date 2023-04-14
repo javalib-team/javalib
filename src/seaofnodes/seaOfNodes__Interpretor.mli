@@ -19,15 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-module Type = SeaOfNodes__Type
-
-module Translator = SeaOfNodes__Translator
-
-module Interpretor = SeaOfNodes__Interpretor
-
-module BirBuilder = SeaOfNodes__BirBuilder
-
-
-module Cfg = SeaOfNodes__Cfg
-
-module PP = SeaOfNodes__PP
+val eval_data :
+  SeaOfNodes__Type.Son.t ->
+  SeaOfNodes__Type.Data.t SeaOfNodes__Type.Son.key ->
+  int

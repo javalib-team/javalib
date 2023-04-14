@@ -1,20 +1,22 @@
-module TranslatorState : sig
-  type t = {stack: SeaOfNodes__Type.Data.t list; region: SeaOfNodes__Type.Region.t; count: int}
+(*
+ * This file is part of Javalib
+ * Copyright (c)2023 Martin Andrieux (ENS Rennes)
+ * Copyright (c)2023 Alban Dutilleul (ENS Rennes)
+ * Copyright (c)2023 David Pichardie (Facebook France)
+ *
+ * This software is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License
+ * version 2.1, with the special exception on linking described in file
+ * LICENSE.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program.  If not, see
+ * <http://www.gnu.org/licenses/>.
+ *)
 
-  val initial : t
-
-  val push_stack : SeaOfNodes__Type.Data.t -> (t, unit) Monad.State.t
-
-  val pop_stack : unit -> (t, SeaOfNodes__Type.Data.t) Monad.State.t
-
-  val fresh : unit -> (t, int) Monad.State.t
-
-  val get_current_region : unit -> (t, SeaOfNodes__Type.Region.t) Monad.State.t
-end
-
-val translate_jopcode :
-     SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t
-  -> JCode.jopcode
-  -> (TranslatorState.t, SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t) Monad.State.t
-
-val translate_jopcodes : JCode.jopcodes -> SeaOfNodes__Type.Node.t SeaOfNodes__Type.IMap.t
+val translate_jopcodes : JCode.jopcodes -> SeaOfNodes__Type.Son.t
