@@ -9,5 +9,7 @@ let _ =
   let son = Translator.translate_jopcodes jopcodes in
   let bir = BirBuilder.translate_son son in
   Printf.printf "Eval : %d\n" (Option.get (Bir.eval_program bir));
+  Printf.printf "Eval : %d\n" (Interpretor.eval_son son);
+  assert (Interpretor.eval_son son = 4);
   assert (Bir.eval_program bir = Some(4));
   Printf.printf "+ [BIR] Test passed successfully.\n"

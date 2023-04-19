@@ -19,7 +19,4 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-val eval_data :
-  SeaOfNodes__Type.Son.t ->
-  SeaOfNodes__Type.Data.t SeaOfNodes__Type.Son.key ->
-  int
+val eval_son : SeaOfNodes__Type.Son.t -> int

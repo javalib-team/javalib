@@ -10,13 +10,7 @@ let _ =
 
   Printf.printf "%a\n" PP.son son;
 
-  let data_key =
-    List.hd
-    @@ map_option (fun (_, control) ->
-           match control with Type.Control.Return {operand; _} -> Some operand | _ -> None )
-    @@ SeaOfNodes.Type.Son.control_nodes son
-  in
-  assert (Interpretor.eval_data son data_key == 42) ;
+  assert (Interpretor.eval_son son == 42) ;
   let data_nodes = List.map snd (Type.Son.data_nodes son) in
   assert (is_list_hash_consed data_nodes) ;
   Javalib.close_class_path cp ;
