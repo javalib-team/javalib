@@ -5,18 +5,12 @@ let _ =
   let cp = Javalib.class_path "java_files" in
   let class_name, _ = Javalib.extract_class_name_from_file "java_files/Test1.class" in
   let jclass = Javalib.get_class cp class_name in
-  let jopcodes = get_jopcodes jclass in
+  let jopcodes = get_jopcodes_by_method_name jclass "Test1" in
   let son = Translator.translate_jopcodes jopcodes in
 
   Printf.printf "%a\n" PP.son son;
 
-  let data_key =
-    List.hd
-    @@ map_option (fun (_, control) ->
-           match control with Type.Control.Return {operand; _} -> Some operand | _ -> None )
-    @@ SeaOfNodes.Type.Son.control_nodes son
-  in
-  assert (Interpretor.eval_data son data_key == 42) ;
+  assert (Interpretor.eval_son son == 42) ;
   let data_nodes = List.map snd (Type.Son.data_nodes son) in
   assert (is_list_hash_consed data_nodes) ;
   Javalib.close_class_path cp ;
