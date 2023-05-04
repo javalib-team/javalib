@@ -1,5 +1,5 @@
 public class Test2 {
-	public static int Test1(String[] args) {
+	public static int Test2(String[] args) {
 		int a = 0;
 		int c = 0;
 		if (a == 0) {

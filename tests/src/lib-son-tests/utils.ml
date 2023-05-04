@@ -2,13 +2,12 @@ open Javalib
 open JBasics
 open JCode
 
-let get_jopcodes c =
+let get_jopcodes_by_method_name c name =
   match c with
   | JInterface _ ->
       assert false
-  | JClass _ -> (
-      let methods = get_methods c in
-      let m = List.hd @@ MethodMap.value_elements methods in
+  | JClass c -> (
+      let m = (List.filter (fun (m, _) -> ms_name m = name) (MethodMap.elements c.c_methods)) |> List.hd |> snd in
       match m with
       | AbstractMethod _ ->
           assert false
