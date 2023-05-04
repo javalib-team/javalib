@@ -19,12 +19,6 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-(*
-write a small BIR SSA interpreter by adding the necessary information
-examples : return 1 + (ternary operator)
-           no phi_nodes but conditional jumps 
-   *)
-
 open SeaOfNodes__Type
 open SeaOfNodes__Cfg
 
