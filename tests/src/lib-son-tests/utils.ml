@@ -18,7 +18,7 @@
  * License along with this program.  If not, see
  * <http://www.gnu.org/licenses/>.
  *)
- 
+
 open Javalib
 open JBasics
 open JCode
@@ -28,7 +28,7 @@ let get_jopcodes_by_method_name c name =
   | JInterface _ ->
       assert false
   | JClass c -> (
-      let m = (List.filter (fun (m, _) -> ms_name m = name) (MethodMap.elements c.c_methods)) |> List.hd |> snd in
+      let m = List.find (fun (m, _) -> ms_name m = name) (MethodMap.elements c.c_methods) |> snd in
       match m with
       | AbstractMethod _ ->
           assert false
