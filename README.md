@@ -13,9 +13,8 @@ the [LICENSE](LICENSE) file).
 
 We recommend you to install every required library and *Ocaml* version with [opam](https://opam.ocaml.org/).
 
-- [ocaml](http://caml.inria.fr/ocaml/release.en.html) >= 4.02.3
-- [ocamlfind](http://projects.camlcity.org/projects/findlib.html) >= 1.5.1
-- [camlzip](https://github.com/xavierleroy/camlzip) >= 1.05
+- [ocaml](http://caml.inria.fr/ocaml/release.en.html) >= 4.08
+- [camlzip](https://github.com/xavierleroy/camlzip) >= 1.11
 - [extlib](https://github.com/ygrek/ocaml-extlib)
 
 ### Configuration and installation
@@ -23,30 +22,12 @@ We recommend you to install every required library and *Ocaml* version with [opa
 Configuring and installing *Javalib* from sources is pretty simple.
 In the main repository, execute
 
-     $ ./configure.sh
-     $ make
-     $ make install
-
-If you want to verify that Javalib is correctly installed and found by ocaml, this command should find the library path
-
-     $ ocamlfind query javalib
+     $ dune build
 
 To clean the sources, run
 
-     $ make clean
+     $ dune clean
 
-To remove the library from your system, just do
-
-     $ make remove
-     
-If you want to generate the documentation, run
-
-     $ make doc
-     
-You can clean the doc with
-
-    $ make cleandoc
-    
 ## Using Javalib
 
 Before being able to use the modules presented in the [API documentation](https://javalib-team.github.io/javalib/doc/api/), you need to `open Javalib_pack`.

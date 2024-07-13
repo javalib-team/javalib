@@ -12,7 +12,6 @@ build: [
 ]
 depends: [
   "ocaml" {>= "4.08"}
-  "odoc"
   "camlzip" {>= "1.11"}
   "extlib"
   "ppx_inline_test"
