@@ -501,37 +501,6 @@ let method_synchronized m =
   if (is_synchronized_method m) then Some "synchronized"
   else None
 
-let acmethod ?(jvm=false) (f:'a -> string list) (m:'a jmethod) =
-  let ms = get_method_signature m in
-  let header =
-    String.concat " " (List.filter_map
-			 (fun x -> x)
-			 [method_access m; method_static m;
-			  method_final m; method_synchronized m;
-			  method_kind m]) in
-  let header = if header = "" then header else header ^ " " in
-    match m with
-      | AbstractMethod _ ->
-	  if jvm then
-	    (method_signature ~jvm:true ms, [])
-	  else
-	    (Printf.sprintf "%s%s" header (method_signature ms), [])
-      | ConcreteMethod cm ->
-	  (match cm.cm_implementation with
-	     | Native ->
-		 if jvm then
-		   (method_signature ~jvm:true ms, [])
-		 else
-		   (Printf.sprintf "%s%s" header (method_signature ms), [])
-	     | Java impl ->
-                 let impl = Lazy.force impl in
-		   if jvm then
-		     (method_signature ~jvm:true ms, f impl)
-		   else
-		     (Printf.sprintf "%s%s" header (method_signature ms),
-		      f impl)
-	  )
-
 let any_field ?(jvm=false) (f : any_field) : string =
   let fs = get_field_signature f in
   let header =
