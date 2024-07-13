@@ -21,30 +21,27 @@
 
 (** Low level (un)parsing of bytecode instructions. *)
 
+val parse_code : JLib.IO.input -> int -> JClassLow.opcode array
 (** Parse a sequence of instructions of given size (in bytes) and
     returns an array of instructions. *)
-val parse_code : JLib.IO.input -> int -> JClassLow.opcode array
 
+val unparse_code : 'a JLib.IO.output -> JClassLow.opcode array -> unit
 (** Unparse a sequence of instructions.
 
     @raise OpcodeLengthError if an opcode cannot be encoded in the allocated
     place.  *)
-val unparse_code :
-  'a JLib.IO.output -> JClassLow.opcode array -> unit
 
+exception OpcodeLengthError of int * JClassLow.opcode
 (** [OpcodeLengthError] takes as argument the opcode and the excepted
     length that cannot be matched by unparsing the opcode. *)
-exception OpcodeLengthError of int * JClassLow.opcode
 
+val parse_full_opcode : JLib.IO.input -> (unit -> int) -> JClassLow.opcode
 
-val parse_full_opcode :
-  JLib.IO.input -> (unit -> int) -> JClassLow.opcode
-
+val unparse_instruction :
+  'a JLib.IO.output -> (unit -> int) -> int -> JClassLow.opcode -> unit
 (** [unparse_instruction ch count length opcode] output on [ch] the
     opcode [opcode] in the [length] byte(s) format. E.g [OpLoad
     (`Int,1)] can be encoded on 4 bytes ([wide iload 0x0001]), 2 bytes
     ([iload 0x01]) or 1 byte ([iload_1]).
 
     @raise OpcodeLengthError if the length provided cannot be matched.*)
-val unparse_instruction :
-  'a JLib.IO.output -> (unit -> int) -> int -> JClassLow.opcode -> unit

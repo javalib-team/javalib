@@ -37,25 +37,20 @@ let opcode = function
   | OpLdc1 i -> sprintf "ldc1 %d" i
   | OpLdc1w i -> sprintf "ldc1w %d" i
   | OpLdc2w i -> sprintf "ldc2w %d" i
-
-  | OpLoad (t,i) -> sprintf "%cload %d" (jvm_basic_type t) i
+  | OpLoad (t, i) -> sprintf "%cload %d" (jvm_basic_type t) i
   | OpALoad i -> sprintf "aload %d" i
-
   | OpArrayLoad t -> sprintf "%caload" (jvm_basic_type t)
   | OpAALoad -> "aaload"
   | OpBALoad -> "baload"
   | OpCALoad -> "caload"
   | OpSALoad -> "saload"
-
-  | OpStore (t,i) -> sprintf "%cstore %d" (jvm_basic_type t) i
+  | OpStore (t, i) -> sprintf "%cstore %d" (jvm_basic_type t) i
   | OpAStore i -> sprintf "astore %d" i
-
   | OpArrayStore t -> sprintf "%castore" (jvm_basic_type t)
   | OpAAStore -> "aastore"
   | OpBAStore -> "bastore"
   | OpCAStore -> "castore"
   | OpSAStore -> "sastore"
-
   | OpPop -> "pop"
   | OpPop2 -> "pop2"
   | OpDup -> "dup"
@@ -65,14 +60,12 @@ let opcode = function
   | OpDup2X1 -> "dup2X1"
   | OpDup2X2 -> "dup2X2"
   | OpSwap -> "swap"
-
   | OpAdd k -> sprintf "%cadd" (jvm_basic_type k)
   | OpSub k -> sprintf "%csub" (jvm_basic_type k)
   | OpMult k -> sprintf "%cmult" (jvm_basic_type k)
   | OpDiv k -> sprintf "%cdiv" (jvm_basic_type k)
   | OpRem k -> sprintf "%crem" (jvm_basic_type k)
   | OpNeg k -> sprintf "%cneg" (jvm_basic_type k)
-
   | OpIShl -> "ishl"
   | OpLShl -> "lshl"
   | OpIShr -> "ishr"
@@ -85,9 +78,7 @@ let opcode = function
   | OpLOr -> "lor"
   | OpIXor -> "ixor"
   | OpLXor -> "lxor"
-
-  | OpIInc (a,b) -> sprintf "iinc %d %d" a b
-
+  | OpIInc (a, b) -> sprintf "iinc %d %d" a b
   | OpI2L -> "i2l"
   | OpI2F -> "i2f"
   | OpI2D -> "i2d"
@@ -103,7 +94,6 @@ let opcode = function
   | OpI2B -> "i2b"
   | OpI2C -> "i2c"
   | OpI2S -> "i2s"
-
   | OpLCmp -> "lcmp"
   | OpFCmpL -> "fcmpl"
   | OpFCmpG -> "fcmpg"
@@ -128,25 +118,26 @@ let opcode = function
   | OpGotoW i -> sprintf "gotow %d" i
   | OpJsrW i -> sprintf "jsrw %d" i
   | OpRet i -> sprintf "ret %d" i
-
-  | OpTableSwitch (def,min,max,tbl) ->
+  | OpTableSwitch (def, min, max, tbl) ->
       (* "tableswitch ([_:_] -> [_,_,_,...],default:_)" *)
-      let inst = "tableswitch (["^ Int32.to_string min ^":"^ Int32.to_string max ^"] -> ["
-      and table = String.concat "," (Array.to_list (Array.map string_of_int tbl))
-      in inst^table^"],default:"^ string_of_int def^")"
-
-  | OpLookupSwitch (default,jumps) ->
       let inst =
-	List.fold_left
-	  (fun s (int,offset) -> s ^ Int32.to_string int ^"->" ^ string_of_int offset^ " | ")
-	  "lookupswitch "
-	  jumps
-      in inst ^ "_ ->" ^string_of_int default
-
+        "tableswitch ([" ^ Int32.to_string min ^ ":" ^ Int32.to_string max
+        ^ "] -> ["
+      and table =
+        String.concat "," (Array.to_list (Array.map string_of_int tbl))
+      in
+      inst ^ table ^ "],default:" ^ string_of_int def ^ ")"
+  | OpLookupSwitch (default, jumps) ->
+      let inst =
+        List.fold_left
+          (fun s (int, offset) ->
+            s ^ Int32.to_string int ^ "->" ^ string_of_int offset ^ " | ")
+          "lookupswitch " jumps
+      in
+      inst ^ "_ ->" ^ string_of_int default
   | OpReturn k -> sprintf "%creturn" (jvm_basic_type k)
   | OpAReturn -> "areturn"
   | OpReturnVoid -> "return"
-
   | OpGetStatic i -> sprintf "getstatic %d" i
   | OpPutStatic i -> sprintf "putstatic %d" i
   | OpGetField i -> sprintf "getfield %d" i
@@ -154,9 +145,8 @@ let opcode = function
   | OpInvokeVirtual i -> sprintf "invokevirtual %d" i
   | OpInvokeNonVirtual i -> sprintf "invokespecial %d" i
   | OpInvokeStatic i -> sprintf "invokestatic %d" i
-  | OpInvokeInterface (i,n) -> sprintf "invokeinterface %d %d" i n
+  | OpInvokeInterface (i, n) -> sprintf "invokeinterface %d %d" i n
   | OpInvokeDynamic i -> sprintf "invokedynamic %d" i
-
   | OpNew i -> sprintf "new %d" i
   | OpNewArray k -> sprintf "%cnewarray" (java_basic_type k)
   | OpANewArray i -> sprintf "anewarray %d" i
@@ -166,13 +156,11 @@ let opcode = function
   | OpInstanceOf i -> sprintf "instanceof %d" i
   | OpMonitorEnter -> "monitorenter"
   | OpMonitorExit -> "monitorexit"
-  | OpAMultiNewArray (c,n) -> sprintf "amultinewarray type:%d dims:%d" c n
+  | OpAMultiNewArray (c, n) -> sprintf "amultinewarray type:%d dims:%d" c n
   | OpIfNull i -> sprintf "ifnull %d" i
   | OpIfNonNull i -> sprintf "ifnonnull %d" i
   | OpBreakpoint -> "breakpoint"
-
   | OpInvalid -> "invalid"
-
 
 let access_flags = function
   | [] -> ""
@@ -180,91 +168,86 @@ let access_flags = function
       String.concat " "
         (List.map
            (function
-	      | `AccPublic -> "public"
-	      | `AccPrivate -> "private"
-	      | `AccProtected -> "protected"
-	      | `AccStatic -> "static"
-	      | `AccFinal -> "final"
-	      | `AccSynchronized -> "synchronized"
-	      | `AccVolatile -> "volatile"
-	      | `AccTransient -> "transient"
-	      | `AccNative -> "native"
-	      | `AccInterface -> "interface"
-	      | `AccAbstract -> "abstract"
-	      | `AccStrict -> "strict"
-	      | `AccEnum -> "enum"
-	      | `AccAnnotation -> "annotation"
-	      | `AccVarArgs -> "VarArgs"
-	      | `AccBridge -> "bridge"
-	      | `AccSuper -> "`AccSuper"
-	      | `AccSynthetic -> "synthetic"
-              | `AccModule -> "module"
-	      | `AccRFU i -> Printf.sprintf "rfu 0x%X" i
-	   ) flags) ^ " "
+             | `AccPublic -> "public"
+             | `AccPrivate -> "private"
+             | `AccProtected -> "protected"
+             | `AccStatic -> "static"
+             | `AccFinal -> "final"
+             | `AccSynchronized -> "synchronized"
+             | `AccVolatile -> "volatile"
+             | `AccTransient -> "transient"
+             | `AccNative -> "native"
+             | `AccInterface -> "interface"
+             | `AccAbstract -> "abstract"
+             | `AccStrict -> "strict"
+             | `AccEnum -> "enum"
+             | `AccAnnotation -> "annotation"
+             | `AccVarArgs -> "VarArgs"
+             | `AccBridge -> "bridge"
+             | `AccSuper -> "`AccSuper"
+             | `AccSynthetic -> "synthetic"
+             | `AccModule -> "module"
+             | `AccRFU i -> Printf.sprintf "rfu 0x%X" i)
+           flags)
+      ^ " "
 
 let string_nwrite ch s = JLib.IO.nwrite_string ch s
-                        
 let dump_java6_stackmap ch frame = dump_stackmap ch frame
 
 let dump_inner_classes ch icl =
   List.iter
-    (fun (ic,oc,icsource,iflags) ->
-       string_nwrite ch "\n      ";
-       (* flags oc.ic (named icsource at source) *)
-       string_nwrite ch (access_flags iflags);
-       JLib.IO.write ch ' ';
-       (match oc with
-          | None -> ()
-          | Some ocname ->
-              string_nwrite ch (cn_name ocname);
-              JLib.IO.write ch '.');
-       (match ic with
-          | None -> JLib.IO.write ch '_'
-          | Some icname -> string_nwrite ch (cn_name icname));
-       (match icsource with
-          | None -> string_nwrite ch " (anonymous in source)"
-          | Some icname ->
-              string_nwrite ch (" (named "^icname^" in the source)"));
-    )
+    (fun (ic, oc, icsource, iflags) ->
+      string_nwrite ch "\n      ";
+      (* flags oc.ic (named icsource at source) *)
+      string_nwrite ch (access_flags iflags);
+      JLib.IO.write ch ' ';
+      (match oc with
+      | None -> ()
+      | Some ocname ->
+          string_nwrite ch (cn_name ocname);
+          JLib.IO.write ch '.');
+      (match ic with
+      | None -> JLib.IO.write ch '_'
+      | Some icname -> string_nwrite ch (cn_name icname));
+      match icsource with
+      | None -> string_nwrite ch " (anonymous in source)"
+      | Some icname -> string_nwrite ch (" (named " ^ icname ^ " in the source)"))
     icl
 
 let dump_list sep print = function
   | [] -> ()
-  | hd::tl ->
+  | hd :: tl ->
       print hd;
       List.iter
-        (fun item -> sep (); print item)
+        (fun item ->
+          sep ();
+          print item)
         tl
 
 let method_parameters_flag_to_string = function
-    | `AccFinal -> "final"
-    | `AccSynthetic -> "synthetic"
-    | `AccMandated -> "mandated"
-    | `AccRFU i -> sprintf "rfu 0x%X" i
+  | `AccFinal -> "final"
+  | `AccSynthetic -> "synthetic"
+  | `AccMandated -> "mandated"
+  | `AccRFU i -> sprintf "rfu 0x%X" i
 
 let dump_method_parameters ch mp =
   (match mp.name with
-   | None -> ()
-   | Some name -> string_nwrite ch (sprintf "%s" name));
-  let flags = String.concat ", " (List.map method_parameters_flag_to_string mp.flags) in
-  match mp.flags with
-  | [] -> ()
-  | _ -> string_nwrite ch (sprintf "(%s)" flags)
-  
+  | None -> ()
+  | Some name -> string_nwrite ch (sprintf "%s" name));
+  let flags =
+    String.concat ", " (List.map method_parameters_flag_to_string mp.flags)
+  in
+  match mp.flags with [] -> () | _ -> string_nwrite ch (sprintf "(%s)" flags)
+
 let rec dump_element_value ch = function
-  | EVCstByte cst ->
-      string_nwrite ch (string_of_int cst)
+  | EVCstByte cst -> string_nwrite ch (string_of_int cst)
   | EVCstChar cst ->
       string_nwrite ch "char ";
       string_nwrite ch (string_of_int cst)
-  | EVCstInt cst ->
-      string_nwrite ch (Int32.to_string cst)
-  | EVCstShort cst ->
-      string_nwrite ch (string_of_int cst)
-  | EVCstBoolean cst ->
-      string_nwrite ch (if cst = 0 then "false" else "true");
-  | EVCstDouble cst ->
-      string_nwrite ch (string_of_float cst)
+  | EVCstInt cst -> string_nwrite ch (Int32.to_string cst)
+  | EVCstShort cst -> string_nwrite ch (string_of_int cst)
+  | EVCstBoolean cst -> string_nwrite ch (if cst = 0 then "false" else "true")
+  | EVCstDouble cst -> string_nwrite ch (string_of_float cst)
   | EVCstFloat cst ->
       string_nwrite ch (string_of_float cst);
       string_nwrite ch "f"
@@ -273,28 +256,26 @@ let rec dump_element_value ch = function
       string_nwrite ch "L"
   | EVCstString cst ->
       string_nwrite ch "\"";
-      for i = 0 to (String.length cst) - 1 do
+      for i = 0 to String.length cst - 1 do
         match cst.[i] with
-          | '\\' -> string_nwrite ch "\\\\"  (* writes 2 slashes (but escaped) *)
-          | '"' -> string_nwrite ch "\\\""  (* writes backslash and doublequote (but escaped) *)
-          | c -> JLib.IO.write ch c
+        | '\\' -> string_nwrite ch "\\\\" (* writes 2 slashes (but escaped) *)
+        | '"' ->
+            string_nwrite ch
+              "\\\"" (* writes backslash and doublequote (but escaped) *)
+        | c -> JLib.IO.write ch c
       done;
       string_nwrite ch "\""
-  | EVEnum (s1,s2) ->
-      string_nwrite ch (cn_name s1 ^ "." ^ s2)
-  | EVClass None ->
-      string_nwrite ch "Void.class"
-  | EVClass (Some vt) ->
-      string_nwrite ch (value_signature ~jvm:true vt)
-  | EVAnnotation annot ->
-      dump_annotation ch annot
+  | EVEnum (s1, s2) -> string_nwrite ch (cn_name s1 ^ "." ^ s2)
+  | EVClass None -> string_nwrite ch "Void.class"
+  | EVClass (Some vt) -> string_nwrite ch (value_signature ~jvm:true vt)
+  | EVAnnotation annot -> dump_annotation ch annot
   | EVArray evlist ->
       string_nwrite ch "[|";
       dump_list (fun () -> string_nwrite ch "; ") (dump_element_value ch) evlist;
       string_nwrite ch "|]"
 
 and dump_annotation ch annot =
-  let dump_pair (s,ev) =
+  let dump_pair (s, ev) =
     string_nwrite ch s;
     string_nwrite ch " = ";
     dump_element_value ch ev
@@ -302,11 +283,11 @@ and dump_annotation ch annot =
   let dump_pairs pairs =
     dump_list (fun () -> string_nwrite ch ", ") dump_pair pairs
   in
-    JLib.IO.write ch '@';
-    string_nwrite ch (JBasics.cn_name annot.kind);
-    JLib.IO.write ch '(';
-    dump_pairs annot.element_value_pairs;
-    JLib.IO.write ch ')'
+  JLib.IO.write ch '@';
+  string_nwrite ch (JBasics.cn_name annot.kind);
+  JLib.IO.write ch '(';
+  dump_pairs annot.element_value_pairs;
+  JLib.IO.write ch ')'
 
 let rec dump_code ch consts code =
   string_nwrite ch "    max_stack = ";
@@ -314,82 +295,77 @@ let rec dump_code ch consts code =
   string_nwrite ch " , max_locals = ";
   string_nwrite ch (string_of_int code.JClassLow.c_max_locals);
   JLib.IO.write ch '\n';
-  Array.iteri (fun i c ->
-		 match c with
-		   | OpInvalid -> (); (* JLib.IO.printf ch "__\n" *)
-		   | _ -> JLib.IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c)
-	      ) code.JClassLow.c_code;
-  if code.JClassLow.c_exc_tbl <> []
-  then
-    begin
-      string_nwrite ch "    exceptions";
-      List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
-      JLib.IO.write ch '\n';
-    end;
+  Array.iteri
+    (fun i c ->
+      match c with
+      | OpInvalid -> ()
+      (* JLib.IO.printf ch "__\n" *)
+      | _ -> JLib.IO.printf ch "      %.4i (%.4X) %s\n" i i (opcode c))
+    code.JClassLow.c_code;
+  if code.JClassLow.c_exc_tbl <> [] then (
+    string_nwrite ch "    exceptions";
+    List.iter (dump_exc ch consts) code.JClassLow.c_exc_tbl;
+    JLib.IO.write ch '\n');
   List.iter (dump_attrib ch consts) code.JClassLow.c_attributes
 
 and dump_attrib ch consts = function
-  | AttributeSourceFile s ->
-      JLib.IO.printf ch "    SourceFile : \"%s\"\n" s
-  | AttributeSignature s ->
-      JLib.IO.printf ch "    signature = %s\n" s
-  | AttributeEnclosingMethod (cn,mso) ->
+  | AttributeSourceFile s -> JLib.IO.printf ch "    SourceFile : \"%s\"\n" s
+  | AttributeSignature s -> JLib.IO.printf ch "    signature = %s\n" s
+  | AttributeEnclosingMethod (cn, mso) ->
       string_nwrite ch "    enclosing method : class = ";
       string_nwrite ch (JDumpBasics.class_name cn);
       string_nwrite ch ", method = ";
       (match mso with
-	 | None -> string_nwrite ch "None"
-	 | Some (mn,ms) -> string_nwrite ch (JDumpBasics.signature mn ms));
+      | None -> string_nwrite ch "None"
+      | Some (mn, ms) -> string_nwrite ch (JDumpBasics.signature mn ms));
       JLib.IO.write ch '\n'
   | AttributeSourceDebugExtension s ->
-      string_nwrite ch ("    SourceDebugExtension = "^s^"\n")
+      string_nwrite ch ("    SourceDebugExtension = " ^ s ^ "\n")
   | AttributeConstant c ->
       string_nwrite ch "    const ";
       JLib.IO.printf ch "%s" (constant_attribute c);
-      JLib.IO.write ch '\n';
+      JLib.IO.write ch '\n'
   | AttributeCode code ->
-      dump_code ch consts (Lazy.force code) (* JLib.IO.printf ch "    unexpected code attribute" *)
+      dump_code ch consts (Lazy.force code)
+      (* JLib.IO.printf ch "    unexpected code attribute" *)
   | AttributeExceptions l ->
       string_nwrite ch "    exceptions";
-      List.iter (fun cn -> string_nwrite ch (class_name cn^" ")) l;
+      List.iter (fun cn -> string_nwrite ch (class_name cn ^ " ")) l;
       JLib.IO.write ch '\n'
   | AttributeInnerClasses icl ->
       string_nwrite ch "    inner-classes:";
       dump_inner_classes ch icl;
       JLib.IO.write ch '\n'
-  | AttributeSynthetic ->
-      JLib.IO.printf ch "    synthetic\n"
+  | AttributeSynthetic -> JLib.IO.printf ch "    synthetic\n"
   | AttributeLineNumberTable lines ->
       JLib.IO.printf ch "    LineNumberTable";
       List.iter
-        (fun (i1,i2) ->
-           string_nwrite ch ("\n      " ^string_of_int i1 ^ ":" ^string_of_int i2))
+        (fun (i1, i2) ->
+          string_nwrite ch
+            ("\n      " ^ string_of_int i1 ^ ":" ^ string_of_int i2))
         lines;
       JLib.IO.write ch '\n'
   | AttributeLocalVariableTable variables ->
       string_nwrite ch "    local-variables\n";
       List.iter
-	(function start_pc, length, name, signature, index ->
-	   JLib.IO.printf ch "      from %d to %d, %s %s at %d\n"
-	     start_pc
-	     (start_pc + length)
-	     (value_signature signature)
-	     name
-	     index)
-	variables
+        (function
+          | start_pc, length, name, signature, index ->
+              JLib.IO.printf ch "      from %d to %d, %s %s at %d\n" start_pc
+                (start_pc + length)
+                (value_signature signature)
+                name index)
+        variables
   | AttributeLocalVariableTypeTable variables ->
       string_nwrite ch "    generic-local-variables\n";
       List.iter
-	(function start_pc, length, name, signature, index ->
-	   JLib.IO.printf ch "      from %d to %d, %s %s at %d\n"
-	     start_pc
-	     (start_pc + length)
-	     (JUnparseSignature.unparse_FieldTypeSignature signature)
-	     name
-	     index)
-	variables
-  | AttributeDeprecated ->
-      string_nwrite ch "    deprecated\n"
+        (function
+          | start_pc, length, name, signature, index ->
+              JLib.IO.printf ch "      from %d to %d, %s %s at %d\n" start_pc
+                (start_pc + length)
+                (JUnparseSignature.unparse_FieldTypeSignature signature)
+                name index)
+        variables
+  | AttributeDeprecated -> string_nwrite ch "    deprecated\n"
   | AttributeStackMapTable stackmap_frames ->
       string_nwrite ch "    stackmap = [";
       List.iter (dump_java6_stackmap ch) stackmap_frames;
@@ -402,39 +378,40 @@ and dump_attrib ch consts = function
       string_nwrite ch "    RuntimeVisibleAnnotations";
       List.iter
         (fun a ->
-           string_nwrite ch "\n        ";
-           dump_annotation ch a)
+          string_nwrite ch "\n        ";
+          dump_annotation ch a)
         al;
       JLib.IO.write ch '\n'
   | AttributeRuntimeInvisibleAnnotations al ->
       string_nwrite ch "    RuntimeInvisibleAnnotations";
       List.iter
         (fun a ->
-           string_nwrite ch "\n      ";
-           dump_annotation ch a)
+          string_nwrite ch "\n      ";
+          dump_annotation ch a)
         al;
       JLib.IO.write ch '\n'
   | AttributeRuntimeInvisibleParameterAnnotations all ->
       string_nwrite ch "    RuntimeInvisibleParameterAnnotations = ";
       List.iter
         (fun al ->
-           string_nwrite ch "\n      [";
-           dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
-           JLib.IO.write ch ']')
+          string_nwrite ch "\n      [";
+          dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
+          JLib.IO.write ch ']')
         all;
       JLib.IO.write ch '\n'
   | AttributeRuntimeVisibleParameterAnnotations all ->
       string_nwrite ch "    RuntimeVisibleParameterAnnotations = ";
       List.iter
         (fun al ->
-           string_nwrite ch "\n      [";
-           dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
-           JLib.IO.write ch ']')
+          string_nwrite ch "\n      [";
+          dump_list (fun () -> string_nwrite ch ", ") (dump_annotation ch) al;
+          JLib.IO.write ch ']')
         all;
       JLib.IO.write ch '\n'
   | AttributeBootstrapMethods methods ->
       string_nwrite ch "    BootstrapMethods = ";
-      List.iter (fun m ->
+      List.iter
+        (fun m ->
           string_nwrite ch "\n      [";
           dump_bootstrap_method ch m;
           JLib.IO.write ch ']')
@@ -442,21 +419,24 @@ and dump_attrib ch consts = function
       JLib.IO.write ch '\n'
   | AttributeMethodParameters mp ->
       string_nwrite ch "    MethodParameters = ";
-      List.iter (fun m ->
+      List.iter
+        (fun m ->
           string_nwrite ch "\n      [";
           dump_method_parameters ch m;
           JLib.IO.write ch ']')
         mp;
       JLib.IO.write ch '\n'
-  | AttributeUnknown (s,_) ->
-      string_nwrite ch ("    ?"^s^"\n")
+  | AttributeUnknown (s, _) -> string_nwrite ch ("    ?" ^ s ^ "\n")
 
 let dump_field ch consts f =
-  JLib.IO.printf ch "  %s%s %s\n" (access_flags f.f_flags) (value_signature f.f_descriptor) f.f_name;
+  JLib.IO.printf ch "  %s%s %s\n" (access_flags f.f_flags)
+    (value_signature f.f_descriptor)
+    f.f_name;
   List.iter (dump_attrib ch consts) f.f_attributes
 
 let dump_method ch consts m =
-  JLib.IO.printf ch "  %s%s\n" (access_flags m.m_flags) (method_signature m.m_name m.m_descriptor);
+  JLib.IO.printf ch "  %s%s\n" (access_flags m.m_flags)
+    (method_signature m.m_name m.m_descriptor);
   List.iter (dump_attrib ch consts) m.m_attributes;
   JLib.IO.write ch '\n'
 
@@ -466,29 +446,32 @@ let dump_super ch = function
 
 let dump ch cl =
   string_nwrite ch (access_flags cl.j_flags);
-  if List.for_all ((<>) `AccInterface) cl.j_flags
-  then string_nwrite ch "class ";
+  if List.for_all (( <> ) `AccInterface) cl.j_flags then
+    string_nwrite ch "class ";
   string_nwrite ch (cn_name cl.j_name);
   JLib.IO.write ch '\n';
   dump_super ch cl.j_super;
-  if cl.j_interfaces <> []
-  then
+  if cl.j_interfaces <> [] then
     JLib.IO.printf ch "  implements %s\n"
       (String.concat " " (List.map (class_name ~jvm:false) cl.j_interfaces));
-  string_nwrite ch ("    version = " ^(string_of_int cl.j_version.major)
-                ^"." ^(string_of_int cl.j_version.minor) ^"\n");
+  string_nwrite ch
+    ("    version = "
+    ^ string_of_int cl.j_version.major
+    ^ "."
+    ^ string_of_int cl.j_version.minor
+    ^ "\n");
   List.iter (dump_attrib ch cl.j_consts) cl.j_attributes;
   JLib.IO.printf ch "{\n\n";
   JLib.IO.printf ch "/* **** CONSTANTS ****\n";
   (* Put this in the dump method for high level class files *)
   Array.iteri
     (fun i c ->
-       string_nwrite ch ("    " ^string_of_int i^"  ");
-       dump_constant ch c;
-       JLib.IO.write ch '\n'
-    ) cl.j_consts;
+      string_nwrite ch ("    " ^ string_of_int i ^ "  ");
+      dump_constant ch c;
+      JLib.IO.write ch '\n')
+    cl.j_consts;
   JLib.IO.printf ch "// ****************** */\n\n";
   List.iter (dump_field ch cl.j_consts) cl.j_fields;
   JLib.IO.printf ch "\n";
   List.iter (dump_method ch cl.j_consts) cl.j_methods;
-  JLib.IO.printf ch "}\n";
+  JLib.IO.printf ch "}\n"

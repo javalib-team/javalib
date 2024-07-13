@@ -24,13 +24,14 @@ open JBasics
 
 (** {1 Loading a single class.} *)
 
-(** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
 type class_path
+(** The type of "compiled" class paths (jar (or zip) files are opened for efficiency). *)
 
+val sep : char
 (** [sep] is the class path separator. It contains a colon (:) under
     Unix and Cygwin and a semi-colon (;) under Windows (or MinGW). *)
-val sep : char
 
+val class_path : string -> class_path
 (** [class_path cp] opens a class path from the list [cp] of
     directories and jar (or zip) files separated by {!JFile.sep}.  jar
     (or zip) files in the given directories are also considered, but
@@ -45,11 +46,12 @@ val sep : char
     Note : the following works :
     {[try class_path (Sys.getenv "CLASSPATH")
 with Not_found-> class_path ""]}*)
-val class_path : string -> class_path
 
-(** Closes a class path. *)
 val close_class_path : class_path -> unit
+(** Closes a class path. *)
 
+val get_class :
+  class_path -> class_name -> JCode.jcode JClass.interface_or_class
 (** Parses a single class. It takes as argument the class name built
     with {!JBasics.make_cn}.
     This function does not check that the name of the parsed class is the
@@ -61,45 +63,46 @@ val close_class_path : class_path -> unit
     @raise JBasics.Class_structure_error if the class file does not match the
     official specification (although it does not check the class file
     entirely).  *)
-val get_class : class_path -> class_name -> JCode.jcode JClass.interface_or_class
 
-(** Same as {! get_class} with low level class files. *)
 val get_class_low : class_path -> class_name -> JClassLow.jclass
+(** Same as {! get_class} with low level class files. *)
 
+val write_class : string -> JCode.jcode JClass.interface_or_class -> unit
 (** [write_class outputdir c] writes the class [c] in the subdirectory of
     [outputdir] that correspond to the package name of [c].
 
     @raise Class_structure_error if an opcode cannot be encoded in the available
     place.  *)
-val write_class : string -> JCode.jcode JClass.interface_or_class -> unit
 
-(** Same as {! write_class} with low level class files. *)
 val write_class_low : string -> JClassLow.jclass -> unit
+(** Same as {! write_class} with low level class files. *)
 
+val extract_class_name_from_file : string -> JBasics.class_name * string
 (** [extract_class_name_from_file f] recovers a class name and a class
     path from the file [f]. @raise Sys_error if [f] is not a file. [f]
     must contain the [.class] extension. *)
-val extract_class_name_from_file : string -> JBasics.class_name * string
 
 (** {1 Reading/transforming a set of classes.} *)
 
+val iter :
+  ?debug:bool ->
+  (JCode.jcode JClass.interface_or_class -> unit) ->
+  string ->
+  unit
 (** [iter ~debug:false f filename] applies the function successively the
     function [f] on each classes specified by [filename]. [filename] is either a
     valid class file, a valid jar (or zip) file, or a valid directory with jar
     (or zip) files inside.  The dirname of [filename] is used as classpath.  If
     [debug] is [true] then the number of classes parsed when given a .jar file or
     a directory is printed on the standard error output.  *)
-val iter :
-  ?debug:bool ->
-  (JCode.jcode JClass.interface_or_class -> unit) -> string -> unit
 
-(** Abstract type representing a list of directories. *)
 type directories
+(** Abstract type representing a list of directories. *)
 
+val make_directories : string -> directories
 (** [make_directories directories] returns an abstract [directories] type.  The
     string [directories] must be a list of files separated by {!JFile.sep}. Only
     directories are filtered. *)
-val make_directories : string -> directories
 
 (** The following functions search for class files in the following order :
     - If a name can be found in some directory, subsequent directories are
@@ -115,24 +118,36 @@ val make_directories : string -> directories
     Dots in class names are interpreted as / (but not for jar (or zip)
     files). *)
 
+val read :
+  directories ->
+  ('a -> JCode.jcode JClass.interface_or_class -> 'a) ->
+  'a ->
+  string list ->
+  'a
 (** [read directories f acc names] iterates [f] over all classes specified by
     [names]. [acc] is the initial accumulator value.  *)
-val read :
-  directories -> ('a -> JCode.jcode JClass.interface_or_class -> 'a) -> 'a -> string list -> 'a
 
+val transform :
+  directories ->
+  string ->
+  (JCode.jcode JClass.interface_or_class ->
+  JCode.jcode JClass.interface_or_class) ->
+  string list ->
+  unit
 (** [transform directories outputdir f names] applies [f] to all
     classes specified by [names], writing the resulting classes in
     [outputdir]. Jar (Or Zip) files are mapped to jar (or zip) files,
     and the non-class files are kept unchanged in the resulting
     archive.  *)
-val transform :
-  directories -> string ->
-  (JCode.jcode JClass.interface_or_class -> JCode.jcode JClass.interface_or_class) ->
-  string list -> unit
 
+val read_low :
+  directories -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 'a
 (** Same as {! read} with low level class files. *)
-val read_low : directories -> ('a -> JClassLow.jclass -> 'a) -> 'a -> string list -> 'a
 
-(** Same as {! transform} with low level class files.  *)
 val transform_low :
-  directories -> string -> (JClassLow.jclass -> JClassLow.jclass) -> string list -> unit
+  directories ->
+  string ->
+  (JClassLow.jclass -> JClassLow.jclass) ->
+  string list ->
+  unit
+(** Same as {! transform} with low level class files.  *)

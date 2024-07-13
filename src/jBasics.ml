@@ -26,65 +26,32 @@
 type class_name = int * string
 
 (* for comparison independent from index *)
-let cn_strong_compare (_,s1) (_,s2) = compare s1 s2
+let cn_strong_compare (_, s1) (_, s2) = compare s1 s2
+let zero_index_class_name (_, s) = (0, s)
 
-let zero_index_class_name (_,s) = (0,s)
-                             
 (* Numerical types that are not smaller than int. *)
-type other_num = [
-| `Long
-| `Float
-| `Double
-]
+type other_num = [ `Long | `Float | `Double ]
 
 (* JVM basic type (int = short = char = byte = bool). *)
-type jvm_basic_type = [
-| `Int2Bool
-| other_num
-]
+type jvm_basic_type = [ `Int2Bool | other_num ]
 
 (* JVM type (int = short = char = byte = bool, all objects have the same type). *)
-type jvm_type = [
-| jvm_basic_type
-| `Object
-]
+type jvm_type = [ jvm_basic_type | `Object ]
 
 (* JVM array element type (byte = bool, all objects have the same type). *)
-type jvm_array_type = [
-| `Int
-| `Short
-| `Char
-| `ByteBool
-| other_num
-| `Object
-]
+type jvm_array_type = [ `Int | `Short | `Char | `ByteBool | other_num | `Object ]
 
 (* JVM return type (byte = bool, all objects have the same type). *)
-type jvm_return_type = [
-|  jvm_basic_type
-| `Object
-| `Void
-]
+type jvm_return_type = [ jvm_basic_type | `Object | `Void ]
 
 (* Java basic type. *)
-type java_basic_type = [
-| `Int
-| `Short
-| `Char
-| `Byte
-| `Bool
-| other_num
-]
+type java_basic_type = [ `Int | `Short | `Char | `Byte | `Bool | other_num ]
 
 (* Java object type *)
-type object_type =
-  | TClass of class_name
-  | TArray of value_type
+type object_type = TClass of class_name | TArray of value_type
 
 (* Java type *)
-and value_type =
-  | TBasic of java_basic_type
-  | TObject of object_type
+and value_type = TBasic of java_basic_type | TObject of object_type
 
 let rec zero_index_value_type = function
   | TBasic _ as t -> t
@@ -99,71 +66,69 @@ type field_descriptor = value_type
 (* Method descriptor *)
 type method_descriptor = value_type list * value_type option
 
-let zero_index_method_descriptor (l,o) =
+let zero_index_method_descriptor (l, o) =
   (List.map zero_index_value_type l, Option.map zero_index_value_type o)
-                       
+
 type field_signature_data = string * field_descriptor
 type method_signature_data = string * method_descriptor
 
-let zero_index_field_signature_data (s,fd) =
-  (s, zero_index_value_type fd)
-let zero_index_method_signature_data (s,msd) =
+let zero_index_field_signature_data (s, fd) = (s, zero_index_value_type fd)
+
+let zero_index_method_signature_data (s, msd) =
   (s, zero_index_method_descriptor msd)
-                           
+
 type method_signature = int * method_signature_data
 type field_signature = int * field_signature_data
+
 (* for comparison independent from index *)
-let ms_strong_compare (_,msd1) (_,msd2) =
+let ms_strong_compare (_, msd1) (_, msd2) =
   compare
     (zero_index_method_signature_data msd1)
     (zero_index_method_signature_data msd2)
-let fs_strong_compare (_,fsd1) (_,fsd2) =
+
+let fs_strong_compare (_, fsd1) (_, fsd2) =
   compare
     (zero_index_field_signature_data fsd1)
     (zero_index_field_signature_data fsd2)
-  
+
 type class_field_signature_data = class_name * field_signature
 type class_method_signature_data = class_name * method_signature
 
-let zero_index_class_field_signature_data (cn,(_,fsd)) =
-  (zero_index_class_name cn,
-   (0,zero_index_field_signature_data fsd))
-let zero_index_class_method_signature_data (cn,(_,msd)) =
-  (zero_index_class_name cn,
-   (0,zero_index_method_signature_data msd))
-  
+let zero_index_class_field_signature_data (cn, (_, fsd)) =
+  (zero_index_class_name cn, (0, zero_index_field_signature_data fsd))
+
+let zero_index_class_method_signature_data (cn, (_, msd)) =
+  (zero_index_class_name cn, (0, zero_index_method_signature_data msd))
+
 type class_field_signature = int * class_field_signature_data
 type class_method_signature = int * class_method_signature_data
 
 (* for comparison independent from index *)
-let cms_strong_compare (_,cmsd1) (_,cmsd2) =
+let cms_strong_compare (_, cmsd1) (_, cmsd2) =
   compare
     (zero_index_class_method_signature_data cmsd1)
     (zero_index_class_method_signature_data cmsd2)
-let cfs_strong_compare (_,cfsd1) (_,cfsd2) =
+
+let cfs_strong_compare (_, cfsd1) (_, cfsd2) =
   compare
     (zero_index_class_field_signature_data cfsd1)
     (zero_index_class_field_signature_data cfsd2)
-                            
 
 (* Signatures parsed from CONSTANT_NameAndType_info structures. *)
-type descriptor =
-  | SValue of field_descriptor
-  | SMethod of method_descriptor
-
+type descriptor = SValue of field_descriptor | SMethod of method_descriptor
 type jstr = string
+
 let make_jstr s = s
-let jstr_pp s   = String.escaped s
-let jstr_raw s  = s
+let jstr_pp s = String.escaped s
+let jstr_raw s = s
 
 (* Method Handle *)
-type jmethod_or_interface = [
-  | `Method of class_name * method_signature
-  | `InterfaceMethod of class_name * method_signature
-  ]
+type jmethod_or_interface =
+  [ `Method of class_name * method_signature
+  | `InterfaceMethod of class_name * method_signature ]
 
-type method_handle = [
-  | `GetField of class_name * field_signature
+type method_handle =
+  [ `GetField of class_name * field_signature
   | `GetStatic of class_name * field_signature
   | `PutField of class_name * field_signature
   | `PutStatic of class_name * field_signature
@@ -171,26 +136,24 @@ type method_handle = [
   | `NewInvokeSpecial of class_name * method_signature
   | `InvokeStatic of jmethod_or_interface
   | `InvokeSpecial of jmethod_or_interface
-  | `InvokeInterface of class_name * method_signature
-  ]
+  | `InvokeInterface of class_name * method_signature ]
 
 (* Bootstrap argument *)
-type bootstrap_argument = [
-  | `String of jstr
+type bootstrap_argument =
+  [ `String of jstr
   | `Class of object_type
   | `Int of int32
   | `Long of int64
   | `Float of float
   | `Double of float
   | `MethodHandle of method_handle
-  | `MethodType of method_descriptor
-]
+  | `MethodType of method_descriptor ]
 
 (* Bootstrap method *)
 type bootstrap_method = {
-    bm_ref : method_handle;
-    bm_args : bootstrap_argument list;
-  }
+  bm_ref : method_handle;
+  bm_args : bootstrap_argument list;
+}
 
 (* Constant. *)
 type constant =
@@ -214,15 +177,15 @@ type constant =
 
 (* Stackmap type. *)
 type verification_type =
-	| VTop
-	| VInteger
-	| VFloat
-	| VDouble
-	| VLong
-	| VNull
-	| VUninitializedThis
-	| VObject of object_type
-	| VUninitialized of int (* creation point *)
+  | VTop
+  | VInteger
+  | VFloat
+  | VDouble
+  | VLong
+  | VNull
+  | VUninitializedThis
+  | VObject of object_type
+  | VUninitialized of int (* creation point *)
 
 type stackmap_frame =
   | SameFrame of int
@@ -233,15 +196,13 @@ type stackmap_frame =
   | AppendFrame of int * int * verification_type list
   | FullFrame of int * int * verification_type list * verification_type list
 
-type version = {major :int; minor:int;}
+type version = { major : int; minor : int }
 
 let clinit_signature_data = ("<clinit>", ([], None))
 let clinit_signature = (0, clinit_signature_data)
-
 let java_lang_object = (0, "java.lang.Object")
 
 exception No_class_found of string
-
 exception Class_structure_error of string
 
 (* Annotations *)
@@ -257,8 +218,8 @@ type element_value =
   | EVCstLong of int64
   | EVCstString of string
   | EVEnum of (class_name * string)
-      (* (type_name_index,const_name_index) cf. JLS 13.1 *)
-      (* TODO: this should probably be modified but I have not understand how *)
+  (* (type_name_index,const_name_index) cf. JLS 13.1 *)
+  (* TODO: this should probably be modified but I have not understand how *)
   | EVClass of value_type option
   | EVAnnotation of annotation
   | EVArray of element_value list
@@ -270,126 +231,127 @@ and annotation = {
 
 (* Definition of dictionary for indexation. *)
 
-module ClassNameMap = Map.Make(
-  struct
-    type t = string
-    let compare = compare
-  end)
+module ClassNameMap = Map.Make (struct
+  type t = string
 
-module MethodSignatureMap = Map.Make(
-  struct
-    type t = method_signature_data
-    let compare = compare
-  end)
+  let compare = compare
+end)
 
-module FieldSignatureMap = Map.Make(
-  struct
-    type t = field_signature_data
-    let compare = compare
-  end)
+module MethodSignatureMap = Map.Make (struct
+  type t = method_signature_data
 
-module ClassFieldSignatureMap = Map.Make(
-  struct
-    type t = class_field_signature_data
-    let compare : class_field_signature_data -> class_field_signature_data -> int =
-      fun (((cni1,_),(fsi1,_))) ((cni2,_),(fsi2,_)) ->
-        compare (cni1,fsi1) (cni2,fsi2)
-  end)
+  let compare = compare
+end)
 
-module ClassMethodSignatureMap = Map.Make(
-  struct
-    type t = class_method_signature_data
-    let compare : class_method_signature_data -> class_method_signature_data -> int =
-      fun (((cni1,_),(msi1,_))) ((cni2,_),(msi2,_)) ->
-        compare (cni1,msi1) (cni2,msi2)
-  end)
+module FieldSignatureMap = Map.Make (struct
+  type t = field_signature_data
 
-type field_signature_table =
-    { mutable fsi_map : field_signature FieldSignatureMap.t;
-      mutable fsi_next : int }
+  let compare = compare
+end)
 
-type method_signature_table =
-    { mutable msi_map : method_signature MethodSignatureMap.t;
-      mutable msi_next : int }
+module ClassFieldSignatureMap = Map.Make (struct
+  type t = class_field_signature_data
 
-type class_name_table =
-    { mutable cni_map : class_name ClassNameMap.t;
-      mutable cni_next : int }
+  let compare : class_field_signature_data -> class_field_signature_data -> int
+      =
+   fun ((cni1, _), (fsi1, _)) ((cni2, _), (fsi2, _)) ->
+    compare (cni1, fsi1) (cni2, fsi2)
+end)
 
-type class_field_signature_table =
-    { mutable cfsi_map : class_field_signature ClassFieldSignatureMap.t;
-      mutable cfsi_next : int }
+module ClassMethodSignatureMap = Map.Make (struct
+  type t = class_method_signature_data
 
-type class_method_signature_table =
-    { mutable cmsi_map : class_method_signature ClassMethodSignatureMap.t;
-      mutable cmsi_next : int }
+  let compare :
+      class_method_signature_data -> class_method_signature_data -> int =
+   fun ((cni1, _), (msi1, _)) ((cni2, _), (msi2, _)) ->
+    compare (cni1, msi1) (cni2, msi2)
+end)
 
-type dictionary = { class_name_table : class_name_table;
-		    field_signature_table : field_signature_table;
-		    method_signature_table : method_signature_table;
-		    class_field_signature_table : class_field_signature_table;
-		    class_method_signature_table : class_method_signature_table;
-		  }
+type field_signature_table = {
+  mutable fsi_map : field_signature FieldSignatureMap.t;
+  mutable fsi_next : int;
+}
+
+type method_signature_table = {
+  mutable msi_map : method_signature MethodSignatureMap.t;
+  mutable msi_next : int;
+}
+
+type class_name_table = {
+  mutable cni_map : class_name ClassNameMap.t;
+  mutable cni_next : int;
+}
+
+type class_field_signature_table = {
+  mutable cfsi_map : class_field_signature ClassFieldSignatureMap.t;
+  mutable cfsi_next : int;
+}
+
+type class_method_signature_table = {
+  mutable cmsi_map : class_method_signature ClassMethodSignatureMap.t;
+  mutable cmsi_next : int;
+}
+
+type dictionary = {
+  class_name_table : class_name_table;
+  field_signature_table : field_signature_table;
+  method_signature_table : method_signature_table;
+  class_field_signature_table : class_field_signature_table;
+  class_method_signature_table : class_method_signature_table;
+}
 
 let make_dictionary () =
-  { class_name_table =
-      { cni_map =
-	  ClassNameMap.add (snd java_lang_object) java_lang_object
-	    ClassNameMap.empty;
-	cni_next = 1
+  {
+    class_name_table =
+      {
+        cni_map =
+          ClassNameMap.add (snd java_lang_object) java_lang_object
+            ClassNameMap.empty;
+        cni_next = 1;
       };
-    field_signature_table =
-      { fsi_map = FieldSignatureMap.empty;
-	fsi_next = 0
-      };
+    field_signature_table = { fsi_map = FieldSignatureMap.empty; fsi_next = 0 };
     method_signature_table =
-      { msi_map =
-	  MethodSignatureMap.add (snd clinit_signature) clinit_signature
-	    MethodSignatureMap.empty;
-	msi_next = 1
+      {
+        msi_map =
+          MethodSignatureMap.add (snd clinit_signature) clinit_signature
+            MethodSignatureMap.empty;
+        msi_next = 1;
       };
     class_field_signature_table =
-      { cfsi_map = ClassFieldSignatureMap.empty;
-	cfsi_next = 0
-      };
+      { cfsi_map = ClassFieldSignatureMap.empty; cfsi_next = 0 };
     class_method_signature_table =
-      { cmsi_map = ClassMethodSignatureMap.empty;
-	cmsi_next = 0
-      };
+      { cmsi_map = ClassMethodSignatureMap.empty; cmsi_next = 0 };
   }
 
 let common_dictionary = make_dictionary ()
 
-
 let make_cn : string -> class_name =
-(*  let valid_class_name =
-    Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_0-9-]+\\$\\)*[a-zA-Z_0-9-]+$"
-  in *)function cn ->
-    let dic = common_dictionary in
-    let cnt = dic.class_name_table in
-      try
-	ClassNameMap.find cn cnt.cni_map
+  (* let valid_class_name =
+       Str.regexp "^\\([a-zA-Z_$-][a-zA-Z_$0-9-]*\\.\\)*\\([a-zA-Z_0-9-]+\\$\\)*[a-zA-Z_0-9-]+$"
+     in *) function
+  | cn -> (
+      let dic = common_dictionary in
+      let cnt = dic.class_name_table in
+      try ClassNameMap.find cn cnt.cni_map
       with _ ->
-	let cni = cnt.cni_next in
-        let new_cn = (cni,cn) in
-(*	  if not (Str.string_match valid_class_name cn 0)
-	  then invalid_arg ("Error : " ^ cn ^ " is not a valid name for a class");*)
-	  cnt.cni_map <- ClassNameMap.add cn new_cn cnt.cni_map;
-	  cnt.cni_next <- cni + 1;
-	  new_cn
+        let cni = cnt.cni_next in
+        let new_cn = (cni, cn) in
+        (* if not (Str.string_match valid_class_name cn 0)
+           then invalid_arg ("Error : " ^ cn ^ " is not a valid name for a class");*)
+        cnt.cni_map <- ClassNameMap.add cn new_cn cnt.cni_map;
+        cnt.cni_next <- cni + 1;
+        new_cn)
 
 let make_ms mname margs mrtype =
   let dic = common_dictionary in
-  let mst = dic.method_signature_table
-  and ms = (mname,(margs,mrtype)) in
-    try
-      MethodSignatureMap.find ms mst.msi_map
-    with _ ->
-      let msi = mst.msi_next in
-      let new_ms = (msi,ms) in
-	mst.msi_map <- MethodSignatureMap.add ms new_ms mst.msi_map;
-	mst.msi_next <- msi + 1;
-	new_ms
+  let mst = dic.method_signature_table and ms = (mname, (margs, mrtype)) in
+  try MethodSignatureMap.find ms mst.msi_map
+  with _ ->
+    let msi = mst.msi_next in
+    let new_ms = (msi, ms) in
+    mst.msi_map <- MethodSignatureMap.add ms new_ms mst.msi_map;
+    mst.msi_next <- msi + 1;
+    new_ms
 
 let make_md md = md
 let md_split md = md
@@ -398,47 +360,42 @@ let md_rtype md = snd md
 
 let make_fs fname fdesc =
   let dic = common_dictionary in
-  let fst = dic.field_signature_table
-  and fs = (fname,fdesc) in
-    try
-      FieldSignatureMap.find fs fst.fsi_map
-    with _ ->
-      let fsi = fst.fsi_next in
-      let new_fs = (fsi,fs) in
-	fst.fsi_map <- FieldSignatureMap.add fs new_fs fst.fsi_map;
-	fst.fsi_next <- fsi + 1;
-        new_fs
+  let fst = dic.field_signature_table and fs = (fname, fdesc) in
+  try FieldSignatureMap.find fs fst.fsi_map
+  with _ ->
+    let fsi = fst.fsi_next in
+    let new_fs = (fsi, fs) in
+    fst.fsi_map <- FieldSignatureMap.add fs new_fs fst.fsi_map;
+    fst.fsi_next <- fsi + 1;
+    new_fs
 
 let make_cfs cs ms =
   let dic = common_dictionary in
-  let cfs = (cs,ms) in
+  let cfs = (cs, ms) in
   let cfst = dic.class_field_signature_table in
-    try
-      ClassFieldSignatureMap.find cfs cfst.cfsi_map
-    with _ ->
-      let cfsi = cfst.cfsi_next in
-      let new_cfs = (cfsi,cfs) in
-	cfst.cfsi_map <-
-	  ClassFieldSignatureMap.add cfs new_cfs cfst.cfsi_map;
-	cfst.cfsi_next <- cfsi + 1;
-	new_cfs
+  try ClassFieldSignatureMap.find cfs cfst.cfsi_map
+  with _ ->
+    let cfsi = cfst.cfsi_next in
+    let new_cfs = (cfsi, cfs) in
+    cfst.cfsi_map <- ClassFieldSignatureMap.add cfs new_cfs cfst.cfsi_map;
+    cfst.cfsi_next <- cfsi + 1;
+    new_cfs
 
 let make_cms cs ms =
   let dic = common_dictionary in
-  let cms = (cs,ms) in
+  let cms = (cs, ms) in
   let cmst = dic.class_method_signature_table in
-    try
-      ClassMethodSignatureMap.find cms cmst.cmsi_map
-    with _ ->
-      let cmsi = cmst.cmsi_next in
-      let new_cms = (cmsi,cms) in
-	cmst.cmsi_map <-
-	  ClassMethodSignatureMap.add cms new_cms cmst.cmsi_map;
-	cmst.cmsi_next <- cmsi + 1;
-	new_cms
+  try ClassMethodSignatureMap.find cms cmst.cmsi_map
+  with _ ->
+    let cmsi = cmst.cmsi_next in
+    let new_cms = (cmsi, cms) in
+    cmst.cmsi_map <- ClassMethodSignatureMap.add cms new_cms cmst.cmsi_map;
+    cmst.cmsi_next <- cmsi + 1;
+    new_cms
 
 let default_native_throwable =
-[ (*RuntimeException that could be thrown by VM.*)
+  [
+    (*RuntimeException that could be thrown by VM.*)
     make_cn "java.lang.ArithmeticException";
     make_cn "java.lang.ArrayStoreException";
     make_cn "java.lang.ClassCastException";
@@ -464,11 +421,11 @@ let default_native_throwable =
     make_cn "java.lang.OutOfMemoryError";
     make_cn "java.lang.StackOverflowError";
     make_cn "java.lang.UnknownError";
- ]
+  ]
 
 (* Comparison operations. *)
 
-let i_compare (i1,_:int*'a) (i2,_:int*'b) = i1 - i2
+let i_compare ((i1, _) : int * 'a) ((i2, _) : int * 'b) = i1 - i2
 (* NB: [i_compare] is correct for positive integers.
        but in general, this could overflow *)
 
@@ -477,98 +434,116 @@ let ms_compare = i_compare
 let fs_compare = i_compare
 let cfs_compare = i_compare
 let cms_compare = i_compare
-
-let i_equal (i1,_:int*'a) (i2,_:int*'b) = i1 == i2
+let i_equal ((i1, _) : int * 'a) ((i2, _) : int * 'b) = i1 == i2
 let cn_equal = i_equal
 let ms_equal = i_equal
 let fs_equal = i_equal
 let cfs_equal = i_equal
 let cms_equal = i_equal
 
-
 (* Conversion operations. *)
 
 let cn_name cn = snd cn
-
 let cn_hash cn = fst cn
 
 let split_package_class csig =
   let cn = snd csig in
-  let l =  JLib.String.nsplit cn "." in
-    match l with
-      | [] -> assert false
-      | _ -> let rl = List.rev l in
-	let cn = List.hd rl in
-	let p = List.rev (List.tl rl) in (p,cn)
+  let l = JLib.String.nsplit cn "." in
+  match l with
+  | [] -> assert false
+  | _ ->
+      let rl = List.rev l in
+      let cn = List.hd rl in
+      let p = List.rev (List.tl rl) in
+      (p, cn)
 
 let cn_package cn = fst (split_package_class cn)
-
 let cn_simple_name csig = snd (split_package_class csig)
-
 let ms_name msig = fst (snd msig)
-
 let ms_hash msig = fst msig
-
 let ms_args msig = fst (snd (snd msig))
-
 let ms_rtype msig = snd (snd (snd msig))
-
-let fs_name (_i,(fn,_ft):field_signature) = fn
-
-let fs_hash (i,(_fn,_ft):field_signature) = i
-
-let fs_type (_i,(_fn,ft):field_signature) = ft
-
-let cfs_hash (i,_:class_field_signature) = i
-
-let cfs_split (_i,(cn,fs):class_field_signature) = (cn, fs)
-
-let cms_split (_i,(cn,ms):class_method_signature) = (cn,ms)
+let fs_name ((_i, (fn, _ft)) : field_signature) = fn
+let fs_hash ((i, (_fn, _ft)) : field_signature) = i
+let fs_type ((_i, (_fn, ft)) : field_signature) = ft
+let cfs_hash ((i, _) : class_field_signature) = i
+let cfs_split ((_i, (cn, fs)) : class_field_signature) = (cn, fs)
+let cms_split ((_i, (cn, ms)) : class_method_signature) = (cn, ms)
 
 (* Containers. *)
 
-module ClassSet = GenericSet.Make(struct type t = class_name let get_hash = fst end)
+module ClassSet = GenericSet.Make (struct
+  type t = class_name
 
-module MethodSet = GenericSet.Make(struct type t = method_signature let get_hash = fst end)
+  let get_hash = fst
+end)
 
-module FieldSet = GenericSet.Make(struct type t = field_signature let get_hash = fst end)
+module MethodSet = GenericSet.Make (struct
+  type t = method_signature
 
-module ClassFieldSet = GenericSet.Make(struct type t = class_field_signature let get_hash = fst end)
+  let get_hash = fst
+end)
 
-module ClassMethodSet = GenericSet.Make(struct type t = class_method_signature let get_hash = fst end)
+module FieldSet = GenericSet.Make (struct
+  type t = field_signature
+
+  let get_hash = fst
+end)
+
+module ClassFieldSet = GenericSet.Make (struct
+  type t = class_field_signature
+
+  let get_hash = fst
+end)
+
+module ClassMethodSet = GenericSet.Make (struct
+  type t = class_method_signature
+
+  let get_hash = fst
+end)
 
 module ClassMethodMap = GenericMap.Make (struct
-                            type t = class_method_signature
-                            let get_hash = fst
-                            let compare = cms_strong_compare
-                          end)
+  type t = class_method_signature
+
+  let get_hash = fst
+  let compare = cms_strong_compare
+end)
 
 module ClassMap = GenericMap.Make (struct
-                      type t = class_name
-                      let get_hash = fst
-                      let compare = cn_strong_compare
-                    end)
+  type t = class_name
+
+  let get_hash = fst
+  let compare = cn_strong_compare
+end)
 
 module MethodMap = GenericMap.Make (struct
-                       type t = method_signature
-                       let get_hash = fst
-                       let compare = ms_strong_compare
-                     end)
+  type t = method_signature
+
+  let get_hash = fst
+  let compare = ms_strong_compare
+end)
 
 module FieldMap = GenericMap.Make (struct
-                      type t = field_signature
-                      let get_hash = fst
-                      let compare = fs_strong_compare
-                    end)
+  type t = field_signature
+
+  let get_hash = fst
+  let compare = fs_strong_compare
+end)
 
 module ClassFieldMap = GenericMap.Make (struct
-                           type t = class_field_signature
-                           let get_hash = fst
-                           let compare = cfs_strong_compare
-                         end)
+  type t = class_field_signature
+
+  let get_hash = fst
+  let compare = cfs_strong_compare
+end)
 
 module ClassMethodMaptoSet =
-  GenericMap.MaptoSet(struct type t = class_method_signature end)(ClassMethodMap)(ClassMethodSet)
+  GenericMap.MaptoSet
+    (struct
+      type t = class_method_signature
+    end)
+    (ClassMethodMap)
+    (ClassMethodSet)
 
 (* javalib tuning *)
 let permissive = ref false

@@ -1,6 +1,6 @@
 module DynArray : sig
-
   type 'a t
+
   val create : unit -> 'a t
   val length : 'a t -> int
   val index_of : ('a -> bool) -> 'a t -> int
@@ -12,17 +12,17 @@ module DynArray : sig
   val to_list : 'a t -> 'a list
   val iter : ('a -> unit) -> 'a t -> unit
 end
-     
-module IO : sig
 
+module IO : sig
   type input
   type 'a output
+
   exception Overflow of string
+
   val input_channel : in_channel -> input
   val output_channel : out_channel -> unit output
-    
   val input_string : string -> input
-  val flush : 'a output -> unit                      
+  val flush : 'a output -> unit
   val read_byte : input -> int
   val read_signed_byte : input -> int
   val really_nread : input -> int -> Bytes.t
@@ -39,50 +39,40 @@ module IO : sig
   val input_bytes : Bytes.t -> input
 
   module BigEndian : sig
-
     val read_ui16 : input -> int
     val read_i16 : input -> int
     val read_i32 : input -> int
     val read_real_i32 : input -> int32
-    val read_i64 : input -> int64      
+    val read_i64 : input -> int64
     val read_double : input -> float
     val write_ui16 : 'a output -> int -> unit
     val write_i16 : 'a output -> int -> unit
-    val write_i32 : 'a output -> int -> unit      
+    val write_i32 : 'a output -> int -> unit
     val write_real_i32 : 'a output -> int32 -> unit
     val write_i64 : 'a output -> int64 -> unit
     val write_double : 'a output -> float -> unit
   end
-     
 end
 
 module String : sig
-
   val nsplit : string -> string -> string list
   val length : string -> int
-  val strip : ?chars:string -> string -> string    
-   
+  val strip : ?chars:string -> string -> string
 end
-                  
-module Option : sig
 
+module Option : sig
   val may : ('a -> unit) -> 'a option -> unit
   val map_default : ('a -> 'b) -> 'b -> 'a option -> 'b
 end
 
-                 
 module Array : sig
-
   val length : 'a array -> int
   val get : 'a array -> int -> 'a
   val findi : ('a -> bool) -> 'a array -> int
-  
 end
 
 module List : sig
-
   val drop : int -> 'a list -> 'a list
   val remove_all : 'a list -> 'a -> 'a list
   val split_nth : int -> 'a list -> 'a list * 'a list
-  
 end

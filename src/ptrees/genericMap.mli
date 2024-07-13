@@ -12,53 +12,52 @@
  *)
 (**Provide a way to create GenericMap from a module specifying how to hash.*)
 
-
 (** This module type must be implemented to obtain an instantiated GenericMap.*)
-module type S = 
-sig 
+module type S = sig
   type t
+
   val get_hash : t -> int
   val compare : t -> t -> int
-end 
-
-
+end
 
 (** Common signature of map modules based on Ptrees library. *)
-module type GenericMapSig =
-sig
-  type key 
+module type GenericMapSig = sig
+  type key
   type 'a t
 
   val empty : 'a t
   val is_empty : 'a t -> bool
   val add : key -> 'a -> 'a t -> 'a t
   val cardinal : 'a t -> int
-  val modify: key -> ('a option -> 'a) -> 'a t -> 'a t
+  val modify : key -> ('a option -> 'a) -> 'a t -> 'a t
   val find : key -> 'a t -> 'a
   val remove : key -> 'a t -> 'a t
   val mem : key -> 'a t -> bool
   val iter : (key -> 'a -> unit) -> 'a t -> unit
+
   val iter_ordered : (key -> 'a -> unit) -> 'a t -> unit
-    (** [iter_ordered f m] iterates function [f] on all bindings (k,d) of [m]
+  (** [iter_ordered f m] iterates function [f] on all bindings (k,d) of [m]
         using an increasing order given by the comparison function [S.compare] **)
 
   val map : ('a -> 'b) -> 'a t -> 'b t
   val mapi : (key -> 'a -> 'b) -> 'a t -> 'b t
   val fold : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
+
   val fold_ordered : (key -> 'a -> 'b -> 'b) -> 'a t -> 'b -> 'b
-    (** [fold_ordered comp f m] folds function [f] on all bindings (k,d) of [m]
+  (** [fold_ordered comp f m] folds function [f] on all bindings (k,d) of [m]
         using an increasing order given by the comparison function [S.compare] **)
 
   val compare : ('a -> 'a -> int) -> 'a t -> 'a t -> int
   val equal : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
+
   val merge : ('a -> 'a -> 'a) -> 'a t -> 'a t -> 'a t
-    (** [merge f m1 m2] returns a map that has the bindings of [m1] and [m2] and
+  (** [merge f m1 m2] returns a map that has the bindings of [m1] and [m2] and
         which binds [k] to [f d1 d2] if [m1] and [m2] binds the same [k] to
         different [d1] and [d2], respectively. If [d1] equals [d2], [f d1 d2] is
         supposed to return [d1]. *)
 
   val choose_and_remove : 'a t -> key * 'a * 'a t
-    (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to [remove
+  (** [choose_and_remove t] returns (i,d,t') such that [t'] equals to [remove
         i t] and [d] equals to [find i t].
         @raise Not_found if [t] is empty. *)
 
@@ -70,12 +69,13 @@ sig
   val subset : ('a -> 'a -> bool) -> 'a t -> 'a t -> bool
 end
 
-
 module Make (El : S) : GenericMapSig with type key = El.t
 
-module MaptoSet ( S : sig type t end )
-  ( GMap : GenericMapSig with type key = S.t )
-  ( GSet : GenericSet.GenericSetSig with type elt = S.t ) :
-sig
+module MaptoSet
+    (S : sig
+      type t
+    end)
+    (GMap : GenericMapSig with type key = S.t)
+    (GSet : GenericSet.GenericSetSig with type elt = S.t) : sig
   val to_set : 'a GMap.t -> GSet.t
 end

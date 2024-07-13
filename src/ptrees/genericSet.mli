@@ -11,20 +11,18 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *)
 
-
 (**Provide a way to create GenericSet specifying how to hash.*)
 
 (** This module type must be implemented to obtain an instantiated GenericSet.*)
-module type S = 
-sig 
+module type S = sig
   type t
-  val get_hash : t -> int
-end 
 
-module type GenericSetSig =
-sig
+  val get_hash : t -> int
+end
+
+module type GenericSetSig = sig
   type t
-  type elt 
+  type elt
 
   val empty : t
   val is_empty : t -> bool
@@ -47,5 +45,4 @@ sig
   val subset : t -> t -> bool
 end
 
-
-module Make (El : S) : GenericSetSig with type elt= El.t
+module Make (El : S) : GenericSetSig with type elt = El.t

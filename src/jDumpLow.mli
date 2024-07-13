@@ -22,13 +22,19 @@
 (** Prints data from {!JClassLow} to a provided output.*)
 
 val opcode : JClassLow.opcode -> string
+
 val dump_code :
   'a JLib.IO.output -> JBasics.constant array -> JClassLow.code -> unit
+
 val dump_attrib :
   'a JLib.IO.output -> JBasics.constant array -> JClassLow.attribute -> unit
-val access_flags : [< JClassLow.access_flag] list -> string
+
+val access_flags : [< JClassLow.access_flag ] list -> string
+
 val dump_field :
   'a JLib.IO.output -> JBasics.constant array -> JClassLow.jfield -> unit
+
 val dump_method :
   'a JLib.IO.output -> JBasics.constant array -> JClassLow.jmethod -> unit
+
 val dump : 'a JLib.IO.output -> JClassLow.jclass -> unit

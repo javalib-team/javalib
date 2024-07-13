@@ -19,37 +19,33 @@
  * <http://www.gnu.org/licenses/>.
  *)
 
-
 open JLib.IO.BigEndian
 open JLib.IO
 open JBasics
 
-type method_handle_kind = [
-| `GetField
-| `GetStatic
-| `PutField
-| `PutStatic
-| `InvokeVirtual
-| `InvokeStatic
-| `InvokeSpecial
-| `NewInvokeSpecial
-| `InvokeInterface
-]
+type method_handle_kind =
+  [ `GetField
+  | `GetStatic
+  | `PutField
+  | `PutStatic
+  | `InvokeVirtual
+  | `InvokeStatic
+  | `InvokeSpecial
+  | `NewInvokeSpecial
+  | `InvokeInterface ]
 
-type ldc_value = [
-  | `Int of int32
+type ldc_value =
+  [ `Int of int32
   | `Float of float
   | `String of jstr
   | `Class of object_type
   | `MethodType of method_descriptor
-  | `MethodHandle of method_handle
-]
+  | `MethodHandle of method_handle ]
 
-type ioc_method = [
-  | `Class of object_type * method_signature
-  | `Interface of class_name * method_signature
-]
-               
+type ioc_method =
+  [ `Class of object_type * method_signature
+  | `Interface of class_name * method_signature ]
+
 (* Usefull functions *)
 (*********************)
 
@@ -60,10 +56,7 @@ let write_ui8 ch n =
 
 let write_i8 ch n =
   if n < -0x80 || n > 0x7F then raise (Overflow "write_i8");
-  if n < 0 then
-    write_ui8 ch (0x100 + n)
-  else
-    write_ui8 ch n
+  if n < 0 then write_ui8 ch (0x100 + n) else write_ui8 ch n
 
 let write_string_with_length length ch s =
   length ch (String.length s);
@@ -71,10 +64,10 @@ let write_string_with_length length ch s =
 
 let write_with_length length ch write =
   let ch' = JLib.IO.output_string () in
-    write ch';
-    write_string_with_length length ch (JLib.IO.close_out ch')
+  write ch';
+  write_string_with_length length ch (JLib.IO.close_out ch')
 
-let write_with_size (size:'a output -> int -> unit) ch write l =
+let write_with_size (size : 'a output -> int -> unit) ch write l =
   size ch (List.length l);
   List.iter write l
 
@@ -82,10 +75,11 @@ let write_with_size (size:'a output -> int -> unit) ch write l =
 (*****************)
 
 let get_constant c n =
-  if n < 0 || n >= Array.length c then raise (Class_structure_error ("Illegal constant index:" ^ string_of_int n));
+  if n < 0 || n >= Array.length c then
+    raise (Class_structure_error ("Illegal constant index:" ^ string_of_int n));
   match c.(n) with
-    | ConstUnusable -> raise (Class_structure_error ("Illegal constant: unusable"))
-    | x -> x
+  | ConstUnusable -> raise (Class_structure_error "Illegal constant: unusable")
+  | x -> x
 
 (* for ldc and ldc_w since Java 7 *)
 let get_constant_ldc_value c n =
@@ -96,43 +90,67 @@ let get_constant_ldc_value c n =
   | ConstClass cl -> `Class cl
   | ConstMethodType mt -> `MethodType mt
   | ConstMethodHandle mh -> `MethodHandle mh
-  | _ -> raise (Class_structure_error ("Illegal constant value index (does not refer to constant value or a method type or a method handle)"))
-  
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal constant value index (does not refer to constant value or \
+            a method type or a method handle)")
+
 let get_object_type consts i =
   match get_constant consts i with
-    | ConstClass n -> n
-    | _ -> raise (Class_structure_error ("Illegal class index (does not refer to a constant class)"))
+  | ConstClass n -> n
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal class index (does not refer to a constant class)")
 
 let get_class consts i =
   match get_object_type consts i with
-    | TClass c -> c
-    | _ -> raise (Class_structure_error ("Illegal class index: refers to an array type descriptor"))
+  | TClass c -> c
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal class index: refers to an array type descriptor")
 
 let get_field consts i =
   match get_constant consts i with
-    | ConstField cnfs -> cnfs
-    | _ -> raise (Class_structure_error ("Illegal field index (does not refer to a constant field)"))
+  | ConstField cnfs -> cnfs
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal field index (does not refer to a constant field)")
 
 let get_method consts i =
   match get_constant consts i with
-    | ConstMethod cms -> cms
-    | _ -> raise (Class_structure_error ("Illegal method index (does not refer to a constant method)"))
+  | ConstMethod cms -> cms
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal method index (does not refer to a constant method)")
 
 let get_interface_method consts i =
   match get_constant consts i with
-    | ConstInterfaceMethod cms -> cms
-    | _ -> raise (Class_structure_error ("Illegal interface method index (does not refer to a constant interface method)"))
+  | ConstInterfaceMethod cms -> cms
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal interface method index (does not refer to a constant \
+            interface method)")
 
 let get_method_or_interface_method consts i =
   match get_constant consts i with
   | ConstMethod cms -> `Class cms
   | ConstInterfaceMethod cms -> `Interface cms
-  | _ -> raise (Class_structure_error ("Illegal class or interface method index (does not refer to a constant class or interface method)"))
-                                         
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal class or interface method index (does not refer to a \
+            constant class or interface method)")
+
 let get_method_handle consts i =
   match get_constant consts i with
   | ConstMethodHandle mh -> mh
-  | _ -> raise (Class_structure_error ("Illegal method handle index"))
+  | _ -> raise (Class_structure_error "Illegal method handle index")
 
 let get_bootstrap_argument consts i =
   match get_constant consts i with
@@ -144,7 +162,7 @@ let get_bootstrap_argument consts i =
   | ConstDouble f -> `Double f
   | ConstMethodType mt -> `MethodType mt
   | ConstMethodHandle mh -> `MethodHandle mh
-  | _ -> raise (Class_structure_error ("Illegal bootstrap argument"))
+  | _ -> raise (Class_structure_error "Illegal bootstrap argument")
 
 let get_constant_attribute consts i =
   match get_constant consts i with
@@ -153,12 +171,12 @@ let get_constant_attribute consts i =
   | ConstDouble f -> `Double f
   | ConstInt i -> `Int i
   | ConstString s -> `String s
-  | _ -> raise (Class_structure_error ("Illegal constant attribute"))
+  | _ -> raise (Class_structure_error "Illegal constant attribute")
 
 let bootstrap_argument_to_const arg =
   match arg with
-  | `String s ->  ConstString s
-  | `Class cl ->  ConstClass cl
+  | `String s -> ConstString s
+  | `Class cl -> ConstClass cl
   | `Int i -> ConstInt i
   | `Long i -> ConstLong i
   | `Float f -> ConstFloat f
@@ -173,11 +191,15 @@ let method_handle_to_const mh =
   | `PutField f -> (`PutField, ConstField f)
   | `PutStatic f -> (`PutStatic, ConstField f)
   | `InvokeVirtual v -> (`InvokeVirtual, ConstMethod v)
-  | `NewInvokeSpecial (cn, ms) -> (`NewInvokeSpecial, ConstMethod (TClass cn, ms))
-  | `InvokeStatic (`Method (cn, ms)) -> (`InvokeStatic, ConstMethod (TClass cn, ms))
+  | `NewInvokeSpecial (cn, ms) ->
+      (`NewInvokeSpecial, ConstMethod (TClass cn, ms))
+  | `InvokeStatic (`Method (cn, ms)) ->
+      (`InvokeStatic, ConstMethod (TClass cn, ms))
   | `InvokeStatic (`InterfaceMethod v) -> (`InvokeStatic, ConstInterfaceMethod v)
-  | `InvokeSpecial (`Method (cn, ms)) -> (`InvokeSpecial, ConstMethod (TClass cn, ms))
-  | `InvokeSpecial (`InterfaceMethod v) -> (`InvokeSpecial, ConstInterfaceMethod v)
+  | `InvokeSpecial (`Method (cn, ms)) ->
+      (`InvokeSpecial, ConstMethod (TClass cn, ms))
+  | `InvokeSpecial (`InterfaceMethod v) ->
+      (`InvokeSpecial, ConstInterfaceMethod v)
   | `InvokeInterface v -> (`InvokeInterface, ConstInterfaceMethod v)
 
 let constant_attribute_to_const attr =
@@ -190,39 +212,39 @@ let constant_attribute_to_const attr =
 
 let get_string consts i =
   match get_constant consts i with
-    | ConstStringUTF8 s -> s
-    | _ -> raise (Class_structure_error ("Illegal string index (does not refer to a constant string)"))
+  | ConstStringUTF8 s -> s
+  | _ ->
+      raise
+        (Class_structure_error
+           "Illegal string index (does not refer to a constant string)")
 
 let get_class_ui16 consts ch = get_class consts (read_ui16 ch)
 let get_string_ui16 consts ch = get_string consts (read_ui16 ch)
 let get_method_handle_ui16 consts ch = get_method_handle consts (read_ui16 ch)
-let get_bootstrap_argument_ui16 consts ch = get_bootstrap_argument consts (read_ui16 ch)
+
+let get_bootstrap_argument_ui16 consts ch =
+  get_bootstrap_argument consts (read_ui16 ch)
 
 let constant_to_int cp c =
-  if c = ConstUnusable
-  then raise (Class_structure_error ("Illegal constant: unusable"));
+  if c = ConstUnusable then
+    raise (Class_structure_error "Illegal constant: unusable");
   try
     JLib.DynArray.index_of (fun c' -> 0 = compare c c') cp
-                           (* [nan <> nan], where as [0 = compare nan nan] *)
-  with
-      Not_found ->
-	if JLib.DynArray.length cp = 0
-	then JLib.DynArray.add cp ConstUnusable;
-	if not (JLib.DynArray.unsafe_get cp 0 = ConstUnusable)
-	then raise (Class_structure_error "unparsing with an incorrect constant pool");
-        let i = JLib.DynArray.length cp in
-          JLib.DynArray.add cp c;
-          (match c with
-             | ConstLong _ | ConstDouble _ ->
-                 JLib.DynArray.add cp ConstUnusable
-	     | _ -> ());
-	  i
+    (* [nan <> nan], where as [0 = compare nan nan] *)
+  with Not_found ->
+    if JLib.DynArray.length cp = 0 then JLib.DynArray.add cp ConstUnusable;
+    if not (JLib.DynArray.unsafe_get cp 0 = ConstUnusable) then
+      raise (Class_structure_error "unparsing with an incorrect constant pool");
+    let i = JLib.DynArray.length cp in
+    JLib.DynArray.add cp c;
+    (match c with
+    | ConstLong _ | ConstDouble _ -> JLib.DynArray.add cp ConstUnusable
+    | _ -> ());
+    i
 
 let bootstrap_method_to_int bm_table bm =
-  try
-    JLib.DynArray.index_of (fun bm' -> 0 = compare bm bm') bm_table
-  with
-    Not_found ->
+  try JLib.DynArray.index_of (fun bm' -> 0 = compare bm bm') bm_table
+  with Not_found ->
     let i = JLib.DynArray.length bm_table in
     JLib.DynArray.add bm_table bm;
     i
@@ -230,7 +252,7 @@ let bootstrap_method_to_int bm_table bm =
 let method_handle_kind_to_int = function
   | `GetField -> 1
   | `GetStatic -> 2
-  | `PutField ->3
+  | `PutField -> 3
   | `PutStatic -> 4
   | `InvokeVirtual -> 5
   | `InvokeStatic -> 6
@@ -252,14 +274,21 @@ let method_to_int cp v = constant_to_int cp (ConstMethod v)
 let interface_method_to_int cp v = constant_to_int cp (ConstInterfaceMethod v)
 let class_to_int cp v = object_type_to_int cp (TClass v)
 let string_to_int cp v = constant_to_int cp (ConstStringUTF8 v)
-let name_and_type_to_int cp (n, s) = constant_to_int cp (ConstNameAndType (n, s))
-let bootstrap_argument_to_int cp a = constant_to_int cp (bootstrap_argument_to_const a)
+
+let name_and_type_to_int cp (n, s) =
+  constant_to_int cp (ConstNameAndType (n, s))
+
+let bootstrap_argument_to_int cp a =
+  constant_to_int cp (bootstrap_argument_to_const a)
 
 let write_constant ch cp c = write_ui16 ch (constant_to_int cp c)
 let write_object_type ch cp c = write_ui16 ch (object_type_to_int cp c)
 let write_class ch cp c = write_ui16 ch (class_to_int cp c)
 let write_string ch cp c = write_ui16 ch (string_to_int cp c)
 let write_name_and_type ch cp c = write_ui16 ch (name_and_type_to_int cp c)
-let write_bootstrap_argument ch cp a = write_ui16 ch (bootstrap_argument_to_int cp a)
+
+let write_bootstrap_argument ch cp a =
+  write_ui16 ch (bootstrap_argument_to_int cp a)
+
 let write_constant_attribute ch cp a =
   write_ui16 ch (constant_to_int cp (constant_attribute_to_const a))

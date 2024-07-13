@@ -24,9 +24,8 @@ include JFile
 
 let unparse_class ioc out =
   let out_chan = JLib.IO.output_channel out in
-    JUnparse.unparse_class out_chan ioc
+  JUnparse.unparse_class out_chan ioc
 
-module JPrint =
-struct
+module JPrint = struct
   include JPrint
 end

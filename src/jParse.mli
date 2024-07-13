@@ -21,8 +21,8 @@
 
 (** Parsing of Java class files. *)
 
-(** Parse a Java class file and return the low level representation. *)
 val parse_class_low_level : JLib.IO.input -> JClassLow.jclass
+(** Parse a Java class file and return the low level representation. *)
 
-(** Parse a Java class file and return the high level representation. *)
 val parse_class : JLib.IO.input -> JCode.jcode JClass.interface_or_class
+(** Parse a Java class file and return the high level representation. *)

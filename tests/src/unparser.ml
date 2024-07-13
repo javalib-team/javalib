@@ -1,11 +1,9 @@
 open Javalib
-open JBasics   
+open JBasics
 
 let remove_extension s =
   let l = ExtLib.String.nsplit s "." in
-  let lr = match l with
-    | [] -> []
-    | _ -> List.rev(List.tl (List.rev l)) in
+  let lr = match l with [] -> [] | _ -> List.rev (List.tl (List.rev l)) in
   String.concat "." lr
 
 let parse_class cfile =
@@ -22,32 +20,34 @@ let parse_class cfile =
 let unparse_class ioc outdir =
   let cname = get_name ioc in
   let scname = cn_name cname in
-  let dest =  Printf.sprintf "%s/%s.class" outdir scname in
+  let dest = Printf.sprintf "%s/%s.class" outdir scname in
   let ch = open_out_bin dest in
-  (unparse_class ioc ch;
-   Printf.printf "[o] class %s unparsed successfully\n" scname;
-   close_out ch)
-  
+  unparse_class ioc ch;
+  Printf.printf "[o] class %s unparsed successfully\n" scname;
+  close_out ch
+
 let _ =
   let _ = set_permissive true in
   let classes_file = ref None in
   let outdir = ref "./" in
-  let argspec =
-    [("-out",
-      Arg.Set_string outdir,
-      "set output directory")] in
-  let usage_msg = "Usage: " ^ Sys.argv.(0) ^ "classes_file [options] -out <output directory>" in
+  let argspec = [ ("-out", Arg.Set_string outdir, "set output directory") ] in
+  let usage_msg =
+    "Usage: " ^ Sys.argv.(0) ^ "classes_file [options] -out <output directory>"
+  in
   let _ = Arg.parse argspec (fun f -> classes_file := Some f) usage_msg in
   let outdir = !outdir in
-  let _ = if not(Sys.file_exists outdir && Sys.is_directory outdir)
-          then failwith (Printf.sprintf "Bad output directory : %s" outdir) in
-  let classes_file = (match !classes_file with
-                      | None -> failwith "Missing classes file parameter"
-                      | Some f -> if (Sys.file_exists f && not(Sys.is_directory f))
-                                  then f
-                                  else failwith (Printf.sprintf "Bad classes file : %s" f)
-    ) in
-  Printf.printf "looking at %s\n" classes_file ;
+  let _ =
+    if not (Sys.file_exists outdir && Sys.is_directory outdir) then
+      failwith (Printf.sprintf "Bad output directory : %s" outdir)
+  in
+  let classes_file =
+    match !classes_file with
+    | None -> failwith "Missing classes file parameter"
+    | Some f ->
+        if Sys.file_exists f && not (Sys.is_directory f) then f
+        else failwith (Printf.sprintf "Bad classes file : %s" f)
+  in
+  Printf.printf "looking at %s\n" classes_file;
   let chan = open_in classes_file in
   let classes = Std.input_list chan in
   let _ = close_in chan in

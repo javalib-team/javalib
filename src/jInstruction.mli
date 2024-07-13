@@ -20,6 +20,11 @@
 
 (** Conversion between low and high level representations of instructions. *)
 
+val opcodes2code :
+  JBasics.constant array ->
+  JBasics.bootstrap_method array ->
+  JClassLow.opcode array ->
+  JCode.jopcodes
 (** Maps an arrray of low level bytecode to a high level code.
     Each instruction is at the index
     corresponding to its absolute offset. The array is padded with the
@@ -28,11 +33,12 @@
     OpInvalid may be interpreted as nop, or the direct successor of
     an instruction can alternatively by defined as the first following
     non-OpInvalid instruction. *)
-val opcodes2code : JBasics.constant array ->
-  JBasics.bootstrap_method array ->
-  JClassLow.opcode array ->
-  JCode.jopcodes
 
+val code2opcodes :
+  JBasics.constant JLib.DynArray.t ->
+  JBasics.bootstrap_method JLib.DynArray.t ->
+  JCode.jopcodes ->
+  JClassLow.opcode array
 (** Maps a high level code to a valid arrray of low level bytecode
     instructions. The distance between the offset of two successive
     non-OpInvalid instructions is assumed to be at least the length of the
@@ -45,16 +51,20 @@ val opcodes2code : JBasics.constant array ->
     {!JBasics.set_permissive} has been called with [true].  Note that this
     will only be an issue when dumping the code to a class file.
 *)
-val code2opcodes : JBasics.constant JLib.DynArray.t ->
-                   JBasics.bootstrap_method JLib.DynArray.t ->
-                   JCode.jopcodes -> JClassLow.opcode array
 
+val opcode2instruction :
+  JBasics.constant array ->
+  JBasics.bootstrap_method array ->
+  JClassLow.opcode ->
+  JCode.jopcode
 (** Low level to high level bytecode instruction. *)
-val opcode2instruction : JBasics.constant array ->
-                         JBasics.bootstrap_method array ->
-                         JClassLow.opcode ->
-                         JCode.jopcode
 
+val instruction2opcode :
+  JBasics.constant JLib.DynArray.t ->
+  JBasics.bootstrap_method JLib.DynArray.t ->
+  int ->
+  JCode.jopcode ->
+  JClassLow.opcode
 (** High level to low level bytecode instruction.
 
     [instruction2opcode consts length instr] tries to produce an
@@ -62,6 +72,3 @@ val opcode2instruction : JBasics.constant array ->
 
     @raise JBasics.Class_structure_error if the class has not a valid structure.
 *)
-val instruction2opcode : JBasics.constant JLib.DynArray.t ->
-                         JBasics.bootstrap_method JLib.DynArray.t ->
-                         int -> JCode.jopcode -> JClassLow.opcode

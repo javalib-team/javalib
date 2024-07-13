@@ -10,5 +10,5 @@
  (libraries extlib zip)
  (inline_tests)
  (wrapped false)
- (preprocess (pps ppx_inline_test))
-)
+ (preprocess
+  (pps ppx_inline_test)))

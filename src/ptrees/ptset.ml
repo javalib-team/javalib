@@ -12,7 +12,6 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  *)
 
-
 (*s Sets of integers implemented as Patricia trees, following Chris
     Okasaki and Andrew Gill's paper {\em Fast Mergeable Integer Maps}
     ({\tt\small http://www.cs.columbia.edu/\~{}cdo/papers.html\#ml98maps}).
@@ -34,10 +33,10 @@
     branching bit is respectively 0 and 1. Invariant: the trees [l]
     and [r] are not empty. *)
 
-
 module type S = sig
   type t
   type elt = int
+
   val empty : t
   val is_empty : t -> bool
   val mem : int -> t -> bool
@@ -63,19 +62,15 @@ module type S = sig
   val min_elt : t -> int
   val max_elt : t -> int
   val intersect : t -> t -> bool
-  val choose_and_remove : t -> int*t
+  val choose_and_remove : t -> int * t
   val to_string : t -> string
 end
-
 
 (*i*)
 type elt = int
 (*i*)
 
-type t =
-  | Empty
-  | Leaf of int
-  | Branch of int * int * t * t
+type t = Empty | Leaf of int | Branch of int * int * t * t
 
 (*s Example: the representation of the set $\{1,4,5\}$ is
     $$\mathtt{Branch~(0,~1,~Leaf~4,~Branch~(1,~4,~Leaf~1,~Leaf~5))}$$
@@ -87,16 +82,14 @@ type t =
 (*s Empty set and singletons. *)
 
 let empty = Empty
-
 let is_empty = function Empty -> true | _ -> false
-
 let singleton k = Leaf k
 
 (*s Testing the occurrence of a value is similar to the search in a
     binary search tree, where the branching bit is used to select the
     appropriate subtree. *)
 
-let zero_bit k m = (k land m) == 0
+let zero_bit k m = k land m == 0
 
 let rec mem k = function
   | Empty -> false
@@ -113,18 +106,14 @@ let rec mem k = function
     the converse. Computing the first branching bit of [p0] and [p1]
     uses a nice property of twos-complement representation of integers. *)
 
-let lowest_bit x = x land (-x)
-
+let lowest_bit x = x land -x
 let branching_bit p0 p1 = lowest_bit (p0 lxor p1)
+let mask p m = p land (m - 1)
 
-let mask p m = p land (m-1)
-
-let join (p0,t0,p1,t1) =
+let join (p0, t0, p1, t1) =
   let m = branching_bit p0 p1 in
-  if zero_bit p0 m then
-    Branch (mask p0 m, m, t0, t1)
-  else
-    Branch (mask p0 m, m, t1, t0)
+  if zero_bit p0 m then Branch (mask p0 m, m, t0, t1)
+  else Branch (mask p0 m, m, t1, t0)
 
 (*s Then the insertion of value [k] in set [t] is easily implemented
     using [join].  Insertion in a singleton is just the identity or a
@@ -134,21 +123,17 @@ let join (p0,t0,p1,t1) =
     the above branching; if so, we just insert [k] in the appropriate
     subtree, depending of the branching bit. *)
 
-let match_prefix k p m = (mask k m) == p
+let match_prefix k p m = mask k m == p
 
 let add k t =
   let rec ins = function
     | Empty -> Leaf k
-    | Leaf j as t ->
-	if j == k then t else join (k, Leaf k, j, t)
-    | Branch (p,m,t0,t1) as t ->
-	if match_prefix k p m then
-	  if zero_bit k m then
-	    Branch (p, m, ins t0, t1)
-	  else
-	    Branch (p, m, t0, ins t1)
-	else
-	  join (k, Leaf k, p, t)
+    | Leaf j as t -> if j == k then t else join (k, Leaf k, j, t)
+    | Branch (p, m, t0, t1) as t ->
+        if match_prefix k p m then
+          if zero_bit k m then Branch (p, m, ins t0, t1)
+          else Branch (p, m, t0, ins t1)
+        else join (k, Leaf k, p, t)
   in
   ins t
 
@@ -158,31 +143,28 @@ let add k t =
     ``smart constructor'' [branch] instead of [Branch]. *)
 
 let branch = function
-  | (_,_,Empty,t) -> t
-  | (_,_,t,Empty) -> t
-  | (p,m,t0,t1)   -> Branch (p,m,t0,t1)
+  | _, _, Empty, t -> t
+  | _, _, t, Empty -> t
+  | p, m, t0, t1 -> Branch (p, m, t0, t1)
 
 let remove k t =
   let rec rmv = function
     | Empty -> Empty
     | Leaf j as t -> if k == j then Empty else t
-    | Branch (p,m,t0,t1) as t ->
-	if match_prefix k p m then
-	  if zero_bit k m then
-	    branch (p, m, rmv t0, t1)
-	  else
-	    branch (p, m, t0, rmv t1)
-	else
-	  t
+    | Branch (p, m, t0, t1) as t ->
+        if match_prefix k p m then
+          if zero_bit k m then branch (p, m, rmv t0, t1)
+          else branch (p, m, t0, rmv t1)
+        else t
   in
   rmv t
 
 let rec choose_and_remove = function
   | Empty -> raise Not_found
-  | Leaf j -> (j,Empty)
-  | Branch (p,m,t0,t1) ->
-      let (j,t0') = choose_and_remove t0
-      in (j, branch (p,m,t0',t1))
+  | Leaf j -> (j, Empty)
+  | Branch (p, m, t0, t1) ->
+      let j, t0' = choose_and_remove t0 in
+      (j, branch (p, m, t0', t1))
 
 (*s One nice property of Patricia trees is to support a fast union
     operation (and also fast subset, difference and intersection
@@ -194,91 +176,78 @@ let rec choose_and_remove = function
     branching. *)
 
 let rec merge = function
-  | t1,t2 when t1==t2 -> t1
-  | Empty, t  -> t
-  | t, Empty  -> t
+  | t1, t2 when t1 == t2 -> t1
+  | Empty, t -> t
+  | t, Empty -> t
   | Leaf k, t -> add k t
   | t, Leaf k -> add k t
-  | (Branch (p,m,s0,s1) as s), (Branch (q,n,t0,t1) as t) ->
+  | (Branch (p, m, s0, s1) as s), (Branch (q, n, t0, t1) as t) ->
       if m == n && match_prefix q p m then
-	(* The trees have the same prefix. Merge the subtrees. *)
-	Branch (p, m, merge (s0,t0), merge (s1,t1))
+        (* The trees have the same prefix. Merge the subtrees. *)
+        Branch (p, m, merge (s0, t0), merge (s1, t1))
       else if m < n && match_prefix q p m then
-	(* [q] contains [p]. Merge [t] with a subtree of [s]. *)
-	if zero_bit q m then
-	  Branch (p, m, merge (s0,t), s1)
-        else
-	  Branch (p, m, s0, merge (s1,t))
+        (* [q] contains [p]. Merge [t] with a subtree of [s]. *)
+        if zero_bit q m then Branch (p, m, merge (s0, t), s1)
+        else Branch (p, m, s0, merge (s1, t))
       else if m > n && match_prefix p q n then
-	(* [p] contains [q]. Merge [s] with a subtree of [t]. *)
-	if zero_bit p n then
-	  Branch (q, n, merge (s,t0), t1)
-	else
-	  Branch (q, n, t0, merge (s,t1))
-      else
-	(* The prefixes disagree. *)
-	join (p, s, q, t)
+        (* [p] contains [q]. Merge [s] with a subtree of [t]. *)
+        if zero_bit p n then Branch (q, n, merge (s, t0), t1)
+        else Branch (q, n, t0, merge (s, t1))
+      else (* The prefixes disagree. *)
+        join (p, s, q, t)
 
-let union s t = merge (s,t)
+let union s t = merge (s, t)
 
 (*s When checking if [s1] is a subset of [s2] only two of the above
     four cases are relevant: when the prefixes are the same and when the
     prefix of [s1] contains the one of [s2], and then the recursion is
     obvious. In the other two cases, the result is [false]. *)
 
-let rec subset s1 s2 = match (s1,s2) with
+let rec subset s1 s2 =
+  match (s1, s2) with
   | Empty, _ -> true
   | _, Empty -> false
   | Leaf k1, _ -> mem k1 s2
   | Branch _, Leaf _ -> false
-  | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-      if m1 == m2 && p1 == p2 then
-	subset l1 l2 && subset r1 r2
+  | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+      if m1 == m2 && p1 == p2 then subset l1 l2 && subset r1 r2
       else if m1 > m2 && match_prefix p1 p2 m2 then
-	if zero_bit p1 m2 then
-	  subset l1 l2 && subset r1 l2
-	else
-	  subset l1 r2 && subset r1 r2
-      else
-	false
+        if zero_bit p1 m2 then subset l1 l2 && subset r1 l2
+        else subset l1 r2 && subset r1 r2
+      else false
 
 (*s To compute the intersection and the difference of two sets, we
     still examine the same four cases as in [merge]. The recursion is
     then obvious. *)
 
-let rec inter s1 s2 = match (s1,s2) with
-  | t1, t2 when t1==t2 -> t1
+let rec inter s1 s2 =
+  match (s1, s2) with
+  | t1, t2 when t1 == t2 -> t1
   | Empty, _ -> Empty
   | _, Empty -> Empty
   | Leaf k1, _ -> if mem k1 s2 then s1 else Empty
   | _, Leaf k2 -> if mem k2 s1 then s2 else Empty
-  | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-      if m1 == m2 && p1 == p2 then
-	merge (inter l1 l2, inter r1 r2)
+  | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+      if m1 == m2 && p1 == p2 then merge (inter l1 l2, inter r1 r2)
       else if m1 < m2 && match_prefix p2 p1 m1 then
-	inter (if zero_bit p2 m1 then l1 else r1) s2
+        inter (if zero_bit p2 m1 then l1 else r1) s2
       else if m1 > m2 && match_prefix p1 p2 m2 then
-	inter s1 (if zero_bit p1 m2 then l2 else r2)
-      else
-	Empty
+        inter s1 (if zero_bit p1 m2 then l2 else r2)
+      else Empty
 
-let rec diff s1 s2 = match (s1,s2) with
+let rec diff s1 s2 =
+  match (s1, s2) with
   | Empty, _ -> Empty
   | _, Empty -> s1
   | Leaf k1, _ -> if mem k1 s2 then Empty else s1
   | _, Leaf k2 -> remove k2 s1
-  | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-      if m1 == m2 && p1 == p2 then
-	merge (diff l1 l2, diff r1 r2)
+  | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+      if m1 == m2 && p1 == p2 then merge (diff l1 l2, diff r1 r2)
       else if m1 < m2 && match_prefix p2 p1 m1 then
-	if zero_bit p2 m1 then
-	  merge (diff l1 s2, r1)
-	else
-	  merge (l1, diff r1 s2)
+        if zero_bit p2 m1 then merge (diff l1 s2, r1) else merge (l1, diff r1 s2)
       else if m1 > m2 && match_prefix p1 p2 m2 then
-	if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
-      else
-	s1
+        if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
+      else s1
 
 (*s All the following operations ([cardinal], [iter], [fold], [for_all],
     [exists], [filter], [partition], [choose], [elements]) are
@@ -287,51 +256,54 @@ let rec diff s1 s2 = match (s1,s2) with
 let rec cardinal = function
   | Empty -> 0
   | Leaf _ -> 1
-  | Branch (_,_,t0,t1) -> cardinal t0 + cardinal t1
+  | Branch (_, _, t0, t1) -> cardinal t0 + cardinal t1
 
 let rec iter f = function
   | Empty -> ()
   | Leaf k -> f k
-  | Branch (_,_,t0,t1) -> iter f t0; iter f t1
+  | Branch (_, _, t0, t1) ->
+      iter f t0;
+      iter f t1
 
-let rec fold f s accu = match s with
+let rec fold f s accu =
+  match s with
   | Empty -> accu
   | Leaf k -> f k accu
-  | Branch (_,_,t0,t1) -> fold f t0 (fold f t1 accu)
+  | Branch (_, _, t0, t1) -> fold f t0 (fold f t1 accu)
 
 let rec for_all p = function
   | Empty -> true
   | Leaf k -> p k
-  | Branch (_,_,t0,t1) -> for_all p t0 && for_all p t1
+  | Branch (_, _, t0, t1) -> for_all p t0 && for_all p t1
 
 let rec exists p = function
   | Empty -> false
   | Leaf k -> p k
-  | Branch (_,_,t0,t1) -> exists p t0 || exists p t1
+  | Branch (_, _, t0, t1) -> exists p t0 || exists p t1
 
 let rec filter pr = function
   | Empty -> Empty
   | Leaf k as t -> if pr k then t else Empty
-  | Branch (p,m,t0,t1) -> branch (p, m, filter pr t0, filter pr t1)
+  | Branch (p, m, t0, t1) -> branch (p, m, filter pr t0, filter pr t1)
 
 let partition p s =
-  let rec part (t,f as acc) = function
+  let rec part ((t, f) as acc) = function
     | Empty -> acc
     | Leaf k -> if p k then (add k t, f) else (t, add k f)
-    | Branch (_,_,t0,t1) -> part (part acc t0) t1
+    | Branch (_, _, t0, t1) -> part (part acc t0) t1
   in
   part (Empty, Empty) s
 
 let rec choose = function
   | Empty -> raise Not_found
   | Leaf k -> k
-  | Branch (_, _,t0,_) -> choose t0   (* we know that [t0] is non-empty *)
+  | Branch (_, _, t0, _) -> choose t0 (* we know that [t0] is non-empty *)
 
 let elements s =
   let rec elements_aux acc = function
     | Empty -> acc
     | Leaf k -> k :: acc
-    | Branch (_,_,l,r) -> elements_aux (elements_aux acc l) r
+    | Branch (_, _, l, r) -> elements_aux (elements_aux acc l) r
   in
   (* unfortunately there is no easy way to get the elements in ascending
      order with little-endian Patricia trees *)
@@ -339,9 +311,9 @@ let elements s =
 
 let split x s =
   let coll k (l, b, r) =
-    if k < x then add k l, b, r
-    else if k > x then l, b, add k r
-    else l, true, r
+    if k < x then (add k l, b, r)
+    else if k > x then (l, b, add k r)
+    else (l, true, r)
   in
   fold coll s (Empty, false, Empty)
 
@@ -356,82 +328,71 @@ let split x s =
 let rec min_elt = function
   | Empty -> raise Not_found
   | Leaf k -> k
-  | Branch (_,_,s,t) -> min (min_elt s) (min_elt t)
+  | Branch (_, _, s, t) -> min (min_elt s) (min_elt t)
 
 let rec max_elt = function
   | Empty -> raise Not_found
   | Leaf k -> k
-  | Branch (_,_,s,t) -> max (max_elt s) (max_elt t)
+  | Branch (_, _, s, t) -> max (max_elt s) (max_elt t)
 
 (*s Another nice property of Patricia trees is to be independent of the
     order of insertion. As a consequence, two Patricia trees have the
     same elements if and only if they are structurally equal. *)
 
-let equal v1 v2 = 0 == (compare v1 v2)
-
+let equal v1 v2 = 0 == compare v1 v2
 let compare = compare
 
 (*s Additional functions w.r.t to [Set.S]. *)
 
-let rec intersect s1 s2 = match (s1,s2) with
+let rec intersect s1 s2 =
+  match (s1, s2) with
   | Empty, _ -> false
   | _, Empty -> false
   | Leaf k1, _ -> mem k1 s2
   | _, Leaf k2 -> mem k2 s1
-  | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-      if m1 == m2 && p1 == p2 then
-        intersect l1 l2 || intersect r1 r2
+  | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+      if m1 == m2 && p1 == p2 then intersect l1 l2 || intersect r1 r2
       else if m1 < m2 && match_prefix p2 p1 m1 then
         intersect (if zero_bit p2 m1 then l1 else r1) s2
       else if m1 > m2 && match_prefix p1 p2 m2 then
         intersect s1 (if zero_bit p1 m2 then l2 else r2)
-      else
-        false
-
+      else false
 
 let to_string_aux elements s =
   let l = elements s in
   let rec aux acc = function
     | [] -> acc
-    | x::q -> aux (","^(string_of_int x)^acc) q in
-    match l with
-      | [] -> "{}"
-      | x::q -> Printf.sprintf "{%d%s}" x (aux "" q)
+    | x :: q -> aux ("," ^ string_of_int x ^ acc) q
+  in
+  match l with [] -> "{}" | x :: q -> Printf.sprintf "{%d%s}" x (aux "" q)
 
 let to_string = to_string_aux elements
-	  
-
 
 (*s Big-endian Patricia trees *)
 
 module Big = struct
-
   type elt = int
-
   type t_ = t
   type t = t_
 
   let empty = Empty
-
   let is_empty = function Empty -> true | _ -> false
-
   let singleton k = Leaf k
-
-  let zero_bit k m = (k land m) == 0
+  let zero_bit k m = k land m == 0
 
   let rec mem k = function
     | Empty -> false
     | Leaf j -> k == j
     | Branch (_, m, l, r) -> mem k (if zero_bit k m then l else r)
 
-  let mask k m  = (k lor (m-1)) land (lnot m)
+  let mask k m = k lor (m - 1) land lnot m
 
   (* we first write a naive implementation of [highest_bit]
      only has to work for bytes *)
   let naive_highest_bit x =
     assert (x < 256);
     let rec loop i =
-      if i = 0 then 1 else if x lsr i = 1 then 1 lsl i else loop (i-1)
+      if i = 0 then 1 else if x lsr i = 1 then 1 lsl i else loop (i - 1)
     in
     loop 7
 
@@ -440,45 +401,44 @@ module Big = struct
 
   (* to determine the highest bit of [x] we split it into bytes *)
   let highest_bit_32 x =
-    let n = x lsr 24 in if n != 0 then hbit.(n) lsl 24
-    else let n = x lsr 16 in if n != 0 then hbit.(n) lsl 16
-    else let n = x lsr 8 in if n != 0 then hbit.(n) lsl 8
-    else hbit.(x)
+    let n = x lsr 24 in
+    if n != 0 then hbit.(n) lsl 24
+    else
+      let n = x lsr 16 in
+      if n != 0 then hbit.(n) lsl 16
+      else
+        let n = x lsr 8 in
+        if n != 0 then hbit.(n) lsl 8 else hbit.(x)
 
   let highest_bit_64 x =
-    let n = x lsr 32 in if n != 0 then (highest_bit_32 n) lsl 32
-    else highest_bit_32 x
+    let n = x lsr 32 in
+    if n != 0 then highest_bit_32 n lsl 32 else highest_bit_32 x
 
-  let highest_bit = match Sys.word_size with
+  let highest_bit =
+    match Sys.word_size with
     | 32 -> highest_bit_32
     | 64 -> highest_bit_64
     | _ -> assert false
 
   let branching_bit p0 p1 = highest_bit (p0 lxor p1)
 
-  let join (p0,t0,p1,t1) =
+  let join (p0, t0, p1, t1) =
     (*i let m = function Branch (_,m,_,_) -> m | _ -> 0 in i*)
     let m = branching_bit p0 p1 (*EXP (m t0) (m t1) *) in
-    if zero_bit p0 m then
-      Branch (mask p0 m, m, t0, t1)
-    else
-      Branch (mask p0 m, m, t1, t0)
+    if zero_bit p0 m then Branch (mask p0 m, m, t0, t1)
+    else Branch (mask p0 m, m, t1, t0)
 
-  let match_prefix k p m = (mask k m) == p
+  let match_prefix k p m = mask k m == p
 
   let add k t =
     let rec ins = function
       | Empty -> Leaf k
-      | Leaf j as t ->
-	  if j == k then t else join (k, Leaf k, j, t)
-      | Branch (p,m,t0,t1) as t ->
-	  if match_prefix k p m then
-	    if zero_bit k m then
-	      Branch (p, m, ins t0, t1)
-	    else
-	      Branch (p, m, t0, ins t1)
-	  else
-	    join (k, Leaf k, p, t)
+      | Leaf j as t -> if j == k then t else join (k, Leaf k, j, t)
+      | Branch (p, m, t0, t1) as t ->
+          if match_prefix k p m then
+            if zero_bit k m then Branch (p, m, ins t0, t1)
+            else Branch (p, m, t0, ins t1)
+          else join (k, Leaf k, p, t)
     in
     ins t
 
@@ -486,92 +446,77 @@ module Big = struct
     let rec rmv = function
       | Empty -> Empty
       | Leaf j as t -> if k == j then Empty else t
-      | Branch (p,m,t0,t1) as t ->
-	  if match_prefix k p m then
-	    if zero_bit k m then
-	      branch (p, m, rmv t0, t1)
-	    else
-	      branch (p, m, t0, rmv t1)
-	  else
-	    t
+      | Branch (p, m, t0, t1) as t ->
+          if match_prefix k p m then
+            if zero_bit k m then branch (p, m, rmv t0, t1)
+            else branch (p, m, t0, rmv t1)
+          else t
     in
     rmv t
 
   let rec merge = function
-    | Empty, t  -> t
-    | t, Empty  -> t
+    | Empty, t -> t
+    | t, Empty -> t
     | Leaf k, t -> add k t
     | t, Leaf k -> add k t
-    | (Branch (p,m,s0,s1) as s), (Branch (q,n,t0,t1) as t) ->
-	if m == n && match_prefix q p m then
-	  (* The trees have the same prefix. Merge the subtrees. *)
-	  Branch (p, m, merge (s0,t0), merge (s1,t1))
-	else if m > n && match_prefix q p m then
-	  (* [q] contains [p]. Merge [t] with a subtree of [s]. *)
-	  if zero_bit q m then
-	    Branch (p, m, merge (s0,t), s1)
-          else
-	    Branch (p, m, s0, merge (s1,t))
-	else if m < n && match_prefix p q n then
-	  (* [p] contains [q]. Merge [s] with a subtree of [t]. *)
-	  if zero_bit p n then
-	    Branch (q, n, merge (s,t0), t1)
-	  else
-	    Branch (q, n, t0, merge (s,t1))
-	else
-	  (* The prefixes disagree. *)
-	  join (p, s, q, t)
+    | (Branch (p, m, s0, s1) as s), (Branch (q, n, t0, t1) as t) ->
+        if m == n && match_prefix q p m then
+          (* The trees have the same prefix. Merge the subtrees. *)
+          Branch (p, m, merge (s0, t0), merge (s1, t1))
+        else if m > n && match_prefix q p m then
+          (* [q] contains [p]. Merge [t] with a subtree of [s]. *)
+          if zero_bit q m then Branch (p, m, merge (s0, t), s1)
+          else Branch (p, m, s0, merge (s1, t))
+        else if m < n && match_prefix p q n then
+          (* [p] contains [q]. Merge [s] with a subtree of [t]. *)
+          if zero_bit p n then Branch (q, n, merge (s, t0), t1)
+          else Branch (q, n, t0, merge (s, t1))
+        else (* The prefixes disagree. *)
+          join (p, s, q, t)
 
-  let union s t = merge (s,t)
+  let union s t = merge (s, t)
 
-  let rec subset s1 s2 = match (s1,s2) with
+  let rec subset s1 s2 =
+    match (s1, s2) with
     | Empty, _ -> true
     | _, Empty -> false
     | Leaf k1, _ -> mem k1 s2
     | Branch _, Leaf _ -> false
-    | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	if m1 == m2 && p1 == p2 then
-	  subset l1 l2 && subset r1 r2
-	else if m1 < m2 && match_prefix p1 p2 m2 then
-	  if zero_bit p1 m2 then
-	    subset l1 l2 && subset r1 l2
-	  else
-	    subset l1 r2 && subset r1 r2
-	else
-	  false
+    | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+        if m1 == m2 && p1 == p2 then subset l1 l2 && subset r1 r2
+        else if m1 < m2 && match_prefix p1 p2 m2 then
+          if zero_bit p1 m2 then subset l1 l2 && subset r1 l2
+          else subset l1 r2 && subset r1 r2
+        else false
 
-  let rec inter s1 s2 = match (s1,s2) with
+  let rec inter s1 s2 =
+    match (s1, s2) with
     | Empty, _ -> Empty
     | _, Empty -> Empty
     | Leaf k1, _ -> if mem k1 s2 then s1 else Empty
     | _, Leaf k2 -> if mem k2 s1 then s2 else Empty
-    | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	if m1 == m2 && p1 == p2 then
-	  merge (inter l1 l2, inter r1 r2)
-	else if m1 > m2 && match_prefix p2 p1 m1 then
-	  inter (if zero_bit p2 m1 then l1 else r1) s2
-	else if m1 < m2 && match_prefix p1 p2 m2 then
-	  inter s1 (if zero_bit p1 m2 then l2 else r2)
-	else
-	  Empty
+    | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+        if m1 == m2 && p1 == p2 then merge (inter l1 l2, inter r1 r2)
+        else if m1 > m2 && match_prefix p2 p1 m1 then
+          inter (if zero_bit p2 m1 then l1 else r1) s2
+        else if m1 < m2 && match_prefix p1 p2 m2 then
+          inter s1 (if zero_bit p1 m2 then l2 else r2)
+        else Empty
 
-  let rec diff s1 s2 = match (s1,s2) with
+  let rec diff s1 s2 =
+    match (s1, s2) with
     | Empty, _ -> Empty
     | _, Empty -> s1
     | Leaf k1, _ -> if mem k1 s2 then Empty else s1
     | _, Leaf k2 -> remove k2 s1
-    | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	if m1 == m2 && p1 == p2 then
-	  merge (diff l1 l2, diff r1 r2)
-	else if m1 > m2 && match_prefix p2 p1 m1 then
-	  if zero_bit p2 m1 then
-	    merge (diff l1 s2, r1)
-	  else
-	    merge (l1, diff r1 s2)
-	else if m1 < m2 && match_prefix p1 p2 m2 then
-	  if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
-	else
-	  s1
+    | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+        if m1 == m2 && p1 == p2 then merge (diff l1 l2, diff r1 r2)
+        else if m1 > m2 && match_prefix p2 p1 m1 then
+          if zero_bit p2 m1 then merge (diff l1 s2, r1)
+          else merge (l1, diff r1 s2)
+        else if m1 < m2 && match_prefix p1 p2 m2 then
+          if zero_bit p1 m2 then diff s1 l2 else diff s1 r2
+        else s1
 
   (* same implementation as for little-endian Patricia trees *)
   let cardinal = cardinal
@@ -582,10 +527,10 @@ module Big = struct
   let filter = filter
 
   let partition p s =
-    let rec part (t,f as acc) = function
+    let rec part ((t, f) as acc) = function
       | Empty -> acc
       | Leaf k -> if p k then (add k t, f) else (t, add k f)
-      | Branch (_,_,t0,t1) -> part (part acc t0) t1
+      | Branch (_, _, t0, t1) -> part (part acc t0) t1
     in
     part (Empty, Empty) s
 
@@ -596,16 +541,16 @@ module Big = struct
     let rec elements_aux acc = function
       | Empty -> acc
       | Leaf k -> k :: acc
-      | Branch (_,_,l,r) -> elements_aux (elements_aux acc r) l
+      | Branch (_, _, l, r) -> elements_aux (elements_aux acc r) l
     in
     (* we still have to sort because of possible negative elements *)
     List.sort Stdlib.compare (elements_aux [] s)
 
   let split x s =
     let coll k (l, b, r) =
-      if k < x then add k l, b, r
-      else if k > x then l, b, add k r
-      else l, true, r
+      if k < x then (add k l, b, r)
+      else if k > x then (l, b, add k r)
+      else (l, true, r)
     in
     fold coll s (Empty, false, Empty)
 
@@ -613,39 +558,38 @@ module Big = struct
      positive or only negative integers) *)
   let min_elt = min_elt
   let max_elt = max_elt
-
-  let equal = (=)
-
+  let equal = ( = )
   let compare = compare
 
-  let rec intersect s1 s2 = match (s1,s2) with
+  let rec intersect s1 s2 =
+    match (s1, s2) with
     | Empty, _ -> false
     | _, Empty -> false
     | Leaf k1, _ -> mem k1 s2
     | _, Leaf k2 -> mem k2 s1
-    | Branch (p1,m1,l1,r1), Branch (p2,m2,l2,r2) ->
-	if m1 == m2 && p1 == p2 then
-          intersect l1 l2 || intersect r1 r2
-	else if m1 > m2 && match_prefix p2 p1 m1 then
+    | Branch (p1, m1, l1, r1), Branch (p2, m2, l2, r2) ->
+        if m1 == m2 && p1 == p2 then intersect l1 l2 || intersect r1 r2
+        else if m1 > m2 && match_prefix p2 p1 m1 then
           intersect (if zero_bit p2 m1 then l1 else r1) s2
-	else if m1 < m2 && match_prefix p1 p2 m2 then
+        else if m1 < m2 && match_prefix p1 p2 m2 then
           intersect s1 (if zero_bit p1 m2 then l2 else r2)
-	else
-          false
+        else false
 
   let to_string = to_string_aux elements
-
 end
 
 (*s Big-endian Patricia trees with non-negative elements only *)
 
 module BigPos = struct
-
   include Big
 
-  let singleton x = if x < 0 then invalid_arg "BigPos.singleton"; singleton x
+  let singleton x =
+    if x < 0 then invalid_arg "BigPos.singleton";
+    singleton x
 
-  let add x s = if x < 0 then invalid_arg "BigPos.add"; add x s
+  let add x s =
+    if x < 0 then invalid_arg "BigPos.add";
+    add x s
 
   (* Patricia trees are now binary search trees! *)
 
@@ -657,22 +601,21 @@ module BigPos = struct
   let rec min_elt = function
     | Empty -> raise Not_found
     | Leaf k -> k
-    | Branch (_,_,s,_) -> min_elt s
+    | Branch (_, _, s, _) -> min_elt s
 
   let rec max_elt = function
     | Empty -> raise Not_found
     | Leaf k -> k
-    | Branch (_,_,_,t) -> max_elt t
+    | Branch (_, _, _, t) -> max_elt t
 
   (* we do not have to sort anymore *)
   let elements s =
     let rec elements_aux acc = function
       | Empty -> acc
       | Leaf k -> k :: acc
-      | Branch (_,_,l,r) -> elements_aux (elements_aux acc r) l
+      | Branch (_, _, l, r) -> elements_aux (elements_aux acc r) l
     in
     elements_aux [] s
 
   let to_string = to_string_aux elements
-
 end

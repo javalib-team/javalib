@@ -40,51 +40,29 @@
 
 module type S = sig
   type t
-
   type elt = int
 
   val empty : t
-
   val is_empty : t -> bool
-
   val mem : int -> t -> bool
-
   val add : int -> t -> t
-
   val singleton : int -> t
-
   val remove : int -> t -> t
-
   val union : t -> t -> t
-
   val subset : t -> t -> bool
-
   val inter : t -> t -> t
-
   val diff : t -> t -> t
-
   val equal : t -> t -> bool
-
   val compare : t -> t -> int
-
   val elements : t -> int list
-
   val choose : t -> int
-
   val cardinal : t -> int
-
   val iter : (int -> unit) -> t -> unit
-
   val fold : (int -> 'a -> 'a) -> t -> 'a -> 'a
-
   val for_all : (int -> bool) -> t -> bool
-
   val exists : (int -> bool) -> t -> bool
-
   val filter : (int -> bool) -> t -> t
-
   val partition : (int -> bool) -> t -> t * t
-
   val split : int -> t -> t * bool * t
 
   (** Warning: [min_elt] and [max_elt] are linear w.r.t. the size of the
@@ -102,15 +80,14 @@ module type S = sig
 
   val intersect : t -> t -> bool
 
+  val choose_and_remove : t -> int * t
   (** [choose_and_remove t] is equivalent (but more efficient) to
       [(fun t -> let i = choose t in (i,remove i t)) t]
       @author Laurent Hubert*)
-  val choose_and_remove : t -> int*t
 
+  val to_string : t -> string
   (** [to_string s] return a string representation of [s]
       @author David Pichardie *)
-  val to_string : t -> string
-
 end
 
 include S
@@ -127,5 +104,3 @@ module Big : S
  *)
 
 module BigPos : S
-
-

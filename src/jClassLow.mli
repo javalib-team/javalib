@@ -39,25 +39,20 @@ type opcode =
   | OpLdc1 of int
   | OpLdc1w of int
   | OpLdc2w of int
-
   | OpLoad of jvm_basic_type * int
   | OpALoad of int
-
-  | OpArrayLoad of [`Int | other_num]
+  | OpArrayLoad of [ `Int | other_num ]
   | OpAALoad
   | OpBALoad
   | OpCALoad
   | OpSALoad
-
   | OpStore of jvm_basic_type * int
   | OpAStore of int
-
-  | OpArrayStore of [`Int | other_num]
+  | OpArrayStore of [ `Int | other_num ]
   | OpAAStore
   | OpBAStore
   | OpCAStore
   | OpSAStore
-
   | OpPop
   | OpPop2
   | OpDup
@@ -67,14 +62,12 @@ type opcode =
   | OpDup2X1
   | OpDup2X2
   | OpSwap
-
   | OpAdd of jvm_basic_type
   | OpSub of jvm_basic_type
   | OpMult of jvm_basic_type
   | OpDiv of jvm_basic_type
   | OpRem of jvm_basic_type
   | OpNeg of jvm_basic_type
-
   | OpIShl
   | OpLShl
   | OpIShr
@@ -87,9 +80,7 @@ type opcode =
   | OpLOr
   | OpIXor
   | OpLXor
-
-  | OpIInc of int * int (** index, increment *)
-
+  | OpIInc of int * int  (** index, increment *)
   | OpI2L
   | OpI2F
   | OpI2D
@@ -105,7 +96,6 @@ type opcode =
   | OpI2B
   | OpI2C
   | OpI2S
-
   | OpLCmp
   | OpFCmpL
   | OpFCmpG
@@ -128,14 +118,11 @@ type opcode =
   | OpGoto of int
   | OpJsr of int
   | OpRet of int
-
   | OpTableSwitch of int * int32 * int32 * int array
   | OpLookupSwitch of int * (int32 * int) list
-
   | OpReturn of jvm_basic_type
   | OpAReturn
   | OpReturnVoid
-
   | OpGetStatic of int
   | OpPutStatic of int
   | OpGetField of int
@@ -143,9 +130,8 @@ type opcode =
   | OpInvokeVirtual of int
   | OpInvokeNonVirtual of int
   | OpInvokeStatic of int
-  | OpInvokeInterface of int * int (** count *)
+  | OpInvokeInterface of int * int  (** count *)
   | OpInvokeDynamic of int
-
   | OpNew of int
   | OpNewArray of java_basic_type
   | OpANewArray of int
@@ -155,99 +141,89 @@ type opcode =
   | OpInstanceOf of int
   | OpMonitorEnter
   | OpMonitorExit
-  | OpAMultiNewArray of int * int (** ClassInfo, dims *)
-  | OpIfNull of int               (* offset *)
-  | OpIfNonNull of int            (* offset *)
-  | OpGotoW of int                (* offset *)
-  | OpJsrW of int                 (* offset *)
-  | OpBreakpoint                  (* should not be found *)
+  | OpAMultiNewArray of int * int  (** ClassInfo, dims *)
+  | OpIfNull of int (* offset *)
+  | OpIfNonNull of int (* offset *)
+  | OpGotoW of int (* offset *)
+  | OpJsrW of int (* offset *)
+  | OpBreakpoint (* should not be found *)
   (* | OpRetW of int *)
   | OpInvalid
-      (* if [opcodes.(i) = OpInvalid] it means that there is an opcode
-         that starts at position j, with j<i, an covers positions up
-         to k, with k>=i. *)
+(* if [opcodes.(i) = OpInvalid] it means that there is an opcode
+   that starts at position j, with j<i, an covers positions up
+   to k, with k>=i. *)
 
 type opcodes = opcode array
 
 (** {1 Flags, attributes and low-level structure of class files.} *)
 
-type common_flag = [
-| `AccPublic
-| `AccSynthetic
-| `AccRFU of int (** The int is a mask. *)
-| `AccFinal
-]
+type common_flag =
+  [ `AccPublic
+  | `AccSynthetic
+  | `AccRFU of int  (** The int is a mask. *)
+  | `AccFinal ]
 
-type inner_flag = [
-| common_flag
-| `AccPrivate
-| `AccProtected
-| `AccStatic
-| `AccInterface
-| `AccAbstract
-| `AccAnnotation
-| `AccEnum
-]
+type inner_flag =
+  [ common_flag
+  | `AccPrivate
+  | `AccProtected
+  | `AccStatic
+  | `AccInterface
+  | `AccAbstract
+  | `AccAnnotation
+  | `AccEnum ]
 
-type field_flag = [
-| common_flag
-| `AccPrivate
-| `AccProtected
-| `AccStatic
-| `AccVolatile
-| `AccTransient
-| `AccEnum
-]
+type field_flag =
+  [ common_flag
+  | `AccPrivate
+  | `AccProtected
+  | `AccStatic
+  | `AccVolatile
+  | `AccTransient
+  | `AccEnum ]
 
-type method_flag = [
-| common_flag
-| `AccPrivate
-| `AccProtected
-| `AccStatic
-| `AccSynchronized
-| `AccBridge
-| `AccVarArgs
-| `AccNative
-| `AccAbstract
-| `AccStrict
-]
+type method_flag =
+  [ common_flag
+  | `AccPrivate
+  | `AccProtected
+  | `AccStatic
+  | `AccSynchronized
+  | `AccBridge
+  | `AccVarArgs
+  | `AccNative
+  | `AccAbstract
+  | `AccStrict ]
 
-type class_flag = [
-| common_flag
-| `AccAbstract
-| `AccAnnotation
-| `AccEnum
-| `AccInterface
-| `AccSuper
-| `AccModule
-]
+type class_flag =
+  [ common_flag
+  | `AccAbstract
+  | `AccAnnotation
+  | `AccEnum
+  | `AccInterface
+  | `AccSuper
+  | `AccModule ]
 
-type access_flag = [
-| common_flag
-| `AccPrivate
-| `AccProtected
-| `AccStatic
-| `AccSynchronized
-| `AccVolatile
-| `AccTransient
-| `AccNative
-| `AccInterface
-| `AccAbstract
-| `AccStrict
-| `AccSuper
-| `AccBridge
-| `AccVarArgs
-| `AccAnnotation
-| `AccEnum
-| `AccModule
-]
+type access_flag =
+  [ common_flag
+  | `AccPrivate
+  | `AccProtected
+  | `AccStatic
+  | `AccSynchronized
+  | `AccVolatile
+  | `AccTransient
+  | `AccNative
+  | `AccInterface
+  | `AccAbstract
+  | `AccStrict
+  | `AccSuper
+  | `AccBridge
+  | `AccVarArgs
+  | `AccAnnotation
+  | `AccEnum
+  | `AccModule ]
 
 type mp_flags = [ `AccFinal | `AccSynthetic | `AccMandated | `AccRFU of int ]
-
-type method_parameters = {
-    name : string option;
-    flags : mp_flags list;
-}
+type method_parameters = { name : string option; flags : mp_flags list }
 
 type code = {
   c_max_stack : int;
@@ -263,15 +239,16 @@ and attribute =
   | AttributeCode of code Lazy.t
   | AttributeExceptions of class_name list
   | AttributeInnerClasses of
-      (class_name option * class_name option * string option
-       * inner_flag list) list
-	(** inner_class_info, outer_class_info, inner_name,
+      (class_name option * class_name option * string option * inner_flag list)
+      list
+      (** inner_class_info, outer_class_info, inner_name,
 	    inner_class_access_flags *)
   | AttributeSynthetic
   | AttributeLineNumberTable of (int * int) list
   | AttributeLocalVariableTable of (int * int * string * value_type * int) list
       (** start_pc, length, name, type, index *)
-  | AttributeLocalVariableTypeTable of (int * int * string * JSignature.fieldTypeSignature * int) list
+  | AttributeLocalVariableTypeTable of
+      (int * int * string * JSignature.fieldTypeSignature * int) list
       (** (start_pc, length, name, type, index), LocalVariableTable for
           generics, described in the JVM Spec 1.5, §4.8.13 *)
   | AttributeDeprecated
@@ -292,7 +269,7 @@ and attribute =
   | AttributeRuntimeInvisibleAnnotations of annotation list
   | AttributeRuntimeVisibleParameterAnnotations of annotation list list
   | AttributeRuntimeInvisibleParameterAnnotations of annotation list list
-  | AttributeAnnotationDefault of element_value  (* cf. §4.8.19 of JVM Spec 5 *)
+  | AttributeAnnotationDefault of element_value (* cf. §4.8.19 of JVM Spec 5 *)
   | AttributeBootstrapMethods of bootstrap_method list
   | AttributeMethodParameters of method_parameters list
   | AttributeUnknown of string * string
@@ -301,14 +278,14 @@ type jfield = {
   f_name : string;
   f_descriptor : value_type;
   f_flags : field_flag list;
-  f_attributes : attribute list
+  f_attributes : attribute list;
 }
 
 type jmethod = {
   m_name : string;
   m_descriptor : method_descriptor;
   m_flags : method_flag list;
-  m_attributes : attribute list
+  m_attributes : attribute list;
 }
 
 type jclass = {

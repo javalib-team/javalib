@@ -23,27 +23,28 @@
 
 open JBasics
 
-
 (** {1 Types used in type declarations of generic signatures} *)
 
 (** This is the type used for type variables as P in Collection<P>.*)
 type typeVariable = TypeVariable of string
 
 type typeArgument =
-  | ArgumentExtends of fieldTypeSignature (** e.g. <?+Object> *)
-  | ArgumentInherits of fieldTypeSignature (** e.g. <?-Object> *)
-  | ArgumentIs of fieldTypeSignature (** e.g. <Object>*)
-  | ArgumentIsAny (** <*> *)
+  | ArgumentExtends of fieldTypeSignature  (** e.g. <?+Object> *)
+  | ArgumentInherits of fieldTypeSignature  (** e.g. <?-Object> *)
+  | ArgumentIs of fieldTypeSignature  (** e.g. <Object>*)
+  | ArgumentIsAny  (** <*> *)
 
 and simpleClassTypeSignature = {
   scts_name : string;
   scts_type_arguments : typeArgument list;
 }
+
 and classTypeSignature = {
   cts_package : string list;
   cts_enclosing_classes : simpleClassTypeSignature list;
   cts_simple_class_type_signature : simpleClassTypeSignature;
 }
+
 and formalTypeParameter = {
   ftp_name : string;
   ftp_class_bound : fieldTypeSignature option;
@@ -56,10 +57,7 @@ and throwsSignature =
 
 (** [typeSignature] is used for method parameters and return values of
     generic methods. *)
-and typeSignature =
-  | GBasic of java_basic_type
-  | GObject of fieldTypeSignature
-
+and typeSignature = GBasic of java_basic_type | GObject of fieldTypeSignature
 
 (** {1 Types of generic signatures} *)
 
@@ -78,7 +76,7 @@ and fieldTypeSignature =
   | GArray of typeSignature
   | GVariable of typeVariable
 
-type methodTypeSignature ={
+type methodTypeSignature = {
   mts_formal_type_parameters : formalTypeParameter list;
   mts_type_signature : typeSignature list;
   mts_return_type : typeSignature option;

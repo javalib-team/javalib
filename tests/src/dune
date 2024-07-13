@@ -1,4 +1,3 @@
 (executables
-  (names test_parser test_collections unparser)
-  (libraries javalib)
-)
+ (names test_parser test_collections unparser)
+ (libraries javalib))

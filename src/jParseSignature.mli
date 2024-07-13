@@ -26,46 +26,44 @@ open JSignature
 
 (** {1 Parsing descriptors and their components } *)
 
+val parse_objectType : string -> object_type
 (** @raise Class_structure_error if the string does not correspond the an object
     type.*)
-val parse_objectType : string -> object_type
 
+val parse_field_descriptor : string -> value_type
 (** @raise Class_structure_error if the string does not correspond the a field
     descriptor.*)
-val parse_field_descriptor : string -> value_type
 
+val parse_method_descriptor : string -> method_descriptor
 (** @raise Class_structure_error if the string does not correspond the a method
     descriptor.*)
-val parse_method_descriptor : string -> method_descriptor
 
+val parse_descriptor : string -> descriptor
 (** @raise Class_structure_error if the string does not correspond the a
     descriptor.*)
-val parse_descriptor : string -> descriptor
-
-
 
 (** {1 Parsing generic signatures} *)
 
+val parse_ClassSignature : string -> classSignature
 (** [parse_ClassSignature s] parses a Signature attribute and expects
     to find a ClassSignature (as describe in paragraph 4.4.4 of the
     Java Virtual Machine Specification of Java 5).
 
     @raise Class_structure_error if the signature does not correspond
     to the specifications. *)
-val parse_ClassSignature : string -> classSignature
 
+val parse_MethodTypeSignature : string -> methodTypeSignature
 (** [parse_MethodTypeSignature s] parses a Signature attribute and
     expects to find a Methodtypesignature (as describe in paragraph
     4.4.4 of the Java Virtual Machine Specification of Java 5).
 
     @raise Class_structure_error if the signature does not correspond
     to the specifications. *)
-val parse_MethodTypeSignature : string -> methodTypeSignature
 
+val parse_FieldTypeSignature : string -> fieldTypeSignature
 (** [parse_FieldTypeSignature s] parses a Signature attribute [s] and
     expects to find a FieldTypeSignature (as describe in paragraph
     4.4.4 of the Java Virtual Machine Specification of Java 5).
 
     @raise Class_structure_error if the signature does not correspond
     to the specifications. *)
-val parse_FieldTypeSignature : string -> fieldTypeSignature

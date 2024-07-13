@@ -22,60 +22,45 @@
 open JBasics
 
 let replace_dot =
-  let replace_char c = if c='.' then '/' else c in
+  let replace_char c = if c = '.' then '/' else c in
   String.map replace_char
 
-let class_name ?(jvm=false) cn =
+let class_name ?(jvm = false) cn =
   let cname = cn_name cn in
-    if jvm then
-      replace_dot cname
-    else cname
+  if jvm then replace_dot cname else cname
 
 let sprintf = Printf.sprintf
 
-let basic_type ?(jvm=false) bt =
+let basic_type ?(jvm = false) bt =
   match bt with
-    | `Bool ->
-	if jvm then "Z" else "bool"
-    | `Byte ->
-	if jvm then "B" else "byte"
-    | `Char ->
-	if jvm then "C" else "char"
-    | `Double ->
-	if jvm then "D" else "double"
-    | `Float ->
-	if jvm then "F" else "float"
-    | `Int ->
-	if jvm then "I" else "int"
-    | `Long ->
-	if jvm then "J" else "long"
-    | `Short ->
-	if jvm then "S" else "short"
+  | `Bool -> if jvm then "Z" else "bool"
+  | `Byte -> if jvm then "B" else "byte"
+  | `Char -> if jvm then "C" else "char"
+  | `Double -> if jvm then "D" else "double"
+  | `Float -> if jvm then "F" else "float"
+  | `Int -> if jvm then "I" else "int"
+  | `Long -> if jvm then "J" else "long"
+  | `Short -> if jvm then "S" else "short"
 
-
-let rec object_value_signature ?(jvm=false) ot =
+let rec object_value_signature ?(jvm = false) ot =
   match ot with
-    | TClass cn ->
-	let cn = class_name ~jvm:jvm cn in
-	  if jvm then "L" ^cn^";"
-	  else cn
-    | TArray vt ->
-	if jvm then
-	  "[" ^ (value_signature ~jvm:true vt)
-	else (value_signature vt) ^ "[]"
+  | TClass cn ->
+      let cn = class_name ~jvm cn in
+      if jvm then "L" ^ cn ^ ";" else cn
+  | TArray vt ->
+      if jvm then "[" ^ value_signature ~jvm:true vt
+      else value_signature vt ^ "[]"
 
-and value_signature ?(jvm=false) vt =
+and value_signature ?(jvm = false) vt =
   match vt with
-    | TBasic bt -> basic_type ~jvm:jvm bt
-    | TObject ot -> object_value_signature ~jvm:jvm ot
+  | TBasic bt -> basic_type ~jvm bt
+  | TObject ot -> object_value_signature ~jvm ot
 
 let type2shortstring = value_signature ~jvm:true
 
-let rettype2shortstring ?(jvm=true) = function
-    None ->
-	if jvm then "V"
-	else "void"
-    | Some v -> value_signature ~jvm:jvm v
+let rettype2shortstring ?(jvm = true) = function
+  | None -> if jvm then "V" else "void"
+  | Some v -> value_signature ~jvm v
 
 let arraytype2shortstring = function
   | `Long -> "J"
@@ -87,23 +72,22 @@ let arraytype2shortstring = function
   | `ByteBool -> "B"
   | `Object -> "A"
 
-let method_signature ?(jvm=false) name md =
-  let (sl, sr) = md_split md in
-  (match sr with
-   | None -> "void"
-   | Some s -> value_signature s
-  ) ^ " " ^name^ "(" ^ String.concat "," (List.map (value_signature ~jvm:jvm) sl) ^ ")"
+let method_signature ?(jvm = false) name md =
+  let sl, sr = md_split md in
+  (match sr with None -> "void" | Some s -> value_signature s)
+  ^ " " ^ name ^ "("
+  ^ String.concat "," (List.map (value_signature ~jvm) sl)
+  ^ ")"
 
 let signature name = function
-  | SValue v -> value_signature v ^ " " ^name
+  | SValue v -> value_signature v ^ " " ^ name
   | SMethod m -> method_signature name m
 
 let jvm_basic_type = function
-	| `Int
-	| `Int2Bool -> 'i'
-	| `Long -> 'l'
-	| `Float -> 'f'
-	| `Double -> 'd'
+  | `Int | `Int2Bool -> 'i'
+  | `Long -> 'l'
+  | `Float -> 'f'
+  | `Double -> 'd'
 
 let java_basic_type = function
   | `Int -> 'i'
@@ -112,8 +96,7 @@ let java_basic_type = function
   | `Double -> 'd'
   | `Short -> 's'
   | `Char -> 'c'
-  | `Byte
-  | `Bool -> 'b'
+  | `Byte | `Bool -> 'b'
 
 let jvm_array_type = function
   | `Int -> 'i'
@@ -143,37 +126,30 @@ let rec dump_constant ch = function
   | ConstLong i -> JLib.IO.printf ch "long %Ld" i
   | ConstDouble f -> JLib.IO.printf ch "double %f" f
   | ConstClass cl -> JLib.IO.printf ch "class %s" (object_value_signature cl)
-  | ConstField (cn,fs) ->
-     let fn = fs_name fs
-     and ft = fs_type fs
-     in
-     JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn) fn
-  | ConstMethod (cl,ms) ->
-     let mn = ms_name ms
-     and md = make_md (ms_args ms, ms_rtype ms)
-     in
-     JLib.IO.printf ch "method : %s"
-                    (method_signature (object_value_signature cl ^ "::" ^ mn) md)
-  | ConstInterfaceMethod (cn,ms) ->
-     let mn = ms_name ms
-     and md = make_md (ms_args ms, ms_rtype ms)
-     in
-     JLib.IO.printf ch "interface-method : %s"
-                    (method_signature (class_name cn ^ "::" ^ mn) md)
-  | ConstNameAndType (s,sign) -> JLib.IO.printf ch "name-and-type : %s" (signature s sign)
+  | ConstField (cn, fs) ->
+      let fn = fs_name fs and ft = fs_type fs in
+      JLib.IO.printf ch "field : %s %s::%s" (value_signature ft) (class_name cn)
+        fn
+  | ConstMethod (cl, ms) ->
+      let mn = ms_name ms and md = make_md (ms_args ms, ms_rtype ms) in
+      JLib.IO.printf ch "method : %s"
+        (method_signature (object_value_signature cl ^ "::" ^ mn) md)
+  | ConstInterfaceMethod (cn, ms) ->
+      let mn = ms_name ms and md = make_md (ms_args ms, ms_rtype ms) in
+      JLib.IO.printf ch "interface-method : %s"
+        (method_signature (class_name cn ^ "::" ^ mn) md)
+  | ConstNameAndType (s, sign) ->
+      JLib.IO.printf ch "name-and-type : %s" (signature s sign)
   | ConstStringUTF8 s -> JLib.IO.printf ch "utf8 %s" s
   | ConstUnusable -> JLib.IO.printf ch "unusable"
   | ConstMethodType ms ->
-      JLib.IO.printf ch "method-type : %s"
-        (method_signature "" ms)
+      JLib.IO.printf ch "method-type : %s" (method_signature "" ms)
   | ConstMethodHandle mh ->
-     let (hk, c) = JBasicsLow.method_handle_to_const mh in
-     JLib.IO.printf ch "method-handle : %s, " (method_handle_kind hk);
-     (dump_constant ch c)
+      let hk, c = JBasicsLow.method_handle_to_const mh in
+      JLib.IO.printf ch "method-handle : %s, " (method_handle_kind hk);
+      dump_constant ch c
   | ConstInvokeDynamic (bmi, ms) ->
-      JLib.IO.printf ch "invoke-dynamic : %d %s"
-        bmi
-        (ms_name ms)
+      JLib.IO.printf ch "invoke-dynamic : %d %s" bmi (ms_name ms)
   | ConstModule s -> JLib.IO.printf ch "module %s" s
   | ConstPackage s -> JLib.IO.printf ch "package %s" s
 
@@ -187,27 +163,25 @@ let dump_bootstrap_argument ch = function
   | `MethodHandle mh -> dump_constant ch (ConstMethodHandle mh)
   | `MethodType ms -> dump_constant ch (ConstMethodType ms)
 
-let dump_bootstrap_method ch { bm_ref; bm_args; } =
+let dump_bootstrap_method ch { bm_ref; bm_args } =
   JLib.IO.nwrite_string ch "\t method_ref {\n\t   ";
   dump_constant ch (ConstMethodHandle bm_ref);
   JLib.IO.nwrite_string ch "\n\t }\n\t";
-  if bm_args <> []
-  then
-    begin
-      JLib.IO.nwrite_string ch (" bootstrap_arguments {\n\t");
-      List.iter (fun arg ->
-          JLib.IO.nwrite_string ch "   ";
-          dump_bootstrap_argument ch arg;
-          JLib.IO.nwrite_string ch "\n\t") bm_args
-    end; JLib.IO.nwrite_string ch " }"
+  if bm_args <> [] then (
+    JLib.IO.nwrite_string ch " bootstrap_arguments {\n\t";
+    List.iter
+      (fun arg ->
+        JLib.IO.nwrite_string ch "   ";
+        dump_bootstrap_argument ch arg;
+        JLib.IO.nwrite_string ch "\n\t")
+      bm_args);
+  JLib.IO.nwrite_string ch " }"
 
 let dump_constantpool ch =
-  Array.iteri
-    (fun i c ->
+  Array.iteri (fun i c ->
       JLib.IO.printf ch "    %d  " i;
       dump_constant ch c;
       JLib.IO.write ch '\n')
-
 
 let dump_verification_type = function
   | VTop -> "Top"
@@ -229,33 +203,40 @@ let dump_verification_type = function
 let dump_stackmap ch frame =
   match frame with
   | SameFrame k -> JLib.IO.printf ch "SameFrame(tag:%d)\n" k
-  | SameLocals (k,vtype) ->
-     JLib.IO.printf ch "SameLocals(tag:%d,%s)\n" k (dump_verification_type vtype)
-  | SameLocalsExtended (k,i,vtype) ->
-     JLib.IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n"
-       k i (dump_verification_type vtype)
-  | ChopFrame (k,i) ->
-     JLib.IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
-  | SameFrameExtended (k,i) ->
-     JLib.IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
-  | AppendFrame (k,i,vtypes) ->
-     let svtypes = String.concat "," (List.map dump_verification_type vtypes) in
-     JLib.IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
-  | FullFrame (k,offset,locals,stack) ->
-     JLib.IO.printf ch "FullFrame(tag:%d," k;
-     JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
-     List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) locals;
-     JLib.IO.printf ch "],\n      stack=[";
-     List.iter (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t)) stack;
-     JLib.IO.nwrite_string ch ")\n"
+  | SameLocals (k, vtype) ->
+      JLib.IO.printf ch "SameLocals(tag:%d,%s)\n" k
+        (dump_verification_type vtype)
+  | SameLocalsExtended (k, i, vtype) ->
+      JLib.IO.printf ch "SameLocalsExtended(tag:%d,%d,%s)\n" k i
+        (dump_verification_type vtype)
+  | ChopFrame (k, i) -> JLib.IO.printf ch "ChopFrame(tag:%d,%d)\n" k i
+  | SameFrameExtended (k, i) ->
+      JLib.IO.printf ch "SameFrameExtended(tag:%d,%d)\n" k i
+  | AppendFrame (k, i, vtypes) ->
+      let svtypes =
+        String.concat "," (List.map dump_verification_type vtypes)
+      in
+      JLib.IO.printf ch "AppendFrame(tag:%d,%d,%s)\n" k i svtypes
+  | FullFrame (k, offset, locals, stack) ->
+      JLib.IO.printf ch "FullFrame(tag:%d," k;
+      JLib.IO.printf ch "\n      offset=%d,\n      locals=[" offset;
+      List.iter
+        (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t))
+        locals;
+      JLib.IO.printf ch "],\n      stack=[";
+      List.iter
+        (fun t -> JLib.IO.printf ch "\n        %s" (dump_verification_type t))
+        stack;
+      JLib.IO.nwrite_string ch ")\n"
 
 open JCode
 
 let dump_exc ch _cl exc =
-  JLib.IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end exc.e_handler;
+  JLib.IO.printf ch "\n      [%d-%d] -> %d (" exc.e_start exc.e_end
+    exc.e_handler;
   (match exc.e_catch_type with
-     | None -> JLib.IO.printf ch "<finally>"
-     | Some cl -> JLib.IO.printf ch "class %s" (class_name cl));
+  | None -> JLib.IO.printf ch "<finally>"
+  | Some cl -> JLib.IO.printf ch "class %s" (class_name cl));
   JLib.IO.printf ch ")"
 
 let constant_attribute = function
